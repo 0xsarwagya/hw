@@ -1,21 +1,24 @@
-name: Commitlint
+name: Release - Beta Branch
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
       - beta
-      - prod
 
 jobs:
-  commitlint:
-    name: Lint Commit Messages
+  release:
+    name: Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -31,6 +34,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Validate commit messages
-        run: pnpm commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.sha }} --verbose
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm semantic-release --config .releaserc.beta.js
 
