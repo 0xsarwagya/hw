@@ -131,7 +131,7 @@ pnpm semantic-release:prod   # For prod branch
 
 **Note:** 
 - Releases are automatically created when pushing to `beta` or `prod` branches via GitHub Actions
-- The `dev` branch (same as `main`) does NOT create releases - it's for development only
+- The `dev` branch does NOT create releases - it's for development only
 - Releases start from `0.0.0` and increment based on commit scopes (`admin` or `backend`)
 - See [SETUP_BRANCHES.md](./SETUP_BRANCHES.md) for branch setup instructions
 
@@ -240,7 +240,7 @@ modules/
 4. **Create NestJS module** in `apps/backend/src/modules/`
 5. **Use shared types** from `@vcecom/db`
 6. **Build admin UI** in `apps/admin/`
-7. **Commit with conventional format**: `feat(scope): description` (see [COMMIT_CONVENTIONS.md](./COMMIT_CONVENTIONS.md))
+7. **Commit with conventional format**: `feat(scope): description`
 8. **Push to appropriate branch** (`dev`, `beta`, or `prod`) for automatic releases
 
 ## 📝 Commit Conventions & Releases
@@ -254,7 +254,7 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/) f
 
 ### Branch Strategy
 
-- **main/dev**: Development branch - **NO releases**
+- **dev**: Development branch - **NO releases**
 - **beta**: Beta releases (e.g., `0.1.0-beta.1`)
 - **prod**: Production releases (e.g., `0.1.0`)
 
