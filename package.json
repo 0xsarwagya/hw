@@ -1,15 +1,57 @@
 {
-  "name": "ecommerce",
+  "name": "@vestcodes/vcecom",
+  "version": "0.0.0",
+  "description": "Lightweight ecommerce backend built with NestJS, Drizzle ORM, and Next.js - India-focused with Razorpay, Shiprocket, and GST compliance",
   "private": true,
+  "license": "UNLICENSED",
+  "author": "Vestcodes <contact@vestcodes.co>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Vestcodes/vcecom.git"
+  },
+  "homepage": "https://vestcodes.co",
+  "bugs": {
+    "url": "https://github.com/Vestcodes/vcecom/issues"
+  },
+  "keywords": [
+    "ecommerce",
+    "nestjs",
+    "drizzle",
+    "nextjs",
+    "razorpay",
+    "shiprocket",
+    "india",
+    "gst",
+    "monorepo",
+    "turborepo"
+  ],
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "format-and-lint": "biome check .",
+    "format-and-lint:fix": "biome check . --write",
+    "check-types": "turbo run check-types",
+    "commitlint": "commitlint --edit",
+    "changelog": "git-cliff",
+    "changelog:unreleased": "git-cliff --unreleased",
+    "semantic-release": "semantic-release",
+    "semantic-release:beta": "semantic-release --config .releaserc.beta.js",
+    "semantic-release:prod": "semantic-release --config .releaserc.prod.js",
+    "prepare": "husky"
   },
   "devDependencies": {
-    "prettier": "^3.6.2",
+    "@biomejs/biome": "^2.3.7",
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.2",
+    "@semantic-release/npm": "^13.1.2",
+    "@semantic-release/release-notes-generator": "^14.1.0",
+    "git-cliff": "^2.10.1",
+    "husky": "^9.1.7",
+    "semantic-release": "^25.0.2",
     "turbo": "^2.6.1",
     "typescript": "5.9.2"
   },

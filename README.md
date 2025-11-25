@@ -1,135 +1,323 @@
-# Turborepo starter
+# VCEcom - Lightweight Ecommerce Backend
 
-This Turborepo starter is maintained by the Turborepo core team.
+> Built with ❤️ by [Vestcodes](https://vestcodes.co)
 
-## Using this example
+A modern, lightweight ecommerce backend built with NestJS, Drizzle ORM, and Next.js. Inspired by Medusa.js but designed to be more lightweight and developer-friendly.
 
-Run the following command:
+**VCEcom** is an India-focused ecommerce platform developed by Vestcodes, featuring Razorpay integration, Indian shipping providers (Shiprocket, Nimbus Post, Unicommerce), and GST compliance.
 
-```sh
-npx create-turbo@latest
+## 🎯 Overview
+
+VCEcom is a headless ecommerce platform built as a monorepo using Turborepo. It provides a flexible, type-safe backend API for building modern ecommerce experiences with a focus on performance, developer experience, and extensibility.
+
+## 🏗️ Architecture
+
+This project uses a monorepo structure powered by [Turborepo](https://turborepo.com) for efficient development and builds.
+
+### Tech Stack
+
+- **Backend**: [NestJS](https://nestjs.com/) - Progressive Node.js framework
+- **Database**: [Drizzle ORM](https://orm.drizzle.team/) - Lightweight, type-safe ORM
+- **Admin Dashboard**: [Next.js](https://nextjs.org/) + [shadcn/ui](https://ui.shadcn.com/)
+- **Language**: TypeScript
+- **Package Manager**: pnpm
+- **Code Quality**: Biome (formatting & linting)
+- **Database**: PostgreSQL
+
+## 📦 Apps and Packages
+
+### Apps
+
+- **`admin`** - Next.js admin dashboard for managing products, orders, customers, and settings
+- **`backend`** - NestJS REST API backend with modular architecture
+
+### Packages
+
+- **`@vcecom/db`** - Shared database package using Drizzle ORM
+  - Centralized schema definitions
+  - Type-safe database queries
+  - Migration management
+- **`@vcecom/typescript-config`** - Shared TypeScript configurations
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js >= 18
+- pnpm >= 9.0.0
+- PostgreSQL database
+
+### Installation
+
+```bash
+# Install dependencies
+pnpm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your database URL and other configuration
 ```
 
-## What's inside?
+### Environment Variables
 
-This Turborepo includes the following packages/apps:
+Create a `.env` file in the root directory:
 
-### Apps and Packages
+```env
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/vcecom
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+# Backend
+PORT=3000
+```
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## 💻 Development
 
-### Utilities
+### Start all apps
 
-This Turborepo has some additional tools already setup for you:
+```bash
+pnpm dev
+```
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+### Start specific app
+
+```bash
+# Start backend only
+pnpm dev --filter=backend
+
+# Start admin only
+pnpm dev --filter=admin
+```
 
 ### Build
 
-To build all apps and packages, run the following command:
+```bash
+# Build all apps and packages
+pnpm build
 
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+# Build specific app
+pnpm build --filter=backend
+pnpm build --filter=admin
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+### Code Quality
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+```bash
+# Check formatting and linting
+pnpm format-and-lint
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+# Auto-fix formatting and linting issues
+pnpm format-and-lint:fix
 
-### Develop
+# Type checking
+pnpm check-types
 
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+# Validate commit messages
+pnpm commitlint
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+### Changelog & Releases
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+```bash
+# Generate changelog using git-cliff
+pnpm changelog
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
+# Generate unreleased changelog
+pnpm changelog:unreleased
 
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+# Run semantic-release (automatically runs in CI)
+pnpm semantic-release:beta   # For beta branch
+pnpm semantic-release:prod   # For prod branch
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+**Note:** 
+- Releases are automatically created when pushing to `beta` or `prod` branches via GitHub Actions
+- The `dev` branch (same as `main`) does NOT create releases - it's for development only
+- Releases start from `0.0.0` and increment based on commit scopes (`admin` or `backend`)
+- See [SETUP_BRANCHES.md](./SETUP_BRANCHES.md) for branch setup instructions
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+### Database
+
+```bash
+# Generate migrations
+cd packages/db
+pnpm db:generate
+
+# Run migrations
+pnpm db:migrate
+
+# Push schema changes (development only)
+pnpm db:push
+
+# Open Drizzle Studio
+pnpm db:studio
+```
+
+## 📁 Project Structure
 
 ```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+ecommerce/
+├── apps/
+│   ├── admin/              # Next.js admin dashboard
+│   │   ├── app/            # Next.js app directory
+│   │   ├── components/     # React components (shadcn/ui)
+│   │   └── lib/            # Utilities
+│   └── backend/            # NestJS API
+│       └── src/
+│           ├── modules/    # Feature modules (to be implemented)
+│           ├── app.module.ts
+│           └── main.ts
+├── packages/
+│   ├── db/                 # Shared database package
+│   │   ├── src/
+│   │   │   ├── schema/     # Database schemas
+│   │   │   └── db/         # Database connection
+│   │   └── drizzle.config.ts
+│   └── typescript-config/ # Shared TS configs
+├── biome.json              # Biome configuration
+├── turbo.json              # Turborepo configuration
+└── package.json
 ```
 
-## Useful Links
+## 🎨 Features
 
-Learn more about the power of Turborepo:
+### Current
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+- ✅ Monorepo setup with Turborepo
+- ✅ NestJS backend with modular architecture
+- ✅ Drizzle ORM with PostgreSQL
+- ✅ Next.js admin dashboard with shadcn/ui
+- ✅ Type-safe database queries
+- ✅ Code formatting and linting with Biome
+- ✅ Shared TypeScript configurations
+
+### Planned
+
+- 🔄 Product catalog management
+- 🔄 Shopping cart functionality
+- 🔄 Order management system
+- 🔄 Customer management
+- 🔄 Payment processing integration
+- 🔄 Shipping and fulfillment
+- 🔄 Inventory management
+- 🔄 Multi-region support
+- 🔄 Plugin system for extensibility
+- 🔄 Admin dashboard features
+- 🔄 Storefront API
+
+## 🏛️ Architecture Principles
+
+### Modular Design
+
+The backend follows NestJS's modular architecture, where each feature is organized into its own module:
+
+```
+modules/
+├── products/      # Product catalog
+├── carts/         # Shopping cart
+├── orders/        # Order management
+├── customers/     # Customer management
+├── payments/      # Payment processing
+└── ...
+```
+
+### Type Safety
+
+- End-to-end TypeScript
+- Type-safe database queries with Drizzle
+- Shared types across apps via `@vcecom/db`
+
+### Shared Packages
+
+- Database schemas and queries in `@vcecom/db`
+- Reusable across backend and admin apps
+- Single source of truth for data models
+
+## 🔧 Development Workflow
+
+1. **Create database schema** in `packages/db/src/schema/`
+2. **Generate migration**: `pnpm db:generate`
+3. **Run migration**: `pnpm db:migrate`
+4. **Create NestJS module** in `apps/backend/src/modules/`
+5. **Use shared types** from `@vcecom/db`
+6. **Build admin UI** in `apps/admin/`
+7. **Commit with conventional format**: `feat(scope): description` (see [COMMIT_CONVENTIONS.md](./COMMIT_CONVENTIONS.md))
+8. **Push to appropriate branch** (`dev`, `beta`, or `prod`) for automatic releases
+
+## 📝 Commit Conventions & Releases
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/) for commit messages. This enables:
+
+- **Automatic versioning** based on commit types
+- **Changelog generation** with git-cliff
+- **GitHub releases** via semantic-release
+- **Branch-specific releases** (beta, prod)
+
+### Branch Strategy
+
+- **main/dev**: Development branch - **NO releases**
+- **beta**: Beta releases (e.g., `0.1.0-beta.1`)
+- **prod**: Production releases (e.g., `0.1.0`)
+
+### Quick Reference
+
+- `feat(admin): add product page` - New feature in admin (minor version)
+- `fix(backend): resolve cart bug` - Bug fix in backend (patch version)
+- `feat(backend)!: change API` - Breaking change (major version)
+- `docs(config): update README` - Documentation (no release)
+- `chore(deps): update packages` - Dependencies (no release)
+
+**Important:** 
+- Only commits with `admin` or `backend` scope trigger releases
+- Commits with `db` or `config` scope do not create releases
+- Releases start from `0.0.0`
+- See [SETUP_BRANCHES.md](./SETUP_BRANCHES.md) for initial branch setup
+
+## 📋 Product Requirements Document (PRD)
+
+For detailed product requirements, specifications, and feature documentation, please refer to the Product Requirements Document:
+
+**PRD Document:** [View PRD on Zoho Writer](https://writer.zoho.in/writer/open/na5811e99faa1ddfb4003a8713b3ffc5a2747)
+
+The PRD includes:
+- Project objectives and scope
+- User personas and use cases
+- Feature requirements and priorities
+- Functional flows and workflows
+- Technical architecture
+- Database schema specifications
+- API endpoint documentation
+- India-focused integrations (Razorpay, Shiprocket, Nimbus Post, Unicommerce)
+- Future roadmap and add-on integrations
+
+## 📚 Learn More
+
+- [NestJS Documentation](https://docs.nestjs.com)
+- [Drizzle ORM Documentation](https://orm.drizzle.team/docs/overview)
+- [Turborepo Documentation](https://turborepo.com/docs)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [shadcn/ui Documentation](https://ui.shadcn.com)
+
+## 🤝 Contributing
+
+This is a proprietary project developed by [Vestcodes](https://vestcodes.co). For questions or suggestions, please contact us:
+
+- **Website:** [vestcodes.co](https://vestcodes.co)
+- **Email:** contact@vestcodes.co
+- **GitHub:** [@vestcodes](https://github.com/vestcodes)
+- **LinkedIn:** [company/vestcodes](https://linkedin.com/company/vestcodes)
+
+## 📄 License
+
+See [LICENSE](./LICENSE) file for details.
+
+---
+
+<div align="center">
+
+**Built by [Vestcodes](https://vestcodes.co)** - Transforming ideas into exceptional digital products
+
+[Website](https://vestcodes.co) • [GitHub](https://github.com/vestcodes) • [LinkedIn](https://linkedin.com/company/vestcodes)
+
+© 2025 Vestcodes. All rights reserved.
+
+</div>
