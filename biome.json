@@ -7,18 +7,6 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "ignore": [
-      "**/*.test.ts",
-      "**/*.test.tsx",
-      "**/*.spec.ts",
-      "**/*.spec.tsx",
-      "**/*.test.js",
-      "**/*.test.jsx",
-      "**/*.spec.js",
-      "**/*.spec.jsx",
-      "**/__tests__/**",
-      "**/__test__/**"
-    ]
   },
   "formatter": {
     "enabled": true,
