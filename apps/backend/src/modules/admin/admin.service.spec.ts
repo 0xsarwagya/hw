@@ -167,21 +167,29 @@ describe("AdminService", () => {
 
       const mockOrders = [];
       // Mock count query (with where condition)
-      const mockCountChain = {
-        from: jest.fn().mockReturnThis(),
+      // db.select().from(orders).where(whereCondition) -> await -> array
+      const mockCountFromChain = {
         where: jest.fn().mockResolvedValue(mockOrders),
+      };
+      const mockCountChain = {
+        from: jest.fn().mockReturnValue(mockCountFromChain),
       };
 
       // Mock orders query with pagination (with where condition)
-      const mockOrdersChain = {
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnValue({
-          limit: jest.fn().mockReturnValue({
-            offset: jest.fn().mockReturnValue({
-              orderBy: jest.fn().mockResolvedValue(mockOrders),
-            }),
+      // The ternary: db.select().from(orders).where(whereCondition)
+      // So: select() -> from() -> where() -> limit() -> offset() -> orderBy() -> await
+      const mockWhereResult = {
+        limit: jest.fn().mockReturnValue({
+          offset: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue(mockOrders),
           }),
         }),
+      };
+      const mockOrdersFromChain = {
+        where: jest.fn().mockReturnValue(mockWhereResult),
+      };
+      const mockOrdersChain = {
+        from: jest.fn().mockReturnValue(mockOrdersFromChain),
       };
 
       const mockOrderItemsChain = {
@@ -209,21 +217,26 @@ describe("AdminService", () => {
 
       const mockOrders = [];
       // Mock count query (with where condition)
-      const mockCountChainWithWhere = {
-        from: jest.fn().mockReturnThis(),
+      const mockCountFromChain = {
         where: jest.fn().mockResolvedValue(mockOrders),
+      };
+      const mockCountChainWithWhere = {
+        from: jest.fn().mockReturnValue(mockCountFromChain),
       };
 
       // Mock orders query with where condition
-      const mockOrdersChainWithWhere = {
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnValue({
-          limit: jest.fn().mockReturnValue({
-            offset: jest.fn().mockReturnValue({
-              orderBy: jest.fn().mockResolvedValue(mockOrders),
-            }),
+      const mockWhereResult = {
+        limit: jest.fn().mockReturnValue({
+          offset: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue(mockOrders),
           }),
         }),
+      };
+      const mockOrdersFromChain = {
+        where: jest.fn().mockReturnValue(mockWhereResult),
+      };
+      const mockOrdersChainWithWhere = {
+        from: jest.fn().mockReturnValue(mockOrdersFromChain),
       };
 
       const mockOrderItemsChain = {
@@ -268,14 +281,17 @@ describe("AdminService", () => {
       };
 
       // Mock customers query with pagination (no where condition)
-      const mockCustomersChain = {
-        from: jest.fn().mockReturnValue({
-          limit: jest.fn().mockReturnValue({
-            offset: jest.fn().mockReturnValue({
-              orderBy: jest.fn().mockResolvedValue(mockCustomers),
-            }),
+      // The ternary: db.select().from(customers)
+      // So: select() -> from() -> limit() -> offset() -> orderBy() -> await
+      const mockFromResult = {
+        limit: jest.fn().mockReturnValue({
+          offset: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue(mockCustomers),
           }),
         }),
+      };
+      const mockCustomersChain = {
+        from: jest.fn().mockReturnValue(mockFromResult),
       };
 
       (db.select as jest.Mock)
@@ -302,21 +318,26 @@ describe("AdminService", () => {
 
       const mockCustomers = [];
       // Mock count query (with where condition)
-      const mockCountChainWithWhere = {
-        from: jest.fn().mockReturnThis(),
+      const mockCountFromChain = {
         where: jest.fn().mockResolvedValue(mockCustomers),
+      };
+      const mockCountChainWithWhere = {
+        from: jest.fn().mockReturnValue(mockCountFromChain),
       };
 
       // Mock customers query with where condition
-      const mockCustomersChainWithWhere = {
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnValue({
-          limit: jest.fn().mockReturnValue({
-            offset: jest.fn().mockReturnValue({
-              orderBy: jest.fn().mockResolvedValue(mockCustomers),
-            }),
+      const mockWhereResult = {
+        limit: jest.fn().mockReturnValue({
+          offset: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue(mockCustomers),
           }),
         }),
+      };
+      const mockCustomersFromChain = {
+        where: jest.fn().mockReturnValue(mockWhereResult),
+      };
+      const mockCustomersChainWithWhere = {
+        from: jest.fn().mockReturnValue(mockCustomersFromChain),
       };
 
       (db.select as jest.Mock)
@@ -363,7 +384,8 @@ describe("AdminService", () => {
         { id: "2" },
       ];
 
-      // getStats makes 3 separate calls that return arrays directly
+      // getStats makes 3 separate calls: db.select().from(table) -> await -> array
+      // So: select() -> from() -> await resolves to array directly
       const mockProductsChain = {
         from: jest.fn().mockResolvedValue(mockProducts),
       };
@@ -438,11 +460,13 @@ describe("AdminService", () => {
 
       const mockProducts = [{ id: "product-1" }];
 
+      // bulkProductOperation: db.select().from(products).where(...) -> await -> array
       const mockSelectChain = {
         from: jest.fn().mockReturnThis(),
         where: jest.fn().mockResolvedValue(mockProducts),
       };
 
+      // db.update(products).set(...).where(...) -> await
       const mockUpdateChain = {
         set: jest.fn().mockReturnThis(),
         where: jest.fn().mockResolvedValue(undefined),
@@ -468,11 +492,13 @@ describe("AdminService", () => {
 
       const mockProducts = [{ id: "product-1" }];
 
+      // bulkProductOperation: db.select().from(products).where(...) -> await -> array
       const mockSelectChain = {
         from: jest.fn().mockReturnThis(),
         where: jest.fn().mockResolvedValue(mockProducts),
       };
 
+      // db.delete(products).where(...) -> await
       const mockDeleteChain = {
         where: jest.fn().mockResolvedValue(undefined),
       };
@@ -497,6 +523,7 @@ describe("AdminService", () => {
 
       const mockProducts = [{ id: "product-1" }]; // Only one found
 
+      // bulkProductOperation: db.select().from(products).where(...) -> await -> array
       const mockSelectChain = {
         from: jest.fn().mockReturnThis(),
         where: jest.fn().mockResolvedValue(mockProducts),
