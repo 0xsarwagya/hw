@@ -24,6 +24,7 @@ export const products = pgTable(
     description: text("description"),
     price: real("price").notNull(),
     gstRate: real("gst_rate").notNull().default(0),
+    hsnCode: text("hsn_code"),
     status: productStatusEnum("status").notNull().default("draft"),
     categoryId: uuid("category_id").references(() => categories.id, {
       onDelete: "set null",
