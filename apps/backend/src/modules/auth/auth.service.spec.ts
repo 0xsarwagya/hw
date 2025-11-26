@@ -177,8 +177,7 @@ describe("AuthService", () => {
         role: "customer",
       };
 
-      (jwtService.sign as jest.Mock) = jest
-        .fn()
+      (jwtService.sign as jest.Mock)
         .mockReturnValueOnce("mock-access-token")
         .mockReturnValueOnce("mock-refresh-token");
 
