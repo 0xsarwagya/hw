@@ -58,8 +58,10 @@
           }
         }
       },
-      "parser": {
-        "unsafeParameterDecoratorsEnabled": true
+      "javascript": {
+        "parser": {
+          "unsafeParameterDecoratorsEnabled": true
+        }
       }
     },
     {

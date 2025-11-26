@@ -1,8 +1,7 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
-import { db } from "@vcecom/db";
+import { db, eq } from "@vcecom/db";
 import { users } from "@vcecom/db/schema";
-import { eq } from "drizzle-orm";
 import { ExtractJwt, Strategy } from "passport-jwt";
 
 @Injectable()
