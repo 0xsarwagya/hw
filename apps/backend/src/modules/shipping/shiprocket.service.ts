@@ -82,30 +82,27 @@ export class ShiprocketService implements OnModuleInit {
    * @returns Authentication token
    */
   async getAuthToken(): Promise<string> {
+    // Authenticate if no token exists
     if (!this.authToken) {
       await this.authenticate();
-      if (!this.authToken) {
-        throw new Error("Failed to authenticate with Shiprocket");
-      }
-      return this.authToken.token;
     }
 
     // Check if token is expired (with 5 minute buffer)
     const bufferTime = 5 * 60 * 1000; // 5 minutes
-    const currentToken = this.authToken;
     if (
-      currentToken.expiresAt &&
-      Date.now() >= currentToken.expiresAt - bufferTime
+      this.authToken &&
+      this.authToken.expiresAt &&
+      Date.now() >= this.authToken.expiresAt - bufferTime
     ) {
       await this.authenticate();
-      const refreshedToken = this.authToken;
-      if (!refreshedToken) {
-        throw new Error("Failed to refresh authentication token");
-      }
-      return refreshedToken.token;
     }
 
-    return currentToken.token;
+    // Final check - TypeScript should now know authToken is not null
+    if (!this.authToken) {
+      throw new Error("Failed to obtain authentication token");
+    }
+
+    return this.authToken.token;
   }
 
   /**
