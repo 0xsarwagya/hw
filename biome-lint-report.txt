@@ -30,5 +30,5 @@ packages/db/src/schema/product-variants.test.ts:180:14 lint/suspicious/noExplici
   i any disables many type checking rules. Its use should be avoided.
   
 
-Checked 128 files in 64ms. No fixes applied.
+Checked 128 files in 288ms. No fixes applied.
 Found 2 warnings.

@@ -21,3 +21,12 @@ packages/db/**/*.test.ts
 **/*.spec.ts
 **/**/*.test.ts
 **/**/*.spec.ts
+# Additional test file patterns
+**/__tests__/**
+**/__test__/**
+**/*.test.tsx
+**/*.spec.tsx
+**/*.test.js
+**/*.spec.js
+**/*.test.jsx
+**/*.spec.jsx
