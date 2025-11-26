@@ -4,6 +4,7 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { CategoriesModule } from "./modules/categories/categories.module";
 import { CustomersModule } from "./modules/customers/customers.module";
 import { OrdersModule } from "./modules/orders/orders.module";
+import { PaymentsModule } from "./modules/payments/payments.module";
 import { ProductsModule } from "./modules/products/products.module";
 
 @Module({
@@ -13,6 +14,7 @@ import { ProductsModule } from "./modules/products/products.module";
     ProductsModule,
     CustomersModule,
     OrdersModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
 })
