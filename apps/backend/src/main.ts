@@ -10,11 +10,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const reflector = app.get(Reflector);
 
-  // Apply JWT guard globally, but allow public routes
-  app.useGlobalGuards(new JwtAuthGuard(reflector), new RolesGuard(reflector));
+  // Create custom JWT guard that respects @Public() decorator
+  const jwtGuard = new JwtAuthGuard();
+  const rolesGuard = new RolesGuard(reflector);
 
   // Override JWT guard to skip public routes
-  const jwtGuard = app.get(JwtAuthGuard);
   const originalCanActivate = jwtGuard.canActivate.bind(jwtGuard);
   jwtGuard.canActivate = async (context: ExecutionContext) => {
     const isPublic = reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -26,6 +26,9 @@ async function bootstrap() {
     }
     return originalCanActivate(context);
   };
+
+  // Apply guards globally
+  app.useGlobalGuards(jwtGuard, rolesGuard);
 
   // Swagger/OpenAPI configuration
   const config = new DocumentBuilder()
@@ -55,6 +58,6 @@ async function bootstrap() {
     },
   });
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3001);
 }
 bootstrap();
