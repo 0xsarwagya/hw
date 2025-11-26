@@ -7,6 +7,7 @@ This document outlines best practices for developing with Turbopack, focusing on
 
 ## 1. Core Principles
 
+- **Always Fetch Remote Changes From The Dev Branch:** - Use github and make sure that the local dev branch stays updated with the remotte branch.
 - **Leverage the Turbo Engine:** Turbopack's core strength lies in its Turbo engine for function-level caching. Understand and utilize this for incremental builds.
 - **Embrace Incremental Computation:** Be mindful of how changes affect the build process. Design your application to maximize incremental computation benefits.
 - **Use TypeScript:** Turbopack has built-in support for TypeScript and JSX, so use them to improve code quality and developer experience.  Make full use of TypeScript's features like generics, interfaces and types.
