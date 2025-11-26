@@ -35,12 +35,12 @@ describe("Users Schema", () => {
         .returning();
 
       expect(user).toBeDefined();
-      expect(user!.email).toBe(email);
-      expect(user!.passwordHash).toBe(passwordHash);
-      expect(user!.role).toBe("customer");
-      expect(user!.id).toBeDefined();
-      expect(user!.createdAt).toBeInstanceOf(Date);
-      expect(user!.updatedAt).toBeInstanceOf(Date);
+      expect(user?.email).toBe(email);
+      expect(user?.passwordHash).toBe(passwordHash);
+      expect(user?.role).toBe("customer");
+      expect(user?.id).toBeDefined();
+      expect(user?.createdAt).toBeInstanceOf(Date);
+      expect(user?.updatedAt).toBeInstanceOf(Date);
     });
 
     it("should read a user by id", async () => {
@@ -56,7 +56,7 @@ describe("Users Schema", () => {
       const [found] = await db
         .select()
         .from(users)
-        .where(eq(users.id, inserted!.id));
+        .where(eq(users.id, inserted?.id));
 
       expect(found).toBeDefined();
       expect(found?.email).toBe(email);
@@ -76,12 +76,12 @@ describe("Users Schema", () => {
       const [updated] = await db
         .update(users)
         .set({ passwordHash: newPasswordHash })
-        .where(eq(users.id, inserted!.id))
+        .where(eq(users.id, inserted?.id))
         .returning();
 
       expect(updated?.passwordHash).toBe(newPasswordHash);
       expect(updated?.updatedAt.getTime()).toBeGreaterThan(
-        inserted!.updatedAt.getTime(),
+        inserted?.updatedAt.getTime(),
       );
     });
 
@@ -95,12 +95,12 @@ describe("Users Schema", () => {
         })
         .returning();
 
-      await db.delete(users).where(eq(users.id, inserted!.id));
+      await db.delete(users).where(eq(users.id, inserted?.id));
 
       const [found] = await db
         .select()
         .from(users)
-        .where(eq(users.id, inserted!.id));
+        .where(eq(users.id, inserted?.id));
 
       expect(found).toBeUndefined();
     });
@@ -123,8 +123,8 @@ describe("Users Schema", () => {
           })
           .returning();
 
-        expect(user!.email).toBe(email);
-        await db.delete(users).where(eq(users.id, user!.id));
+        expect(user?.email).toBe(email);
+        await db.delete(users).where(eq(users.id, user?.id));
       }
     });
 
@@ -198,8 +198,8 @@ describe("Users Schema", () => {
           })
           .returning();
 
-        expect(user!.passwordHash).toBe(hash);
-        await db.delete(users).where(eq(users.id, user!.id));
+        expect(user?.passwordHash).toBe(hash);
+        await db.delete(users).where(eq(users.id, user?.id));
       }
     });
   });
@@ -214,7 +214,7 @@ describe("Users Schema", () => {
         })
         .returning();
 
-      expect(user!.role).toBe("customer");
+      expect(user?.role).toBe("customer");
     });
 
     it("should accept admin role", async () => {
@@ -227,7 +227,7 @@ describe("Users Schema", () => {
         })
         .returning();
 
-      expect(user!.role).toBe("admin");
+      expect(user?.role).toBe("admin");
     });
 
     it("should accept customer role explicitly", async () => {
@@ -240,7 +240,7 @@ describe("Users Schema", () => {
         })
         .returning();
 
-      expect(user!.role).toBe("customer");
+      expect(user?.role).toBe("customer");
     });
 
     it("should reject invalid role values", async () => {
@@ -266,11 +266,11 @@ describe("Users Schema", () => {
         .returning();
       const afterInsert = new Date();
 
-      expect(user!.createdAt).toBeInstanceOf(Date);
-      expect(user!.createdAt.getTime()).toBeGreaterThanOrEqual(
+      expect(user?.createdAt).toBeInstanceOf(Date);
+      expect(user?.createdAt.getTime()).toBeGreaterThanOrEqual(
         beforeInsert.getTime(),
       );
-      expect(user!.createdAt.getTime()).toBeLessThanOrEqual(
+      expect(user?.createdAt.getTime()).toBeLessThanOrEqual(
         afterInsert.getTime(),
       );
     });
@@ -284,7 +284,7 @@ describe("Users Schema", () => {
         })
         .returning();
 
-      expect(user!.updatedAt).toBeInstanceOf(Date);
+      expect(user?.updatedAt).toBeInstanceOf(Date);
     });
 
     it("should update updated_at on record update", async () => {
@@ -296,7 +296,7 @@ describe("Users Schema", () => {
         })
         .returning();
 
-      const originalUpdatedAt = inserted!.updatedAt;
+      const originalUpdatedAt = inserted?.updatedAt;
 
       // Wait a bit to ensure timestamp difference
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -304,7 +304,7 @@ describe("Users Schema", () => {
       const [updated] = await db
         .update(users)
         .set({ passwordHash: "$2b$10$newhash" })
-        .where(eq(users.id, inserted!.id))
+        .where(eq(users.id, inserted?.id))
         .returning();
 
       expect(updated?.updatedAt.getTime()).toBeGreaterThan(
@@ -321,17 +321,17 @@ describe("Users Schema", () => {
         })
         .returning();
 
-      const originalCreatedAt = inserted!.createdAt;
+      const originalCreatedAt = inserted?.createdAt;
 
       await db
         .update(users)
         .set({ passwordHash: "$2b$10$newhash" })
-        .where(eq(users.id, inserted!.id));
+        .where(eq(users.id, inserted?.id));
 
       const [updated] = await db
         .select()
         .from(users)
-        .where(eq(users.id, inserted!.id));
+        .where(eq(users.id, inserted?.id));
 
       expect(updated?.createdAt.getTime()).toBe(originalCreatedAt.getTime());
     });

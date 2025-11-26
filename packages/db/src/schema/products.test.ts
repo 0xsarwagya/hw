@@ -399,11 +399,11 @@ describe("Products Schema", () => {
       const [updated] = await db
         .update(products)
         .set({ title: "Updated Product" })
-        .where(eq(products.id, inserted!.id))
+        .where(eq(products.id, inserted?.id))
         .returning();
 
       expect(updated?.updatedAt.getTime()).toBeGreaterThan(
-        inserted!.updatedAt.getTime(),
+        inserted?.updatedAt.getTime(),
       );
     });
   });

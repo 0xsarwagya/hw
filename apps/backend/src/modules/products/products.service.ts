@@ -12,9 +12,7 @@ import {
   eq,
   gte,
   ilike,
-  inArray,
   lte,
-  notInArray,
   or,
   products,
   productVariants,
@@ -111,13 +109,12 @@ export class ProductsService {
 
         if (variantsWithMatchingSku.length > 0) {
           const productIds = variantsWithMatchingSku.map((v) => v.productId);
-          searchConditions.push(
-            sql`${products.id} = ANY(${sql.raw(`ARRAY[${productIds.map(() => "?").join(",")}]`)})` as any,
-          );
+          const { inArray } = await import("@vcecom/db");
+          searchConditions.push(inArray(products.id, productIds));
         }
       }
 
-      conditions.push(or(...searchConditions) as any);
+      conditions.push(or(...searchConditions));
     }
 
     // Status filter
@@ -151,10 +148,8 @@ export class ProductsService {
       if (query.inStock) {
         // Filter to only products in stock
         if (productIdsInStock.length > 0) {
-          const inStockConditions = productIdsInStock.map((id) =>
-            eq(products.id, id),
-          );
-          conditions.push(or(...inStockConditions) as any);
+          const { inArray } = await import("@vcecom/db");
+          conditions.push(inArray(products.id, productIdsInStock));
         } else {
           // No products in stock, return empty result
           return {
@@ -168,11 +163,8 @@ export class ProductsService {
       } else {
         // Filter to only products out of stock (not in the in-stock list)
         if (productIdsInStock.length > 0) {
-          // Products that are NOT in the in-stock list
-          const notInStockConditions = productIdsInStock.map(
-            (id) => sql`${products.id} != ${id}` as any,
-          );
-          conditions.push(and(...notInStockConditions) as any);
+          const { notInArray } = await import("@vcecom/db");
+          conditions.push(notInArray(products.id, productIdsInStock));
         }
         // If no products are in stock, all products are out of stock, so no additional filter needed
       }
@@ -181,7 +173,7 @@ export class ProductsService {
     // Build final where condition
     let whereCondition: ReturnType<typeof and> | undefined;
     if (conditions.length > 0) {
-      whereCondition = and(...conditions) as ReturnType<typeof and>;
+      whereCondition = and(...conditions);
     }
 
     // Get total count
@@ -195,7 +187,7 @@ export class ProductsService {
     // Build sort order
     const sortBy = query.sortBy || "date";
     const sortOrder = query.sortOrder || "desc";
-    let orderBy;
+    let orderBy: ReturnType<typeof asc> | ReturnType<typeof desc>;
     if (sortBy === "price") {
       orderBy =
         sortOrder === "asc" ? asc(products.price) : desc(products.price);

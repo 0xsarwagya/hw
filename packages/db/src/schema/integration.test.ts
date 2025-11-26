@@ -283,7 +283,7 @@ describe("Schema Integration Tests", () => {
         })
         .returning();
 
-      const [customer] = await db
+      const [_customer] = await db
         .insert(customers)
         .values({
           userId: user.id,

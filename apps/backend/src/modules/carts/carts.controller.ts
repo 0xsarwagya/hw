@@ -13,7 +13,6 @@ import {
 } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
-  ApiBearerAuth,
   ApiCreatedResponse,
   ApiHeader,
   ApiNotFoundResponse,
@@ -21,10 +20,8 @@ import {
   ApiOperation,
   ApiParam,
   ApiTags,
-  ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 import { Public } from "../../common/decorators/public.decorator";
-import { Roles } from "../../common/decorators/roles.decorator";
 import { CartsService } from "./carts.service";
 import { AddItemDto } from "./dto/add-item.dto";
 import { CartResponseDto } from "./dto/cart-response.dto";

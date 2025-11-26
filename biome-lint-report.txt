@@ -1,0 +1,912 @@
+
+> @vestcodes/vcecom@0.0.0 format-and-lint /Users/sarwagya/Desktop/vestcodes/ecommerce
+> biome check . "--max-diagnostics" "1000"
+
+apps/backend/src/modules/auth/auth.service.spec.ts:4:14 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Several of these imports are unused.
+  
+    2 │ import { JwtService } from "@nestjs/jwt";
+    3 │ import { Test, TestingModule } from "@nestjs/testing";
+  > 4 │ import { db, users } from "@vcecom/db";
+      │              ^^^^^
+    5 │ import * as bcrypt from "bcrypt";
+    6 │ import { AuthService } from "./auth.service";
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: Remove the unused imports.
+  
+    4 │ import·{·db,·users·}·from·"@vcecom/db";
+      │              ------                    
+
+apps/backend/src/modules/carts/carts.controller.ts:16:3 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Several of these imports are unused.
+  
+    14 │ import {
+    15 │   ApiBadRequestResponse,
+  > 16 │   ApiBearerAuth,
+       │   ^^^^^^^^^^^^^^
+  > 17 │   ApiCreatedResponse,
+        ...
+  > 23 │   ApiTags,
+  > 24 │   ApiUnauthorizedResponse,
+       │   ^^^^^^^^^^^^^^^^^^^^^^^
+    25 │ } from "@nestjs/swagger";
+    26 │ import { Public } from "../../common/decorators/public.decorator";
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: Remove the unused imports.
+  
+     14  14 │   import {
+     15  15 │     ApiBadRequestResponse,
+     16     │ - ··ApiBearerAuth,
+     17  16 │     ApiCreatedResponse,
+     18  17 │     ApiHeader,
+    ······· │ 
+     22  21 │     ApiParam,
+     23  22 │     ApiTags,
+     24     │ - ··ApiUnauthorizedResponse,
+     25  23 │   } from "@nestjs/swagger";
+     26  24 │   import { Public } from "../../common/decorators/public.decorator";
+  
+
+apps/backend/src/modules/carts/carts.controller.ts:27:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! This import is unused.
+  
+    25 │ } from "@nestjs/swagger";
+    26 │ import { Public } from "../../common/decorators/public.decorator";
+  > 27 │ import { Roles } from "../../common/decorators/roles.decorator";
+       │        ^^^^^^^^^
+    28 │ import { CartsService } from "./carts.service";
+    29 │ import { AddItemDto } from "./dto/add-item.dto";
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: Remove the unused imports.
+  
+     25  25 │   } from "@nestjs/swagger";
+     26  26 │   import { Public } from "../../common/decorators/public.decorator";
+     27     │ - import·{·Roles·}·from·"../../common/decorators/roles.decorator";
+     28  27 │   import { CartsService } from "./carts.service";
+     29  28 │   import { AddItemDto } from "./dto/add-item.dto";
+  
+
+apps/backend/src/modules/customers/dto/update-address.dto.ts:1:10 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Several of these imports are unused.
+  
+  > 1 │ import { ApiProperty, PartialType } from "@nestjs/swagger";
+      │          ^^^^^^^^^^^
+    2 │ import { CreateAddressDto } from "./create-address.dto";
+    3 │ 
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: Remove the unused imports.
+  
+    1 │ import·{·ApiProperty,·PartialType·}·from·"@nestjs/swagger";
+      │          -------------                                     
+
+apps/backend/src/modules/products/dto/create-product.dto.ts:10:3 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Several of these imports are unused.
+  
+     8 │   IsString,
+     9 │   IsUUID,
+  > 10 │   Max,
+       │   ^^^
+    11 │   MaxLength,
+    12 │   Min,
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: Remove the unused imports.
+  
+     8  8 │     IsString,
+     9  9 │     IsUUID,
+    10    │ - ··Max,
+    11 10 │     MaxLength,
+    12 11 │     Min,
+  
+
+apps/backend/src/modules/products/dto/update-product.dto.ts:9:3 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Several of these imports are unused.
+  
+     7 │   IsString,
+     8 │   IsUUID,
+   > 9 │   Max,
+       │   ^^^
+    10 │   MaxLength,
+    11 │   Min,
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: Remove the unused imports.
+  
+     7  7 │     IsString,
+     8  8 │     IsUUID,
+     9    │ - ··Max,
+    10  9 │     MaxLength,
+    11 10 │     Min,
+  
+
+apps/backend/src/modules/products/products.service.ts:115:103 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    113 │           const productIds = variantsWithMatchingSku.map((v) => v.productId);
+    114 │           searchConditions.push(
+  > 115 │             sql`${products.id} = ANY(${sql.raw(`ARRAY[${productIds.map(() => "?").join(",")}]`)})` as any,
+        │                                                                                                       ^^^
+    116 │           );
+    117 │         }
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+
+apps/backend/src/modules/products/products.service.ts:120:50 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    118 │       }
+    119 │ 
+  > 120 │       conditions.push(or(...searchConditions) as any);
+        │                                                  ^^^
+    121 │     }
+    122 │ 
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+
+apps/backend/src/modules/products/products.service.ts:157:55 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    155 │             eq(products.id, id),
+    156 │           );
+  > 157 │           conditions.push(or(...inStockConditions) as any);
+        │                                                       ^^^
+    158 │         } else {
+    159 │           // No products in stock, return empty result
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+
+apps/backend/src/modules/products/products.service.ts:173:53 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    171 │           // Products that are NOT in the in-stock list
+    172 │           const notInStockConditions = productIdsInStock.map(
+  > 173 │             (id) => sql`${products.id} != ${id}` as any,
+        │                                                     ^^^
+    174 │           );
+    175 │           conditions.push(and(...notInStockConditions) as any);
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+
+apps/backend/src/modules/products/products.service.ts:175:59 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    173 │             (id) => sql`${products.id} != ${id}` as any,
+    174 │           );
+  > 175 │           conditions.push(and(...notInStockConditions) as any);
+        │                                                           ^^^
+    176 │         }
+    177 │         // If no products are in stock, all products are out of stock, so no additional filter needed
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+
+apps/backend/src/modules/products/products.service.ts:15:3 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Several of these imports are unused.
+  
+    13 │   gte,
+    14 │   ilike,
+  > 15 │   inArray,
+       │   ^^^^^^^^
+  > 16 │   lte,
+  > 17 │   notInArray,
+       │   ^^^^^^^^^^
+    18 │   or,
+    19 │   products,
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: Remove the unused imports.
+  
+     13  13 │     gte,
+     14  14 │     ilike,
+     15     │ - ··inArray,
+     16  15 │     lte,
+     17     │ - ··notInArray,
+     18  16 │     or,
+     19  17 │     products,
+  
+
+packages/db/src/schema/integration.test.ts:286:14 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! This variable customer is unused.
+  
+    284 │         .returning();
+    285 │ 
+  > 286 │       const [customer] = await db
+        │              ^^^^^^^^
+    287 │         .insert(customers)
+    288 │         .values({
+  
+  i Unused variables are often the result of an incomplete refactoring, typos, or other sources of bugs.
+  
+  i Unsafe fix: If this is intentional, prepend customer with an underscore.
+  
+    284 284 │           .returning();
+    285 285 │   
+    286     │ - ······const·[customer]·=·await·db
+        286 │ + ······const·[_customer]·=·await·db
+    287 287 │           .insert(customers)
+    288 288 │           .values({
+  
+
+packages/db/src/schema/product-images.test.ts:142:14 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    140 │         db.insert(productImages).values({
+    141 │           url: "https://example.com/image.jpg",
+  > 142 │         } as any),
+        │              ^^^
+    143 │       ).rejects.toThrow();
+    144 │     });
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+
+packages/db/src/schema/product-variants.test.ts:180:14 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    178 │           sku: "SKU-001",
+    179 │           price: 100.0,
+  > 180 │         } as any),
+        │              ^^^
+    181 │       ).rejects.toThrow();
+    182 │     });
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+
+packages/db/src/schema/products.test.ts:402:32 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    400 │         .update(products)
+    401 │         .set({ title: "Updated Product" })
+  > 402 │         .where(eq(products.id, inserted!.id))
+        │                                ^^^^^^^^^
+    403 │         .returning();
+    404 │ 
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    400 400 │           .update(products)
+    401 401 │           .set({ title: "Updated Product" })
+    402     │ - ········.where(eq(products.id,·inserted!.id))
+        402 │ + ········.where(eq(products.id,·inserted?.id))
+    403 403 │           .returning();
+    404 404 │   
+  
+
+packages/db/src/schema/products.test.ts:406:9 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    405 │       expect(updated?.updatedAt.getTime()).toBeGreaterThan(
+  > 406 │         inserted!.updatedAt.getTime(),
+        │         ^^^^^^^^^
+    407 │       );
+    408 │     });
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    404 404 │   
+    405 405 │         expect(updated?.updatedAt.getTime()).toBeGreaterThan(
+    406     │ - ········inserted!.updatedAt.getTime(),
+        406 │ + ········inserted?.updatedAt.getTime(),
+    407 407 │         );
+    408 408 │       });
+  
+
+packages/db/src/schema/users.test.ts:287:14 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    285 │         .returning();
+    286 │ 
+  > 287 │       expect(user!.updatedAt).toBeInstanceOf(Date);
+        │              ^^^^^
+    288 │     });
+    289 │ 
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    285 285 │           .returning();
+    286 286 │   
+    287     │ - ······expect(user!.updatedAt).toBeInstanceOf(Date);
+        287 │ + ······expect(user?.updatedAt).toBeInstanceOf(Date);
+    288 288 │       });
+    289 289 │   
+  
+
+packages/db/src/schema/users.test.ts:42:14 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    40 │       expect(user!.role).toBe("customer");
+    41 │       expect(user!.id).toBeDefined();
+  > 42 │       expect(user!.createdAt).toBeInstanceOf(Date);
+       │              ^^^^^
+    43 │       expect(user!.updatedAt).toBeInstanceOf(Date);
+    44 │     });
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+     40  40 │         expect(user!.role).toBe("customer");
+     41  41 │         expect(user!.id).toBeDefined();
+     42     │ - ······expect(user!.createdAt).toBeInstanceOf(Date);
+         42 │ + ······expect(user?.createdAt).toBeInstanceOf(Date);
+     43  43 │         expect(user!.updatedAt).toBeInstanceOf(Date);
+     44  44 │       });
+  
+
+packages/db/src/schema/users.test.ts:43:14 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    41 │       expect(user!.id).toBeDefined();
+    42 │       expect(user!.createdAt).toBeInstanceOf(Date);
+  > 43 │       expect(user!.updatedAt).toBeInstanceOf(Date);
+       │              ^^^^^
+    44 │     });
+    45 │ 
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+     41  41 │         expect(user!.id).toBeDefined();
+     42  42 │         expect(user!.createdAt).toBeInstanceOf(Date);
+     43     │ - ······expect(user!.updatedAt).toBeInstanceOf(Date);
+         43 │ + ······expect(user?.updatedAt).toBeInstanceOf(Date);
+     44  44 │       });
+     45  45 │   
+  
+
+packages/db/src/schema/users.test.ts:59:29 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    57 │         .select()
+    58 │         .from(users)
+  > 59 │         .where(eq(users.id, inserted!.id));
+       │                             ^^^^^^^^^
+    60 │ 
+    61 │       expect(found).toBeDefined();
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+     57  57 │           .select()
+     58  58 │           .from(users)
+     59     │ - ········.where(eq(users.id,·inserted!.id));
+         59 │ + ········.where(eq(users.id,·inserted?.id));
+     60  60 │   
+     61  61 │         expect(found).toBeDefined();
+  
+
+packages/db/src/schema/users.test.ts:79:29 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    77 │         .update(users)
+    78 │         .set({ passwordHash: newPasswordHash })
+  > 79 │         .where(eq(users.id, inserted!.id))
+       │                             ^^^^^^^^^
+    80 │         .returning();
+    81 │ 
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+     77  77 │           .update(users)
+     78  78 │           .set({ passwordHash: newPasswordHash })
+     79     │ - ········.where(eq(users.id,·inserted!.id))
+         79 │ + ········.where(eq(users.id,·inserted?.id))
+     80  80 │           .returning();
+     81  81 │   
+  
+
+packages/db/src/schema/users.test.ts:84:9 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    82 │       expect(updated?.passwordHash).toBe(newPasswordHash);
+    83 │       expect(updated?.updatedAt.getTime()).toBeGreaterThan(
+  > 84 │         inserted!.updatedAt.getTime(),
+       │         ^^^^^^^^^
+    85 │       );
+    86 │     });
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+     82  82 │         expect(updated?.passwordHash).toBe(newPasswordHash);
+     83  83 │         expect(updated?.updatedAt.getTime()).toBeGreaterThan(
+     84     │ - ········inserted!.updatedAt.getTime(),
+         84 │ + ········inserted?.updatedAt.getTime(),
+     85  85 │         );
+     86  86 │       });
+  
+
+packages/db/src/schema/users.test.ts:98:49 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+     96 │         .returning();
+     97 │ 
+   > 98 │       await db.delete(users).where(eq(users.id, inserted!.id));
+        │                                                 ^^^^^^^^^
+     99 │ 
+    100 │       const [found] = await db
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+     96  96 │           .returning();
+     97  97 │   
+     98     │ - ······await·db.delete(users).where(eq(users.id,·inserted!.id));
+         98 │ + ······await·db.delete(users).where(eq(users.id,·inserted?.id));
+     99  99 │   
+    100 100 │         const [found] = await db
+  
+
+packages/db/src/schema/users.test.ts:103:29 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    101 │         .select()
+    102 │         .from(users)
+  > 103 │         .where(eq(users.id, inserted!.id));
+        │                             ^^^^^^^^^
+    104 │ 
+    105 │       expect(found).toBeUndefined();
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    101 101 │           .select()
+    102 102 │           .from(users)
+    103     │ - ········.where(eq(users.id,·inserted!.id));
+        103 │ + ········.where(eq(users.id,·inserted?.id));
+    104 104 │   
+    105 105 │         expect(found).toBeUndefined();
+  
+
+packages/db/src/schema/users.test.ts:126:16 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    124 │           .returning();
+    125 │ 
+  > 126 │         expect(user!.email).toBe(email);
+        │                ^^^^^
+    127 │         await db.delete(users).where(eq(users.id, user!.id));
+    128 │       }
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    124 124 │             .returning();
+    125 125 │   
+    126     │ - ········expect(user!.email).toBe(email);
+        126 │ + ········expect(user?.email).toBe(email);
+    127 127 │           await db.delete(users).where(eq(users.id, user!.id));
+    128 128 │         }
+  
+
+packages/db/src/schema/users.test.ts:127:51 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    126 │         expect(user!.email).toBe(email);
+  > 127 │         await db.delete(users).where(eq(users.id, user!.id));
+        │                                                   ^^^^^
+    128 │       }
+    129 │     });
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    125 125 │   
+    126 126 │           expect(user!.email).toBe(email);
+    127     │ - ········await·db.delete(users).where(eq(users.id,·user!.id));
+        127 │ + ········await·db.delete(users).where(eq(users.id,·user?.id));
+    128 128 │         }
+    129 129 │       });
+  
+
+packages/db/src/schema/users.test.ts:201:16 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    199 │           .returning();
+    200 │ 
+  > 201 │         expect(user!.passwordHash).toBe(hash);
+        │                ^^^^^
+    202 │         await db.delete(users).where(eq(users.id, user!.id));
+    203 │       }
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    199 199 │             .returning();
+    200 200 │   
+    201     │ - ········expect(user!.passwordHash).toBe(hash);
+        201 │ + ········expect(user?.passwordHash).toBe(hash);
+    202 202 │           await db.delete(users).where(eq(users.id, user!.id));
+    203 203 │         }
+  
+
+packages/db/src/schema/users.test.ts:202:51 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    201 │         expect(user!.passwordHash).toBe(hash);
+  > 202 │         await db.delete(users).where(eq(users.id, user!.id));
+        │                                                   ^^^^^
+    203 │       }
+    204 │     });
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    200 200 │   
+    201 201 │           expect(user!.passwordHash).toBe(hash);
+    202     │ - ········await·db.delete(users).where(eq(users.id,·user!.id));
+        202 │ + ········await·db.delete(users).where(eq(users.id,·user?.id));
+    203 203 │         }
+    204 204 │       });
+  
+
+packages/db/src/schema/users.test.ts:217:14 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    215 │         .returning();
+    216 │ 
+  > 217 │       expect(user!.role).toBe("customer");
+        │              ^^^^^
+    218 │     });
+    219 │ 
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    215 215 │           .returning();
+    216 216 │   
+    217     │ - ······expect(user!.role).toBe("customer");
+        217 │ + ······expect(user?.role).toBe("customer");
+    218 218 │       });
+    219 219 │   
+  
+
+packages/db/src/schema/users.test.ts:230:14 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    228 │         .returning();
+    229 │ 
+  > 230 │       expect(user!.role).toBe("admin");
+        │              ^^^^^
+    231 │     });
+    232 │ 
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    228 228 │           .returning();
+    229 229 │   
+    230     │ - ······expect(user!.role).toBe("admin");
+        230 │ + ······expect(user?.role).toBe("admin");
+    231 231 │       });
+    232 232 │   
+  
+
+packages/db/src/schema/users.test.ts:243:14 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    241 │         .returning();
+    242 │ 
+  > 243 │       expect(user!.role).toBe("customer");
+        │              ^^^^^
+    244 │     });
+    245 │ 
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    241 241 │           .returning();
+    242 242 │   
+    243     │ - ······expect(user!.role).toBe("customer");
+        243 │ + ······expect(user?.role).toBe("customer");
+    244 244 │       });
+    245 245 │   
+  
+
+packages/db/src/schema/users.test.ts:269:14 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    267 │       const afterInsert = new Date();
+    268 │ 
+  > 269 │       expect(user!.createdAt).toBeInstanceOf(Date);
+        │              ^^^^^
+    270 │       expect(user!.createdAt.getTime()).toBeGreaterThanOrEqual(
+    271 │         beforeInsert.getTime(),
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    267 267 │         const afterInsert = new Date();
+    268 268 │   
+    269     │ - ······expect(user!.createdAt).toBeInstanceOf(Date);
+        269 │ + ······expect(user?.createdAt).toBeInstanceOf(Date);
+    270 270 │         expect(user!.createdAt.getTime()).toBeGreaterThanOrEqual(
+    271 271 │           beforeInsert.getTime(),
+  
+
+packages/db/src/schema/users.test.ts:270:14 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    269 │       expect(user!.createdAt).toBeInstanceOf(Date);
+  > 270 │       expect(user!.createdAt.getTime()).toBeGreaterThanOrEqual(
+        │              ^^^^^
+    271 │         beforeInsert.getTime(),
+    272 │       );
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    268 268 │   
+    269 269 │         expect(user!.createdAt).toBeInstanceOf(Date);
+    270     │ - ······expect(user!.createdAt.getTime()).toBeGreaterThanOrEqual(
+        270 │ + ······expect(user?.createdAt.getTime()).toBeGreaterThanOrEqual(
+    271 271 │           beforeInsert.getTime(),
+    272 272 │         );
+  
+
+packages/db/src/schema/users.test.ts:273:14 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    271 │         beforeInsert.getTime(),
+    272 │       );
+  > 273 │       expect(user!.createdAt.getTime()).toBeLessThanOrEqual(
+        │              ^^^^^
+    274 │         afterInsert.getTime(),
+    275 │       );
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    271 271 │           beforeInsert.getTime(),
+    272 272 │         );
+    273     │ - ······expect(user!.createdAt.getTime()).toBeLessThanOrEqual(
+        273 │ + ······expect(user?.createdAt.getTime()).toBeLessThanOrEqual(
+    274 274 │           afterInsert.getTime(),
+    275 275 │         );
+  
+
+packages/db/src/schema/users.test.ts:299:33 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    297 │         .returning();
+    298 │ 
+  > 299 │       const originalUpdatedAt = inserted!.updatedAt;
+        │                                 ^^^^^^^^^
+    300 │ 
+    301 │       // Wait a bit to ensure timestamp difference
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    297 297 │           .returning();
+    298 298 │   
+    299     │ - ······const·originalUpdatedAt·=·inserted!.updatedAt;
+        299 │ + ······const·originalUpdatedAt·=·inserted?.updatedAt;
+    300 300 │   
+    301 301 │         // Wait a bit to ensure timestamp difference
+  
+
+packages/db/src/schema/users.test.ts:307:29 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    305 │         .update(users)
+    306 │         .set({ passwordHash: "$2b$10$newhash" })
+  > 307 │         .where(eq(users.id, inserted!.id))
+        │                             ^^^^^^^^^
+    308 │         .returning();
+    309 │ 
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    305 305 │           .update(users)
+    306 306 │           .set({ passwordHash: "$2b$10$newhash" })
+    307     │ - ········.where(eq(users.id,·inserted!.id))
+        307 │ + ········.where(eq(users.id,·inserted?.id))
+    308 308 │           .returning();
+    309 309 │   
+  
+
+packages/db/src/schema/users.test.ts:324:33 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    322 │         .returning();
+    323 │ 
+  > 324 │       const originalCreatedAt = inserted!.createdAt;
+        │                                 ^^^^^^^^^
+    325 │ 
+    326 │       await db
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    322 322 │           .returning();
+    323 323 │   
+    324     │ - ······const·originalCreatedAt·=·inserted!.createdAt;
+        324 │ + ······const·originalCreatedAt·=·inserted?.createdAt;
+    325 325 │   
+    326 326 │         await db
+  
+
+packages/db/src/schema/users.test.ts:329:29 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    327 │         .update(users)
+    328 │         .set({ passwordHash: "$2b$10$newhash" })
+  > 329 │         .where(eq(users.id, inserted!.id));
+        │                             ^^^^^^^^^
+    330 │ 
+    331 │       const [updated] = await db
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    327 327 │           .update(users)
+    328 328 │           .set({ passwordHash: "$2b$10$newhash" })
+    329     │ - ········.where(eq(users.id,·inserted!.id));
+        329 │ + ········.where(eq(users.id,·inserted?.id));
+    330 330 │   
+    331 331 │         const [updated] = await db
+  
+
+packages/db/src/schema/users.test.ts:334:29 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    332 │         .select()
+    333 │         .from(users)
+  > 334 │         .where(eq(users.id, inserted!.id));
+        │                             ^^^^^^^^^
+    335 │ 
+    336 │       expect(updated?.createdAt.getTime()).toBe(originalCreatedAt.getTime());
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    332 332 │           .select()
+    333 333 │           .from(users)
+    334     │ - ········.where(eq(users.id,·inserted!.id));
+        334 │ + ········.where(eq(users.id,·inserted?.id));
+    335 335 │   
+    336 336 │         expect(updated?.createdAt.getTime()).toBe(originalCreatedAt.getTime());
+  
+
+packages/db/src/schema/users.test.ts:38:14 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    37 │       expect(user).toBeDefined();
+  > 38 │       expect(user!.email).toBe(email);
+       │              ^^^^^
+    39 │       expect(user!.passwordHash).toBe(passwordHash);
+    40 │       expect(user!.role).toBe("customer");
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+     36  36 │   
+     37  37 │         expect(user).toBeDefined();
+     38     │ - ······expect(user!.email).toBe(email);
+         38 │ + ······expect(user?.email).toBe(email);
+     39  39 │         expect(user!.passwordHash).toBe(passwordHash);
+     40  40 │         expect(user!.role).toBe("customer");
+  
+
+packages/db/src/schema/users.test.ts:39:14 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    37 │       expect(user).toBeDefined();
+    38 │       expect(user!.email).toBe(email);
+  > 39 │       expect(user!.passwordHash).toBe(passwordHash);
+       │              ^^^^^
+    40 │       expect(user!.role).toBe("customer");
+    41 │       expect(user!.id).toBeDefined();
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+     37  37 │         expect(user).toBeDefined();
+     38  38 │         expect(user!.email).toBe(email);
+     39     │ - ······expect(user!.passwordHash).toBe(passwordHash);
+         39 │ + ······expect(user?.passwordHash).toBe(passwordHash);
+     40  40 │         expect(user!.role).toBe("customer");
+     41  41 │         expect(user!.id).toBeDefined();
+  
+
+packages/db/src/schema/users.test.ts:40:14 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    38 │       expect(user!.email).toBe(email);
+    39 │       expect(user!.passwordHash).toBe(passwordHash);
+  > 40 │       expect(user!.role).toBe("customer");
+       │              ^^^^^
+    41 │       expect(user!.id).toBeDefined();
+    42 │       expect(user!.createdAt).toBeInstanceOf(Date);
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+     38  38 │         expect(user!.email).toBe(email);
+     39  39 │         expect(user!.passwordHash).toBe(passwordHash);
+     40     │ - ······expect(user!.role).toBe("customer");
+         40 │ + ······expect(user?.role).toBe("customer");
+     41  41 │         expect(user!.id).toBeDefined();
+     42  42 │         expect(user!.createdAt).toBeInstanceOf(Date);
+  
+
+packages/db/src/schema/users.test.ts:41:14 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    39 │       expect(user!.passwordHash).toBe(passwordHash);
+    40 │       expect(user!.role).toBe("customer");
+  > 41 │       expect(user!.id).toBeDefined();
+       │              ^^^^^
+    42 │       expect(user!.createdAt).toBeInstanceOf(Date);
+    43 │       expect(user!.updatedAt).toBeInstanceOf(Date);
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+     39  39 │         expect(user!.passwordHash).toBe(passwordHash);
+     40  40 │         expect(user!.role).toBe("customer");
+     41     │ - ······expect(user!.id).toBeDefined();
+         41 │ + ······expect(user?.id).toBeDefined();
+     42  42 │         expect(user!.createdAt).toBeInstanceOf(Date);
+     43  43 │         expect(user!.updatedAt).toBeInstanceOf(Date);
+  
+
+apps/backend/src/modules/products/products.service.ts:198:9 lint/suspicious/noImplicitAnyLet ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × This variable implicitly has the any type.
+  
+    196 │     const sortBy = query.sortBy || "date";
+    197 │     const sortOrder = query.sortOrder || "desc";
+  > 198 │     let orderBy;
+        │         ^^^^^^^
+    199 │     if (sortBy === "price") {
+    200 │       orderBy =
+  
+  i Variable declarations without type annotation and initialization implicitly have the any type. Declare a type or initialize the variable with some value.
+  
+
+Checked 128 files in 75ms. No fixes applied.
+Found 1 error.
+Found 44 warnings.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+ ELIFECYCLE  Command failed with exit code 1.

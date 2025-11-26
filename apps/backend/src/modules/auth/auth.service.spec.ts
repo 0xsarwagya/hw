@@ -1,7 +1,7 @@
 import { BadRequestException, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Test, TestingModule } from "@nestjs/testing";
-import { db, users } from "@vcecom/db";
+import { db } from "@vcecom/db";
 import * as bcrypt from "bcrypt";
 import { AuthService } from "./auth.service";
 
