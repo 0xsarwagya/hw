@@ -145,13 +145,13 @@ This roadmap outlines the development phases for building VCEcom, a lightweight 
 
 ---
 
-### Phase 5: Razorpay Payment Integration 🔄
+### Phase 5: Razorpay Payment Integration ✅
 
-**Status:** In Progress  
+**Status:** Complete  
 **Priority:** High  
 **Duration:** Week 10-11  
 **Dependencies:** Phase 4  
-**Issue:** [#5](https://github.com/Vestcodes/vcecom/issues/5) 🔄
+**Issue:** [#5](https://github.com/Vestcodes/vcecom/issues/5) ✅
 
 #### 5.1 Razorpay Setup (Week 10) ✅
 
@@ -173,19 +173,19 @@ This roadmap outlines the development phases for building VCEcom, a lightweight 
 
 ---
 
-### Phase 6: Shipping Integration
+### Phase 6: Shipping Integration 🔄
 
-**Status:** Not Started  
+**Status:** In Progress  
 **Priority:** High  
 **Duration:** Week 12-13  
 **Dependencies:** Phase 5  
-**Issue:** [#6](https://github.com/Vestcodes/vcecom/issues/6)
+**Issue:** [#6](https://github.com/Vestcodes/vcecom/issues/6) 🔄
 
-#### 6.1 Shiprocket Integration (Week 12)
+#### 6.1 Shiprocket Integration (Week 12) 🔄
 
 **Module:** `apps/backend/src/modules/shipping`
 
-- [#34](https://github.com/Vestcodes/vcecom/issues/34) **Shiprocket Integration Setup**
+- [x] [#34](https://github.com/Vestcodes/vcecom/issues/34) **Shiprocket Integration Setup** ✅
 - [#35](https://github.com/Vestcodes/vcecom/issues/35) **Shiprocket Rate Calculation**
 - [#36](https://github.com/Vestcodes/vcecom/issues/36) **Shiprocket Label Generation & Tracking**
 
