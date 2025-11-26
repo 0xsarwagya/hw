@@ -1,6 +1,5 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { AppController } from "./app.controller";
-import { AppService } from "./app.service";
 
 describe("AppController", () => {
   let appController: AppController;
@@ -8,15 +7,20 @@ describe("AppController", () => {
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
     }).compile();
 
     appController = app.get<AppController>(AppController);
   });
 
   describe("root", () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe("Hello World!");
+    it("should return build info JSON", () => {
+      const result = appController.getStatus();
+      expect(result).toHaveProperty("ok", true);
+      expect(result).toHaveProperty("version");
+      expect(result).toHaveProperty("buildEnv");
+      expect(result).toHaveProperty("commitHash");
+      expect(result).toHaveProperty("buildDate");
+      expect(result).toHaveProperty("runningSince");
     });
   });
 });
