@@ -5,6 +5,7 @@
     "rootDir": "./src",
     "module": "commonjs",
     "moduleResolution": "node",
+    "strict": false,
     "strictNullChecks": false
   },
   "include": ["src/**/*"],
