@@ -3,7 +3,9 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from "@nestjs/common";
@@ -11,12 +13,17 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { OrderResponseDto } from "./dto/order-response.dto";
+import {
+  OrderStatus,
+  UpdateOrderStatusDto,
+} from "./dto/update-order-status.dto";
 import { OrdersService } from "./orders.service";
 
 interface AuthenticatedRequest extends Request {
@@ -67,7 +74,15 @@ export class OrdersController {
   @Get()
   @ApiOperation({
     summary: "Get all orders for authenticated customer",
-    description: "Returns all orders for the authenticated customer",
+    description:
+      "Returns all orders for the authenticated customer. Optionally filter by status.",
+  })
+  @ApiQuery({
+    name: "status",
+    required: false,
+    enum: OrderStatus,
+    description: "Filter orders by status",
+    example: "pending",
   })
   @ApiResponse({
     status: 200,
@@ -78,8 +93,11 @@ export class OrdersController {
     status: 401,
     description: "Unauthorized",
   })
-  async findAll(@Request() req: AuthenticatedRequest) {
-    return this.ordersService.findAll(req.user.userId);
+  async findAll(
+    @Request() req: AuthenticatedRequest,
+    @Query("status") status?: OrderStatus,
+  ) {
+    return this.ordersService.findAll(req.user.userId, status);
   }
 
   @Get(":id")
@@ -108,5 +126,45 @@ export class OrdersController {
   })
   async findOne(@Request() req: AuthenticatedRequest, @Param("id") id: string) {
     return this.ordersService.findOne(req.user.userId, id);
+  }
+
+  @Patch(":id/status")
+  @ApiOperation({
+    summary: "Update order status",
+    description:
+      "Updates the status of an order. Validates status transitions according to order workflow.",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Order ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Order status updated successfully",
+    type: OrderResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Invalid status transition",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Order not found",
+  })
+  async updateStatus(
+    @Request() req: AuthenticatedRequest,
+    @Param("id") id: string,
+    @Body() updateStatusDto: UpdateOrderStatusDto,
+  ) {
+    return this.ordersService.updateStatus(
+      req.user.userId,
+      id,
+      updateStatusDto,
+    );
   }
 }
