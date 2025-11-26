@@ -1,4 +1,5 @@
 // Export all schema definitions
-// Add your table schemas here
 
+export * from "./addresses.js";
+export * from "./customers.js";
 export * from "./users.js";
