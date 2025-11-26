@@ -13,8 +13,10 @@ import {
   inArray,
   orderItems,
   orders,
+  payments,
   productVariants,
   products,
+  shipments,
   users,
 } from "@vcecom/db";
 import { CartsService } from "../carts/carts.service";
@@ -40,8 +42,10 @@ jest.mock("@vcecom/db", () => ({
   customers: {},
   orderItems: {},
   orders: {},
+  payments: {},
   productVariants: {},
   products: {},
+  shipments: {},
   users: {},
 }));
 
@@ -1674,6 +1678,1314 @@ describe("OrdersService", () => {
         expect(error).toBeInstanceOf(BadRequestException);
         expect((error as BadRequestException).message).toContain("none");
       }
+    });
+  });
+
+  describe("getTracking", () => {
+    const mockOrder = {
+      id: mockOrderId,
+      customerId: mockCustomerId,
+      orderNumber: "ORD-2025-001234",
+      status: "shipped" as const,
+      subtotal: 1000,
+      gstAmount: 180,
+      shippingCost: 50,
+      total: 1230,
+      shippingAddressId: mockShippingAddressId,
+      billingAddressId: mockBillingAddressId,
+      razorpayOrderId: null,
+      shippingProvider: "shiprocket",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockShipment = {
+      id: "shipment-123",
+      orderId: mockOrderId,
+      provider: "shiprocket",
+      trackingNumber: "TRACK123456789",
+      status: "in_transit" as const,
+      labelUrl: "https://example.com/label.pdf",
+      awbNumber: "AWB123456789",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it("should return order tracking information with shipments", async () => {
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([mockShipment]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTracking(mockUserId, mockOrderId);
+
+      expect(result).toBeDefined();
+      expect(result.orderId).toBe(mockOrderId);
+      expect(result.orderNumber).toBe("ORD-2025-001234");
+      expect(result.status).toBe("shipped");
+      expect(result.shippingProvider).toBe("shiprocket");
+      expect(result.shipments).toHaveLength(1);
+      expect(result.shipments[0].trackingNumber).toBe("TRACK123456789");
+      expect(result.shipments[0].status).toBe("in_transit");
+    });
+
+    it("should return empty shipments array when no shipments exist", async () => {
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTracking(mockUserId, mockOrderId);
+
+      expect(result).toBeDefined();
+      expect(result.shipments).toHaveLength(0);
+    });
+
+    it("should throw NotFoundException if order not found", async () => {
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain);
+
+      await expect(
+        service.getTracking(mockUserId, "non-existent-order"),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe("getTimeline", () => {
+    const mockOrder = {
+      id: mockOrderId,
+      customerId: mockCustomerId,
+      orderNumber: "ORD-2025-001234",
+      status: "shipped" as const,
+      subtotal: 1000,
+      gstAmount: 180,
+      shippingCost: 50,
+      total: 1230,
+      shippingAddressId: mockShippingAddressId,
+      billingAddressId: mockBillingAddressId,
+      razorpayOrderId: null,
+      shippingProvider: "shiprocket",
+      createdAt: new Date("2025-11-26T10:00:00Z"),
+      updatedAt: new Date("2025-11-26T12:00:00Z"),
+    };
+
+    const mockPayment = {
+      id: "payment-123",
+      orderId: mockOrderId,
+      razorpayPaymentId: "pay_123456",
+      razorpayOrderId: "order_123456",
+      amount: 1230,
+      status: "captured" as const,
+      method: "razorpay" as const,
+      createdAt: new Date("2025-11-26T10:30:00Z"),
+      updatedAt: new Date("2025-11-26T10:31:00Z"),
+    };
+
+    const mockShipment = {
+      id: "shipment-123",
+      orderId: mockOrderId,
+      provider: "shiprocket",
+      trackingNumber: "TRACK123456789",
+      status: "in_transit" as const,
+      labelUrl: "https://example.com/label.pdf",
+      awbNumber: "AWB123456789",
+      createdAt: new Date("2025-11-26T11:00:00Z"),
+      updatedAt: new Date("2025-11-26T12:00:00Z"),
+    };
+
+    it("should return order timeline with all events", async () => {
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([mockPayment]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([mockShipment]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      expect(result).toBeDefined();
+      expect(result.orderId).toBe(mockOrderId);
+      expect(result.orderNumber).toBe("ORD-2025-001234");
+      expect(result.currentStatus).toBe("shipped");
+      expect(result.events.length).toBeGreaterThan(0);
+      expect(result.events[0].type).toBeDefined();
+      expect(result.events[0].title).toBeDefined();
+      expect(result.events[0].timestamp).toBeDefined();
+    });
+
+    it("should include order created event", async () => {
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const orderCreatedEvent = result.events.find(
+        (e) => e.type === "order_created",
+      );
+      expect(orderCreatedEvent).toBeDefined();
+      expect(orderCreatedEvent?.title).toBe("Order Created");
+    });
+
+    it("should include payment events when payments exist", async () => {
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([mockPayment]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const paymentInitiatedEvent = result.events.find(
+        (e) => e.type === "payment_initiated",
+      );
+      expect(paymentInitiatedEvent).toBeDefined();
+
+      const paymentCompletedEvent = result.events.find(
+        (e) => e.type === "payment_completed",
+      );
+      expect(paymentCompletedEvent).toBeDefined();
+    });
+
+    it("should include shipment events when shipments exist", async () => {
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([mockShipment]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const shipmentCreatedEvent = result.events.find(
+        (e) => e.type === "shipment_created",
+      );
+      expect(shipmentCreatedEvent).toBeDefined();
+
+      const shipmentInTransitEvent = result.events.find(
+        (e) => e.type === "shipment_in_transit",
+      );
+      expect(shipmentInTransitEvent).toBeDefined();
+    });
+
+    it("should handle failed payment status", async () => {
+      const failedPayment = {
+        ...mockPayment,
+        status: "failed" as const,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([failedPayment]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const paymentFailedEvent = result.events.find(
+        (e) => e.type === "payment_failed",
+      );
+      expect(paymentFailedEvent).toBeDefined();
+    });
+
+    it("should handle label_generated shipment status", async () => {
+      const labelGeneratedShipment = {
+        ...mockShipment,
+        status: "label_generated" as const,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([labelGeneratedShipment]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const labelGeneratedEvent = result.events.find(
+        (e) => e.type === "shipment_label_generated",
+      );
+      expect(labelGeneratedEvent).toBeDefined();
+    });
+
+    it("should handle picked_up shipment status", async () => {
+      const pickedUpShipment = {
+        ...mockShipment,
+        status: "picked_up" as const,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([pickedUpShipment]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const pickedUpEvent = result.events.find(
+        (e) => e.type === "shipment_picked_up",
+      );
+      expect(pickedUpEvent).toBeDefined();
+    });
+
+    it("should handle out_for_delivery shipment status", async () => {
+      const outForDeliveryShipment = {
+        ...mockShipment,
+        status: "out_for_delivery" as const,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([outForDeliveryShipment]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const outForDeliveryEvent = result.events.find(
+        (e) => e.type === "shipment_out_for_delivery",
+      );
+      expect(outForDeliveryEvent).toBeDefined();
+    });
+
+    it("should handle different shipment statuses", async () => {
+      const deliveredShipment = {
+        ...mockShipment,
+        status: "delivered" as const,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([deliveredShipment]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const shipmentDeliveredEvent = result.events.find(
+        (e) => e.type === "shipment_delivered",
+      );
+      expect(shipmentDeliveredEvent).toBeDefined();
+    });
+
+    it("should handle failed shipment status", async () => {
+      const failedShipment = {
+        ...mockShipment,
+        status: "failed" as const,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([failedShipment]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const failedEvent = result.events.find(
+        (e) => e.type === "shipment_failed",
+      );
+      expect(failedEvent).toBeDefined();
+    });
+
+    it("should handle returned shipment status", async () => {
+      const returnedShipment = {
+        ...mockShipment,
+        status: "returned" as const,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([returnedShipment]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const returnedEvent = result.events.find(
+        (e) => e.type === "shipment_returned",
+      );
+      expect(returnedEvent).toBeDefined();
+    });
+
+    it("should handle shipments without tracking numbers (label_generated)", async () => {
+      const shipmentWithoutTracking = {
+        ...mockShipment,
+        trackingNumber: null,
+        status: "label_generated" as const,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([shipmentWithoutTracking]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const labelGeneratedEvent = result.events.find(
+        (e) => e.type === "shipment_label_generated",
+      );
+      expect(labelGeneratedEvent).toBeDefined();
+      expect(labelGeneratedEvent?.description).not.toContain("tracking number");
+    });
+
+    it("should handle shipments without tracking numbers (picked_up)", async () => {
+      const shipmentWithoutTracking = {
+        ...mockShipment,
+        trackingNumber: null,
+        status: "picked_up" as const,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([shipmentWithoutTracking]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const pickedUpEvent = result.events.find(
+        (e) => e.type === "shipment_picked_up",
+      );
+      expect(pickedUpEvent).toBeDefined();
+      expect(pickedUpEvent?.description).not.toContain("Tracking:");
+    });
+
+    it("should handle shipments without tracking numbers (in_transit)", async () => {
+      const shipmentWithoutTracking = {
+        ...mockShipment,
+        trackingNumber: null,
+        status: "in_transit" as const,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([shipmentWithoutTracking]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const inTransitEvent = result.events.find(
+        (e) => e.type === "shipment_in_transit",
+      );
+      expect(inTransitEvent).toBeDefined();
+      expect(inTransitEvent?.description).not.toContain("Tracking:");
+    });
+
+    it("should handle shipments without tracking numbers (out_for_delivery)", async () => {
+      const shipmentWithoutTracking = {
+        ...mockShipment,
+        trackingNumber: null,
+        status: "out_for_delivery" as const,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([shipmentWithoutTracking]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const outForDeliveryEvent = result.events.find(
+        (e) => e.type === "shipment_out_for_delivery",
+      );
+      expect(outForDeliveryEvent).toBeDefined();
+      expect(outForDeliveryEvent?.description).not.toContain("Tracking:");
+    });
+
+    it("should handle shipments without tracking numbers (delivered)", async () => {
+      const shipmentWithoutTracking = {
+        ...mockShipment,
+        trackingNumber: null,
+        status: "delivered" as const,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([shipmentWithoutTracking]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const deliveredEvent = result.events.find(
+        (e) => e.type === "shipment_delivered",
+      );
+      expect(deliveredEvent).toBeDefined();
+      expect(deliveredEvent?.description).not.toContain("Tracking:");
+    });
+
+    it("should handle shipments without tracking numbers (failed)", async () => {
+      const shipmentWithoutTracking = {
+        ...mockShipment,
+        trackingNumber: null,
+        status: "failed" as const,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([shipmentWithoutTracking]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const failedEvent = result.events.find(
+        (e) => e.type === "shipment_failed",
+      );
+      expect(failedEvent).toBeDefined();
+      expect(failedEvent?.description).not.toContain("Tracking:");
+    });
+
+    it("should handle shipments without tracking numbers (returned)", async () => {
+      const shipmentWithoutTracking = {
+        ...mockShipment,
+        trackingNumber: null,
+        status: "returned" as const,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([shipmentWithoutTracking]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const returnedEvent = result.events.find(
+        (e) => e.type === "shipment_returned",
+      );
+      expect(returnedEvent).toBeDefined();
+      expect(returnedEvent?.description).not.toContain("Tracking:");
+    });
+
+    it("should handle payment status processing", async () => {
+      const processingPayment = {
+        ...mockPayment,
+        status: "processing" as const,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([processingPayment]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const paymentInitiatedEvent = result.events.find(
+        (e) => e.type === "payment_initiated",
+      );
+      expect(paymentInitiatedEvent).toBeDefined();
+
+      // Should not have payment_completed or payment_failed events
+      const paymentCompletedEvent = result.events.find(
+        (e) => e.type === "payment_completed",
+      );
+      const paymentFailedEvent = result.events.find(
+        (e) => e.type === "payment_failed",
+      );
+      expect(paymentCompletedEvent).toBeUndefined();
+      expect(paymentFailedEvent).toBeUndefined();
+    });
+
+    it("should sort events by timestamp (newest first)", async () => {
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([mockPayment]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([mockShipment]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      // Check that events are sorted (newest first)
+      for (let i = 0; i < result.events.length - 1; i++) {
+        expect(
+          result.events[i].timestamp.getTime(),
+        ).toBeGreaterThanOrEqual(result.events[i + 1].timestamp.getTime());
+      }
+    });
+
+    it("should throw NotFoundException if order not found", async () => {
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain);
+
+      await expect(
+        service.getTimeline(mockUserId, "non-existent-order"),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it("should include status changed event when status is not pending", async () => {
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const statusChangedEvent = result.events.find(
+        (e) => e.type === "status_changed",
+      );
+      expect(statusChangedEvent).toBeDefined();
+      expect(statusChangedEvent?.newValue).toBe("shipped");
+    });
+
+    it("should not include status changed event when status is pending", async () => {
+      const pendingOrder = {
+        ...mockOrder,
+        status: "pending" as const,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([pendingOrder]),
+          }),
+        }),
+      };
+
+      const mockPaymentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      const mockShipmentsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockPaymentsChain)
+        .mockReturnValueOnce(mockShipmentsChain);
+
+      const result = await service.getTimeline(mockUserId, mockOrderId);
+
+      const statusChangedEvent = result.events.find(
+        (e) => e.type === "status_changed",
+      );
+      expect(statusChangedEvent).toBeUndefined();
     });
   });
 });
