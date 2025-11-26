@@ -28,11 +28,12 @@ export async function closeTestDb(pool: Pool) {
  * Truncates all tables in the test database
  * Useful for cleaning up between tests
  */
-export async function truncateTables(db: ReturnType<typeof createTestDb>["db"]) {
+export async function truncateTables(
+  _db: ReturnType<typeof createTestDb>["db"],
+) {
   // This will be implemented after we have all tables
   // For now, it's a placeholder
-  const tables = Object.values(schema);
+  const _tables = Object.values(schema);
   // Note: Drizzle doesn't have a built-in truncate, so we'll use raw SQL
   // This will be implemented per table as we add them
 }
-
