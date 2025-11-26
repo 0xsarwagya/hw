@@ -120,9 +120,6 @@ importers:
       bcrypt:
         specifier: ^5.1.1
         version: 5.1.1
-      drizzle-orm:
-        specifier: ^0.36.4
-        version: 0.36.4(@types/pg@8.15.6)(@types/react@19.2.2)(pg@8.16.3)(react@19.2.0)
       passport:
         specifier: ^0.7.0
         version: 0.7.0

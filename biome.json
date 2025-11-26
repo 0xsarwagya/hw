@@ -50,6 +50,19 @@
       }
     },
     {
+      "includes": ["apps/backend/**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedFunctionParameters": "off"
+          }
+        }
+      },
+      "parser": {
+        "unsafeParameterDecoratorsEnabled": true
+      }
+    },
+    {
       "includes": [".releaserc.*.js"],
       "linter": {
         "rules": {
