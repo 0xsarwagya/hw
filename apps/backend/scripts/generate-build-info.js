@@ -17,11 +17,9 @@ try {
 // Get build date
 const buildDate = new Date().toISOString();
 
-// Get version from package.json
-const packageJson = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "../package.json"), "utf-8"),
-);
-const version = packageJson.version || "0.0.1";
+// Generate date-based version (YYYY.MM.DD format)
+const now = new Date();
+const version = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")}`;
 
 // Get build environment
 const buildEnv = process.env.NODE_ENV || "development";
