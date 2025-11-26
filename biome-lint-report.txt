@@ -2,33 +2,28 @@
 > @vestcodes/vcecom@0.0.0 format-and-lint /Users/sarwagya/Desktop/vestcodes/ecommerce
 > biome check . "--max-diagnostics" "1000"
 
-packages/db/src/schema/product-images.test.ts:142:14 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/Users/sarwagya/Desktop/vestcodes/ecommerce/biome.json:10:5 deserialize ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  ! Unexpected any. Specify a different type.
+  × Found an unknown key `ignore`.
   
-    140 │         db.insert(productImages).values({
-    141 │           url: "https://example.com/image.jpg",
-  > 142 │         } as any),
-        │              ^^^
-    143 │       ).rejects.toThrow();
-    144 │     });
+     8 │   "files": {
+     9 │     "ignoreUnknown": true,
+  > 10 │     "ignore": [
+       │     ^^^^^^^^
+    11 │       "**/*.test.ts",
+    12 │       "**/*.test.tsx",
   
-  i any disables many type checking rules. Its use should be avoided.
+  i Known keys:
   
-
-packages/db/src/schema/product-variants.test.ts:180:14 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-  ! Unexpected any. Specify a different type.
-  
-    178 │           sku: "SKU-001",
-    179 │           price: 100.0,
-  > 180 │         } as any),
-        │              ^^^
-    181 │       ).rejects.toThrow();
-    182 │     });
-  
-  i any disables many type checking rules. Its use should be avoided.
+  - maxSize
+  - ignoreUnknown
+  - includes
+  - experimentalScannerIgnores
   
 
-Checked 128 files in 288ms. No fixes applied.
-Found 2 warnings.
+configuration ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Biome exited because the configuration resulted in errors. Please fix them.
+  
+
+ ELIFECYCLE  Command failed with exit code 1.
