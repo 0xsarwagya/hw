@@ -430,9 +430,13 @@ describe("AdminService", () => {
         { id: "product-2" },
       ];
 
-      const mockSelectChain = {
-        from: jest.fn().mockReturnThis(),
+      // bulkProductOperation: db.select().from(products).where(...) -> await -> array
+      // So: select() -> from() -> where() -> await resolves to array
+      const mockFromChain = {
         where: jest.fn().mockResolvedValue(mockProducts),
+      };
+      const mockSelectChain = {
+        from: jest.fn().mockReturnValue(mockFromChain),
       };
 
       const mockUpdateChain = {
@@ -461,9 +465,11 @@ describe("AdminService", () => {
       const mockProducts = [{ id: "product-1" }];
 
       // bulkProductOperation: db.select().from(products).where(...) -> await -> array
-      const mockSelectChain = {
-        from: jest.fn().mockReturnThis(),
+      const mockFromChain = {
         where: jest.fn().mockResolvedValue(mockProducts),
+      };
+      const mockSelectChain = {
+        from: jest.fn().mockReturnValue(mockFromChain),
       };
 
       // db.update(products).set(...).where(...) -> await
@@ -493,9 +499,11 @@ describe("AdminService", () => {
       const mockProducts = [{ id: "product-1" }];
 
       // bulkProductOperation: db.select().from(products).where(...) -> await -> array
-      const mockSelectChain = {
-        from: jest.fn().mockReturnThis(),
+      const mockFromChain = {
         where: jest.fn().mockResolvedValue(mockProducts),
+      };
+      const mockSelectChain = {
+        from: jest.fn().mockReturnValue(mockFromChain),
       };
 
       // db.delete(products).where(...) -> await
@@ -524,9 +532,11 @@ describe("AdminService", () => {
       const mockProducts = [{ id: "product-1" }]; // Only one found
 
       // bulkProductOperation: db.select().from(products).where(...) -> await -> array
-      const mockSelectChain = {
-        from: jest.fn().mockReturnThis(),
+      const mockFromChain = {
         where: jest.fn().mockResolvedValue(mockProducts),
+      };
+      const mockSelectChain = {
+        from: jest.fn().mockReturnValue(mockFromChain),
       };
 
       (db.select as jest.Mock).mockReturnValue(mockSelectChain);
