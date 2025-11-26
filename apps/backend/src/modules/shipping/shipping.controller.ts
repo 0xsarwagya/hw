@@ -9,6 +9,10 @@ import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import {
+  CalculateRatesDto,
+  CalculateRatesResponseDto,
+} from "./dto/calculate-rates.dto";
+import {
   ShiprocketConfigDto,
   ShiprocketConfigResponseDto,
   ShiprocketConnectionTestResponseDto,
@@ -123,5 +127,42 @@ export class ShippingController {
   })
   async testConnection(): Promise<ShiprocketConnectionTestResponseDto> {
     return this.shiprocketService.testConnection();
+  }
+
+  @Post("calculate")
+  @Roles("admin", "customer")
+  @ApiOperation({
+    summary: "Calculate shipping rates",
+    description:
+      "Calculates shipping rates for a given pickup and delivery PIN code. Returns multiple courier options with rates, COD charges, and estimated delivery times. Accessible by both admin and customer users.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Shipping rates calculated successfully",
+    type: CalculateRatesResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request - Invalid input parameters",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 500,
+    description:
+      "Internal server error - Shiprocket not initialized or API error",
+  })
+  async calculateRates(
+    @Body() calculateRatesDto: CalculateRatesDto,
+  ): Promise<CalculateRatesResponseDto> {
+    return this.shiprocketService.calculateRates(
+      calculateRatesDto.pickupPincode,
+      calculateRatesDto.deliveryPincode,
+      calculateRatesDto.weight,
+      calculateRatesDto.orderValue,
+      calculateRatesDto.codAmount,
+    );
   }
 }
