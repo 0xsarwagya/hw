@@ -6,6 +6,7 @@ import {
   Headers,
   Param,
   Post,
+  RawBodyRequest,
   Req,
   SetMetadata,
   UseGuards,
@@ -22,16 +23,14 @@ import { IS_PUBLIC_KEY } from "../../common/decorators/public.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
-
-interface RequestWithRawBody extends Request {
-  rawBody?: Buffer | string;
-}
-
 import {
   CreateRazorpayOrderDto,
   RazorpayOrderResponseDto,
 } from "./dto/create-razorpay-order.dto";
-import { RazorpayConfigDto } from "./dto/razorpay-config.dto";
+import {
+  RazorpayConfigDto,
+  RazorpayConfigResponseDto,
+} from "./dto/razorpay-config.dto";
 import {
   PaymentVerificationResponseDto,
   VerifyPaymentDto,
@@ -91,26 +90,14 @@ export class PaymentsController {
   @Post("razorpay/initialize")
   @Roles("admin")
   @ApiOperation({
-    summary: "Initialize Razorpay with API credentials",
+    summary: "Initialize Razorpay with API keys",
     description:
-      "Initializes Razorpay with the provided API credentials. Only accessible by admin users. This endpoint allows manual initialization of Razorpay if environment variables are not set.",
+      "Initializes Razorpay with the provided API keys. Only accessible by admin users. This endpoint allows manual initialization of Razorpay if environment variables are not set.",
   })
   @ApiResponse({
     status: 201,
     description: "Razorpay initialized successfully",
-    schema: {
-      type: "object",
-      properties: {
-        initialized: {
-          type: "boolean",
-          example: true,
-        },
-        message: {
-          type: "string",
-          example: "Razorpay initialized successfully",
-        },
-      },
-    },
+    type: RazorpayConfigResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -124,7 +111,9 @@ export class PaymentsController {
     status: 403,
     description: "Forbidden - Admin access required",
   })
-  initializeRazorpay(@Body() configDto: RazorpayConfigDto) {
+  initializeRazorpay(
+    @Body() configDto: RazorpayConfigDto,
+  ): RazorpayConfigResponseDto {
     this.paymentsService.initialize(configDto.keyId, configDto.keySecret);
     return {
       initialized: true,
@@ -135,9 +124,9 @@ export class PaymentsController {
   @Post("razorpay/orders")
   @Roles("admin", "customer")
   @ApiOperation({
-    summary: "Create a Razorpay order",
+    summary: "Create Razorpay order for payment",
     description:
-      "Creates a Razorpay order for payment processing. Requires an existing order in the system. Accessible by admin and customer users.",
+      "Creates a Razorpay order for an existing system order. This generates a payment order that can be used for Razorpay checkout.",
   })
   @ApiResponse({
     status: 201,
@@ -147,15 +136,11 @@ export class PaymentsController {
   @ApiResponse({
     status: 400,
     description:
-      "Bad request - Invalid order data or order already has Razorpay order ID",
+      "Bad request (order already has Razorpay order, invalid amount, etc.)",
   })
   @ApiResponse({
     status: 401,
     description: "Unauthorized",
-  })
-  @ApiResponse({
-    status: 403,
-    description: "Forbidden",
   })
   @ApiResponse({
     status: 404,
@@ -172,7 +157,7 @@ export class PaymentsController {
   @ApiOperation({
     summary: "Verify Razorpay payment signature",
     description:
-      "Verifies the signature of a Razorpay payment to ensure authenticity. Accessible by admin and customer users.",
+      "Verifies the payment signature received from Razorpay after a successful payment. This ensures the payment is authentic and not tampered with.",
   })
   @ApiResponse({
     status: 200,
@@ -181,15 +166,12 @@ export class PaymentsController {
   })
   @ApiResponse({
     status: 400,
-    description: "Bad request - Invalid signature or payment data",
+    description:
+      "Bad request (invalid signature format, missing key secret, etc.)",
   })
   @ApiResponse({
     status: 401,
     description: "Unauthorized",
-  })
-  @ApiResponse({
-    status: 403,
-    description: "Forbidden",
   })
   async verifyPayment(
     @Body() verifyPaymentDto: VerifyPaymentDto,
@@ -202,14 +184,11 @@ export class PaymentsController {
   @ApiOperation({
     summary: "Get Razorpay payment details",
     description:
-      "Retrieves payment details from Razorpay API. Only accessible by admin users.",
+      "Retrieves payment details from Razorpay by payment ID. Only accessible by admin users.",
   })
   @ApiResponse({
     status: 200,
     description: "Payment details",
-    schema: {
-      type: "object",
-    },
   })
   @ApiResponse({
     status: 401,
@@ -232,14 +211,11 @@ export class PaymentsController {
   @ApiOperation({
     summary: "Get Razorpay order details",
     description:
-      "Retrieves order details from Razorpay API. Only accessible by admin users.",
+      "Retrieves order details from Razorpay by order ID. Only accessible by admin users.",
   })
   @ApiResponse({
     status: 200,
     description: "Razorpay order details",
-    schema: {
-      type: "object",
-    },
   })
   @ApiResponse({
     status: 401,
@@ -251,7 +227,7 @@ export class PaymentsController {
   })
   @ApiResponse({
     status: 404,
-    description: "Order not found",
+    description: "Razorpay order not found",
   })
   async getRazorpayOrderDetails(@Param("orderId") orderId: string) {
     return this.paymentsService.getRazorpayOrderDetails(orderId);
@@ -262,11 +238,11 @@ export class PaymentsController {
   @ApiOperation({
     summary: "Handle Razorpay webhook events",
     description:
-      "Receives and processes webhook events from Razorpay. This endpoint is public (no authentication required) but is secured by webhook signature verification.",
+      "Receives and processes webhook events from Razorpay. This endpoint should be configured in Razorpay dashboard. Webhook signature is verified for security.",
   })
   @ApiHeader({
     name: "x-razorpay-signature",
-    description: "Razorpay webhook signature for verification",
+    description: "Razorpay webhook signature",
     required: true,
   })
   @ApiResponse({
@@ -288,30 +264,29 @@ export class PaymentsController {
   })
   @ApiResponse({
     status: 400,
-    description: "Bad request - Invalid signature or webhook data",
+    description:
+      "Bad request (invalid signature, missing webhook secret, etc.)",
   })
   async handleWebhook(
-    @Req() req: RequestWithRawBody,
+    @Req() req: RawBodyRequest<Request>,
     @Headers("x-razorpay-signature") signature: string,
   ): Promise<{ processed: boolean; message: string }> {
     if (!signature) {
-      throw new BadRequestException("Razorpay signature header is required");
+      throw new BadRequestException("Missing x-razorpay-signature header");
     }
 
-    // Parse webhook event from raw body or body
+    // Parse body if it's a buffer or string
     let webhookEvent: RazorpayWebhookEventDto;
-    if (req.rawBody) {
-      webhookEvent =
-        req.rawBody instanceof Buffer
-          ? JSON.parse(req.rawBody.toString())
-          : JSON.parse(req.rawBody as string);
-    } else if (req.body) {
-      webhookEvent =
-        typeof req.body === "string"
-          ? JSON.parse(req.body)
-          : (req.body as RazorpayWebhookEventDto);
+    if (req.rawBody && Buffer.isBuffer(req.rawBody)) {
+      webhookEvent = JSON.parse(
+        req.rawBody.toString(),
+      ) as RazorpayWebhookEventDto;
+    } else if (typeof req.body === "string") {
+      webhookEvent = JSON.parse(req.body) as RazorpayWebhookEventDto;
+    } else if (req.body && typeof req.body === "object") {
+      webhookEvent = req.body as unknown as RazorpayWebhookEventDto;
     } else {
-      throw new BadRequestException("Webhook body is required");
+      throw new BadRequestException("Invalid webhook payload");
     }
 
     return this.paymentsService.handleWebhook(webhookEvent, signature);
