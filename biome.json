@@ -7,7 +7,6 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "ignore": ["**/*.spec.*", "**/*.test.*"]
   },
   "formatter": {
     "enabled": true,
