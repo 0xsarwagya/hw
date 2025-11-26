@@ -3,6 +3,8 @@ import { ShippingModule } from "./shipping.module";
 import { ShippingController } from "./shipping.controller";
 import { ShiprocketService } from "./shiprocket.service";
 import { ShiprocketConfigService } from "./shiprocket-config.service";
+import { NimbusPostService } from "./nimbus-post.service";
+import { NimbusPostConfigService } from "./nimbus-post-config.service";
 
 describe("ShippingModule", () => {
   let module: TestingModule;
@@ -34,6 +36,18 @@ describe("ShippingModule", () => {
     expect(configService).toBeDefined();
   });
 
+  it("should provide NimbusPostService", () => {
+    const service = module.get<NimbusPostService>(NimbusPostService);
+    expect(service).toBeDefined();
+  });
+
+  it("should provide NimbusPostConfigService", () => {
+    const configService = module.get<NimbusPostConfigService>(
+      NimbusPostConfigService,
+    );
+    expect(configService).toBeDefined();
+  });
+
   it("should export ShiprocketService", () => {
     const service = module.get<ShiprocketService>(ShiprocketService);
     expect(service).toBeDefined();
@@ -42,6 +56,18 @@ describe("ShippingModule", () => {
   it("should export ShiprocketConfigService", () => {
     const configService = module.get<ShiprocketConfigService>(
       ShiprocketConfigService,
+    );
+    expect(configService).toBeDefined();
+  });
+
+  it("should export NimbusPostService", () => {
+    const service = module.get<NimbusPostService>(NimbusPostService);
+    expect(service).toBeDefined();
+  });
+
+  it("should export NimbusPostConfigService", () => {
+    const configService = module.get<NimbusPostConfigService>(
+      NimbusPostConfigService,
     );
     expect(configService).toBeDefined();
   });

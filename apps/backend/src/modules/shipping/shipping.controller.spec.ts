@@ -1,13 +1,16 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { ShippingController } from "./shipping.controller";
 import { ShiprocketService } from "./shiprocket.service";
+import { NimbusPostService } from "./nimbus-post.service";
 import { ShiprocketConfigDto } from "./dto/shiprocket-config.dto";
+import { NimbusPostConfigDto } from "./dto/nimbus-post-config.dto";
 import { CalculateRatesDto } from "./dto/calculate-rates.dto";
 import { GenerateLabelDto } from "./dto/generate-label.dto";
 
 describe("ShippingController", () => {
   let controller: ShippingController;
   let shiprocketService: ShiprocketService;
+  let nimbusPostService: NimbusPostService;
 
   const mockShiprocketService = {
     isInitialized: jest.fn(),
@@ -18,6 +21,12 @@ describe("ShippingController", () => {
     trackShipment: jest.fn(),
   };
 
+  const mockNimbusPostService = {
+    isInitialized: jest.fn(),
+    initialize: jest.fn(),
+    testConnection: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ShippingController],
@@ -26,12 +35,18 @@ describe("ShippingController", () => {
           provide: ShiprocketService,
           useValue: mockShiprocketService,
         },
+        {
+          provide: NimbusPostService,
+          useValue: mockNimbusPostService,
+        },
       ],
     }).compile();
 
     controller = module.get<ShippingController>(ShippingController);
     shiprocketService =
       module.get<ShiprocketService>(ShiprocketService);
+    nimbusPostService =
+      module.get<NimbusPostService>(NimbusPostService);
 
     jest.clearAllMocks();
   });
@@ -300,6 +315,100 @@ describe("ShippingController", () => {
       await expect(
         controller.trackShipment("INVALID"),
       ).rejects.toThrow("Shipment not found");
+    });
+  });
+
+  describe("getNimbusPostStatus", () => {
+    it("should return initialized status when initialized", () => {
+      mockNimbusPostService.isInitialized.mockReturnValue(true);
+
+      const result = controller.getNimbusPostStatus();
+
+      expect(result).toEqual({
+        initialized: true,
+        message: "Nimbus Post is initialized",
+      });
+      expect(nimbusPostService.isInitialized).toHaveBeenCalled();
+    });
+
+    it("should return not initialized status when not initialized", () => {
+      mockNimbusPostService.isInitialized.mockReturnValue(false);
+
+      const result = controller.getNimbusPostStatus();
+
+      expect(result).toEqual({
+        initialized: false,
+        message: "Nimbus Post is not initialized",
+      });
+      expect(nimbusPostService.isInitialized).toHaveBeenCalled();
+    });
+  });
+
+  describe("initializeNimbusPost", () => {
+    const validConfig: NimbusPostConfigDto = {
+      apiKey: "test-api-key",
+      apiSecret: "test-api-secret",
+    };
+
+    it("should initialize Nimbus Post with valid config", async () => {
+      mockNimbusPostService.initialize.mockResolvedValue(undefined);
+
+      const result = await controller.initializeNimbusPost(validConfig);
+
+      expect(result).toEqual({
+        initialized: true,
+        message: "Nimbus Post initialized successfully",
+      });
+      expect(nimbusPostService.initialize).toHaveBeenCalledWith(
+        validConfig.apiKey,
+        validConfig.apiSecret,
+      );
+    });
+
+    it("should handle initialization errors", async () => {
+      mockNimbusPostService.initialize.mockRejectedValue(
+        new Error("Initialization failed"),
+      );
+
+      await expect(
+        controller.initializeNimbusPost(validConfig),
+      ).rejects.toThrow("Initialization failed");
+    });
+  });
+
+  describe("testNimbusPostConnection", () => {
+    it("should return successful connection test result", async () => {
+      mockNimbusPostService.testConnection.mockResolvedValue({
+        success: true,
+        message: "Nimbus Post API connection successful",
+        authenticated: true,
+      });
+
+      const result = await controller.testNimbusPostConnection();
+
+      expect(result).toEqual({
+        success: true,
+        message: "Nimbus Post API connection successful",
+        authenticated: true,
+      });
+      expect(nimbusPostService.testConnection).toHaveBeenCalled();
+    });
+
+    it("should return failed connection test result", async () => {
+      mockNimbusPostService.testConnection.mockResolvedValue({
+        success: false,
+        message: "Nimbus Post is not initialized",
+        authenticated: false,
+      });
+
+      const result = await controller.testNimbusPostConnection();
+
+      expect(result).toEqual({
+        success: false,
+        message: "Nimbus Post is not initialized",
+        authenticated: false,
+      });
+      expect(nimbusPostService.testConnection).toHaveBeenCalled();
     });
   });
 });
