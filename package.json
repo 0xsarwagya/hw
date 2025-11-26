@@ -31,7 +31,7 @@
     "format-and-lint": "biome check .",
     "format-and-lint:fix": "biome check . --write",
     "check-types": "turbo run check-types",
-    "commitlint": "commitlint --edit",
+    "commitlint": "commitlint",
     "changelog": "git-cliff",
     "changelog:unreleased": "git-cliff --unreleased",
     "semantic-release": "semantic-release",
