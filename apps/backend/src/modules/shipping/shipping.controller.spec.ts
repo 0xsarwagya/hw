@@ -3,6 +3,7 @@ import { ShippingController } from "./shipping.controller";
 import { ShiprocketService } from "./shiprocket.service";
 import { ShiprocketConfigDto } from "./dto/shiprocket-config.dto";
 import { CalculateRatesDto } from "./dto/calculate-rates.dto";
+import { GenerateLabelDto } from "./dto/generate-label.dto";
 
 describe("ShippingController", () => {
   let controller: ShippingController;
@@ -13,6 +14,8 @@ describe("ShippingController", () => {
     initialize: jest.fn(),
     testConnection: jest.fn(),
     calculateRates: jest.fn(),
+    createShipment: jest.fn(),
+    trackShipment: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -214,6 +217,89 @@ describe("ShippingController", () => {
       await expect(
         controller.calculateRates(validCalculateRatesDto),
       ).rejects.toThrow("Shiprocket is not initialized");
+    });
+  });
+
+  describe("generateLabel", () => {
+    const validGenerateLabelDto: GenerateLabelDto = {
+      orderId: "123e4567-e89b-12d3-a456-426614174000",
+      courierId: 1,
+      pickupPincode: "400001",
+      weight: 1.5,
+    };
+
+    it("should generate label successfully", async () => {
+      const mockResponse = {
+        shipmentId: 12345678,
+        awbNumber: "AWB123456789",
+        trackingNumber: "AWB123456789",
+        labelUrl: "https://shiprocket.s3.amazonaws.com/labels/label_12345678.pdf",
+        status: "label_generated",
+        message: "Shipment created and label generated successfully",
+      };
+
+      mockShiprocketService.createShipment.mockResolvedValue(mockResponse);
+
+      const result = await controller.generateLabel(validGenerateLabelDto);
+
+      expect(result).toEqual(mockResponse);
+      expect(shiprocketService.createShipment).toHaveBeenCalledWith(
+        validGenerateLabelDto.orderId,
+        validGenerateLabelDto.courierId,
+        validGenerateLabelDto.pickupPincode,
+        validGenerateLabelDto.weight,
+      );
+    });
+
+    it("should handle label generation errors", async () => {
+      mockShiprocketService.createShipment.mockRejectedValue(
+        new Error("Order not found"),
+      );
+
+      await expect(
+        controller.generateLabel(validGenerateLabelDto),
+      ).rejects.toThrow("Order not found");
+    });
+  });
+
+  describe("trackShipment", () => {
+    it("should track shipment successfully", async () => {
+      const trackingNumber = "AWB123456789";
+      const mockResponse = {
+        awbNumber: "AWB123456789",
+        trackingNumber: "SR123456789",
+        status: "in_transit",
+        statusDescription: "In Transit",
+        estimatedDeliveryDate: "2025-11-28",
+        events: [
+          {
+            date: "2025-11-26T10:30:00Z",
+            status: "In Transit",
+            location: "Mumbai",
+            description: "In transit to destination",
+          },
+        ],
+        message: "Tracking information retrieved successfully",
+      };
+
+      mockShiprocketService.trackShipment.mockResolvedValue(mockResponse);
+
+      const result = await controller.trackShipment(trackingNumber);
+
+      expect(result).toEqual(mockResponse);
+      expect(shiprocketService.trackShipment).toHaveBeenCalledWith(
+        trackingNumber,
+      );
+    });
+
+    it("should handle tracking errors", async () => {
+      mockShiprocketService.trackShipment.mockRejectedValue(
+        new Error("Shipment not found"),
+      );
+
+      await expect(
+        controller.trackShipment("INVALID"),
+      ).rejects.toThrow("Shipment not found");
     });
   });
 });
