@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -294,7 +295,7 @@ export class PaymentsController {
     @Headers("x-razorpay-signature") signature: string,
   ): Promise<{ processed: boolean; message: string }> {
     if (!signature) {
-      throw new Error("Razorpay signature header is required");
+      throw new BadRequestException("Razorpay signature header is required");
     }
 
     // Parse webhook event from raw body or body
@@ -310,7 +311,7 @@ export class PaymentsController {
           ? JSON.parse(req.body)
           : (req.body as RazorpayWebhookEventDto);
     } else {
-      throw new Error("Webhook body is required");
+      throw new BadRequestException("Webhook body is required");
     }
 
     return this.paymentsService.handleWebhook(webhookEvent, signature);
