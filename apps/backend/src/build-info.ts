@@ -8,6 +8,6 @@ export const BUILD_INFO = {
   ok: true,
   version: "2025.11.26",
   buildEnv: "development",
-  commitHash: "4286f34",
-  buildDate: "2025-11-26T02:50:49.852Z",
+  commitHash: "64d25e4",
+  buildDate: "2025-11-26T02:53:58.670Z",
 };

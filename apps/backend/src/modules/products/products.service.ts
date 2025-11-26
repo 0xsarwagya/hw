@@ -78,7 +78,7 @@ export class ProductsService {
     const allProducts = await productsQuery
       .limit(limit)
       .offset(offset)
-      .orderBy(products.createdAt);
+      .orderBy(desc(products.createdAt));
 
     const totalPages = Math.ceil(total / limit);
 
