@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import {
+  addresses,
   and,
   cartItems,
   carts,
@@ -14,6 +15,7 @@ import {
   products,
   productVariants,
 } from "@vcecom/db";
+import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 
 @Injectable()
 export class CartsService {
