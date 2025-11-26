@@ -2,8 +2,8 @@
   "name": "@vcecom/db",
   "version": "0.0.0",
   "private": true,
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema/index.ts"
@@ -13,6 +13,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
+    "build": "tsc",
     "check-types": "tsc --noEmit --project tsconfig.json",
     "check-types:test": "tsc --noEmit --project tsconfig.test.json"
   },
