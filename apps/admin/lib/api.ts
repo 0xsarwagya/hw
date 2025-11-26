@@ -83,6 +83,58 @@ async function fetchApi<T>(
   return response.json();
 }
 
+export interface Product {
+  id: string;
+  title: string;
+  description: string | null;
+  price: number;
+  gstRate: number;
+  gstAmount: number;
+  priceExcludingGst: number;
+  priceIncludingGst: number;
+  hsnCode: string | null;
+  status: "draft" | "active" | "archived";
+  categoryId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginatedProductsResponse {
+  data: Product[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface CreateProductDto {
+  title: string;
+  description?: string;
+  price: number;
+  gstRate?: number;
+  hsnCode?: string;
+  status?: "draft" | "active" | "archived";
+  categoryId?: string;
+}
+
+export interface UpdateProductDto {
+  title?: string;
+  description?: string;
+  price?: number;
+  gstRate?: number;
+  hsnCode?: string;
+  status?: "draft" | "active" | "archived";
+  categoryId?: string;
+}
+
+export interface QueryProductsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: "draft" | "active" | "archived";
+  categoryId?: string;
+}
+
 export const adminApi = {
   /**
    * Get dashboard statistics
@@ -98,5 +150,61 @@ export const adminApi = {
     return fetchApi<PaginatedOrdersResponse>(
       `/admin/orders?page=1&limit=${limit}`,
     );
+  },
+
+  /**
+   * Get all products with pagination and filters
+   */
+  async getProducts(
+    params?: QueryProductsParams,
+  ): Promise<PaginatedProductsResponse> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.search) searchParams.append("search", params.search);
+    if (params?.status) searchParams.append("status", params.status);
+    if (params?.categoryId)
+      searchParams.append("categoryId", params.categoryId);
+
+    const query = searchParams.toString();
+    return fetchApi<PaginatedProductsResponse>(
+      `/admin/products${query ? `?${query}` : ""}`,
+    );
+  },
+
+  /**
+   * Get a single product by ID
+   */
+  async getProduct(id: string): Promise<Product> {
+    return fetchApi<Product>(`/products/${id}`);
+  },
+
+  /**
+   * Create a new product
+   */
+  async createProduct(data: CreateProductDto): Promise<Product> {
+    return fetchApi<Product>("/products", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Update a product
+   */
+  async updateProduct(id: string, data: UpdateProductDto): Promise<Product> {
+    return fetchApi<Product>(`/products/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Delete a product
+   */
+  async deleteProduct(id: string): Promise<void> {
+    return fetchApi<void>(`/products/${id}`, {
+      method: "DELETE",
+    });
   },
 };
