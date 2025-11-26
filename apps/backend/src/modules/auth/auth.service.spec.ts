@@ -177,12 +177,15 @@ describe("AuthService", () => {
         role: "customer",
       };
 
-      (jwtService.sign as jest.Mock) = jest.fn().mockReturnValue("mock-token");
+      (jwtService.sign as jest.Mock) = jest
+        .fn()
+        .mockReturnValueOnce("mock-access-token")
+        .mockReturnValueOnce("mock-refresh-token");
 
       const result = service.login(mockUser);
 
-      expect(result).toHaveProperty("access_token");
-      expect(result).toHaveProperty("refresh_token");
+      expect(result).toHaveProperty("access_token", "mock-access-token");
+      expect(result).toHaveProperty("refresh_token", "mock-refresh-token");
       expect(jwtService.sign).toHaveBeenCalledTimes(2);
     });
   });
