@@ -41,8 +41,8 @@ describe("AuthService", () => {
 
   afterEach(() => {
     jest.clearAllMocks();
-    mockBcrypt.compare.mockReset();
-    mockBcrypt.hash.mockReset();
+    (bcrypt.compare as jest.Mock).mockReset();
+    (bcrypt.hash as jest.Mock).mockReset();
   });
 
   describe("validateUser", () => {
@@ -78,7 +78,7 @@ describe("AuthService", () => {
       });
 
       (db.select as jest.Mock) = mockSelect;
-      mockBcrypt.compare.mockResolvedValue(false);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(
         service.validateUser("test@example.com", "wrongpassword"),
@@ -102,7 +102,7 @@ describe("AuthService", () => {
       });
 
       (db.select as jest.Mock) = mockSelect;
-      mockBcrypt.compare.mockResolvedValue(true);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const result = await service.validateUser(
         "test@example.com",
@@ -159,7 +159,7 @@ describe("AuthService", () => {
 
       (db.select as jest.Mock) = mockSelect;
       (db.insert as jest.Mock) = mockInsert;
-      mockBcrypt.hash.mockResolvedValue("hashedPassword");
+      (bcrypt.hash as jest.Mock).mockResolvedValue("hashedPassword");
       (jwtService.sign as jest.Mock) = jest.fn().mockReturnValue("mock-token");
 
       const result = await service.register("new@example.com", "password123");
