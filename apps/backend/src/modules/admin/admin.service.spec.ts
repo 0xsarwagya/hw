@@ -116,12 +116,12 @@ describe("AdminService", () => {
         },
       ];
 
-      // Mock count query (no where condition, so no where call)
+      // Mock count query (no where condition)
       const mockCountChain = {
         from: jest.fn().mockResolvedValue(mockOrders),
       };
 
-      // Mock orders query with pagination (no where condition, so no where call)
+      // Mock orders query with pagination (no where condition)
       const mockOrdersChain = {
         from: jest.fn().mockReturnValue({
           limit: jest.fn().mockReturnValue({
@@ -166,19 +166,22 @@ describe("AdminService", () => {
       };
 
       const mockOrders = [];
-      // Mock count query
+      // Mock count query (with where condition)
       const mockCountChain = {
         from: jest.fn().mockReturnThis(),
         where: jest.fn().mockResolvedValue(mockOrders),
       };
 
-      // Mock orders query with pagination
+      // Mock orders query with pagination (with where condition)
       const mockOrdersChain = {
         from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        offset: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockResolvedValue(mockOrders),
+        where: jest.fn().mockReturnValue({
+          limit: jest.fn().mockReturnValue({
+            offset: jest.fn().mockReturnValue({
+              orderBy: jest.fn().mockResolvedValue(mockOrders),
+            }),
+          }),
+        }),
       };
 
       const mockOrderItemsChain = {
@@ -205,24 +208,22 @@ describe("AdminService", () => {
       };
 
       const mockOrders = [];
-      // Mock count query
-      const mockCountChain = {
+      // Mock count query (with where condition)
+      const mockCountChainWithWhere = {
         from: jest.fn().mockReturnThis(),
         where: jest.fn().mockResolvedValue(mockOrders),
       };
 
-      // Mock orders query with pagination - where() returns a new chain
-      const mockWhereChain = {
-        limit: jest.fn().mockReturnValue({
-          offset: jest.fn().mockReturnValue({
-            orderBy: jest.fn().mockResolvedValue(mockOrders),
+      // Mock orders query with where condition
+      const mockOrdersChainWithWhere = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnValue({
+          limit: jest.fn().mockReturnValue({
+            offset: jest.fn().mockReturnValue({
+              orderBy: jest.fn().mockResolvedValue(mockOrders),
+            }),
           }),
         }),
-      };
-
-      const mockOrdersChain = {
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnValue(mockWhereChain),
       };
 
       const mockOrderItemsChain = {
@@ -231,8 +232,8 @@ describe("AdminService", () => {
       };
 
       (db.select as jest.Mock)
-        .mockReturnValueOnce(mockCountChain) // Count query
-        .mockReturnValueOnce(mockOrdersChain) // Orders query
+        .mockReturnValueOnce(mockCountChainWithWhere) // Count query (with where)
+        .mockReturnValueOnce(mockOrdersChainWithWhere) // Orders query (with where)
         .mockReturnValueOnce(mockOrderItemsChain); // Order items query
 
       await service.getAllOrders(mockQuery);
@@ -261,12 +262,12 @@ describe("AdminService", () => {
         },
       ];
 
-      // Mock count query (no where condition, so no where call)
+      // Mock count query (no where condition)
       const mockCountChain = {
         from: jest.fn().mockResolvedValue(mockCustomers),
       };
 
-      // Mock customers query with pagination (no where condition, so no where call)
+      // Mock customers query with pagination (no where condition)
       const mockCustomersChain = {
         from: jest.fn().mockReturnValue({
           limit: jest.fn().mockReturnValue({
@@ -300,22 +301,27 @@ describe("AdminService", () => {
       };
 
       const mockCustomers = [];
-      // Mock count query (no where condition, so no where call)
-      const mockCountChain = {
-        from: jest.fn().mockResolvedValue(mockCustomers),
+      // Mock count query (with where condition)
+      const mockCountChainWithWhere = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue(mockCustomers),
       };
 
-      // Mock customers query with pagination (no where condition, so no where call)
-      const mockCustomersChain = {
+      // Mock customers query with where condition
+      const mockCustomersChainWithWhere = {
         from: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        offset: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockResolvedValue(mockCustomers),
+        where: jest.fn().mockReturnValue({
+          limit: jest.fn().mockReturnValue({
+            offset: jest.fn().mockReturnValue({
+              orderBy: jest.fn().mockResolvedValue(mockCustomers),
+            }),
+          }),
+        }),
       };
 
       (db.select as jest.Mock)
-        .mockReturnValueOnce(mockCountChain) // Count query
-        .mockReturnValueOnce(mockCustomersChain); // Customers query
+        .mockReturnValueOnce(mockCountChainWithWhere) // Count query (with where)
+        .mockReturnValueOnce(mockCustomersChainWithWhere); // Customers query (with where)
 
       await service.getAllCustomers(mockQuery);
 
@@ -357,6 +363,7 @@ describe("AdminService", () => {
         { id: "2" },
       ];
 
+      // getStats makes 3 separate calls that return arrays directly
       const mockProductsChain = {
         from: jest.fn().mockResolvedValue(mockProducts),
       };
