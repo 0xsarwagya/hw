@@ -1,5 +1,5 @@
+import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
-import { http, HttpResponse } from "msw";
 
 // Create a server instance for Node.js environment
 export const server = setupServer();
@@ -11,4 +11,3 @@ export const defaultHandlers = [
 ];
 
 export { http, HttpResponse };
-

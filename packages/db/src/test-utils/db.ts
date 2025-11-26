@@ -7,9 +7,7 @@ import * as schema from "../schema/index";
  * Reads at runtime to ensure environment variables are available
  */
 export function getTestDatabaseUrl(): string {
-  return (
-    process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || ""
-  );
+  return process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || "";
 }
 
 /**

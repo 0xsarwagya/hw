@@ -3,10 +3,10 @@
  * This file provides utilities for running migrations
  */
 
-import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
 
 /**
