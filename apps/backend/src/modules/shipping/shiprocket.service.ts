@@ -179,4 +179,114 @@ export class ShiprocketService implements OnModuleInit {
 
     return response.json();
   }
+
+  /**
+   * Calculate shipping rates
+   * @param pickupPincode - Pickup PIN code (seller location)
+   * @param deliveryPincode - Delivery PIN code (buyer location)
+   * @param weight - Weight in kg
+   * @param orderValue - Order value in INR
+   * @param codAmount - COD amount in INR (optional)
+   * @returns Calculated rates for available couriers
+   */
+  async calculateRates(
+    pickupPincode: string,
+    deliveryPincode: string,
+    weight: number,
+    orderValue: number,
+    codAmount?: number,
+  ): Promise<{
+    pickupPincode: string;
+    deliveryPincode: string;
+    weight: number;
+    orderValue: number;
+    codAmount: number | null;
+    courierRates: Array<{
+      courierId: number;
+      courierName: string;
+      rate: number;
+      estimatedDeliveryDays: number | null;
+      codCharges: number;
+      totalRate: number;
+      codAvailable: boolean;
+      isRecommended: boolean;
+    }>;
+    totalCouriers: number;
+    message: string;
+  }> {
+    if (!this.isInitialized()) {
+      throw new Error(
+        "Shiprocket is not initialized. Please initialize Shiprocket first.",
+      );
+    }
+
+    // Prepare request payload for Shiprocket API
+    const payload: {
+      pickup_postcode: string;
+      delivery_postcode: string;
+      weight: number;
+      cod_amount?: number;
+      order_amount: number;
+    } = {
+      pickup_postcode: pickupPincode,
+      delivery_postcode: deliveryPincode,
+      weight,
+      order_amount: orderValue,
+    };
+
+    // Add COD amount if provided
+    if (codAmount !== undefined && codAmount > 0) {
+      payload.cod_amount = codAmount;
+    }
+
+    // Call Shiprocket rate calculation API
+    const response = await this.makeRequest<{
+      data: {
+        available_courier_companies: Array<{
+          id: number;
+          courier_name: string;
+          rate: number;
+          estimated_delivery_days: number | null;
+          cod_charges?: number;
+          cod_available: boolean;
+          is_recommended?: boolean;
+        }>;
+      };
+    }>("/courier/serviceability/", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    // Transform Shiprocket response to our format
+    const courierRates =
+      response.data?.available_courier_companies?.map((courier) => {
+        const codCharges = courier.cod_charges || 0;
+        const totalRate = courier.rate + codCharges;
+
+        return {
+          courierId: courier.id,
+          courierName: courier.courier_name,
+          rate: courier.rate,
+          estimatedDeliveryDays: courier.estimated_delivery_days,
+          codCharges,
+          totalRate,
+          codAvailable: courier.cod_available || false,
+          isRecommended: courier.is_recommended || false,
+        };
+      }) || [];
+
+    return {
+      pickupPincode,
+      deliveryPincode,
+      weight,
+      orderValue,
+      codAmount: codAmount || null,
+      courierRates,
+      totalCouriers: courierRates.length,
+      message:
+        courierRates.length > 0
+          ? "Rates calculated successfully"
+          : "No couriers available for this route",
+    };
+  }
 }

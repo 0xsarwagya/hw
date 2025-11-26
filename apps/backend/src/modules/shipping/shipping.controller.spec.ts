@@ -2,6 +2,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { ShippingController } from "./shipping.controller";
 import { ShiprocketService } from "./shiprocket.service";
 import { ShiprocketConfigDto } from "./dto/shiprocket-config.dto";
+import { CalculateRatesDto } from "./dto/calculate-rates.dto";
 
 describe("ShippingController", () => {
   let controller: ShippingController;
@@ -11,6 +12,7 @@ describe("ShippingController", () => {
     isInitialized: jest.fn(),
     initialize: jest.fn(),
     testConnection: jest.fn(),
+    calculateRates: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -122,6 +124,96 @@ describe("ShippingController", () => {
         authenticated: false,
       });
       expect(shiprocketService.testConnection).toHaveBeenCalled();
+    });
+  });
+
+  describe("calculateRates", () => {
+    const validCalculateRatesDto: CalculateRatesDto = {
+      pickupPincode: "400001",
+      deliveryPincode: "110001",
+      weight: 1.5,
+      orderValue: 1999.99,
+      codAmount: 1999.99,
+    };
+
+    it("should calculate rates successfully", async () => {
+      const mockResponse = {
+        pickupPincode: "400001",
+        deliveryPincode: "110001",
+        weight: 1.5,
+        orderValue: 1999.99,
+        codAmount: 1999.99,
+        courierRates: [
+          {
+            courierId: 1,
+            courierName: "BlueDart",
+            rate: 150.0,
+            estimatedDeliveryDays: 3,
+            codCharges: 20.0,
+            totalRate: 170.0,
+            codAvailable: true,
+            isRecommended: false,
+          },
+        ],
+        totalCouriers: 1,
+        message: "Rates calculated successfully",
+      };
+
+      mockShiprocketService.calculateRates.mockResolvedValue(mockResponse);
+
+      const result = await controller.calculateRates(validCalculateRatesDto);
+
+      expect(result).toEqual(mockResponse);
+      expect(shiprocketService.calculateRates).toHaveBeenCalledWith(
+        validCalculateRatesDto.pickupPincode,
+        validCalculateRatesDto.deliveryPincode,
+        validCalculateRatesDto.weight,
+        validCalculateRatesDto.orderValue,
+        validCalculateRatesDto.codAmount,
+      );
+    });
+
+    it("should calculate rates without COD amount", async () => {
+      const dtoWithoutCod: CalculateRatesDto = {
+        pickupPincode: "400001",
+        deliveryPincode: "110001",
+        weight: 1.5,
+        orderValue: 1999.99,
+      };
+
+      const mockResponse = {
+        pickupPincode: "400001",
+        deliveryPincode: "110001",
+        weight: 1.5,
+        orderValue: 1999.99,
+        codAmount: null,
+        courierRates: [],
+        totalCouriers: 0,
+        message: "No couriers available for this route",
+      };
+
+      mockShiprocketService.calculateRates.mockResolvedValue(mockResponse);
+
+      const result = await controller.calculateRates(dtoWithoutCod);
+
+      expect(result).toEqual(mockResponse);
+      expect(shiprocketService.calculateRates).toHaveBeenCalledWith(
+        dtoWithoutCod.pickupPincode,
+        dtoWithoutCod.deliveryPincode,
+        dtoWithoutCod.weight,
+        dtoWithoutCod.orderValue,
+        undefined,
+      );
+    });
+
+    it("should handle calculation errors", async () => {
+      mockShiprocketService.calculateRates.mockRejectedValue(
+        new Error("Shiprocket is not initialized"),
+      );
+
+      await expect(
+        controller.calculateRates(validCalculateRatesDto),
+      ).rejects.toThrow("Shiprocket is not initialized");
     });
   });
 });

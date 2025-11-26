@@ -350,5 +350,273 @@ describe("ShiprocketService", () => {
       );
     });
   });
+
+  describe("calculateRates", () => {
+    beforeEach(() => {
+      service.initialize("test@example.com", "test-password");
+    });
+
+    it("should calculate rates successfully", async () => {
+      const mockRateResponse = {
+        data: {
+          available_courier_companies: [
+            {
+              id: 1,
+              courier_name: "BlueDart",
+              rate: 150.0,
+              estimated_delivery_days: 3,
+              cod_charges: 20.0,
+              cod_available: true,
+              is_recommended: false,
+            },
+            {
+              id: 2,
+              courier_name: "DTDC",
+              rate: 120.0,
+              estimated_delivery_days: 4,
+              cod_charges: 15.0,
+              cod_available: true,
+              is_recommended: true,
+            },
+          ],
+        },
+      };
+
+      mockConfigService.authenticate.mockResolvedValue({
+        token: "test-token",
+        expires_in: 3600,
+      });
+
+      mockConfigService.getBaseUrl.mockReturnValue(
+        "https://apiv2.shiprocket.in/v1/external",
+      );
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockRateResponse,
+      });
+
+      const result = await service.calculateRates(
+        "400001",
+        "110001",
+        1.5,
+        1999.99,
+        1999.99,
+      );
+
+      expect(result).toEqual({
+        pickupPincode: "400001",
+        deliveryPincode: "110001",
+        weight: 1.5,
+        orderValue: 1999.99,
+        codAmount: 1999.99,
+        courierRates: [
+          {
+            courierId: 1,
+            courierName: "BlueDart",
+            rate: 150.0,
+            estimatedDeliveryDays: 3,
+            codCharges: 20.0,
+            totalRate: 170.0,
+            codAvailable: true,
+            isRecommended: false,
+          },
+          {
+            courierId: 2,
+            courierName: "DTDC",
+            rate: 120.0,
+            estimatedDeliveryDays: 4,
+            codCharges: 15.0,
+            totalRate: 135.0,
+            codAvailable: true,
+            isRecommended: true,
+          },
+        ],
+        totalCouriers: 2,
+        message: "Rates calculated successfully",
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        "https://apiv2.shiprocket.in/v1/external/courier/serviceability/",
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+            Authorization: "Bearer test-token",
+          }),
+          body: JSON.stringify({
+            pickup_postcode: "400001",
+            delivery_postcode: "110001",
+            weight: 1.5,
+            order_amount: 1999.99,
+            cod_amount: 1999.99,
+          }),
+        }),
+      );
+    });
+
+    it("should calculate rates without COD amount", async () => {
+      const mockRateResponse = {
+        data: {
+          available_courier_companies: [
+            {
+              id: 1,
+              courier_name: "BlueDart",
+              rate: 150.0,
+              estimated_delivery_days: 3,
+              cod_charges: 0,
+              cod_available: false,
+              is_recommended: false,
+            },
+          ],
+        },
+      };
+
+      mockConfigService.authenticate.mockResolvedValue({
+        token: "test-token",
+        expires_in: 3600,
+      });
+
+      mockConfigService.getBaseUrl.mockReturnValue(
+        "https://apiv2.shiprocket.in/v1/external",
+      );
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockRateResponse,
+      });
+
+      const result = await service.calculateRates(
+        "400001",
+        "110001",
+        1.5,
+        1999.99,
+      );
+
+      expect(result.codAmount).toBeNull();
+      expect(result.courierRates[0].codCharges).toBe(0);
+      expect(result.courierRates[0].codAvailable).toBe(false);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          body: JSON.stringify({
+            pickup_postcode: "400001",
+            delivery_postcode: "110001",
+            weight: 1.5,
+            order_amount: 1999.99,
+          }),
+        }),
+      );
+    });
+
+    it("should handle empty courier list", async () => {
+      const mockRateResponse = {
+        data: {
+          available_courier_companies: [],
+        },
+      };
+
+      mockConfigService.authenticate.mockResolvedValue({
+        token: "test-token",
+        expires_in: 3600,
+      });
+
+      mockConfigService.getBaseUrl.mockReturnValue(
+        "https://apiv2.shiprocket.in/v1/external",
+      );
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockRateResponse,
+      });
+
+      const result = await service.calculateRates(
+        "400001",
+        "999999", // Invalid PIN code
+        1.5,
+        1999.99,
+      );
+
+      expect(result.courierRates).toEqual([]);
+      expect(result.totalCouriers).toBe(0);
+      expect(result.message).toBe("No couriers available for this route");
+    });
+
+    it("should handle couriers without COD charges", async () => {
+      const mockRateResponse = {
+        data: {
+          available_courier_companies: [
+            {
+              id: 1,
+              courier_name: "BlueDart",
+              rate: 150.0,
+              estimated_delivery_days: null,
+              cod_available: false,
+            },
+          ],
+        },
+      };
+
+      mockConfigService.authenticate.mockResolvedValue({
+        token: "test-token",
+        expires_in: 3600,
+      });
+
+      mockConfigService.getBaseUrl.mockReturnValue(
+        "https://apiv2.shiprocket.in/v1/external",
+      );
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockRateResponse,
+      });
+
+      const result = await service.calculateRates(
+        "400001",
+        "110001",
+        1.5,
+        1999.99,
+      );
+
+      expect(result.courierRates[0].codCharges).toBe(0);
+      expect(result.courierRates[0].totalRate).toBe(150.0);
+      expect(result.courierRates[0].estimatedDeliveryDays).toBeNull();
+      expect(result.courierRates[0].isRecommended).toBe(false);
+    });
+
+    it("should throw error when Shiprocket is not initialized", async () => {
+      const newService = new ShiprocketService(configService);
+
+      await expect(
+        newService.calculateRates("400001", "110001", 1.5, 1999.99),
+      ).rejects.toThrow("Shiprocket is not initialized");
+    });
+
+    it("should handle API errors", async () => {
+      mockConfigService.authenticate.mockResolvedValue({
+        token: "test-token",
+        expires_in: 3600,
+      });
+
+      mockConfigService.getBaseUrl.mockReturnValue(
+        "https://apiv2.shiprocket.in/v1/external",
+      );
+
+      service.initialize("test@example.com", "test-password");
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        statusText: "Bad Request",
+        json: async () => ({
+          message: "Invalid PIN code",
+        }),
+      });
+
+      await expect(
+        service.calculateRates("400001", "110001", 1.5, 1999.99),
+      ).rejects.toThrow("Shiprocket API request failed: Invalid PIN code");
+    });
+  });
 });
 
