@@ -54,7 +54,10 @@ export class ProductsService {
     const offset = (page - 1) * limit;
 
     // Build where conditions
-    let whereCondition;
+    let whereCondition:
+      | ReturnType<typeof eq>
+      | ReturnType<typeof and>
+      | undefined;
     if (query.status && query.categoryId) {
       whereCondition = and(
         eq(products.status, query.status),

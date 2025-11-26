@@ -120,7 +120,8 @@ export class CategoriesService {
     const rootCategories: CategoryWithChildren[] = [];
 
     for (const category of allCategories) {
-      const categoryWithChildren = categoryMap.get(category.id)!;
+      const categoryWithChildren = categoryMap.get(category.id);
+      if (!categoryWithChildren) continue;
 
       if (category.parentId) {
         const parent = categoryMap.get(category.parentId);
@@ -290,7 +291,8 @@ export class CategoriesService {
     const queue = [categoryId];
 
     while (queue.length > 0) {
-      const currentId = queue.shift()!;
+      const currentId = queue.shift();
+      if (!currentId) break;
       const children = await db
         .select()
         .from(categories)

@@ -4,10 +4,10 @@ import { JwtAuthGuard } from "./jwt-auth.guard";
 
 describe("JwtAuthGuard", () => {
   let guard: JwtAuthGuard;
-  let reflector: Reflector;
+  let _reflector: Reflector;
 
   beforeEach(() => {
-    reflector = new Reflector();
+    _reflector = new Reflector();
     guard = new JwtAuthGuard();
   });
 
@@ -30,7 +30,7 @@ describe("JwtAuthGuard", () => {
       } as unknown as ExecutionContext;
 
       // Mock the parent AuthGuard's canActivate
-      const originalCanActivate = guard.canActivate.bind(guard);
+      const _originalCanActivate = guard.canActivate.bind(guard);
       guard.canActivate = jest.fn().mockResolvedValue(true);
 
       const result = await guard.canActivate(mockContext);

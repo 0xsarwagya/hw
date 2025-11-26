@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const path = require("path");
-const { execSync } = require("child_process");
+const fs = require("node:fs");
+const path = require("node:path");
+const { execSync } = require("node:child_process");
 
 // Get git commit hash
 let commitHash = "unknown";
@@ -10,7 +10,7 @@ try {
   commitHash = execSync("git rev-parse --short HEAD", {
     encoding: "utf-8",
   }).trim();
-} catch (e) {
+} catch (_e) {
   // Git not available or not a git repo
 }
 
