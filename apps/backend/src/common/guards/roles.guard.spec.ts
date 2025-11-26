@@ -39,7 +39,7 @@ describe("RolesGuard", () => {
     });
 
     it("should allow access when user role matches required role (admin)", () => {
-      jest.spyOn(reflector, "getAllAndOverride").mockReturnValue("admin");
+      jest.spyOn(reflector, "getAllAndOverride").mockReturnValue(["admin"]);
 
       const mockContext = {
         switchToHttp: () => ({
@@ -57,7 +57,31 @@ describe("RolesGuard", () => {
     });
 
     it("should allow access when user role matches required role (customer)", () => {
-      jest.spyOn(reflector, "getAllAndOverride").mockReturnValue("customer");
+      jest.spyOn(reflector, "getAllAndOverride").mockReturnValue(["customer"]);
+
+      const mockContext = {
+        switchToHttp: () => ({
+          getRequest: () => ({
+            user: {
+              id: "123",
+              email: "customer@example.com",
+              role: "customer",
+            },
+          }),
+        }),
+        getHandler: () => ({}),
+        getClass: () => ({}),
+      } as unknown as ExecutionContext;
+
+      const result = guard.canActivate(mockContext);
+
+      expect(result).toBe(true);
+    });
+
+    it("should allow access when user role matches one of multiple required roles", () => {
+      jest
+        .spyOn(reflector, "getAllAndOverride")
+        .mockReturnValue(["admin", "customer"]);
 
       const mockContext = {
         switchToHttp: () => ({
@@ -79,7 +103,7 @@ describe("RolesGuard", () => {
     });
 
     it("should throw UnauthorizedException when user is not authenticated", () => {
-      jest.spyOn(reflector, "getAllAndOverride").mockReturnValue("admin");
+      jest.spyOn(reflector, "getAllAndOverride").mockReturnValue(["admin"]);
 
       const mockContext = {
         switchToHttp: () => ({
@@ -100,7 +124,7 @@ describe("RolesGuard", () => {
     });
 
     it("should throw ForbiddenException when user role doesn't match (customer accessing admin route)", () => {
-      jest.spyOn(reflector, "getAllAndOverride").mockReturnValue("admin");
+      jest.spyOn(reflector, "getAllAndOverride").mockReturnValue(["admin"]);
 
       const mockContext = {
         switchToHttp: () => ({
@@ -118,12 +142,14 @@ describe("RolesGuard", () => {
 
       expect(() => guard.canActivate(mockContext)).toThrow(ForbiddenException);
       expect(() => guard.canActivate(mockContext)).toThrow(
-        "Access denied. This endpoint requires admin role",
+        "Access denied. This endpoint requires roles: admin",
       );
     });
 
     it("should throw ForbiddenException when user role doesn't match (admin accessing customer route)", () => {
-      jest.spyOn(reflector, "getAllAndOverride").mockReturnValue("customer");
+      jest
+        .spyOn(reflector, "getAllAndOverride")
+        .mockReturnValue(["customer"]);
 
       const mockContext = {
         switchToHttp: () => ({
@@ -141,7 +167,32 @@ describe("RolesGuard", () => {
 
       expect(() => guard.canActivate(mockContext)).toThrow(ForbiddenException);
       expect(() => guard.canActivate(mockContext)).toThrow(
-        "Access denied. This endpoint requires customer role",
+        "Access denied. This endpoint requires roles: customer",
+      );
+    });
+
+    it("should throw ForbiddenException with multiple roles message when user role doesn't match", () => {
+      jest
+        .spyOn(reflector, "getAllAndOverride")
+        .mockReturnValue(["admin", "customer"]);
+
+      const mockContext = {
+        switchToHttp: () => ({
+          getRequest: () => ({
+            user: {
+              id: "123",
+              email: "guest@example.com",
+              role: "guest",
+            },
+          }),
+        }),
+        getHandler: () => ({}),
+        getClass: () => ({}),
+      } as unknown as ExecutionContext;
+
+      expect(() => guard.canActivate(mockContext)).toThrow(ForbiddenException);
+      expect(() => guard.canActivate(mockContext)).toThrow(
+        "Access denied. This endpoint requires one of these roles: admin, customer",
       );
     });
   });
