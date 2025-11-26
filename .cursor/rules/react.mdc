@@ -1,0 +1,157 @@
+---
+globs: apps/admin/**
+alwaysApply: false
+---
+## 2. React Query Rules
+All client-side data fetching/mutation MUST use **React Query**.
+
+### Fetching:
+- Always define query keys in a central file (e.g. `hooks/query-keys.ts`).
+- Always handle loading, error, and success states with:
+  - Lightweight UI feedback
+  - Skeletons or shimmer components for loading
+  - Toast notifications (if suitable) for mutations or important errors
+
+### Mutations:
+- Always use:
+  ```ts
+  const mutation = useMutation({
+    mutationFn: myFunction,
+    onSuccess: () => queryClient.invalidateQueries([...]),
+  });
+````
+
+* Mutations must show user feedback (success/error).
+* Use `optimistic updates` where appropriate.
+
+---
+
+## 3. Clean Code & Architecture Rules
+
+Inspired by "10 Simple Tips for Writing Clean Code in React Projects":
+
+### Component Structure
+
+* Never create large "God components".
+  Keep components **small, focused, and pure**.
+* Extract logic into:
+
+  * `hooks/*`
+  * `utils/*`
+  * `lib/*`
+  * `services/*`
+* Separate concerns clearly:
+
+  * **UI** → `components/ui/*`
+  * **Features** → `features/*`
+  * **Business logic** → hooks/services
+
+### Naming
+
+* Descriptive, meaningful names for components, hooks, variables, and files.
+* Use **PascalCase** for components, **camelCase** for functions/variables.
+
+### Props Management
+
+* Use `type Props = { ... }` for all props.
+* Avoid passing unnecessary props.
+* Avoid deeply nested prop drilling → use context or composition.
+
+### Conditional Rendering
+
+* Favor early returns over long nested conditions.
+* Avoid inline complex logic inside JSX → extract to helpers.
+
+### Side Effects
+
+* Use React Query instead of `useEffect` for data fetching.
+* Keep `useEffect` extremely minimal; avoid using it as a “catch-all”.
+
+---
+
+## 4. UI/UX Rules
+
+* Components must be accessible by default.
+* Use semantic HTML elements.
+* Ensure meaningful focus states.
+* User feedback must be:
+
+  * Clear
+  * Minimal but noticeable
+  * Non-blocking
+* Avoid heavy popups; prefer toasts, inline notes, disabled states, etc.
+
+---
+
+## 5. Code Quality Rules
+
+* All code must be written in **TypeScript**.
+* No unused variables, unused imports, or dead code.
+* Always write predictable and readable code.
+* Avoid deeply nested structures.
+* Prefer immutability.
+
+---
+
+## 6. File Organization Rules
+
+* Use feature-based folders rather than type-based when project grows.
+* Example:
+
+  ```
+  app/
+  components/
+  features/
+    auth/
+      components/
+      hooks/
+      services/
+  lib/
+  hooks/
+  utils/
+  ```
+* Co-locate related components and logic.
+
+---
+
+## 7. Performance Rules
+
+* Memoize heavy logic using `useMemo` and `useCallback`.
+* Prevent unnecessary re-renders through memoization where justified.
+* Prefer server-side rendering or static rendering when possible.
+
+---
+
+## 8. Coding Behavior Rules for Cursor
+
+When generating or modifying code:
+
+* Think **10 steps ahead** like an IQ-250 engineer.
+* Make architecture decisions thoughtfully.
+* Prefer scalable, maintainable, readable solutions over shortcuts.
+* Explain decisions only when asked; otherwise output clean code.
+
+---
+
+## 9. Forbidden Patterns
+
+❌ Do NOT use `"use client"` in pages or layouts
+❌ Do NOT fetch data in `useEffect`
+❌ Do NOT mix server and client code together
+❌ Do NOT create huge components
+❌ Do NOT ignore error/loading states
+❌ Do NOT use non-semantic HTML for major layout structures
+
+---
+
+## 10. When in Doubt
+
+Always choose:
+
+* Type safety
+* Clean architecture
+* Predictability
+* Simplicity
+* Scalability
+
+as guiding principles.
