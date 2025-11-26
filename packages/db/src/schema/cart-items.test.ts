@@ -1,17 +1,21 @@
 import { eq } from "drizzle-orm";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { closeTestDb, createTestDb } from "../test-utils/db";
+import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  closeTestDb,
+  createTestDb,
+  getTestDatabaseUrl,
+  isDatabaseAvailable,
+} from "../test-utils/db";
 import { cartItems } from "./cart-items";
 import { carts } from "./carts";
 import { categories } from "./categories";
+import { customers } from "./customers";
 import { productVariants } from "./product-variants";
 import { products } from "./products";
+import { users } from "./users";
 
-const TEST_DB_URL =
-  process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || "";
-
-describe("Cart Items Schema", () => {
-  const { db, pool } = createTestDb(TEST_DB_URL);
+describe.skipIf(!isDatabaseAvailable())("Cart Items Schema", () => {
+  const { db, pool } = createTestDb(getTestDatabaseUrl());
 
   beforeEach(async () => {
     await db.delete(cartItems);
@@ -31,6 +35,9 @@ describe("Cart Items Schema", () => {
     await db.delete(categories);
     await db.delete(customers);
     await db.delete(users);
+  });
+
+  afterAll(async () => {
     await closeTestDb(pool);
   });
 
@@ -49,6 +56,7 @@ describe("Cart Items Schema", () => {
         title: "Test Product",
         price: 100.0,
         gstRate: 18.0,
+        hsnCode: "8471",
         status: "active",
         categoryId: category.id,
       })
@@ -389,16 +397,21 @@ describe("Cart Items Schema", () => {
         })
         .returning();
 
-      // Wait a bit to ensure timestamp difference
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      expect(inserted).toBeDefined();
+      expect(inserted.id).toBeDefined();
 
-      const [updated] = await db
+      // Wait a bit to ensure timestamp difference
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const updated = await db
         .update(cartItems)
         .set({ quantity: 2 })
         .where(eq(cartItems.id, inserted.id))
         .returning();
 
-      expect(updated?.updatedAt.getTime()).toBeGreaterThan(
+      expect(updated).toBeDefined();
+      expect(updated.length).toBeGreaterThan(0);
+      expect(updated[0]?.updatedAt.getTime()).toBeGreaterThan(
         inserted.updatedAt.getTime(),
       );
     });

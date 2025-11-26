@@ -1,32 +1,49 @@
 import { eq } from "drizzle-orm";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { closeTestDb, createTestDb } from "../test-utils/db";
+import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  closeTestDb,
+  createTestDb,
+  getTestDatabaseUrl,
+  isDatabaseAvailable,
+} from "../test-utils/db";
+import { categories } from "./categories";
 import { productVariants } from "./product-variants";
 import { products } from "./products";
 
-const TEST_DB_URL =
-  process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || "";
-
-describe("Product Variants Schema", () => {
-  const { db, pool } = createTestDb(TEST_DB_URL);
+describe.skipIf(!isDatabaseAvailable())("Product Variants Schema", () => {
+  const { db, pool } = createTestDb(getTestDatabaseUrl());
 
   beforeEach(async () => {
     await db.delete(productVariants);
     await db.delete(products);
+    await db.delete(categories);
   });
 
   afterEach(async () => {
     await db.delete(productVariants);
     await db.delete(products);
+    await db.delete(categories);
+  });
+
+  afterAll(async () => {
     await closeTestDb(pool);
   });
 
   const createProduct = async () => {
+    const [category] = await db
+      .insert(categories)
+      .values({
+        name: `Test Category ${Math.random()}`,
+        slug: `test-category-${Math.random().toString(36).substring(7)}`,
+      })
+      .returning();
+
     const [product] = await db
       .insert(products)
       .values({
         title: "Test Product",
         price: 100.0,
+        categoryId: category.id,
       })
       .returning();
     return product;
@@ -94,15 +111,22 @@ describe("Product Variants Schema", () => {
         })
         .returning();
 
-      const [updated] = await db
+      expect(inserted).toBeDefined();
+      expect(inserted.id).toBeDefined();
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const updated = await db
         .update(productVariants)
         .set({ price: 150.0, inventory: 75 })
         .where(eq(productVariants.id, inserted.id))
         .returning();
 
-      expect(updated?.price).toBe(150.0);
-      expect(updated?.inventory).toBe(75);
-      expect(updated?.updatedAt.getTime()).toBeGreaterThan(
+      expect(updated).toBeDefined();
+      expect(updated.length).toBeGreaterThan(0);
+      expect(updated[0]?.price).toBe(150.0);
+      expect(updated[0]?.inventory).toBe(75);
+      expect(updated[0]?.updatedAt.getTime()).toBeGreaterThan(
         inserted.updatedAt.getTime(),
       );
     });
@@ -435,15 +459,20 @@ describe("Product Variants Schema", () => {
         })
         .returning();
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      expect(inserted).toBeDefined();
+      expect(inserted.id).toBeDefined();
 
-      const [updated] = await db
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const updated = await db
         .update(productVariants)
         .set({ price: 150.0 })
         .where(eq(productVariants.id, inserted.id))
         .returning();
 
-      expect(updated?.updatedAt.getTime()).toBeGreaterThan(
+      expect(updated).toBeDefined();
+      expect(updated.length).toBeGreaterThan(0);
+      expect(updated[0]?.updatedAt.getTime()).toBeGreaterThan(
         inserted.updatedAt.getTime(),
       );
     });

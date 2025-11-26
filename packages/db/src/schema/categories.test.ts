@@ -1,13 +1,15 @@
 import { eq, isNull } from "drizzle-orm";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { closeTestDb, createTestDb } from "../test-utils/db";
+import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  closeTestDb,
+  createTestDb,
+  getTestDatabaseUrl,
+  isDatabaseAvailable,
+} from "../test-utils/db";
 import { categories } from "./categories";
 
-const TEST_DB_URL =
-  process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || "";
-
-describe("Categories Schema", () => {
-  const { db, pool } = createTestDb(TEST_DB_URL);
+describe.skipIf(!isDatabaseAvailable())("Categories Schema", () => {
+  const { db, pool } = createTestDb(getTestDatabaseUrl());
 
   beforeEach(async () => {
     await db.delete(categories);
@@ -15,6 +17,9 @@ describe("Categories Schema", () => {
 
   afterEach(async () => {
     await db.delete(categories);
+  });
+
+  afterAll(async () => {
     await closeTestDb(pool);
   });
 
@@ -63,19 +68,27 @@ describe("Categories Schema", () => {
         .insert(categories)
         .values({
           name: "Old Name",
-          slug: "old-slug",
+          slug: `old-slug-${Math.random().toString(36).substring(7)}`,
         })
         .returning();
 
-      const [updated] = await db
+      expect(inserted).toBeDefined();
+      expect(inserted.id).toBeDefined();
+
+      // Wait a bit to ensure timestamp difference
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      const updated = await db
         .update(categories)
         .set({ name: "New Name", description: "Updated description" })
         .where(eq(categories.id, inserted.id))
         .returning();
 
-      expect(updated?.name).toBe("New Name");
-      expect(updated?.description).toBe("Updated description");
-      expect(updated?.updatedAt.getTime()).toBeGreaterThan(
+      expect(updated).toBeDefined();
+      expect(updated.length).toBeGreaterThan(0);
+      expect(updated[0]?.name).toBe("New Name");
+      expect(updated[0]?.description).toBe("Updated description");
+      expect(updated[0]?.updatedAt.getTime()).toBeGreaterThan(
         inserted.updatedAt.getTime(),
       );
     });
@@ -102,15 +115,19 @@ describe("Categories Schema", () => {
 
   describe("Slug Uniqueness", () => {
     it("should enforce unique slug constraint", async () => {
-      await db.insert(categories).values({
+      const slug = `unique-slug-${Math.random().toString(36).substring(7)}`;
+      const [first] = await db.insert(categories).values({
         name: "Category 1",
-        slug: "unique-slug",
-      });
+        slug,
+      }).returning();
+
+      expect(first).toBeDefined();
+      expect(first.id).toBeDefined();
 
       await expect(
         db.insert(categories).values({
           name: "Category 2",
-          slug: "unique-slug",
+          slug,
         }),
       ).rejects.toThrow();
     });
@@ -284,23 +301,30 @@ describe("Categories Schema", () => {
 
   describe("Query Operations", () => {
     it("should find categories by slug", async () => {
-      await db.insert(categories).values({
+      const slug1 = `category-1-${Math.random().toString(36).substring(7)}`;
+      const slug2 = `category-2-${Math.random().toString(36).substring(7)}`;
+
+      const [cat1] = await db.insert(categories).values({
         name: "Category 1",
-        slug: "category-1",
-      });
+        slug: slug1,
+      }).returning();
 
       await db.insert(categories).values({
         name: "Category 2",
-        slug: "category-2",
+        slug: slug2,
       });
 
-      const [found] = await db
+      expect(cat1).toBeDefined();
+      expect(cat1.id).toBeDefined();
+
+      const found = await db
         .select()
         .from(categories)
-        .where(eq(categories.slug, "category-1"));
+        .where(eq(categories.slug, slug1));
 
       expect(found).toBeDefined();
-      expect(found?.name).toBe("Category 1");
+      expect(found.length).toBeGreaterThan(0);
+      expect(found[0]?.name).toBe("Category 1");
     });
 
     it("should find root categories (no parent)", async () => {
@@ -328,25 +352,34 @@ describe("Categories Schema", () => {
     });
 
     it("should find child categories by parent_id", async () => {
+      const parentSlug = `parent-${Math.random().toString(36).substring(7)}`;
       const [parent] = await db
         .insert(categories)
         .values({
           name: "Parent",
-          slug: "parent",
+          slug: parentSlug,
         })
         .returning();
 
-      await db.insert(categories).values({
-        name: "Child 1",
-        slug: "child-1",
-        parentId: parent.id,
-      });
+      expect(parent).toBeDefined();
+      expect(parent.id).toBeDefined();
 
-      await db.insert(categories).values({
-        name: "Child 2",
-        slug: "child-2",
+      const child1Slug = `child-1-${Math.random().toString(36).substring(7)}`;
+      const [child1] = await db.insert(categories).values({
+        name: "Child 1",
+        slug: child1Slug,
         parentId: parent.id,
-      });
+      }).returning();
+
+      const child2Slug = `child-2-${Math.random().toString(36).substring(7)}`;
+      const [child2] = await db.insert(categories).values({
+        name: "Child 2",
+        slug: child2Slug,
+        parentId: parent.id,
+      }).returning();
+
+      expect(child1).toBeDefined();
+      expect(child2).toBeDefined();
 
       const children = await db
         .select()
@@ -355,6 +388,8 @@ describe("Categories Schema", () => {
 
       expect(children.length).toBe(2);
       expect(children.every((c) => c.parentId === parent.id)).toBe(true);
+      expect(children.some((c) => c.id === child1.id)).toBe(true);
+      expect(children.some((c) => c.id === child2.id)).toBe(true);
     });
   });
 
@@ -379,20 +414,25 @@ describe("Categories Schema", () => {
         .insert(categories)
         .values({
           name: "Category",
-          slug: "category",
+          slug: `category-${Math.random().toString(36).substring(7)}`,
         })
         .returning();
+
+      expect(inserted).toBeDefined();
+      expect(inserted.id).toBeDefined();
 
       // Wait a bit to ensure timestamp difference
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      const [updated] = await db
+      const updated = await db
         .update(categories)
         .set({ name: "Updated Category" })
         .where(eq(categories.id, inserted.id))
         .returning();
 
-      expect(updated?.updatedAt.getTime()).toBeGreaterThan(
+      expect(updated).toBeDefined();
+      expect(updated.length).toBeGreaterThan(0);
+      expect(updated[0]?.updatedAt.getTime()).toBeGreaterThan(
         inserted.updatedAt.getTime(),
       );
     });

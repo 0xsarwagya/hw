@@ -28,6 +28,12 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "test:cov": "turbo run test:cov",
+    "test:local": "bash scripts/test-local.sh",
+    "test:local:no-docker": "bash scripts/test-local.sh --no-docker",
+    "test:local:cleanup": "bash scripts/test-local.sh --cleanup",
     "format-and-lint": "biome check .",
     "format-and-lint:fix": "biome check . --write",
     "check-types": "turbo run check-types",

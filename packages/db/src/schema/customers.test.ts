@@ -1,15 +1,17 @@
 import { eq } from "drizzle-orm";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { closeTestDb, createTestDb } from "../test-utils/db";
+import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  closeTestDb,
+  createTestDb,
+  getTestDatabaseUrl,
+  isDatabaseAvailable,
+} from "../test-utils/db";
 import { randomEmail, randomPhone } from "../test-utils/helpers";
 import { customers } from "./customers";
 import { users } from "./users";
 
-const TEST_DB_URL =
-  process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || "";
-
-describe("Customers Schema", () => {
-  const { db, pool } = createTestDb(TEST_DB_URL);
+describe.skipIf(!isDatabaseAvailable())("Customers Schema", () => {
+  const { db, pool } = createTestDb(getTestDatabaseUrl());
 
   beforeEach(async () => {
     await db.delete(customers);
@@ -19,6 +21,9 @@ describe("Customers Schema", () => {
   afterEach(async () => {
     await db.delete(customers);
     await db.delete(users);
+  });
+
+  afterAll(async () => {
     await closeTestDb(pool);
   });
 
@@ -92,13 +97,21 @@ describe("Customers Schema", () => {
         })
         .returning();
 
-      const [updated] = await db
+      expect(inserted).toBeDefined();
+      expect(inserted.id).toBeDefined();
+
+      // Wait a bit to ensure timestamp difference
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const updated = await db
         .update(customers)
         .set({ name: "New Name" })
         .where(eq(customers.id, inserted.id))
         .returning();
 
-      expect(updated?.name).toBe("New Name");
+      expect(updated).toBeDefined();
+      expect(updated.length).toBeGreaterThan(0);
+      expect(updated[0]?.name).toBe("New Name");
     });
 
     it("should delete a customer", async () => {

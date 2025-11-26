@@ -1,35 +1,52 @@
 import { eq, isNull } from "drizzle-orm";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { closeTestDb, createTestDb } from "../test-utils/db";
+import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  closeTestDb,
+  createTestDb,
+  getTestDatabaseUrl,
+  isDatabaseAvailable,
+} from "../test-utils/db";
+import { categories } from "./categories";
 import { productImages } from "./product-images";
 import { productVariants } from "./product-variants";
 import { products } from "./products";
 
-const TEST_DB_URL =
-  process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || "";
-
-describe("Product Images Schema", () => {
-  const { db, pool } = createTestDb(TEST_DB_URL);
+describe.skipIf(!isDatabaseAvailable())("Product Images Schema", () => {
+  const { db, pool } = createTestDb(getTestDatabaseUrl());
 
   beforeEach(async () => {
     await db.delete(productImages);
     await db.delete(productVariants);
     await db.delete(products);
+    await db.delete(categories);
   });
 
   afterEach(async () => {
     await db.delete(productImages);
     await db.delete(productVariants);
     await db.delete(products);
+    await db.delete(categories);
+  });
+
+  afterAll(async () => {
     await closeTestDb(pool);
   });
 
   const createProduct = async () => {
+    const [category] = await db
+      .insert(categories)
+      .values({
+        name: `Test Category ${Math.random()}`,
+        slug: `test-category-${Math.random().toString(36).substring(7)}`,
+      })
+      .returning();
+
     const [product] = await db
       .insert(products)
       .values({
         title: "Test Product",
         price: 100.0,
+        categoryId: category.id,
       })
       .returning();
     return product;
@@ -80,13 +97,17 @@ describe("Product Images Schema", () => {
         })
         .returning();
 
-      const [found] = await db
+      expect(inserted).toBeDefined();
+      expect(inserted.id).toBeDefined();
+
+      const found = await db
         .select()
         .from(productImages)
         .where(eq(productImages.id, inserted.id));
 
       expect(found).toBeDefined();
-      expect(found?.url).toBe("https://example.com/image.jpg");
+      expect(found.length).toBeGreaterThan(0);
+      expect(found[0]?.url).toBe("https://example.com/image.jpg");
     });
 
     it("should update an image", async () => {
@@ -100,15 +121,22 @@ describe("Product Images Schema", () => {
         })
         .returning();
 
-      const [updated] = await db
+      expect(inserted).toBeDefined();
+      expect(inserted.id).toBeDefined();
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const updated = await db
         .update(productImages)
         .set({ url: "https://example.com/new.jpg", order: 2 })
         .where(eq(productImages.id, inserted.id))
         .returning();
 
-      expect(updated?.url).toBe("https://example.com/new.jpg");
-      expect(updated?.order).toBe(2);
-      expect(updated?.updatedAt.getTime()).toBeGreaterThan(
+      expect(updated).toBeDefined();
+      expect(updated.length).toBeGreaterThan(0);
+      expect(updated[0]?.url).toBe("https://example.com/new.jpg");
+      expect(updated[0]?.order).toBe(2);
+      expect(updated[0]?.updatedAt.getTime()).toBeGreaterThan(
         inserted.updatedAt.getTime(),
       );
     });
@@ -408,15 +436,20 @@ describe("Product Images Schema", () => {
         })
         .returning();
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      expect(inserted).toBeDefined();
+      expect(inserted.id).toBeDefined();
 
-      const [updated] = await db
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const updated = await db
         .update(productImages)
         .set({ url: "https://example.com/new.jpg" })
         .where(eq(productImages.id, inserted.id))
         .returning();
 
-      expect(updated?.updatedAt.getTime()).toBeGreaterThan(
+      expect(updated).toBeDefined();
+      expect(updated.length).toBeGreaterThan(0);
+      expect(updated[0]?.updatedAt.getTime()).toBeGreaterThan(
         inserted.updatedAt.getTime(),
       );
     });

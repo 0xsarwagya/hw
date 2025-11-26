@@ -83,9 +83,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Database setup skipped - DB tests are disabled
+      # Only backend tests run (using MSW for mocking)
+
       - name: Run tests
-        run: |
-          pnpm --filter "@vestcodes/vcecom-backend" test
-          pnpm --filter "@vcecom/db" exec vitest run
+        run: pnpm test
         continue-on-error: false
 

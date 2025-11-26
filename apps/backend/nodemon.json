@@ -1,7 +1,7 @@
 {
   "watch": ["src", "../../packages/db/src"],
   "ext": "ts",
-  "ignore": ["src/**/*.spec.ts", "node_modules", "dist"],
+  "ignore": ["src/**/*.spec.ts", "node_modules", "dist" , "src/build-info.ts"],
   "exec": "pnpm --filter @vcecom/db run build && pnpm run build && node dist/main.js",
   "env": {
     "NODE_ENV": "development"

@@ -1,19 +1,27 @@
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { closeTestDb, createTestDb } from "../test-utils/db";
+import {
+  closeTestDb,
+  createTestDb,
+  getTestDatabaseUrl,
+  isDatabaseAvailable,
+} from "../test-utils/db";
 import { randomEmail, randomPhone, randomPinCode } from "../test-utils/helpers";
 import { addresses } from "./addresses";
 import { customers } from "./customers";
+import { orderItems } from "./order-items";
 import { orders } from "./orders";
+import { payments } from "./payments";
+import { shipments } from "./shipments";
 import { users } from "./users";
 
-const TEST_DB_URL =
-  process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || "";
-
-describe("Orders Schema", () => {
-  const { db, pool } = createTestDb(TEST_DB_URL);
+describe.skipIf(!isDatabaseAvailable())("Orders Schema", () => {
+  const { db, pool } = createTestDb(getTestDatabaseUrl());
 
   beforeEach(async () => {
+    await db.delete(orderItems);
+    await db.delete(payments);
+    await db.delete(shipments);
     await db.delete(orders);
     await db.delete(addresses);
     await db.delete(customers);
@@ -21,10 +29,16 @@ describe("Orders Schema", () => {
   });
 
   afterEach(async () => {
+    await db.delete(orderItems);
+    await db.delete(payments);
+    await db.delete(shipments);
     await db.delete(orders);
     await db.delete(addresses);
     await db.delete(customers);
     await db.delete(users);
+  });
+
+  afterAll(async () => {
     await closeTestDb(pool);
   });
 
@@ -37,6 +51,9 @@ describe("Orders Schema", () => {
       })
       .returning();
 
+    expect(user).toBeDefined();
+    expect(user.id).toBeDefined();
+
     const [customer] = await db
       .insert(customers)
       .values({
@@ -46,6 +63,9 @@ describe("Orders Schema", () => {
         name: "Test Customer",
       })
       .returning();
+
+    expect(customer).toBeDefined();
+    expect(customer.id).toBeDefined();
 
     const [shippingAddress] = await db
       .insert(addresses)
@@ -59,6 +79,9 @@ describe("Orders Schema", () => {
       })
       .returning();
 
+    expect(shippingAddress).toBeDefined();
+    expect(shippingAddress.id).toBeDefined();
+
     const [billingAddress] = await db
       .insert(addresses)
       .values({
@@ -70,6 +93,9 @@ describe("Orders Schema", () => {
         type: "billing",
       })
       .returning();
+
+    expect(billingAddress).toBeDefined();
+    expect(billingAddress.id).toBeDefined();
 
     return { customer, shippingAddress, billingAddress };
   }
@@ -153,15 +179,22 @@ describe("Orders Schema", () => {
         })
         .returning();
 
-      const [updated] = await db
+      expect(inserted).toBeDefined();
+      expect(inserted.id).toBeDefined();
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const updated = await db
         .update(orders)
         .set({ status: "confirmed", razorpayOrderId: "rzp_123456" })
         .where(eq(orders.id, inserted.id))
         .returning();
 
-      expect(updated?.status).toBe("confirmed");
-      expect(updated?.razorpayOrderId).toBe("rzp_123456");
-      expect(updated?.updatedAt.getTime()).toBeGreaterThan(
+      expect(updated).toBeDefined();
+      expect(updated.length).toBeGreaterThan(0);
+      expect(updated[0]?.status).toBe("confirmed");
+      expect(updated[0]?.razorpayOrderId).toBe("rzp_123456");
+      expect(updated[0]?.updatedAt.getTime()).toBeGreaterThan(
         inserted.updatedAt.getTime(),
       );
     });

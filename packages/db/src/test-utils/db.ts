@@ -3,6 +3,23 @@ import { Pool } from "pg";
 import * as schema from "../schema/index";
 
 /**
+ * Gets the test database URL from environment variables
+ * Reads at runtime to ensure environment variables are available
+ */
+export function getTestDatabaseUrl(): string {
+  return (
+    process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || ""
+  );
+}
+
+/**
+ * Checks if database connection string is available
+ */
+export function isDatabaseAvailable(): boolean {
+  return !!getTestDatabaseUrl();
+}
+
+/**
  * Creates a test database connection
  * Uses a separate test database to avoid conflicts with development data
  */

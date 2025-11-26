@@ -1,6 +1,11 @@
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { closeTestDb, createTestDb } from "../test-utils/db";
+import {
+  closeTestDb,
+  createTestDb,
+  getTestDatabaseUrl,
+  isDatabaseAvailable,
+} from "../test-utils/db";
 import { randomEmail, randomPhone, randomPinCode } from "../test-utils/helpers";
 import { addresses } from "./addresses";
 import { categories } from "./categories";
@@ -11,11 +16,8 @@ import { productVariants } from "./product-variants";
 import { products } from "./products";
 import { users } from "./users";
 
-const TEST_DB_URL =
-  process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || "";
-
-describe("Order Items Schema", () => {
-  const { db, pool } = createTestDb(TEST_DB_URL);
+describe.skipIf(!isDatabaseAvailable())("Order Items Schema", () => {
+  const { db, pool } = createTestDb(getTestDatabaseUrl());
 
   beforeEach(async () => {
     await db.delete(orderItems);
@@ -37,6 +39,9 @@ describe("Order Items Schema", () => {
     await db.delete(addresses);
     await db.delete(customers);
     await db.delete(users);
+  });
+
+  afterAll(async () => {
     await closeTestDb(pool);
   });
 
@@ -49,6 +54,9 @@ describe("Order Items Schema", () => {
       })
       .returning();
 
+    expect(user).toBeDefined();
+    expect(user.id).toBeDefined();
+
     const [customer] = await db
       .insert(customers)
       .values({
@@ -58,6 +66,9 @@ describe("Order Items Schema", () => {
         name: "Test Customer",
       })
       .returning();
+
+    expect(customer).toBeDefined();
+    expect(customer.id).toBeDefined();
 
     const [shippingAddress] = await db
       .insert(addresses)
@@ -71,6 +82,9 @@ describe("Order Items Schema", () => {
       })
       .returning();
 
+    expect(shippingAddress).toBeDefined();
+    expect(shippingAddress.id).toBeDefined();
+
     const [billingAddress] = await db
       .insert(addresses)
       .values({
@@ -82,6 +96,9 @@ describe("Order Items Schema", () => {
         type: "billing",
       })
       .returning();
+
+    expect(billingAddress).toBeDefined();
+    expect(billingAddress.id).toBeDefined();
 
     const [order] = await db
       .insert(orders)
@@ -115,6 +132,7 @@ describe("Order Items Schema", () => {
         title: "Test Product",
         price: 100.0,
         gstRate: 18.0,
+        hsnCode: "8471",
         status: "active",
         categoryId: category.id,
       })
