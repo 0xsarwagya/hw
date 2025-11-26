@@ -6,7 +6,13 @@ coverage/
 .turbo/
 pnpm-lock.yaml
 # Ignore all test/spec files
+*.spec.*
+*.test.*
 **/*.spec.*
 **/*.test.*
 **/**/*.spec.*
 **/**/*.test.*
+apps/**/*.spec.*
+apps/**/*.test.*
+packages/**/*.spec.*
+packages/**/*.test.*
