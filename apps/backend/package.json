@@ -30,6 +30,7 @@
     "class-validator": "^0.14.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "razorpay": "^2.9.6",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
@@ -40,7 +41,7 @@
     "@types/bcrypt": "^5.0.2",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
-    "@types/node": "^22.10.7",
+    "@types/node": "^22.15.3",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.2",
     "jest": "^30.0.0",
@@ -69,6 +70,8 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
-    "setupFilesAfterEnv": ["<rootDir>/test-utils/jest-setup.ts"]
+    "setupFilesAfterEnv": [
+      "<rootDir>/test-utils/jest-setup.ts"
+    ]
   }
 }
