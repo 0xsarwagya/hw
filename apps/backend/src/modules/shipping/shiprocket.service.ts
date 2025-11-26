@@ -93,14 +93,20 @@ export class ShiprocketService implements OnModuleInit {
 
     // Check if token is expired (with 5 minute buffer)
     const bufferTime = 5 * 60 * 1000; // 5 minutes
+    const currentToken = this.authToken;
     if (
-      this.authToken.expiresAt &&
-      Date.now() >= this.authToken.expiresAt - bufferTime
+      currentToken.expiresAt &&
+      Date.now() >= currentToken.expiresAt - bufferTime
     ) {
       await this.authenticate();
+      const refreshedToken = this.authToken;
+      if (!refreshedToken) {
+        throw new Error("Failed to refresh authentication token");
+      }
+      return refreshedToken.token;
     }
 
-    return this.authToken.token;
+    return currentToken.token;
   }
 
   /**
