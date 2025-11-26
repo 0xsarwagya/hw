@@ -90,8 +90,7 @@ export class ShiprocketService implements OnModuleInit {
     // Check if token is expired (with 5 minute buffer)
     const bufferTime = 5 * 60 * 1000; // 5 minutes
     if (
-      this.authToken &&
-      this.authToken.expiresAt &&
+      this.authToken?.expiresAt &&
       Date.now() >= this.authToken.expiresAt - bufferTime
     ) {
       await this.authenticate();
