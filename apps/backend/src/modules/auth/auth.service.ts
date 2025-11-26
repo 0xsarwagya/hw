@@ -1,9 +1,8 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { db } from "@vcecom/db";
+import { db, eq } from "@vcecom/db";
 import { users } from "@vcecom/db/schema";
 import * as bcrypt from "bcrypt";
-import { eq } from "drizzle-orm";
 
 @Injectable()
 export class AuthService {
