@@ -13,11 +13,21 @@ export class RolesGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<
-      "admin" | "customer"
+      ("admin" | "customer")[] | "admin" | "customer"
     >("roles", [context.getHandler(), context.getClass()]);
 
     // If no roles are required, allow access
     if (!requiredRoles) {
+      return true;
+    }
+
+    // Normalize to array for consistent handling
+    const rolesArray = Array.isArray(requiredRoles)
+      ? requiredRoles
+      : [requiredRoles];
+
+    // If empty array, allow access
+    if (rolesArray.length === 0) {
       return true;
     }
 
@@ -31,13 +41,16 @@ export class RolesGuard implements CanActivate {
       );
     }
 
-    // If user role doesn't match required role, throw 403
-    if (user.role !== requiredRoles) {
-      throw new ForbiddenException(
-        `Access denied. This endpoint requires ${requiredRoles} role, but you have ${user.role} role.`,
-      );
+    // If user role is in the required roles array, allow access
+    if (rolesArray.includes(user.role as "admin" | "customer")) {
+      return true;
     }
 
-    return true;
+    // If user role doesn't match any required role, throw 403
+    const rolesList =
+      rolesArray.length === 1 ? rolesArray[0] : rolesArray.join(", ");
+    throw new ForbiddenException(
+      `Access denied. This endpoint requires ${rolesArray.length === 1 ? "" : "one of these "}roles: ${rolesList}, but you have ${user.role} role.`,
+    );
   }
 }
