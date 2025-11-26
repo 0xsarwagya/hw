@@ -23,6 +23,10 @@ import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { CartsService } from "../carts/carts.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { OrderResponseDto } from "./dto/order-response.dto";
+import {
+  OrderStatus,
+  UpdateOrderStatusDto,
+} from "./dto/update-order-status.dto";
 
 @Injectable()
 export class OrdersService {
@@ -296,14 +300,20 @@ export class OrdersService {
 
   /**
    * Get all orders for authenticated customer
+   * @param userId - User ID
+   * @param status - Optional status filter
    */
-  async findAll(userId: string) {
+  async findAll(userId: string, status?: OrderStatus) {
     const customerId = await this.getCustomerId(userId);
+
+    const whereConditions = status
+      ? and(eq(orders.customerId, customerId), eq(orders.status, status))
+      : eq(orders.customerId, customerId);
 
     const customerOrders = await db
       .select()
       .from(orders)
-      .where(eq(orders.customerId, customerId))
+      .where(whereConditions)
       .orderBy(desc(orders.createdAt));
 
     // Get items for each order
@@ -322,5 +332,80 @@ export class OrdersService {
     );
 
     return ordersWithItems;
+  }
+
+  /**
+   * Validate status transition
+   * Ensures status changes follow a valid workflow
+   */
+  private validateStatusTransition(
+    currentStatus: string,
+    newStatus: OrderStatus,
+  ): void {
+    const validTransitions: Record<string, OrderStatus[]> = {
+      pending: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+      confirmed: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
+      processing: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
+      shipped: [OrderStatus.DELIVERED],
+      delivered: [OrderStatus.REFUNDED],
+      cancelled: [], // Cannot transition from cancelled
+      refunded: [], // Cannot transition from refunded
+    };
+
+    const allowedStatuses = validTransitions[currentStatus] || [];
+
+    if (!allowedStatuses.includes(newStatus)) {
+      throw new BadRequestException(
+        `Cannot change order status from '${currentStatus}' to '${newStatus}'. ` +
+          `Valid transitions from '${currentStatus}': ${allowedStatuses.join(", ") || "none"}`,
+      );
+    }
+  }
+
+  /**
+   * Update order status
+   * Validates status transition and updates the order
+   */
+  async updateStatus(
+    userId: string,
+    orderId: string,
+    updateStatusDto: UpdateOrderStatusDto,
+  ) {
+    const customerId = await this.getCustomerId(userId);
+
+    // Get current order
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(and(eq(orders.id, orderId), eq(orders.customerId, customerId)))
+      .limit(1);
+
+    if (!order) {
+      throw new NotFoundException("Order not found");
+    }
+
+    // Validate status transition
+    this.validateStatusTransition(order.status, updateStatusDto.status);
+
+    // Update order status
+    const [updatedOrder] = await db
+      .update(orders)
+      .set({
+        status: updateStatusDto.status,
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, orderId))
+      .returning();
+
+    // Get order items
+    const items = await db
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.orderId, orderId));
+
+    return {
+      ...updatedOrder,
+      items,
+    } as OrderResponseDto;
   }
 }

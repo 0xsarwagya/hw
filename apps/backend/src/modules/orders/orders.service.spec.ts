@@ -406,6 +406,120 @@ describe("OrdersService", () => {
         service.create(mockUserId, createOrderDto),
       ).rejects.toThrow(BadRequestException);
     });
+
+    it("should create order with default shipping cost when not provided", async () => {
+      const createOrderDtoWithoutShippingCost = {
+        shippingAddressId: mockShippingAddressId,
+        billingAddressId: mockBillingAddressId,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockShippingAddressChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockShippingAddress]),
+      };
+
+      const mockBillingAddressChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockBillingAddress]),
+      };
+
+      (cartsService.getCart as jest.Mock).mockResolvedValue(mockCart);
+
+      const mockCartItemsChain = {
+        from: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue([
+          {
+            cartItemId: "cart-item-123",
+            productVariantId: mockVariantId,
+            quantity: 2,
+            price: 500,
+            variantInventory: 10,
+            productGstRate: 18,
+          },
+        ]),
+      };
+
+      const mockOrdersChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([]),
+      };
+
+      const mockInsertOrderChain = {
+        values: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([
+          {
+            id: mockOrderId,
+            customerId: mockCustomerId,
+            orderNumber: "ORD-2025-000001",
+            status: "pending",
+            subtotal: 1000,
+            gstAmount: 180,
+            shippingCost: 0,
+            total: 1180,
+            shippingAddressId: mockShippingAddressId,
+            billingAddressId: mockBillingAddressId,
+            razorpayOrderId: null,
+            shippingProvider: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ]),
+      };
+
+      const mockInsertOrderItemsChain = {
+        values: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([
+          {
+            id: "order-item-123",
+            orderId: mockOrderId,
+            productVariantId: mockVariantId,
+            quantity: 2,
+            price: 500,
+            gstRate: 18,
+            gstAmount: 180,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ]),
+      };
+
+      const mockUpdateVariantChain = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue([]),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockShippingAddressChain)
+        .mockReturnValueOnce(mockBillingAddressChain)
+        .mockReturnValueOnce(mockCartItemsChain)
+        .mockReturnValueOnce(mockOrdersChain);
+      (db.insert as jest.Mock)
+        .mockReturnValueOnce(mockInsertOrderChain)
+        .mockReturnValueOnce(mockInsertOrderItemsChain);
+      (db.update as jest.Mock).mockReturnValue(mockUpdateVariantChain);
+      (cartsService.clearCart as jest.Mock).mockResolvedValue(undefined);
+
+      const result = await service.create(
+        mockUserId,
+        createOrderDtoWithoutShippingCost,
+      );
+
+      expect(result).toBeDefined();
+      expect(result.shippingCost).toBe(0);
+      expect(result.total).toBe(1180);
+    });
   });
 
   describe("findOne", () => {
@@ -513,6 +627,28 @@ describe("OrdersService", () => {
       const result = await generateOrderNumber();
 
       expect(result).toBe("ORD-2025-000006");
+    });
+
+    it("should handle invalid order number format gracefully (NaN case)", async () => {
+      const mockOrdersChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([
+          { orderNumber: "ORD-2025-INVALID" },
+        ]),
+      };
+
+      (db.select as jest.Mock).mockReturnValue(mockOrdersChain);
+
+      // Access private method via reflection
+      const generateOrderNumber = (service as any).generateOrderNumber.bind(
+        service,
+      );
+      const result = await generateOrderNumber();
+
+      // Should default to sequence 1 when parsing fails
+      expect(result).toMatch(/^ORD-\d{4}-000001$/);
     });
 
     it("should handle invalid order number format gracefully", async () => {
@@ -852,6 +988,692 @@ describe("OrdersService", () => {
       expect(result).toHaveLength(2);
       expect(result[0].items).toHaveLength(1);
       expect(result[1].items).toHaveLength(1);
+    });
+
+    it("should return all orders when status filter is not provided", async () => {
+      const mockOrders = [
+        {
+          id: "order-123",
+          customerId: mockCustomerId,
+          orderNumber: "ORD-2025-001234",
+          status: "pending" as const,
+          subtotal: 1000,
+          gstAmount: 180,
+          shippingCost: 50,
+          total: 1230,
+          shippingAddressId: mockShippingAddressId,
+          billingAddressId: mockBillingAddressId,
+          razorpayOrderId: null,
+          shippingProvider: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      const mockOrderItems = [
+        {
+          id: "order-item-123",
+          orderId: "order-123",
+          productVariantId: mockVariantId,
+          quantity: 2,
+          price: 500,
+          gstRate: 18,
+          gstAmount: 180,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrdersChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue(mockOrders),
+          }),
+        }),
+      };
+
+      const mockOrderItemsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue(mockOrderItems),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrdersChain)
+        .mockReturnValueOnce(mockOrderItemsChain);
+
+      const result = await service.findAll(mockUserId);
+
+      expect(result).toBeDefined();
+      expect(result).toHaveLength(1);
+    });
+
+    it("should filter orders by status", async () => {
+      const mockOrders = [
+        {
+          id: "order-123",
+          customerId: mockCustomerId,
+          orderNumber: "ORD-2025-001234",
+          status: "pending" as const,
+          subtotal: 1000,
+          gstAmount: 180,
+          shippingCost: 50,
+          total: 1230,
+          shippingAddressId: mockShippingAddressId,
+          billingAddressId: mockBillingAddressId,
+          razorpayOrderId: null,
+          shippingProvider: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      const mockOrderItems = [
+        {
+          id: "order-item-123",
+          orderId: "order-123",
+          productVariantId: mockVariantId,
+          quantity: 2,
+          price: 500,
+          gstRate: 18,
+          gstAmount: 180,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrdersChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue(mockOrders),
+          }),
+        }),
+      };
+
+      const mockOrderItemsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue(mockOrderItems),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrdersChain)
+        .mockReturnValueOnce(mockOrderItemsChain);
+
+      const result = await service.findAll(mockUserId, "pending");
+
+      expect(result).toBeDefined();
+      expect(result).toHaveLength(1);
+      expect(result[0].status).toBe("pending");
+    });
+  });
+
+  describe("updateStatus", () => {
+    const mockOrder = {
+      id: mockOrderId,
+      customerId: mockCustomerId,
+      orderNumber: "ORD-2025-001234",
+      status: "pending" as const,
+      subtotal: 1000,
+      gstAmount: 180,
+      shippingCost: 50,
+      total: 1230,
+      shippingAddressId: mockShippingAddressId,
+      billingAddressId: mockBillingAddressId,
+      razorpayOrderId: null,
+      shippingProvider: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockUpdatedOrder = {
+      ...mockOrder,
+      status: "confirmed" as const,
+      updatedAt: new Date(),
+    };
+
+    const mockOrderItems = [
+      {
+        id: "order-item-123",
+        orderId: mockOrderId,
+        productVariantId: mockVariantId,
+        quantity: 2,
+        price: 500,
+        gstRate: 18,
+        gstAmount: 180,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    it("should update order status successfully", async () => {
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockUpdateChain = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([mockUpdatedOrder]),
+      };
+
+      const mockOrderItemsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue(mockOrderItems),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockOrderItemsChain);
+      (db.update as jest.Mock).mockReturnValue(mockUpdateChain);
+
+      const result = await service.updateStatus(mockUserId, mockOrderId, {
+        status: "confirmed",
+      });
+
+      expect(result).toBeDefined();
+      expect(result.status).toBe("confirmed");
+      expect(result.items).toHaveLength(1);
+      expect(db.update).toHaveBeenCalled();
+    });
+
+    it("should throw NotFoundException if order not found", async () => {
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain);
+
+      await expect(
+        service.updateStatus(mockUserId, "non-existent-order", {
+          status: "confirmed",
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw BadRequestException for invalid status transition from pending", async () => {
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain);
+
+      await expect(
+        service.updateStatus(mockUserId, mockOrderId, {
+          status: "delivered",
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("should throw BadRequestException for invalid status transition from confirmed", async () => {
+      const confirmedOrder = { ...mockOrder, status: "confirmed" as const };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([confirmedOrder]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain);
+
+      await expect(
+        service.updateStatus(mockUserId, mockOrderId, {
+          status: "delivered",
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("should throw BadRequestException when trying to transition from cancelled", async () => {
+      const cancelledOrder = { ...mockOrder, status: "cancelled" as const };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([cancelledOrder]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain);
+
+      await expect(
+        service.updateStatus(mockUserId, mockOrderId, {
+          status: "confirmed",
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("should allow valid transition from pending to confirmed", async () => {
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockUpdateChain = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([mockUpdatedOrder]),
+      };
+
+      const mockOrderItemsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue(mockOrderItems),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockOrderItemsChain);
+      (db.update as jest.Mock).mockReturnValue(mockUpdateChain);
+
+      const result = await service.updateStatus(mockUserId, mockOrderId, {
+        status: "confirmed",
+      });
+
+      expect(result.status).toBe("confirmed");
+    });
+
+    it("should allow valid transition from confirmed to processing", async () => {
+      const confirmedOrder = { ...mockOrder, status: "confirmed" as const };
+      const processingOrder = {
+        ...confirmedOrder,
+        status: "processing" as const,
+        updatedAt: new Date(),
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([confirmedOrder]),
+          }),
+        }),
+      };
+
+      const mockUpdateChain = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([processingOrder]),
+      };
+
+      const mockOrderItemsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue(mockOrderItems),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockOrderItemsChain);
+      (db.update as jest.Mock).mockReturnValue(mockUpdateChain);
+
+      const result = await service.updateStatus(mockUserId, mockOrderId, {
+        status: "processing",
+      });
+
+      expect(result.status).toBe("processing");
+    });
+
+    it("should allow valid transition from processing to shipped", async () => {
+      const processingOrder = { ...mockOrder, status: "processing" as const };
+      const shippedOrder = {
+        ...processingOrder,
+        status: "shipped" as const,
+        updatedAt: new Date(),
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([processingOrder]),
+          }),
+        }),
+      };
+
+      const mockUpdateChain = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([shippedOrder]),
+      };
+
+      const mockOrderItemsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue(mockOrderItems),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockOrderItemsChain);
+      (db.update as jest.Mock).mockReturnValue(mockUpdateChain);
+
+      const result = await service.updateStatus(mockUserId, mockOrderId, {
+        status: "shipped",
+      });
+
+      expect(result.status).toBe("shipped");
+    });
+
+    it("should allow valid transition from shipped to delivered", async () => {
+      const shippedOrder = { ...mockOrder, status: "shipped" as const };
+      const deliveredOrder = {
+        ...shippedOrder,
+        status: "delivered" as const,
+        updatedAt: new Date(),
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([shippedOrder]),
+          }),
+        }),
+      };
+
+      const mockUpdateChain = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([deliveredOrder]),
+      };
+
+      const mockOrderItemsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue(mockOrderItems),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockOrderItemsChain);
+      (db.update as jest.Mock).mockReturnValue(mockUpdateChain);
+
+      const result = await service.updateStatus(mockUserId, mockOrderId, {
+        status: "delivered",
+      });
+
+      expect(result.status).toBe("delivered");
+    });
+
+    it("should allow valid transition from delivered to refunded", async () => {
+      const deliveredOrder = { ...mockOrder, status: "delivered" as const };
+      const refundedOrder = {
+        ...deliveredOrder,
+        status: "refunded" as const,
+        updatedAt: new Date(),
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([deliveredOrder]),
+          }),
+        }),
+      };
+
+      const mockUpdateChain = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([refundedOrder]),
+      };
+
+      const mockOrderItemsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue(mockOrderItems),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockOrderItemsChain);
+      (db.update as jest.Mock).mockReturnValue(mockUpdateChain);
+
+      const result = await service.updateStatus(mockUserId, mockOrderId, {
+        status: "refunded",
+      });
+
+      expect(result.status).toBe("refunded");
+    });
+
+    it("should allow valid transition from pending to cancelled", async () => {
+      const cancelledOrder = {
+        ...mockOrder,
+        status: "cancelled" as const,
+        updatedAt: new Date(),
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      };
+
+      const mockUpdateChain = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([cancelledOrder]),
+      };
+
+      const mockOrderItemsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue(mockOrderItems),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain)
+        .mockReturnValueOnce(mockOrderItemsChain);
+      (db.update as jest.Mock).mockReturnValue(mockUpdateChain);
+
+      const result = await service.updateStatus(mockUserId, mockOrderId, {
+        status: "cancelled",
+      });
+
+      expect(result.status).toBe("cancelled");
+    });
+
+    it("should throw BadRequestException for unknown status", async () => {
+      const unknownStatusOrder = {
+        ...mockOrder,
+        status: "unknown_status" as any,
+      };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([unknownStatusOrder]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain);
+
+      await expect(
+        service.updateStatus(mockUserId, mockOrderId, {
+          status: "confirmed",
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("should throw BadRequestException when trying to transition from refunded", async () => {
+      const refundedOrder = { ...mockOrder, status: "refunded" as const };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([refundedOrder]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain);
+
+      await expect(
+        service.updateStatus(mockUserId, mockOrderId, {
+          status: "confirmed",
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("should show 'none' when no valid transitions exist", async () => {
+      const cancelledOrder = { ...mockOrder, status: "cancelled" as const };
+
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockOrderChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([cancelledOrder]),
+          }),
+        }),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockOrderChain);
+
+      try {
+        await service.updateStatus(mockUserId, mockOrderId, {
+          status: "confirmed",
+        });
+        fail("Should have thrown BadRequestException");
+      } catch (error) {
+        expect(error).toBeInstanceOf(BadRequestException);
+        expect((error as BadRequestException).message).toContain("none");
+      }
     });
   });
 });
