@@ -1,0 +1,47 @@
+---
+alwaysApply: false
+---
+These rules ensure that whenever I ask Cursor to "push", it should perform a safe, structured flow including branch creation and PR creation.
+
+## Push Workflow
+When I say **"push"** or anything similar:
+
+1. **Create a new git branch**  
+   - Automatically generate a clean, descriptive branch name based on context.  
+   - Format:  
+     - `feature/<short-description>` for new features  
+     - `fix/<short-description>` for bug fixes  
+     - `chore/<short-description>` for maintenance  
+   - Use kebab-case (`-`), no spaces.
+
+2. **Stage, commit, and push all local changes**  
+   - Commit message should be clear and contextual based on the changes in the current working directory.
+
+3. **Create a Pull Request to the `dev` branch using GitHub CLI**  
+   Use:
+
+   ```bash
+   gh api \
+     --method POST \
+     -H "Accept: application/vnd.github+json" \
+     /repos/:owner/:repo/pulls \
+     -f title="$PR_TITLE" \
+     -f head="$BRANCH_NAME" \
+     -f base="dev" \
+     -f body="$PR_BODY"
+````
+
+Where:
+
+* `$PR_TITLE` = summary of what changed
+* `$PR_BODY` = details of the modifications
+* `$BRANCH_NAME` = the auto-generated branch name
+
+4. **Report the new PR link back to me.**
+
+## Additional Expectations
+
+* Never commit directly to `dev` or `main`.
+* Never reuse old branches; always create a fresh one.
+* Ensure the branch name is always based on the task context.
+* If multiple logical changes exist, summarize them concisely in the PR.
