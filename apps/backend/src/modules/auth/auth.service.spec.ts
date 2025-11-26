@@ -170,7 +170,7 @@ describe("AuthService", () => {
   });
 
   describe("login", () => {
-    it("should return access token and refresh token", () => {
+    it("should return access token and refresh token", async () => {
       const mockUser = {
         id: "123",
         email: "test@example.com",
@@ -181,7 +181,7 @@ describe("AuthService", () => {
         .mockReturnValueOnce("mock-access-token")
         .mockReturnValueOnce("mock-refresh-token");
 
-      const result = service.login(mockUser);
+      const result = await service.login(mockUser);
 
       expect(result).toHaveProperty("access_token", "mock-access-token");
       expect(result).toHaveProperty("refresh_token", "mock-refresh-token");

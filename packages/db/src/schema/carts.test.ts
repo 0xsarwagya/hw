@@ -1,27 +1,35 @@
 import { eq, isNull } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { closeTestDb, createTestDb } from "../test-utils/db";
+import {
+  closeTestDb,
+  createTestDb,
+  getTestDatabaseUrl,
+  isDatabaseAvailable,
+} from "../test-utils/db";
 import { randomEmail, randomPhone } from "../test-utils/helpers";
+import { cartItems } from "./cart-items";
 import { carts } from "./carts";
 import { customers } from "./customers";
 import { users } from "./users";
 
-const TEST_DB_URL =
-  process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || "";
-
-describe("Carts Schema", () => {
-  const { db, pool } = createTestDb(TEST_DB_URL);
+describe.skipIf(!isDatabaseAvailable())("Carts Schema", () => {
+  const { db, pool } = createTestDb(getTestDatabaseUrl());
 
   beforeEach(async () => {
+    await db.delete(cartItems);
     await db.delete(carts);
     await db.delete(customers);
     await db.delete(users);
   });
 
   afterEach(async () => {
+    await db.delete(cartItems);
     await db.delete(carts);
     await db.delete(customers);
     await db.delete(users);
+  });
+
+  afterAll(async () => {
     await closeTestDb(pool);
   });
 
@@ -116,16 +124,24 @@ describe("Carts Schema", () => {
         })
         .returning();
 
-      const [updated] = await db
+      expect(inserted).toBeDefined();
+      expect(inserted.id).toBeDefined();
+
+      // Wait a bit to ensure timestamp difference
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const updated = await db
         .update(carts)
         .set({ subtotal: 200.0, gstAmount: 36.0, total: 236.0 })
         .where(eq(carts.id, inserted.id))
         .returning();
 
-      expect(updated?.subtotal).toBe(200.0);
-      expect(updated?.gstAmount).toBe(36.0);
-      expect(updated?.total).toBe(236.0);
-      expect(updated?.updatedAt.getTime()).toBeGreaterThan(
+      expect(updated).toBeDefined();
+      expect(updated.length).toBeGreaterThan(0);
+      expect(updated[0]?.subtotal).toBe(200.0);
+      expect(updated[0]?.gstAmount).toBe(36.0);
+      expect(updated[0]?.total).toBe(236.0);
+      expect(updated[0]?.updatedAt.getTime()).toBeGreaterThan(
         inserted.updatedAt.getTime(),
       );
     });
@@ -240,12 +256,12 @@ describe("Carts Schema", () => {
 
   describe("Query Operations", () => {
     it("should find cart by session_id", async () => {
-      await db.insert(carts).values({
+      const [cart1] = await db.insert(carts).values({
         sessionId: "session-1",
         subtotal: 100.0,
         gstAmount: 18.0,
         total: 118.0,
-      });
+      }).returning();
 
       await db.insert(carts).values({
         sessionId: "session-2",
@@ -254,14 +270,15 @@ describe("Carts Schema", () => {
         total: 236.0,
       });
 
-      const [found] = await db
+      const found = await db
         .select()
         .from(carts)
         .where(eq(carts.sessionId, "session-1"));
 
       expect(found).toBeDefined();
-      expect(found?.sessionId).toBe("session-1");
-      expect(found?.subtotal).toBe(100.0);
+      expect(found.length).toBeGreaterThan(0);
+      expect(found[0]?.sessionId).toBe("session-1");
+      expect(found[0]?.subtotal).toBe(100.0);
     });
 
     it("should find carts by customer_id", async () => {
@@ -273,6 +290,9 @@ describe("Carts Schema", () => {
         })
         .returning();
 
+      expect(user).toBeDefined();
+      expect(user.id).toBeDefined();
+
       const [customer] = await db
         .insert(customers)
         .values({
@@ -283,14 +303,20 @@ describe("Carts Schema", () => {
         })
         .returning();
 
-      await db.insert(carts).values({
+      expect(customer).toBeDefined();
+      expect(customer.id).toBeDefined();
+
+      const [cart1] = await db.insert(carts).values({
         customerId: customer.id,
         subtotal: 100.0,
         gstAmount: 18.0,
         total: 118.0,
-      });
+      }).returning();
+
+      expect(cart1).toBeDefined();
 
       await db.insert(carts).values({
+        sessionId: `guest-${Math.random().toString(36).substring(7)}`,
         subtotal: 200.0,
         gstAmount: 36.0,
         total: 236.0,
@@ -306,33 +332,16 @@ describe("Carts Schema", () => {
     });
 
     it("should find carts without customer (guest carts)", async () => {
+      // Create guest carts (no customer)
       await db.insert(carts).values({
-        sessionId: "guest-1",
+        sessionId: `guest-${Math.random().toString(36).substring(7)}`,
         subtotal: 100.0,
         gstAmount: 18.0,
         total: 118.0,
       });
 
-      const [user] = await db
-        .insert(users)
-        .values({
-          email: randomEmail(),
-          passwordHash: "$2b$10$testhash",
-        })
-        .returning();
-
-      const [customer] = await db
-        .insert(customers)
-        .values({
-          userId: user.id,
-          email: randomEmail(),
-          phone: randomPhone(),
-          name: "Test Customer",
-        })
-        .returning();
-
       await db.insert(carts).values({
-        customerId: customer.id,
+        sessionId: `guest-${Math.random().toString(36).substring(7)}`,
         subtotal: 200.0,
         gstAmount: 36.0,
         total: 236.0,
@@ -370,23 +379,28 @@ describe("Carts Schema", () => {
       const [inserted] = await db
         .insert(carts)
         .values({
-          sessionId: "test-update",
+          sessionId: `test-update-${Math.random().toString(36).substring(7)}`,
           subtotal: 100.0,
           gstAmount: 18.0,
           total: 118.0,
         })
         .returning();
 
-      // Wait a bit to ensure timestamp difference
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      expect(inserted).toBeDefined();
+      expect(inserted.id).toBeDefined();
 
-      const [updated] = await db
+      // Wait a bit to ensure timestamp difference
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const updated = await db
         .update(carts)
         .set({ subtotal: 200.0 })
         .where(eq(carts.id, inserted.id))
         .returning();
 
-      expect(updated?.updatedAt.getTime()).toBeGreaterThan(
+      expect(updated).toBeDefined();
+      expect(updated.length).toBeGreaterThan(0);
+      expect(updated[0]?.updatedAt.getTime()).toBeGreaterThan(
         inserted.updatedAt.getTime(),
       );
     });

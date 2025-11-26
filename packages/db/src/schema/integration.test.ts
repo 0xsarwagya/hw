@@ -1,16 +1,18 @@
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { closeTestDb, createTestDb } from "../test-utils/db";
+import {
+  closeTestDb,
+  createTestDb,
+  getTestDatabaseUrl,
+  isDatabaseAvailable,
+} from "../test-utils/db";
 import { randomEmail, randomPhone, randomPinCode } from "../test-utils/helpers";
 import { addresses } from "./addresses";
 import { customers } from "./customers";
 import { users } from "./users";
 
-const TEST_DB_URL =
-  process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || "";
-
-describe("Schema Integration Tests", () => {
-  const { db, pool } = createTestDb(TEST_DB_URL);
+describe.skipIf(!isDatabaseAvailable())("Schema Integration Tests", () => {
+  const { db, pool } = createTestDb(getTestDatabaseUrl());
 
   beforeEach(async () => {
     await db.delete(addresses);
@@ -22,6 +24,9 @@ describe("Schema Integration Tests", () => {
     await db.delete(addresses);
     await db.delete(customers);
     await db.delete(users);
+  });
+
+  afterAll(async () => {
     await closeTestDb(pool);
   });
 
@@ -315,14 +320,20 @@ describe("Schema Integration Tests", () => {
         })
         .returning();
 
-      await db.insert(customers).values({
+      expect(user).toBeDefined();
+      expect(user.id).toBeDefined();
+
+      const [firstCustomer] = await db.insert(customers).values({
         userId: user.id,
         email: randomEmail(),
         phone: randomPhone(),
         name: "First Customer",
-      });
+      }).returning();
 
-      // Try to create second customer for same user should fail
+      expect(firstCustomer).toBeDefined();
+      expect(firstCustomer.userId).toBe(user.id);
+
+      // Try to create second customer for same user should fail due to unique constraint
       await expect(
         db.insert(customers).values({
           userId: user.id,

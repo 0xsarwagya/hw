@@ -1,16 +1,20 @@
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { closeTestDb, createTestDb } from "../test-utils/db";
+import {
+  closeTestDb,
+  createTestDb,
+  getTestDatabaseUrl,
+  isDatabaseAvailable,
+} from "../test-utils/db";
 import { categories } from "./categories";
 import { productImages } from "./product-images";
 import { productVariants } from "./product-variants";
 import { products } from "./products";
 
-const TEST_DB_URL =
-  process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || "";
-
-describe("Product Catalog Integration Tests", () => {
-  const { db, pool } = createTestDb(TEST_DB_URL);
+describe.skipIf(!isDatabaseAvailable())(
+  "Product Catalog Integration Tests",
+  () => {
+  const { db, pool } = createTestDb(getTestDatabaseUrl());
 
   beforeEach(async () => {
     await db.delete(productImages);
@@ -24,6 +28,9 @@ describe("Product Catalog Integration Tests", () => {
     await db.delete(productVariants);
     await db.delete(products);
     await db.delete(categories);
+  });
+
+  afterAll(async () => {
     await closeTestDb(pool);
   });
 
@@ -42,6 +49,8 @@ describe("Product Catalog Integration Tests", () => {
         .values({
           title: "Product",
           price: 100.0,
+          hsnCode: "8471",
+          gstRate: 18,
           categoryId: category.id,
         })
         .returning();
@@ -58,11 +67,22 @@ describe("Product Catalog Integration Tests", () => {
     });
 
     it("should cascade delete variants when product is deleted", async () => {
+      const [category] = await db
+        .insert(categories)
+        .values({
+          name: "Test Category",
+          slug: `test-category-${Math.random().toString(36).substring(7)}`,
+        })
+        .returning();
+
       const [product] = await db
         .insert(products)
         .values({
           title: "Product",
           price: 100.0,
+          hsnCode: "8471",
+          gstRate: 18,
+          categoryId: category.id,
         })
         .returning();
 
@@ -86,11 +106,22 @@ describe("Product Catalog Integration Tests", () => {
     });
 
     it("should cascade delete images when product is deleted", async () => {
+      const [category] = await db
+        .insert(categories)
+        .values({
+          name: "Test Category",
+          slug: `test-category-${Math.random().toString(36).substring(7)}`,
+        })
+        .returning();
+
       const [product] = await db
         .insert(products)
         .values({
           title: "Product",
           price: 100.0,
+          hsnCode: "8471",
+          gstRate: 18,
+          categoryId: category.id,
         })
         .returning();
 
@@ -113,11 +144,22 @@ describe("Product Catalog Integration Tests", () => {
     });
 
     it("should cascade delete images when variant is deleted", async () => {
+      const [category] = await db
+        .insert(categories)
+        .values({
+          name: "Test Category",
+          slug: `test-category-${Math.random().toString(36).substring(7)}`,
+        })
+        .returning();
+
       const [product] = await db
         .insert(products)
         .values({
           title: "Product",
           price: 100.0,
+          hsnCode: "8471",
+          gstRate: 18,
+          categoryId: category.id,
         })
         .returning();
 
@@ -167,6 +209,8 @@ describe("Product Catalog Integration Tests", () => {
         .values({
           title: "Product",
           price: 100.0,
+          hsnCode: "8471",
+          gstRate: 18,
           categoryId: category.id,
         })
         .returning();
@@ -181,11 +225,22 @@ describe("Product Catalog Integration Tests", () => {
     });
 
     it("should query product with all variants", async () => {
+      const [category] = await db
+        .insert(categories)
+        .values({
+          name: "Test Category",
+          slug: `test-category-${Math.random().toString(36).substring(7)}`,
+        })
+        .returning();
+
       const [product] = await db
         .insert(products)
         .values({
           title: "Product",
           price: 100.0,
+          hsnCode: "8471",
+          gstRate: 18,
+          categoryId: category.id,
         })
         .returning();
 
@@ -212,11 +267,22 @@ describe("Product Catalog Integration Tests", () => {
     });
 
     it("should query product with all images", async () => {
+      const [category] = await db
+        .insert(categories)
+        .values({
+          name: "Test Category",
+          slug: `test-category-${Math.random().toString(36).substring(7)}`,
+        })
+        .returning();
+
       const [product] = await db
         .insert(products)
         .values({
           title: "Product",
           price: 100.0,
+          hsnCode: "8471",
+          gstRate: 18,
+          categoryId: category.id,
         })
         .returning();
 
@@ -243,11 +309,22 @@ describe("Product Catalog Integration Tests", () => {
     });
 
     it("should query variant with its images", async () => {
+      const [category] = await db
+        .insert(categories)
+        .values({
+          name: "Test Category",
+          slug: `test-category-${Math.random().toString(36).substring(7)}`,
+        })
+        .returning();
+
       const [product] = await db
         .insert(products)
         .values({
           title: "Product",
           price: 100.0,
+          hsnCode: "8471",
+          gstRate: 18,
+          categoryId: category.id,
         })
         .returning();
 
@@ -291,6 +368,8 @@ describe("Product Catalog Integration Tests", () => {
         .values({
           title: "Product",
           price: 100.0,
+          hsnCode: "8471",
+          gstRate: 18,
           categoryId: parentCategory.id,
         })
         .returning();

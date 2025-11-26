@@ -1,16 +1,18 @@
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { closeTestDb, createTestDb } from "../test-utils/db";
+import {
+  closeTestDb,
+  createTestDb,
+  getTestDatabaseUrl,
+  isDatabaseAvailable,
+} from "../test-utils/db";
 import { randomEmail, randomPhone, randomPinCode } from "../test-utils/helpers";
 import { addresses } from "./addresses";
 import { customers } from "./customers";
 import { users } from "./users";
 
-const TEST_DB_URL =
-  process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || "";
-
-describe("Addresses Schema", () => {
-  const { db, pool } = createTestDb(TEST_DB_URL);
+describe.skipIf(!isDatabaseAvailable())("Addresses Schema", () => {
+  const { db, pool } = createTestDb(getTestDatabaseUrl());
 
   beforeEach(async () => {
     await db.delete(addresses);
@@ -22,6 +24,9 @@ describe("Addresses Schema", () => {
     await db.delete(addresses);
     await db.delete(customers);
     await db.delete(users);
+  });
+
+  afterAll(async () => {
     await closeTestDb(pool);
   });
 
@@ -34,6 +39,10 @@ describe("Addresses Schema", () => {
       })
       .returning();
 
+    if (!user || !user.id) {
+      throw new Error("Failed to create user");
+    }
+
     const [customer] = await db
       .insert(customers)
       .values({
@@ -43,6 +52,10 @@ describe("Addresses Schema", () => {
         name: "Test Customer",
       })
       .returning();
+
+    if (!customer || !customer.id) {
+      throw new Error("Failed to create customer");
+    }
 
     return customer;
   };
@@ -107,13 +120,18 @@ describe("Addresses Schema", () => {
         })
         .returning();
 
-      const [updated] = await db
+      expect(inserted).toBeDefined();
+      expect(inserted.id).toBeDefined();
+
+      const updated = await db
         .update(addresses)
         .set({ street: "456 New Street" })
         .where(eq(addresses.id, inserted.id))
         .returning();
 
-      expect(updated?.street).toBe("456 New Street");
+      expect(updated).toBeDefined();
+      expect(updated.length).toBeGreaterThan(0);
+      expect(updated[0]?.street).toBe("456 New Street");
     });
 
     it("should delete an address", async () => {
