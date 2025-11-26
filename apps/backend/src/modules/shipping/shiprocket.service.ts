@@ -84,7 +84,10 @@ export class ShiprocketService implements OnModuleInit {
   async getAuthToken(): Promise<string> {
     if (!this.authToken) {
       await this.authenticate();
-      return this.authToken!.token;
+      if (!this.authToken) {
+        throw new Error("Failed to authenticate with Shiprocket");
+      }
+      return this.authToken.token;
     }
 
     // Check if token is expired (with 5 minute buffer)
