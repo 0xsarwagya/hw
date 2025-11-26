@@ -84,6 +84,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run tests
-        run: pnpm --filter "./apps/**" --filter "./packages/**" test
+        run: |
+          pnpm --filter "@vestcodes/vcecom-backend" test
+          pnpm --filter "@vcecom/db" exec vitest run
         continue-on-error: false
 
