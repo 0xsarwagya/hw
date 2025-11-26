@@ -73,6 +73,8 @@ async function bootstrap() {
     .addTag("customers", "Customer management endpoints")
     .addTag("carts", "Shopping cart endpoints")
     .addTag("orders", "Order management endpoints")
+    .addTag("payments", "Payment processing endpoints")
+    .addTag("shipping", "Shipping integration endpoints")
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

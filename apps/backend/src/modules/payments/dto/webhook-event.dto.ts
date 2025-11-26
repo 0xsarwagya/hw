@@ -1,88 +1,120 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { IsObject, IsString } from "class-validator";
+
+class RazorpayPaymentEntity {
+  @ApiProperty()
+  id: string;
+  @ApiProperty()
+  entity: string;
+  @ApiProperty()
+  amount: number;
+  @ApiProperty()
+  currency: string;
+  @ApiProperty()
+  status: string;
+  @ApiProperty()
+  order_id: string;
+  @ApiProperty({ nullable: true })
+  invoice_id: string | null;
+  @ApiProperty()
+  international: boolean;
+  @ApiProperty()
+  method: string;
+  @ApiProperty()
+  amount_refunded: number;
+  @ApiProperty({ nullable: true })
+  refund_status: string | null;
+  @ApiProperty()
+  captured: boolean;
+  @ApiProperty({ nullable: true })
+  description: string | null;
+  @ApiProperty({ nullable: true })
+  card_id: string | null;
+  @ApiProperty({ nullable: true })
+  bank: string | null;
+  @ApiProperty({ nullable: true })
+  wallet: string | null;
+  @ApiProperty({ nullable: true })
+  vpa: string | null;
+  @ApiProperty()
+  email: string;
+  @ApiProperty()
+  contact: string;
+  @ApiProperty()
+  notes: Record<string, string>;
+  @ApiProperty()
+  fee: number;
+  @ApiProperty()
+  tax: number;
+  @ApiProperty({ nullable: true })
+  error_code: string | null;
+  @ApiProperty({ nullable: true })
+  error_description: string | null;
+  @ApiProperty({ nullable: true })
+  error_source: string | null;
+  @ApiProperty({ nullable: true })
+  error_step: string | null;
+  @ApiProperty({ nullable: true })
+  error_reason: string | null;
+  @ApiProperty()
+  created_at: number;
+}
+
+class RazorpayOrderEntity {
+  @ApiProperty()
+  id: string;
+  @ApiProperty()
+  entity: string;
+  @ApiProperty()
+  amount: number;
+  @ApiProperty()
+  amount_paid: number;
+  @ApiProperty()
+  amount_due: number;
+  @ApiProperty()
+  currency: string;
+  @ApiProperty()
+  receipt: string;
+  @ApiProperty({ nullable: true })
+  offer_id: string | null;
+  @ApiProperty()
+  status: string;
+  @ApiProperty()
+  attempts: number;
+  @ApiProperty()
+  notes: Record<string, string>;
+  @ApiProperty()
+  created_at: number;
+}
+
+class RazorpayWebhookPayload {
+  @ApiProperty({ type: RazorpayPaymentEntity, required: false })
+  payment?: { entity: RazorpayPaymentEntity };
+
+  @ApiProperty({ type: RazorpayOrderEntity, required: false })
+  order?: { entity: RazorpayOrderEntity };
+}
 
 export class RazorpayWebhookEventDto {
-  @ApiProperty({
-    description: "Event entity type",
-    example: "event",
-  })
+  @ApiProperty({ example: "event" })
+  @IsString()
   entity: string;
 
-  @ApiProperty({
-    description: "Event account ID",
-    example: "acc_MNOPQRSTUVWXYZ",
-  })
+  @ApiProperty({ example: "acc_xxxxxxxxxxxxxx" })
+  @IsString()
   account_id: string;
 
-  @ApiProperty({
-    description: "Event name",
-    example: "payment.captured",
-  })
+  @ApiProperty({ example: "payment.captured" })
+  @IsString()
   event: string;
 
-  @ApiProperty({
-    description: "Event contains",
-    example: ["payment", "order"],
-  })
+  @ApiProperty({ example: ["payment"] })
   contains: string[];
 
-  @ApiProperty({
-    description: "Event payload",
-  })
-  payload: {
-    payment?: {
-      entity: {
-        id: string;
-        entity: string;
-        amount: number;
-        currency: string;
-        status: string;
-        order_id: string;
-        invoice_id: string | null;
-        international: boolean;
-        method: string;
-        amount_refunded: number;
-        refund_status: string | null;
-        captured: boolean;
-        description: string | null;
-        card_id: string | null;
-        bank: string | null;
-        wallet: string | null;
-        vpa: string | null;
-        email: string;
-        contact: string;
-        notes: Record<string, string>;
-        fee: number;
-        tax: number;
-        error_code: string | null;
-        error_description: string | null;
-        error_source: string | null;
-        error_step: string | null;
-        error_reason: string | null;
-        acquirer_data: Record<string, unknown>;
-        created_at: number;
-      };
-    };
-    order?: {
-      entity: {
-        id: string;
-        entity: string;
-        amount: number;
-        amount_paid: number;
-        amount_due: number;
-        currency: string;
-        receipt: string | null;
-        offer_id: string | null;
-        status: string;
-        attempts: number;
-        notes: Record<string, string>;
-        created_at: number;
-      };
-    };
-  };
+  @ApiProperty({ type: RazorpayWebhookPayload })
+  @IsObject()
+  payload: RazorpayWebhookPayload;
 
-  @ApiProperty({
-    description: "Event created timestamp",
-    example: 1234567890,
-  })
+  @ApiProperty({ example: 1678886400 })
   created_at: number;
 }

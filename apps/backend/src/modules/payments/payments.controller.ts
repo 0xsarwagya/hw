@@ -8,6 +8,7 @@ import {
   Post,
   RawBodyRequest,
   Req,
+  SetMetadata,
   UseGuards,
 } from "@nestjs/common";
 import {
@@ -17,6 +18,8 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
+import { Request } from "express";
+import { IS_PUBLIC_KEY } from "../../common/decorators/public.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
@@ -173,11 +176,7 @@ export class PaymentsController {
   async verifyPayment(
     @Body() verifyPaymentDto: VerifyPaymentDto,
   ): Promise<PaymentVerificationResponseDto> {
-    const result = await this.paymentsService.verifyPayment(verifyPaymentDto);
-    return {
-      ...result,
-      payment: undefined, // Payment details can be fetched separately if needed
-    };
+    return this.paymentsService.verifyPayment(verifyPaymentDto);
   }
 
   @Get("razorpay/payments/:paymentId")
@@ -235,8 +234,7 @@ export class PaymentsController {
   }
 
   @Post("razorpay/webhook")
-  // Webhook endpoint doesn't require authentication (Razorpay calls it directly)
-  // Signature verification is done in the service
+  @SetMetadata(IS_PUBLIC_KEY, true)
   @ApiOperation({
     summary: "Handle Razorpay webhook events",
     description:
@@ -272,7 +270,7 @@ export class PaymentsController {
   async handleWebhook(
     @Req() req: RawBodyRequest<Request>,
     @Headers("x-razorpay-signature") signature: string,
-  ) {
+  ): Promise<{ processed: boolean; message: string }> {
     if (!signature) {
       throw new BadRequestException("Missing x-razorpay-signature header");
     }
