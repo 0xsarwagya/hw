@@ -15,14 +15,22 @@ import {
   inArray,
   orderItems,
   orders,
+  payments,
   products,
   productVariants,
+  shipments,
   sql,
 } from "@vcecom/db";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { CartsService } from "../carts/carts.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { OrderResponseDto } from "./dto/order-response.dto";
+import {
+  OrderTimelineDto,
+  TimelineEventDto,
+  TimelineEventType,
+} from "./dto/order-timeline.dto";
+import { OrderTrackingDto } from "./dto/order-tracking.dto";
 import {
   OrderStatus,
   UpdateOrderStatusDto,
@@ -407,5 +415,267 @@ export class OrdersService {
       ...updatedOrder,
       items,
     } as OrderResponseDto;
+  }
+
+  /**
+   * Get order tracking information
+   * Returns order details with shipment tracking information
+   */
+  async getTracking(
+    userId: string,
+    orderId: string,
+  ): Promise<OrderTrackingDto> {
+    const customerId = await this.getCustomerId(userId);
+
+    // Get order
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(and(eq(orders.id, orderId), eq(orders.customerId, customerId)))
+      .limit(1);
+
+    if (!order) {
+      throw new NotFoundException("Order not found");
+    }
+
+    // Get shipments for this order
+    const orderShipments = await db
+      .select()
+      .from(shipments)
+      .where(eq(shipments.orderId, orderId))
+      .orderBy(desc(shipments.createdAt));
+
+    return {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      shippingProvider: order.shippingProvider,
+      shipments: orderShipments.map((shipment) => ({
+        id: shipment.id,
+        provider: shipment.provider,
+        trackingNumber: shipment.trackingNumber,
+        status: shipment.status,
+        labelUrl: shipment.labelUrl,
+        awbNumber: shipment.awbNumber,
+        createdAt: shipment.createdAt,
+        updatedAt: shipment.updatedAt,
+      })),
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+    };
+  }
+
+  /**
+   * Get order timeline
+   * Returns chronological list of all events related to the order
+   */
+  async getTimeline(
+    userId: string,
+    orderId: string,
+  ): Promise<OrderTimelineDto> {
+    const customerId = await this.getCustomerId(userId);
+
+    // Get order
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(and(eq(orders.id, orderId), eq(orders.customerId, customerId)))
+      .limit(1);
+
+    if (!order) {
+      throw new NotFoundException("Order not found");
+    }
+
+    const events: TimelineEventDto[] = [];
+
+    // Add order creation event
+    events.push({
+      type: TimelineEventType.ORDER_CREATED,
+      title: "Order Created",
+      description: `Order ${order.orderNumber} was created`,
+      timestamp: order.createdAt,
+      metadata: {
+        orderNumber: order.orderNumber,
+        total: order.total,
+      },
+    });
+
+    // Get payments for this order
+    const orderPayments = await db
+      .select()
+      .from(payments)
+      .where(eq(payments.orderId, orderId))
+      .orderBy(desc(payments.createdAt));
+
+    // Add payment events
+    for (const payment of orderPayments) {
+      events.push({
+        type: TimelineEventType.PAYMENT_INITIATED,
+        title: "Payment Initiated",
+        description: `Payment of ₹${payment.amount} initiated via ${payment.method}`,
+        timestamp: payment.createdAt,
+        metadata: {
+          paymentId: payment.id,
+          amount: payment.amount,
+          method: payment.method,
+          razorpayPaymentId: payment.razorpayPaymentId,
+        },
+      });
+
+      if (payment.status === "captured") {
+        events.push({
+          type: TimelineEventType.PAYMENT_COMPLETED,
+          title: "Payment Completed",
+          description: `Payment of ₹${payment.amount} was successfully completed`,
+          timestamp: payment.updatedAt,
+          metadata: {
+            paymentId: payment.id,
+            amount: payment.amount,
+            method: payment.method,
+          },
+        });
+      } else if (payment.status === "failed") {
+        events.push({
+          type: TimelineEventType.PAYMENT_FAILED,
+          title: "Payment Failed",
+          description: `Payment of ₹${payment.amount} failed`,
+          timestamp: payment.updatedAt,
+          metadata: {
+            paymentId: payment.id,
+            amount: payment.amount,
+            method: payment.method,
+          },
+        });
+      }
+    }
+
+    // Get shipments for this order
+    const orderShipments = await db
+      .select()
+      .from(shipments)
+      .where(eq(shipments.orderId, orderId))
+      .orderBy(desc(shipments.createdAt));
+
+    // Add shipment events
+    for (const shipment of orderShipments) {
+      events.push({
+        type: TimelineEventType.SHIPMENT_CREATED,
+        title: "Shipment Created",
+        description: `Shipment created via ${shipment.provider}`,
+        timestamp: shipment.createdAt,
+        metadata: {
+          shipmentId: shipment.id,
+          provider: shipment.provider,
+        },
+      });
+
+      // Add shipment status-specific events
+      if (shipment.status === "label_generated") {
+        events.push({
+          type: TimelineEventType.SHIPMENT_LABEL_GENERATED,
+          title: "Shipping Label Generated",
+          description: `Shipping label generated${shipment.trackingNumber ? ` with tracking number ${shipment.trackingNumber}` : ""}`,
+          timestamp: shipment.updatedAt,
+          metadata: {
+            shipmentId: shipment.id,
+            trackingNumber: shipment.trackingNumber,
+            labelUrl: shipment.labelUrl,
+            awbNumber: shipment.awbNumber,
+          },
+        });
+      } else if (shipment.status === "picked_up") {
+        events.push({
+          type: TimelineEventType.SHIPMENT_PICKED_UP,
+          title: "Shipment Picked Up",
+          description: `Shipment picked up by courier${shipment.trackingNumber ? ` (Tracking: ${shipment.trackingNumber})` : ""}`,
+          timestamp: shipment.updatedAt,
+          metadata: {
+            shipmentId: shipment.id,
+            trackingNumber: shipment.trackingNumber,
+          },
+        });
+      } else if (shipment.status === "in_transit") {
+        events.push({
+          type: TimelineEventType.SHIPMENT_IN_TRANSIT,
+          title: "Shipment In Transit",
+          description: `Shipment is in transit${shipment.trackingNumber ? ` (Tracking: ${shipment.trackingNumber})` : ""}`,
+          timestamp: shipment.updatedAt,
+          metadata: {
+            shipmentId: shipment.id,
+            trackingNumber: shipment.trackingNumber,
+          },
+        });
+      } else if (shipment.status === "out_for_delivery") {
+        events.push({
+          type: TimelineEventType.SHIPMENT_OUT_FOR_DELIVERY,
+          title: "Out for Delivery",
+          description: `Shipment is out for delivery${shipment.trackingNumber ? ` (Tracking: ${shipment.trackingNumber})` : ""}`,
+          timestamp: shipment.updatedAt,
+          metadata: {
+            shipmentId: shipment.id,
+            trackingNumber: shipment.trackingNumber,
+          },
+        });
+      } else if (shipment.status === "delivered") {
+        events.push({
+          type: TimelineEventType.SHIPMENT_DELIVERED,
+          title: "Shipment Delivered",
+          description: `Shipment has been delivered${shipment.trackingNumber ? ` (Tracking: ${shipment.trackingNumber})` : ""}`,
+          timestamp: shipment.updatedAt,
+          metadata: {
+            shipmentId: shipment.id,
+            trackingNumber: shipment.trackingNumber,
+          },
+        });
+      } else if (shipment.status === "failed") {
+        events.push({
+          type: TimelineEventType.SHIPMENT_FAILED,
+          title: "Shipment Failed",
+          description: `Shipment delivery failed${shipment.trackingNumber ? ` (Tracking: ${shipment.trackingNumber})` : ""}`,
+          timestamp: shipment.updatedAt,
+          metadata: {
+            shipmentId: shipment.id,
+            trackingNumber: shipment.trackingNumber,
+          },
+        });
+      } else if (shipment.status === "returned") {
+        events.push({
+          type: TimelineEventType.SHIPMENT_RETURNED,
+          title: "Shipment Returned",
+          description: `Shipment has been returned${shipment.trackingNumber ? ` (Tracking: ${shipment.trackingNumber})` : ""}`,
+          timestamp: shipment.updatedAt,
+          metadata: {
+            shipmentId: shipment.id,
+            trackingNumber: shipment.trackingNumber,
+          },
+        });
+      }
+    }
+
+    // Note: Status changes are tracked via order.updatedAt
+    // In a real system, you might want to track status changes separately
+    // For now, we'll add a status change event based on the current status
+    if (order.status !== "pending") {
+      events.push({
+        type: TimelineEventType.STATUS_CHANGED,
+        title: "Order Status Updated",
+        description: `Order status is now '${order.status}'`,
+        newValue: order.status,
+        timestamp: order.updatedAt,
+        metadata: {
+          currentStatus: order.status,
+        },
+      });
+    }
+
+    // Sort events by timestamp (newest first)
+    events.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    return {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      currentStatus: order.status,
+      events,
+    };
   }
 }

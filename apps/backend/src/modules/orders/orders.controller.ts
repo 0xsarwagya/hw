@@ -20,6 +20,8 @@ import {
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { OrderResponseDto } from "./dto/order-response.dto";
+import { OrderTimelineDto } from "./dto/order-timeline.dto";
+import { OrderTrackingDto } from "./dto/order-tracking.dto";
 import {
   OrderStatus,
   UpdateOrderStatusDto,
@@ -166,5 +168,67 @@ export class OrdersController {
       id,
       updateStatusDto,
     );
+  }
+
+  @Get(":id/tracking")
+  @ApiOperation({
+    summary: "Get order tracking information",
+    description:
+      "Returns tracking information for an order including shipment details and tracking numbers.",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Order ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Order tracking information",
+    type: OrderTrackingDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Order not found",
+  })
+  async getTracking(
+    @Request() req: AuthenticatedRequest,
+    @Param("id") id: string,
+  ) {
+    return this.ordersService.getTracking(req.user.userId, id);
+  }
+
+  @Get(":id/timeline")
+  @ApiOperation({
+    summary: "Get order timeline",
+    description:
+      "Returns a chronological timeline of all events related to the order including status changes, payments, and shipments.",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Order ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Order timeline",
+    type: OrderTimelineDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Order not found",
+  })
+  async getTimeline(
+    @Request() req: AuthenticatedRequest,
+    @Param("id") id: string,
+  ) {
+    return this.ordersService.getTimeline(req.user.userId, id);
   }
 }
