@@ -84,6 +84,6 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run tests
-        run: turbo run test
+        run: pnpm turbo run test
         continue-on-error: false
 
