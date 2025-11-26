@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -13,10 +13,15 @@ import {
   CalculateRatesResponseDto,
 } from "./dto/calculate-rates.dto";
 import {
+  GenerateLabelDto,
+  GenerateLabelResponseDto,
+} from "./dto/generate-label.dto";
+import {
   ShiprocketConfigDto,
   ShiprocketConfigResponseDto,
   ShiprocketConnectionTestResponseDto,
 } from "./dto/shiprocket-config.dto";
+import { TrackShipmentResponseDto } from "./dto/track-shipment.dto";
 import { ShiprocketService } from "./shiprocket.service";
 
 @ApiTags("shipping")
@@ -164,5 +169,80 @@ export class ShippingController {
       calculateRatesDto.orderValue,
       calculateRatesDto.codAmount,
     );
+  }
+
+  @Post("generate-label")
+  @Roles("admin")
+  @ApiOperation({
+    summary: "Generate shipping label for an order",
+    description:
+      "Creates a shipment in Shiprocket and generates a shipping label (PDF) for the specified order. Only accessible by admin users. This will create the shipment, assign an AWB number, and generate the label.",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Label generated successfully",
+    type: GenerateLabelResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request - Invalid order or courier ID",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Order not found",
+  })
+  @ApiResponse({
+    status: 500,
+    description:
+      "Internal server error - Shiprocket not initialized or API error",
+  })
+  async generateLabel(
+    @Body() generateLabelDto: GenerateLabelDto,
+  ): Promise<GenerateLabelResponseDto> {
+    return this.shiprocketService.createShipment(
+      generateLabelDto.orderId,
+      generateLabelDto.courierId,
+      generateLabelDto.pickupPincode,
+      generateLabelDto.weight,
+    );
+  }
+
+  @Get("track/:trackingNumber")
+  @Roles("admin", "customer")
+  @ApiOperation({
+    summary: "Track shipment by tracking number",
+    description:
+      "Retrieves tracking information for a shipment using the AWB/tracking number. Returns current status, estimated delivery date, and a timeline of tracking events. Accessible by both admin and customer users.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Tracking information retrieved successfully",
+    type: TrackShipmentResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Shipment not found",
+  })
+  @ApiResponse({
+    status: 500,
+    description:
+      "Internal server error - Shiprocket not initialized or API error",
+  })
+  async trackShipment(
+    @Param("trackingNumber") trackingNumber: string,
+  ): Promise<TrackShipmentResponseDto> {
+    return this.shiprocketService.trackShipment(trackingNumber);
   }
 }

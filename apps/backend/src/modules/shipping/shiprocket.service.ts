@@ -1,4 +1,10 @@
-import { Injectable, OnModuleInit } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  OnModuleInit,
+} from "@nestjs/common";
+import { addresses, db, eq, orderItems, orders, shipments } from "@vcecom/db";
 import { ShiprocketConfigService } from "./shiprocket-config.service";
 
 export interface ShiprocketAuthToken {
@@ -287,6 +293,322 @@ export class ShiprocketService implements OnModuleInit {
         courierRates.length > 0
           ? "Rates calculated successfully"
           : "No couriers available for this route",
+    };
+  }
+
+  /**
+   * Create shipment in Shiprocket and generate label
+   * @param orderId - Order ID
+   * @param courierId - Selected courier ID
+   * @param pickupPincode - Optional pickup PIN code (defaults to seller location)
+   * @param weight - Optional weight (will be calculated from order if not provided)
+   * @returns Shipment details with AWB number and label URL
+   */
+  async createShipment(
+    orderId: string,
+    courierId: number,
+    pickupPincode?: string,
+    weight?: number,
+  ): Promise<{
+    shipmentId: number;
+    awbNumber: string;
+    trackingNumber: string;
+    labelUrl: string;
+    status: string;
+    message: string;
+  }> {
+    if (!this.isInitialized()) {
+      throw new Error(
+        "Shiprocket is not initialized. Please initialize Shiprocket first.",
+      );
+    }
+
+    // Get order details with shipping address
+    const [order] = await db
+      .select({
+        id: orders.id,
+        orderNumber: orders.orderNumber,
+        total: orders.total,
+        shippingAddressId: orders.shippingAddressId,
+        shippingProvider: orders.shippingProvider,
+      })
+      .from(orders)
+      .where(eq(orders.id, orderId))
+      .limit(1);
+
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    // Get shipping address
+    const [shippingAddress] = await db
+      .select()
+      .from(addresses)
+      .where(eq(addresses.id, order.shippingAddressId))
+      .limit(1);
+
+    if (!shippingAddress) {
+      throw new NotFoundException("Shipping address not found");
+    }
+
+    // Get order items to calculate weight if not provided
+    let calculatedWeight = weight;
+    if (!calculatedWeight) {
+      const items = await db
+        .select({
+          quantity: orderItems.quantity,
+        })
+        .from(orderItems)
+        .where(eq(orderItems.orderId, orderId));
+
+      // Default weight calculation: 0.5 kg per item
+      calculatedWeight = items.reduce(
+        (sum, item) => sum + item.quantity * 0.5,
+        0.5, // Minimum weight
+      );
+    }
+
+    // Get seller pickup PIN code (from environment or use default)
+    const sellerPincode =
+      pickupPincode || process.env.SELLER_PINCODE || "400001";
+
+    // Prepare shipment creation payload for Shiprocket API
+    const shipmentPayload = {
+      order_id: order.orderNumber,
+      order_date: new Date().toISOString().split("T")[0],
+      pickup_location: "Primary",
+      billing_customer_name: shippingAddress.street.split(",")[0] || "Customer",
+      billing_last_name: "",
+      billing_address: shippingAddress.street,
+      billing_address_2: "",
+      billing_city: shippingAddress.city,
+      billing_state: shippingAddress.state,
+      billing_country: shippingAddress.country || "India",
+      billing_pincode: shippingAddress.pincode,
+      billing_email: "",
+      billing_phone: "",
+      shipping_is_billing: true,
+      shipping_customer_name:
+        shippingAddress.street.split(",")[0] || "Customer",
+      shipping_last_name: "",
+      shipping_address: shippingAddress.street,
+      shipping_address_2: "",
+      shipping_city: shippingAddress.city,
+      shipping_state: shippingAddress.state,
+      shipping_country: shippingAddress.country || "India",
+      shipping_pincode: shippingAddress.pincode,
+      shipping_email: "",
+      shipping_phone: "",
+      order_items: await this.prepareOrderItems(orderId),
+      payment_method: "Prepaid",
+      sub_total: order.total.toString(),
+      length: "10",
+      breadth: "10",
+      height: "10",
+      weight: calculatedWeight.toString(),
+    };
+
+    // Create shipment in Shiprocket
+    const createResponse = await this.makeRequest<{
+      shipment_id: number;
+      status: string;
+      status_code: number;
+      onboarding_completed_now: number;
+      awb_code: string;
+      courier_company_id: number;
+      courier_name: string;
+    }>("/orders/create/adhoc", {
+      method: "POST",
+      body: JSON.stringify(shipmentPayload),
+    });
+
+    // Assign AWB to shipment
+    const awbResponse = await this.makeRequest<{
+      response: {
+        awb_assign_status: number;
+        awb_code: string[];
+      };
+    }>("/courier/assign/awb", {
+      method: "POST",
+      body: JSON.stringify({
+        shipment_id: [createResponse.shipment_id],
+      }),
+    });
+
+    const awbNumber = awbResponse.response.awb_code[0];
+
+    // Generate label
+    const labelResponse = await this.makeRequest<{
+      label_created: number;
+      response: {
+        label_url: string;
+      };
+    }>("/courier/generate/label", {
+      method: "POST",
+      body: JSON.stringify({
+        shipment_id: [createResponse.shipment_id],
+      }),
+    });
+
+    const labelUrl = labelResponse.response.label_url;
+
+    // Store shipment in database
+    await db
+      .insert(shipments)
+      .values({
+        orderId: orderId,
+        provider: "shiprocket",
+        trackingNumber: awbNumber,
+        awbNumber: awbNumber,
+        status: "label_generated",
+        labelUrl: labelUrl,
+      })
+      .returning();
+
+    // Update order shipping provider
+    await db
+      .update(orders)
+      .set({
+        shippingProvider: "shiprocket",
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, orderId));
+
+    return {
+      shipmentId: createResponse.shipment_id,
+      awbNumber: awbNumber,
+      trackingNumber: awbNumber,
+      labelUrl: labelUrl,
+      status: "label_generated",
+      message: "Shipment created and label generated successfully",
+    };
+  }
+
+  /**
+   * Prepare order items for Shiprocket shipment
+   */
+  private async prepareOrderItems(orderId: string): Promise<
+    Array<{
+      name: string;
+      sku: string;
+      units: number;
+      selling_price: string;
+    }>
+  > {
+    const items = await db
+      .select({
+        quantity: orderItems.quantity,
+        price: orderItems.price,
+        productVariantId: orderItems.productVariantId,
+      })
+      .from(orderItems)
+      .where(eq(orderItems.orderId, orderId));
+
+    // For now, return simplified items
+    // In production, you'd want to fetch product names and SKUs
+    return items.map((item, index) => ({
+      name: `Product ${index + 1}`,
+      sku: item.productVariantId.substring(0, 8),
+      units: item.quantity,
+      selling_price: item.price.toString(),
+    }));
+  }
+
+  /**
+   * Track shipment by AWB number
+   * @param awbNumber - AWB (Airway Bill) number
+   * @returns Tracking information with events timeline
+   */
+  async trackShipment(awbNumber: string): Promise<{
+    awbNumber: string;
+    trackingNumber: string;
+    status: string;
+    statusDescription: string;
+    estimatedDeliveryDate: string | null;
+    events: Array<{
+      date: string;
+      status: string;
+      location: string | null;
+      description: string | null;
+    }>;
+    message: string;
+  }> {
+    if (!this.isInitialized()) {
+      throw new Error(
+        "Shiprocket is not initialized. Please initialize Shiprocket first.",
+      );
+    }
+
+    // Track shipment via Shiprocket API
+    const trackingResponse = await this.makeRequest<{
+      tracking_data: {
+        tracking_status: string;
+        tracking_status_date: string;
+        tracking_status_location: string;
+        courier_tracking_id: string;
+        estimated_delivery_date: string | null;
+        shipment_track?: Array<{
+          tracking_status: string;
+          tracking_status_date: string;
+          tracking_status_location: string;
+          tracking_status_description: string | null;
+        }>;
+      };
+    }>(`/courier/track/awb/${awbNumber}`, {
+      method: "GET",
+    });
+
+    const trackingData = trackingResponse.tracking_data;
+
+    // Transform tracking events
+    const events =
+      trackingData.shipment_track?.map((event) => ({
+        date: event.tracking_status_date,
+        status: event.tracking_status,
+        location: event.tracking_status_location || null,
+        description: event.tracking_status_description || null,
+      })) || [];
+
+    // Map Shiprocket status to our status
+    const statusMap: Record<string, string> = {
+      Pending: "pending",
+      "Label Generated": "label_generated",
+      "Picked Up": "picked_up",
+      "In Transit": "in_transit",
+      "Out for Delivery": "out_for_delivery",
+      Delivered: "delivered",
+      Failed: "failed",
+      Returned: "returned",
+      Cancelled: "cancelled",
+    };
+
+    const mappedStatus = statusMap[trackingData.tracking_status] || "pending";
+
+    // Update shipment status in database if exists
+    const [existingShipment] = await db
+      .select()
+      .from(shipments)
+      .where(eq(shipments.awbNumber, awbNumber))
+      .limit(1);
+
+    if (existingShipment) {
+      await db
+        .update(shipments)
+        .set({
+          status: mappedStatus as any,
+          updatedAt: new Date(),
+        })
+        .where(eq(shipments.awbNumber, awbNumber));
+    }
+
+    return {
+      awbNumber: awbNumber,
+      trackingNumber: trackingData.courier_tracking_id || awbNumber,
+      status: mappedStatus,
+      statusDescription: trackingData.tracking_status,
+      estimatedDeliveryDate: trackingData.estimated_delivery_date || null,
+      events: events,
+      message: "Tracking information retrieved successfully",
     };
   }
 }

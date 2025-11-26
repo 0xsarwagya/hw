@@ -1,9 +1,24 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { ShiprocketService } from "./shiprocket.service";
 import { ShiprocketConfigService } from "./shiprocket-config.service";
+import { db, eq, orders, addresses, orderItems, shipments } from "@vcecom/db";
 
 // Mock fetch globally
 global.fetch = jest.fn();
+
+// Mock database module
+jest.mock("@vcecom/db", () => ({
+  db: {
+    select: jest.fn(),
+    insert: jest.fn(),
+    update: jest.fn(),
+  },
+  eq: jest.fn(),
+  orders: {},
+  addresses: {},
+  orderItems: {},
+  shipments: {},
+}));
 
 describe("ShiprocketService", () => {
   let service: ShiprocketService;
@@ -616,6 +631,320 @@ describe("ShiprocketService", () => {
       await expect(
         service.calculateRates("400001", "110001", 1.5, 1999.99),
       ).rejects.toThrow("Shiprocket API request failed: Invalid PIN code");
+    });
+  });
+
+  describe("createShipment", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+      // Reset config service mocks
+      mockConfigService.authenticate.mockReset();
+      mockConfigService.getBaseUrl.mockReset();
+      mockConfigService.getBaseUrl.mockReturnValue(
+        "https://apiv2.shiprocket.in/v1/external",
+      );
+      // Setup authenticate mock before initialize
+      mockConfigService.authenticate.mockResolvedValue({
+        token: "test-token",
+        expires_in: 3600,
+      });
+      service.initialize("test@example.com", "test-password");
+    });
+
+    it("should create shipment and generate label successfully", async () => {
+      const mockOrderId = "order-123";
+      const mockOrder = {
+        id: mockOrderId,
+        orderNumber: "ORD-2025-001234",
+        total: 1999.99,
+        shippingAddressId: "address-123",
+        shippingProvider: null,
+      };
+
+      const mockAddress = {
+        id: "address-123",
+        street: "123 Main St",
+        city: "Mumbai",
+        state: "Maharashtra",
+        pincode: "400001",
+        country: "India",
+      };
+
+      const mockOrderItems = [
+        { quantity: 2, price: 500, productVariantId: "variant-1" },
+        { quantity: 1, price: 999.99, productVariantId: "variant-2" },
+      ];
+
+      // Mock database queries - need to mock all 3 select calls
+      const mockOrderChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockOrder]),
+      };
+
+      const mockAddressChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockAddress]),
+      };
+
+      // Mock for prepareOrderItems (called after order and address are fetched)
+      const mockOrderItemsForPrepareChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue(mockOrderItems),
+      };
+
+      // Setup mocks in order: order, address, then orderItems (for prepareOrderItems)
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockOrderChain) // 1st call: get order
+        .mockReturnValueOnce(mockAddressChain) // 2nd call: get address
+        .mockReturnValueOnce(mockOrderItemsForPrepareChain); // 3rd call: get order items in prepareOrderItems
+
+      (db.insert as jest.Mock).mockReturnValue({
+        values: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([{ id: "shipment-123" }]),
+      });
+
+      const mockUpdateChain = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue(undefined),
+      };
+
+      (db.update as jest.Mock).mockReturnValue(mockUpdateChain);
+
+      mockConfigService.authenticate.mockResolvedValue({
+        token: "test-token",
+        expires_in: 3600,
+      });
+
+      mockConfigService.getBaseUrl.mockReturnValue(
+        "https://apiv2.shiprocket.in/v1/external",
+      );
+
+      // Mock Shiprocket API responses
+      const mockCreateResponse = {
+        shipment_id: 12345678,
+        status: "success",
+        status_code: 200,
+        onboarding_completed_now: 1,
+        awb_code: "",
+        courier_company_id: 1,
+        courier_name: "BlueDart",
+      };
+
+      const mockAwbResponse = {
+        response: {
+          awb_assign_status: 1,
+          awb_code: ["AWB123456789"],
+        },
+      };
+
+      const mockLabelResponse = {
+        label_created: 1,
+        response: {
+          label_url: "https://shiprocket.s3.amazonaws.com/labels/label_12345678.pdf",
+        },
+      };
+
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockCreateResponse,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockAwbResponse,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockLabelResponse,
+        });
+
+      // Pass weight to avoid weight calculation db.select call
+      const result = await service.createShipment(mockOrderId, 1, undefined, 1.5);
+
+      expect(result).toEqual({
+        shipmentId: 12345678,
+        awbNumber: "AWB123456789",
+        trackingNumber: "AWB123456789",
+        labelUrl: "https://shiprocket.s3.amazonaws.com/labels/label_12345678.pdf",
+        status: "label_generated",
+        message: "Shipment created and label generated successfully",
+      });
+    });
+
+    it("should throw error when order not found", async () => {
+      const mockEmptyChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([]),
+      };
+
+      (db.select as jest.Mock).mockReturnValue(mockEmptyChain);
+
+      await expect(
+        service.createShipment("invalid-order", 1, undefined, 1.5),
+      ).rejects.toThrow("Order with ID invalid-order not found");
+    });
+
+    it("should throw error when Shiprocket is not initialized", async () => {
+      const newService = new ShiprocketService(configService);
+
+      await expect(
+        newService.createShipment("order-123", 1, undefined, 1.5),
+      ).rejects.toThrow("Shiprocket is not initialized");
+    });
+  });
+
+  describe("trackShipment", () => {
+    beforeEach(() => {
+      service.initialize("test@example.com", "test-password");
+    });
+
+    it("should track shipment successfully", async () => {
+      const mockAwbNumber = "AWB123456789";
+      const mockTrackingResponse = {
+        tracking_data: {
+          tracking_status: "In Transit",
+          tracking_status_date: "2025-11-26T10:30:00Z",
+          tracking_status_location: "Mumbai",
+          courier_tracking_id: "SR123456789",
+          estimated_delivery_date: "2025-11-28",
+          shipment_track: [
+            {
+              tracking_status: "Label Generated",
+              tracking_status_date: "2025-11-26T09:00:00Z",
+              tracking_status_location: "Mumbai",
+              tracking_status_description: "Label generated",
+            },
+            {
+              tracking_status: "Picked Up",
+              tracking_status_date: "2025-11-26T10:00:00Z",
+              tracking_status_location: "Mumbai",
+              tracking_status_description: "Shipment picked up",
+            },
+            {
+              tracking_status: "In Transit",
+              tracking_status_date: "2025-11-26T10:30:00Z",
+              tracking_status_location: "Mumbai",
+              tracking_status_description: "In transit to destination",
+            },
+          ],
+        },
+      };
+
+      mockConfigService.authenticate.mockResolvedValue({
+        token: "test-token",
+        expires_in: 3600,
+      });
+
+      mockConfigService.getBaseUrl.mockReturnValue(
+        "https://apiv2.shiprocket.in/v1/external",
+      );
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockTrackingResponse,
+      });
+
+      const mockShipmentSelectChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([
+          {
+            id: "shipment-123",
+            awbNumber: mockAwbNumber,
+            status: "pending",
+          },
+        ]),
+      };
+
+      (db.select as jest.Mock).mockReturnValue(mockShipmentSelectChain);
+
+      const mockUpdateChain = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue(undefined),
+      };
+
+      (db.update as jest.Mock).mockReturnValue(mockUpdateChain);
+
+      const result = await service.trackShipment(mockAwbNumber);
+
+      expect(result).toEqual({
+        awbNumber: mockAwbNumber,
+        trackingNumber: "SR123456789",
+        status: "in_transit",
+        statusDescription: "In Transit",
+        estimatedDeliveryDate: "2025-11-28",
+        events: [
+          {
+            date: "2025-11-26T09:00:00Z",
+            status: "Label Generated",
+            location: "Mumbai",
+            description: "Label generated",
+          },
+          {
+            date: "2025-11-26T10:00:00Z",
+            status: "Picked Up",
+            location: "Mumbai",
+            description: "Shipment picked up",
+          },
+          {
+            date: "2025-11-26T10:30:00Z",
+            status: "In Transit",
+            location: "Mumbai",
+            description: "In transit to destination",
+          },
+        ],
+        message: "Tracking information retrieved successfully",
+      });
+    });
+
+    it("should handle tracking without existing shipment in database", async () => {
+      const mockAwbNumber = "AWB123456789";
+      const mockTrackingResponse = {
+        tracking_data: {
+          tracking_status: "Delivered",
+          tracking_status_date: "2025-11-27T12:00:00Z",
+          tracking_status_location: "Delhi",
+          courier_tracking_id: "SR123456789",
+          estimated_delivery_date: null,
+          shipment_track: [],
+        },
+      };
+
+      mockConfigService.authenticate.mockResolvedValue({
+        token: "test-token",
+        expires_in: 3600,
+      });
+
+      mockConfigService.getBaseUrl.mockReturnValue(
+        "https://apiv2.shiprocket.in/v1/external",
+      );
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockTrackingResponse,
+      });
+
+      (db.select as jest.Mock).mockReturnValue({
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([]),
+      });
+
+      const result = await service.trackShipment(mockAwbNumber);
+
+      expect(result.status).toBe("delivered");
+      expect(result.events).toEqual([]);
+    });
+
+    it("should throw error when Shiprocket is not initialized", async () => {
+      const newService = new ShiprocketService(configService);
+
+      await expect(
+        newService.trackShipment("AWB123456789"),
+      ).rejects.toThrow("Shiprocket is not initialized");
     });
   });
 });
