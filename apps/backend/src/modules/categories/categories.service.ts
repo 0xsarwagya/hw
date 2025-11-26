@@ -103,13 +103,21 @@ export class CategoriesService {
   async findTree() {
     const allCategories = await db.select().from(categories);
 
+    // Type for category with children
+    type CategoryWithChildren = (typeof allCategories)[0] & {
+      children: CategoryWithChildren[];
+    };
+
     // Build a map of categories by ID
-    const categoryMap = new Map(
-      allCategories.map((cat) => [cat.id, { ...cat, children: [] }]),
+    const categoryMap = new Map<string, CategoryWithChildren>(
+      allCategories.map((cat) => [
+        cat.id,
+        { ...cat, children: [] as CategoryWithChildren[] },
+      ]),
     );
 
     // Build tree structure
-    const rootCategories: typeof allCategories = [];
+    const rootCategories: CategoryWithChildren[] = [];
 
     for (const category of allCategories) {
       const categoryWithChildren = categoryMap.get(category.id)!;
