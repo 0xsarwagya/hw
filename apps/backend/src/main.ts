@@ -5,9 +5,12 @@ import { AppModule } from "./app.module";
 import { IS_PUBLIC_KEY } from "./common/decorators/public.decorator";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
+import { BuildInfoInterceptor } from "./common/interceptors/build-info.interceptor";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true, // Enable raw body for webhook signature verification
+  });
   const reflector = app.get(Reflector);
 
   // Enable validation globally
@@ -41,6 +44,9 @@ async function bootstrap() {
 
   // Apply guards globally
   app.useGlobalGuards(jwtGuard, rolesGuard);
+
+  // Apply interceptors globally
+  app.useGlobalInterceptors(new BuildInfoInterceptor());
 
   // Swagger/OpenAPI configuration
   const config = new DocumentBuilder()
