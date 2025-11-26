@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-  OnModuleInit,
-} from "@nestjs/common";
+import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { addresses, db, eq, orderItems, orders, shipments } from "@vcecom/db";
 import { ShiprocketConfigService } from "./shiprocket-config.service";
 
@@ -369,7 +364,8 @@ export class ShiprocketService implements OnModuleInit {
     }
 
     // Get seller pickup PIN code (from environment or use default)
-    const sellerPincode =
+    // Note: Currently not used in payload, but kept for future use
+    const _sellerPincode =
       pickupPincode || process.env.SELLER_PINCODE || "400001";
 
     // Prepare shipment creation payload for Shiprocket API
@@ -595,7 +591,16 @@ export class ShiprocketService implements OnModuleInit {
       await db
         .update(shipments)
         .set({
-          status: mappedStatus as any,
+          status: mappedStatus as
+            | "pending"
+            | "label_generated"
+            | "picked_up"
+            | "in_transit"
+            | "out_for_delivery"
+            | "delivered"
+            | "failed"
+            | "returned"
+            | "cancelled",
           updatedAt: new Date(),
         })
         .where(eq(shipments.awbNumber, awbNumber));
