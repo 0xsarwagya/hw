@@ -25,7 +25,9 @@
     "@vcecom/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
     "@types/pg": "^8.11.10",
+    "@vitest/ui": "^2.1.8",
     "drizzle-kit": "^0.30.0",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "vitest": "^2.1.8"
   }
 }
