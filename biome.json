@@ -7,6 +7,18 @@
   },
   "files": {
     "ignoreUnknown": true,
+    "includes": [
+      "apps/**",
+      "packages/**",
+      "configs/**",
+      "utils/**",
+      "types/**",
+      "!**/*.test.ts",
+      "!**/*.spec.ts",
+      "!**/*.test.tsx",
+      "!**/*.spec.tsx",
+      "!*.json"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -42,7 +54,9 @@
   },
   "overrides": [
     {
-      "includes": ["apps/admin/**"],
+      "includes": [
+        "apps/admin/**"
+      ],
       "linter": {
         "rules": {
           "recommended": true
@@ -50,7 +64,9 @@
       }
     },
     {
-      "includes": ["apps/backend/**"],
+      "includes": [
+        "apps/backend/**"
+      ],
       "linter": {
         "rules": {
           "correctness": {
@@ -65,7 +81,9 @@
       }
     },
     {
-      "includes": [".releaserc.*.js"],
+      "includes": [
+        ".releaserc.*.js"
+      ],
       "linter": {
         "rules": {
           "suspicious": {
