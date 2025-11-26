@@ -54,26 +54,30 @@ export class ProductsService {
     const offset = (page - 1) * limit;
 
     // Build where conditions
-    const conditions = [];
-    if (query.status) {
-      conditions.push(eq(products.status, query.status));
-    }
-    if (query.categoryId) {
-      conditions.push(eq(products.categoryId, query.categoryId));
+    let whereCondition;
+    if (query.status && query.categoryId) {
+      whereCondition = and(
+        eq(products.status, query.status),
+        eq(products.categoryId, query.categoryId),
+      );
+    } else if (query.status) {
+      whereCondition = eq(products.status, query.status);
+    } else if (query.categoryId) {
+      whereCondition = eq(products.categoryId, query.categoryId);
     }
 
     // Get total count
     const countQuery = db.select().from(products);
-    if (conditions.length > 0) {
-      countQuery.where(and(...conditions));
+    if (whereCondition) {
+      countQuery.where(whereCondition);
     }
     const allProductsForCount = await countQuery;
     const total = allProductsForCount.length;
 
     // Get products
     const productsQuery = db.select().from(products);
-    if (conditions.length > 0) {
-      productsQuery.where(and(...conditions));
+    if (whereCondition) {
+      productsQuery.where(whereCondition);
     }
     const allProducts = await productsQuery
       .limit(limit)
