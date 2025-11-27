@@ -8,7 +8,6 @@ import {
   Request,
   Response,
 } from "@nestjs/common";
-import type { Response as ExpressResponse, Request as ExpressRequest } from "express";
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -19,6 +18,10 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
+import type {
+  Request as ExpressRequest,
+  Response as ExpressResponse,
+} from "express";
 import { Public } from "../../common/decorators/public.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { AuthService } from "./auth.service";
