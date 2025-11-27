@@ -11,7 +11,8 @@
     "start": "next start",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "check-types": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

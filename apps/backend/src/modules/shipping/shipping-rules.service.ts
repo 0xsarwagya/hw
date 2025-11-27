@@ -1,14 +1,12 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { Inject } from "@nestjs/common";
-import { eq, and, desc, gte, lte } from "drizzle-orm";
-import { NodePgDatabase } from "drizzle-orm/pg-core";
-import { DATABASE_CONNECTION } from "../../common/database/database.constants";
+import { db } from "@vcecom/db";
 import {
   pincodes,
   shippingRules,
   shippingZoneRates,
   stateShippingRules,
-} from "../../../packages/db/src/schema";
+} from "@vcecom/db/src/schema";
+import { and, desc, eq, gte } from "@vcecom/db";
 import {
   checkPincodeServiceability,
   getShippingRateByZone,
@@ -35,18 +33,13 @@ export interface ShippingRateRequest {
 export class ShippingRulesService {
   private readonly logger = new Logger(ShippingRulesService.name);
 
-  constructor(
-    @Inject(DATABASE_CONNECTION)
-    private readonly db: NodePgDatabase<any>,
-  ) {}
-
   /**
    * Check if a PIN code is serviceable and get shipping details
    */
   async checkServiceability(pincode: string): Promise<ServiceabilityResult> {
     try {
       // First try to get data from database
-      const pincodeData = await this.db
+      const pincodeData = await db
         .select({
           pincode: pincodes.pincode,
           state: pincodes.state,
@@ -75,10 +68,15 @@ export class ShippingRulesService {
       }
 
       // Fallback to utility function if not in database
-      this.logger.warn(`PIN code ${pincode} not found in database, using fallback logic`);
+      this.logger.warn(
+        `PIN code ${pincode} not found in database, using fallback logic`,
+      );
       return await checkPincodeServiceability(pincode);
     } catch (error) {
-      this.logger.error(`Error checking serviceability for PIN code ${pincode}:`, error);
+      this.logger.error(
+        `Error checking serviceability for PIN code ${pincode}:`,
+        error,
+      );
       // Fallback to utility function on error
       return await checkPincodeServiceability(pincode);
     }
@@ -87,7 +85,9 @@ export class ShippingRulesService {
   /**
    * Calculate shipping rates based on PIN code and weight
    */
-  async calculateShippingRate(request: ShippingRateRequest): Promise<ShippingCalculation> {
+  async calculateShippingRate(
+    request: ShippingRateRequest,
+  ): Promise<ShippingCalculation> {
     const { pincode, weight, isCod = false } = request;
 
     // Check serviceability first
@@ -100,7 +100,7 @@ export class ShippingRulesService {
     const zone = serviceability.shippingZone;
 
     // Get zone-based rates from database
-    const zoneRates = await this.db
+    const zoneRates = await db
       .select()
       .from(shippingZoneRates)
       .where(
@@ -123,13 +123,14 @@ export class ShippingRulesService {
       baseRate = rate.baseRate;
       additionalPerKg = rate.additionalPerKg || 0;
       estimatedDays = rate.estimatedDays;
-      codCharge = rate.codCharge;
+      codCharge = rate.codCharge ?? undefined;
 
       // Check if weight exceeds max weight for this rate
       if (rate.maxWeight && weight > rate.maxWeight) {
         // Calculate additional charges
         const excessWeight = weight - rate.maxWeight;
-        const additionalCharges = Math.ceil(excessWeight / 1000) * additionalPerKg;
+        const additionalCharges =
+          Math.ceil(excessWeight / 1000) * additionalPerKg;
         baseRate += additionalCharges;
       }
     } else {
@@ -139,7 +140,7 @@ export class ShippingRulesService {
     }
 
     // Check state-specific rules
-    const stateRules = await this.db
+    const stateRules = await db
       .select()
       .from(stateShippingRules)
       .where(
@@ -163,7 +164,8 @@ export class ShippingRulesService {
     }
 
     // Calculate total
-    const codChargeAmount = (isCod && serviceability.codAvailable && codCharge) ? codCharge : 0;
+    const codChargeAmount =
+      isCod && serviceability.codAvailable && codCharge ? codCharge : 0;
     const totalRate = baseRate + codChargeAmount;
 
     return {
@@ -181,7 +183,7 @@ export class ShippingRulesService {
    * Get all active shipping rules
    */
   async getShippingRules() {
-    return await this.db
+    return await db
       .select()
       .from(shippingRules)
       .where(eq(shippingRules.isActive, true))
@@ -192,7 +194,7 @@ export class ShippingRulesService {
    * Get shipping zone rates
    */
   async getShippingZoneRates() {
-    return await this.db
+    return await db
       .select()
       .from(shippingZoneRates)
       .where(eq(shippingZoneRates.isActive, true))
@@ -203,7 +205,7 @@ export class ShippingRulesService {
    * Get state shipping rules
    */
   async getStateShippingRules() {
-    return await this.db
+    return await db
       .select()
       .from(stateShippingRules)
       .where(eq(stateShippingRules.isActive, true))
@@ -213,11 +215,13 @@ export class ShippingRulesService {
   /**
    * Bulk check serviceability for multiple PIN codes
    */
-  async checkBulkServiceability(pincodes: string[]): Promise<Map<string, ServiceabilityResult>> {
+  async checkBulkServiceability(
+    pincodeList: string[],
+  ): Promise<Map<string, ServiceabilityResult>> {
     const results = new Map<string, ServiceabilityResult>();
 
     // Get data from database first
-    const dbResults = await this.db
+    const dbResults = await db
       .select({
         pincode: pincodes.pincode,
         state: pincodes.state,
@@ -228,19 +232,17 @@ export class ShippingRulesService {
         shippingZone: pincodes.shippingZone,
       })
       .from(pincodes)
-      .where(
-        and(
-          ...pincodes.map(pin => eq(pincodes.pincode, pin)),
-        ),
-      );
+      .where(and(...pincodeList.map((pin) => eq(pincodes.pincode, pin))));
 
     // Create map of database results
-    const dbMap = new Map(dbResults.map(result => [result.pincode, result]));
+    const dbMap = new Map(dbResults.map((result) => [result.pincode, result]));
 
     // Process each PIN code
-    for (const pincode of pincodes) {
+    for (const pincode of pincodeList) {
       if (dbMap.has(pincode)) {
-        const data = dbMap.get(pincode)!;
+        const data = dbMap.get(pincode) as NonNullable<
+          ReturnType<typeof dbMap.get>
+        >;
         results.set(pincode, {
           isValid: true,
           isServiceable: data.isServiceable,

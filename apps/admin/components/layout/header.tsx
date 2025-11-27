@@ -43,7 +43,7 @@ export function Header() {
       });
       router.push("/login");
       router.refresh();
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Logout failed",
         description: "An error occurred during logout.",

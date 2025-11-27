@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { decodeJWT, isTokenExpired } from "./lib/jwt";
+import { isTokenExpired } from "./lib/jwt";
 
 /**
  * Protected routes that require authentication

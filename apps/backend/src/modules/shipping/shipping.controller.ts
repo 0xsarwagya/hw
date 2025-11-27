@@ -17,10 +17,10 @@ import {
   ShippingCalculationResponseDto,
 } from "./dto/calculate-shipping-rate.dto";
 import {
-  CheckServiceabilityDto,
-  ServiceabilityResponseDto,
   BulkCheckServiceabilityDto,
   BulkServiceabilityResponseDto,
+  CheckServiceabilityDto,
+  ServiceabilityResponseDto,
 } from "./dto/check-serviceability.dto";
 import {
   GenerateLabelDto,
@@ -32,15 +32,15 @@ import {
   NimbusPostConnectionTestResponseDto,
 } from "./dto/nimbus-post-config.dto";
 import {
-  ShiprocketConfigDto,
-  ShiprocketConfigResponseDto,
-  ShiprocketConnectionTestResponseDto,
-} from "./dto/shiprocket-config.dto";
-import {
   ShippingRuleDto,
   ShippingZoneRateDto,
   StateShippingRuleDto,
 } from "./dto/shipping-rules.dto";
+import {
+  ShiprocketConfigDto,
+  ShiprocketConfigResponseDto,
+  ShiprocketConnectionTestResponseDto,
+} from "./dto/shiprocket-config.dto";
 import { TrackShipmentResponseDto } from "./dto/track-shipment.dto";
 import { NimbusPostService } from "./nimbus-post.service";
 import { ShippingRulesService } from "./shipping-rules.service";
@@ -380,7 +380,8 @@ export class ShippingController {
   @Post("check-serviceability")
   @ApiOperation({
     summary: "Check PIN code serviceability",
-    description: "Checks if a PIN code is serviceable and returns shipping details including COD availability and zone information.",
+    description:
+      "Checks if a PIN code is serviceable and returns shipping details including COD availability and zone information.",
   })
   @ApiResponse({
     status: 200,
@@ -404,7 +405,8 @@ export class ShippingController {
   @Post("check-serviceability/bulk")
   @ApiOperation({
     summary: "Bulk check PIN code serviceability",
-    description: "Checks serviceability for multiple PIN codes in a single request.",
+    description:
+      "Checks serviceability for multiple PIN codes in a single request.",
   })
   @ApiResponse({
     status: 200,
@@ -422,14 +424,17 @@ export class ShippingController {
   async checkBulkServiceability(
     @Body() dto: BulkCheckServiceabilityDto,
   ): Promise<BulkServiceabilityResponseDto> {
-    const results = await this.shippingRulesService.checkBulkServiceability(dto.pincodes);
+    const results = await this.shippingRulesService.checkBulkServiceability(
+      dto.pincodes,
+    );
     return { results: Object.fromEntries(results) };
   }
 
   @Post("calculate-rate")
   @ApiOperation({
     summary: "Calculate shipping rate",
-    description: "Calculates shipping rate based on PIN code, weight, and COD requirements.",
+    description:
+      "Calculates shipping rate based on PIN code, weight, and COD requirements.",
   })
   @ApiResponse({
     status: 200,
@@ -483,7 +488,8 @@ export class ShippingController {
   @Roles("admin")
   @ApiOperation({
     summary: "Get shipping zone rates",
-    description: "Retrieves all active shipping zone rates. Admin access required.",
+    description:
+      "Retrieves all active shipping zone rates. Admin access required.",
   })
   @ApiResponse({
     status: 200,
@@ -506,7 +512,8 @@ export class ShippingController {
   @Roles("admin")
   @ApiOperation({
     summary: "Get state shipping rules",
-    description: "Retrieves all active state shipping rules. Admin access required.",
+    description:
+      "Retrieves all active state shipping rules. Admin access required.",
   })
   @ApiResponse({
     status: 200,

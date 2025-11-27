@@ -105,7 +105,9 @@ export function getStateFromRegionCode(regionCode: number): string | null {
  * @param pincode - PIN code to check
  * @returns Serviceability result
  */
-export async function checkPincodeServiceability(pincode: string): Promise<ServiceabilityResult> {
+export async function checkPincodeServiceability(
+  pincode: string,
+): Promise<ServiceabilityResult> {
   if (!isValidPincodeFormat(pincode)) {
     return {
       isValid: false,
@@ -138,7 +140,8 @@ export async function checkPincodeServiceability(pincode: string): Promise<Servi
   const shippingZone = getShippingZoneFromRegion(regionCode);
 
   // COD availability logic (simplified)
-  const codAvailable = isServiceable && ["metro", "zone_a"].includes(shippingZone);
+  const codAvailable =
+    isServiceable && ["metro", "zone_a"].includes(shippingZone);
 
   return {
     isValid: true,
@@ -178,7 +181,10 @@ export function getShippingZoneFromRegion(regionCode: number): string {
  * @param weight - Weight in grams
  * @returns Shipping rate or null if not available
  */
-export function getShippingRateByZone(zone: string, weight: number = 500): number | null {
+export function getShippingRateByZone(
+  zone: string,
+  weight: number = 500,
+): number | null {
   const baseRates: Record<string, number> = {
     metro: 50,
     zone_a: 80,

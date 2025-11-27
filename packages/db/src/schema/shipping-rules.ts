@@ -1,11 +1,11 @@
 import {
   boolean,
   index,
+  integer,
   pgEnum,
   pgTable,
-  text,
-  integer,
   real,
+  text,
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -36,7 +36,9 @@ export const shippingRules = pgTable(
     baseRate: real("base_rate").notNull(), // base shipping rate
     additionalRate: real("additional_rate"), // per additional unit
     codCharge: real("cod_charge"), // COD handling charge
-    paymentMethods: shippingPaymentMethodEnum("payment_methods").notNull().default("both"),
+    paymentMethods: shippingPaymentMethodEnum("payment_methods")
+      .notNull()
+      .default("both"),
     isActive: boolean("is_active").notNull().default(true),
     priority: integer("priority").notNull().default(0), // higher priority rules override lower ones
     conditions: text("conditions"), // JSON string for complex conditions
@@ -91,7 +93,9 @@ export const stateShippingRules = pgTable(
   },
   (table) => ({
     stateIdx: index("state_shipping_rules_state_idx").on(table.state),
-    stateCodeIdx: index("state_shipping_rules_state_code_idx").on(table.stateCode),
+    stateCodeIdx: index("state_shipping_rules_state_code_idx").on(
+      table.stateCode,
+    ),
     activeIdx: index("state_shipping_rules_active_idx").on(table.isActive),
   }),
 );

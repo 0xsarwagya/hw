@@ -25,28 +25,28 @@ export class ShippingRuleDto {
     example: "metro",
     required: false,
   })
-  zone?: string;
+  zone?: string | null;
 
   @ApiProperty({
     description: "State this rule applies to",
     example: "Maharashtra",
     required: false,
   })
-  state?: string;
+  state?: string | null;
 
   @ApiProperty({
     description: "Minimum weight in grams",
     example: 0,
     required: false,
   })
-  minWeight?: number;
+  minWeight?: number | null;
 
   @ApiProperty({
     description: "Maximum weight in grams",
     example: 1000,
     required: false,
   })
-  maxWeight?: number;
+  maxWeight?: number | null;
 
   @ApiProperty({
     description: "Base shipping rate",
@@ -59,14 +59,14 @@ export class ShippingRuleDto {
     example: 10,
     required: false,
   })
-  additionalRate?: number;
+  additionalRate?: number | null;
 
   @ApiProperty({
     description: "COD handling charge",
     example: 30,
     required: false,
   })
-  codCharge?: number;
+  codCharge?: number | null;
 
   @ApiProperty({
     description: "Allowed payment methods",
@@ -92,7 +92,7 @@ export class ShippingRuleDto {
     example: '{"minOrderValue": 500}',
     required: false,
   })
-  conditions?: string;
+  conditions?: string | null;
 }
 
 export class ShippingZoneRateDto {
@@ -119,7 +119,7 @@ export class ShippingZoneRateDto {
     example: 1000,
     required: false,
   })
-  maxWeight?: number;
+  maxWeight?: number | null;
 
   @ApiProperty({
     description: "Base shipping rate",
@@ -132,7 +132,7 @@ export class ShippingZoneRateDto {
     example: 20,
     required: false,
   })
-  additionalPerKg?: number;
+  additionalPerKg?: number | null;
 
   @ApiProperty({
     description: "Estimated delivery days",
@@ -151,7 +151,7 @@ export class ShippingZoneRateDto {
     example: 30,
     required: false,
   })
-  codCharge?: number;
+  codCharge?: number | null;
 
   @ApiProperty({
     description: "Whether this rate is active",
@@ -190,7 +190,7 @@ export class StateShippingRuleDto {
     example: 25,
     required: false,
   })
-  codCharge?: number;
+  codCharge?: number | null;
 
   @ApiProperty({
     description: "Whether special handling is required",
@@ -203,7 +203,7 @@ export class StateShippingRuleDto {
     example: '["liquor", "tobacco"]',
     required: false,
   })
-  restrictedItems?: string;
+  restrictedItems?: string | null;
 
   @ApiProperty({
     description: "Additional delivery days for this state",

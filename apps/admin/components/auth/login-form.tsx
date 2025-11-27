@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { adminApi, LoginCredentials } from "@/lib/api";
+import { adminApi } from "@/lib/api";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),

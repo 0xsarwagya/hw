@@ -1,11 +1,11 @@
 import {
   boolean,
   index,
+  integer,
   pgEnum,
   pgTable,
-  text,
-  integer,
   real,
+  text,
   timestamp,
 } from "drizzle-orm/pg-core";
 
@@ -36,7 +36,9 @@ export const pincodes = pgTable(
     isServiceable: boolean("is_serviceable").notNull().default(true),
     codAvailable: boolean("cod_available").notNull().default(true),
     shippingZone: shippingZoneEnum("shipping_zone").notNull().default("zone_c"),
-    estimatedDeliveryDays: integer("estimated_delivery_days").notNull().default(3),
+    estimatedDeliveryDays: integer("estimated_delivery_days")
+      .notNull()
+      .default(3),
     lastUpdated: timestamp("last_updated").defaultNow().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },

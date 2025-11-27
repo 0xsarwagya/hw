@@ -1,9 +1,9 @@
+import { resolve } from "node:path";
 import { ExecutionContext } from "@nestjs/common";
 import { NestFactory, Reflector } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import cookieParser from "cookie-parser";
 import { config } from "dotenv";
-import { resolve } from "path";
 import { AppModule } from "./app.module";
 
 // Load .env file before anything else
