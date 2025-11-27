@@ -1,0 +1,13 @@
+
+> @vestcodes/vcecom@0.0.0 test /Users/sarwagya/Desktop/personal/vestcodes/ecommerce
+> turbo run test "--testPathPattern=shipping-rules.service.spec.ts"
+
+ ERROR  unexpected argument '--testPathPattern' found
+
+  tip: to pass '--testPathPattern' as a value, use '-- --testPathPattern'
+
+Usage: turbo run <--cache-dir <CACHE_DIR>|--concurrency <CONCURRENCY>|--continue[=<CONTINUE>]|--single-package|--framework-inference [<BOOL>]|--global-deps <GLOBAL_DEPS>|--env-mode [<ENV_MODE>]|--filter <FILTER>|--affected|--output-logs <OUTPUT_LOGS>|--log-order <LOG_ORDER>|--only|--pkg-inference-root <PKG_INFERENCE_ROOT>|--log-prefix <LOG_PREFIX>|TASKS|PASS_THROUGH_ARGS>
+
+For more information, try '--help'.
+
+ ELIFECYCLE  Test failed. See above for more details.
