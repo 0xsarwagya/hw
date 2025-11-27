@@ -1,7 +1,14 @@
 "use client";
 
-import { LogOut, User } from "lucide-react";
-import { useRouter } from "next/navigation";
+import {
+  LayoutDashboard,
+  LogOut,
+  Package,
+  ShoppingCart,
+  User,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/providers/toast-provider";
 import { Button } from "@/components/ui/button";
@@ -10,6 +17,7 @@ import { decodeJWT } from "@/lib/jwt";
 
 export function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
   const [user, setUser] = useState<{ email: string; role: string } | null>(
     null,
@@ -55,8 +63,47 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <h1 className="text-lg font-semibold">VCEcom Admin</h1>
+
+          {/* Navigation Links */}
+          <nav className="hidden md:flex items-center gap-6">
+            <Link
+              href="/dashboard"
+              className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${
+                pathname === "/dashboard"
+                  ? "text-primary"
+                  : "text-muted-foreground"
+              }`}
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              Dashboard
+            </Link>
+
+            <Link
+              href="/products"
+              className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${
+                pathname.startsWith("/products")
+                  ? "text-primary"
+                  : "text-muted-foreground"
+              }`}
+            >
+              <Package className="h-4 w-4" />
+              Products
+            </Link>
+
+            <Link
+              href="/orders"
+              className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${
+                pathname.startsWith("/orders")
+                  ? "text-primary"
+                  : "text-muted-foreground"
+              }`}
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Orders
+            </Link>
+          </nav>
         </div>
         <div className="flex items-center gap-4">
           {user && (
