@@ -8,6 +8,7 @@ import {
   Request,
   Response,
 } from "@nestjs/common";
+import type { Response as ExpressResponse, Request as ExpressRequest } from "express";
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -75,7 +76,7 @@ export class AuthController {
   })
   async login(
     @Body() loginDto: LoginDto,
-    @Response({ passthrough: true }) res: Response,
+    @Response({ passthrough: true }) res: ExpressResponse,
   ): Promise<AuthResponseDto> {
     const user = await this.authService.validateUser(
       loginDto.email,
@@ -122,8 +123,8 @@ export class AuthController {
   })
   async refresh(
     @Body() refreshTokenDto: RefreshTokenDto,
-    @Request() req: Request,
-    @Response({ passthrough: true }) res: Response,
+    @Request() req: ExpressRequest,
+    @Response({ passthrough: true }) res: ExpressResponse,
   ): Promise<AuthResponseDto> {
     // Try to get refresh token from cookie first, then from body
     const refreshToken =
@@ -165,7 +166,7 @@ export class AuthController {
       },
     },
   })
-  async logout(@Response({ passthrough: true }) res: Response) {
+  async logout(@Response({ passthrough: true }) res: ExpressResponse) {
     res.clearCookie("admin_access_token", { path: "/" });
     res.clearCookie("admin_refresh_token", { path: "/" });
     return { message: "Logged out successfully" };
