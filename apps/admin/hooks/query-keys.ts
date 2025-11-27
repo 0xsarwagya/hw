@@ -5,8 +5,14 @@
 export const queryKeys = {
   admin: {
     stats: ["admin", "stats"] as const,
-    orders: (page?: number, limit?: number) =>
-      ["admin", "orders", page, limit] as const,
+    orders: (params?: {
+      page?: number;
+      limit?: number;
+      status?: string;
+      startDate?: string;
+      endDate?: string;
+    }) => ["admin", "orders", params] as const,
+    order: (id: string) => ["admin", "orders", id] as const,
     recentOrders: (limit?: number) =>
       ["admin", "orders", "recent", limit] as const,
     products: (params?: {

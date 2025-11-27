@@ -45,6 +45,24 @@ export interface PaginatedOrdersResponse {
   totalPages: number;
 }
 
+export enum OrderStatus {
+  PENDING = "pending",
+  CONFIRMED = "confirmed",
+  PROCESSING = "processing",
+  SHIPPED = "shipped",
+  DELIVERED = "delivered",
+  CANCELLED = "cancelled",
+  REFUNDED = "refunded",
+}
+
+export interface QueryOrdersParams {
+  page?: number;
+  limit?: number;
+  status?: OrderStatus;
+  startDate?: string;
+  endDate?: string;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -178,6 +196,45 @@ export const adminApi = {
     return fetchApi<PaginatedOrdersResponse>(
       `/admin/orders?page=1&limit=${limit}`,
     );
+  },
+
+  /**
+   * Get all orders with pagination and filters
+   */
+  async getOrders(
+    params?: QueryOrdersParams,
+  ): Promise<PaginatedOrdersResponse> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.status) searchParams.append("status", params.status);
+    if (params?.startDate) searchParams.append("startDate", params.startDate);
+    if (params?.endDate) searchParams.append("endDate", params.endDate);
+
+    const query = searchParams.toString();
+    return fetchApi<PaginatedOrdersResponse>(
+      `/admin/orders${query ? `?${query}` : ""}`,
+    );
+  },
+
+  /**
+   * Get order details by ID
+   */
+  async getOrder(id: string): Promise<Order> {
+    return fetchApi<Order>(`/orders/${id}`);
+  },
+
+  /**
+   * Update order status
+   */
+  async updateOrderStatus(
+    id: string,
+    status: OrderStatus,
+  ): Promise<{ message: string }> {
+    return fetchApi<{ message: string }>(`/orders/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
   },
 
   /**
