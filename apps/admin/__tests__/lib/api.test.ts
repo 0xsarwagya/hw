@@ -42,9 +42,7 @@ describe("adminApi", () => {
       );
     });
 
-    it("includes auth token when available", async () => {
-      localStorage.setItem("admin_access_token", "test-token");
-
+    it("makes request with correct options", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({}),
@@ -55,8 +53,9 @@ describe("adminApi", () => {
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
+          credentials: "include",
           headers: expect.objectContaining({
-            Authorization: "Bearer test-token",
+            "Content-Type": "application/json",
           }),
         }),
       );

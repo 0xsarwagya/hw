@@ -9,6 +9,15 @@ jest.mock("@/lib/api", () => ({
     getOrders: jest.fn(),
     getOrder: jest.fn(),
   },
+  OrderStatus: {
+    PENDING: "pending",
+    CONFIRMED: "confirmed",
+    PROCESSING: "processing",
+    SHIPPED: "shipped",
+    DELIVERED: "delivered",
+    CANCELLED: "cancelled",
+    REFUNDED: "refunded",
+  },
 }));
 
 const createWrapper = () => {

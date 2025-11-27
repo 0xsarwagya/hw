@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/table";
 import { useOrderMutations } from "@/hooks/use-order-mutations";
 import { useOrders } from "@/hooks/use-orders";
-import { Order, OrderStatus } from "@/lib/api";
+import { OrderStatus } from "@/lib/api";
 
 interface OrderListProps {
   page?: number;
@@ -72,7 +72,7 @@ export function OrderList({ page = 1, limit = 10 }: OrderListProps) {
     endDate: endDate || undefined,
   });
 
-  const handleStatusUpdate = async (
+  const _handleStatusUpdate = async (
     orderId: string,
     newStatus: OrderStatus,
   ) => {
@@ -190,7 +190,8 @@ export function OrderList({ page = 1, limit = 10 }: OrderListProps) {
             <TableBody>
               {isLoading ? (
                 Array.from({ length: limit }).map((_, i) => (
-                  <TableRow key={i}>
+                  // biome-ignore lint/suspicious/noArrayIndexKey: Skeleton components in loading state
+                  <TableRow key={`order-row-skeleton-${i}`}>
                     <TableCell>
                       <Skeleton className="h-4 w-24" />
                     </TableCell>

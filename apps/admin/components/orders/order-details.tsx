@@ -4,7 +4,6 @@ import { format } from "date-fns";
 import { CreditCard, Package, Truck, User } from "lucide-react";
 import { useToast } from "@/components/providers/toast-provider";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -23,7 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrderMutations } from "@/hooks/use-order-mutations";
 import { useOrder } from "@/hooks/use-orders";
-import { Order, OrderStatus } from "@/lib/api";
+import { OrderStatus } from "@/lib/api";
 
 interface OrderDetailsProps {
   orderId: string;
@@ -280,7 +279,10 @@ function OrderDetailsSkeleton() {
             <CardContent>
               <div className="space-y-4">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-20 w-full" />
+                  <Skeleton
+                    key={`order-item-skeleton-${i.toString()}`}
+                    className="h-20 w-full"
+                  />
                 ))}
               </div>
             </CardContent>
@@ -289,7 +291,8 @@ function OrderDetailsSkeleton() {
 
         <div className="space-y-6">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i}>
+            // biome-ignore lint/suspicious/noArrayIndexKey: Skeleton components in loading state
+            <Card key={`order-summary-skeleton-${i}`}>
               <CardHeader>
                 <Skeleton className="h-6 w-24" />
               </CardHeader>
