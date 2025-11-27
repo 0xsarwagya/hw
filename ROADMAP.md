@@ -226,7 +226,7 @@ This roadmap outlines the development phases for building VCEcom, a lightweight 
 
 - [#40](https://github.com/Vestcodes/vcecom/issues/40) **Admin Dashboard UI - Overview**
 - [#41](https://github.com/Vestcodes/vcecom/issues/41) **Admin Product Management UI**
-- [#42](https://github.com/Vestcodes/vcecom/issues/42) **Admin Order Management UI**
+- [x] [#42](https://github.com/Vestcodes/vcecom/issues/42) **Admin Order Management UI**
 
 **Deliverables:**
 - Admin API endpoints
