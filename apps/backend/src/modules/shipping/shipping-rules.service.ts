@@ -233,23 +233,33 @@ export class ShippingRulesService {
       .from(pincodes)
       .where(and(...pincodeList.map((pin) => eq(pincodes.pincode, pin))));
 
-    // Create map of database results
-    const dbMap = new Map(dbResults.map((result) => [result.pincode, result]));
+    // Create map of database results with proper typing
+    const dbMap = new Map<
+      string,
+      {
+        pincode: string;
+        state: string | null;
+        district: string | null;
+        city: string | null;
+        isServiceable: boolean;
+        codAvailable: boolean;
+        shippingZone: string;
+      }
+    >(dbResults.map((result) => [result.pincode, result]));
 
     // Process each PIN code
     for (const pincode of pincodeList) {
       if (dbMap.has(pincode)) {
-        const data = dbMap.get(pincode) as NonNullable<
-          ReturnType<typeof dbMap.get>
-        >;
+        const data = dbMap.get(pincode);
+        if (!data) continue;
         results.set(pincode, {
           isValid: true,
           isServiceable: data.isServiceable,
           codAvailable: data.codAvailable,
           shippingZone: data.shippingZone,
-          state: data.state,
-          district: data.district,
-          city: data.city,
+          state: data.state || undefined,
+          district: data.district || undefined,
+          city: data.city || undefined,
         });
       } else {
         // Fallback to utility function
