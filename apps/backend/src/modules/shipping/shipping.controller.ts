@@ -13,6 +13,16 @@ import {
   CalculateRatesResponseDto,
 } from "./dto/calculate-rates.dto";
 import {
+  CalculateShippingRateDto,
+  ShippingCalculationResponseDto,
+} from "./dto/calculate-shipping-rate.dto";
+import {
+  BulkCheckServiceabilityDto,
+  BulkServiceabilityResponseDto,
+  CheckServiceabilityDto,
+  ServiceabilityResponseDto,
+} from "./dto/check-serviceability.dto";
+import {
   GenerateLabelDto,
   GenerateLabelResponseDto,
 } from "./dto/generate-label.dto";
@@ -22,12 +32,18 @@ import {
   NimbusPostConnectionTestResponseDto,
 } from "./dto/nimbus-post-config.dto";
 import {
+  ShippingRuleDto,
+  ShippingZoneRateDto,
+  StateShippingRuleDto,
+} from "./dto/shipping-rules.dto";
+import {
   ShiprocketConfigDto,
   ShiprocketConfigResponseDto,
   ShiprocketConnectionTestResponseDto,
 } from "./dto/shiprocket-config.dto";
 import { TrackShipmentResponseDto } from "./dto/track-shipment.dto";
 import { NimbusPostService } from "./nimbus-post.service";
+import { ShippingRulesService } from "./shipping-rules.service";
 import { ShiprocketService } from "./shiprocket.service";
 
 @ApiTags("shipping")
@@ -38,6 +54,7 @@ export class ShippingController {
   constructor(
     private readonly shiprocketService: ShiprocketService,
     private readonly nimbusPostService: NimbusPostService,
+    private readonly shippingRulesService: ShippingRulesService,
   ) {}
 
   @Get("shiprocket/status")
@@ -356,5 +373,162 @@ export class ShippingController {
   })
   async testNimbusPostConnection(): Promise<NimbusPostConnectionTestResponseDto> {
     return this.nimbusPostService.testConnection();
+  }
+
+  // PIN Code Serviceability Endpoints
+
+  @Post("check-serviceability")
+  @ApiOperation({
+    summary: "Check PIN code serviceability",
+    description:
+      "Checks if a PIN code is serviceable and returns shipping details including COD availability and zone information.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Serviceability check result",
+    type: ServiceabilityResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request - Invalid PIN code format",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  async checkServiceability(
+    @Body() dto: CheckServiceabilityDto,
+  ): Promise<ServiceabilityResponseDto> {
+    return this.shippingRulesService.checkServiceability(dto.pincode);
+  }
+
+  @Post("check-serviceability/bulk")
+  @ApiOperation({
+    summary: "Bulk check PIN code serviceability",
+    description:
+      "Checks serviceability for multiple PIN codes in a single request.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Bulk serviceability check results",
+    type: BulkServiceabilityResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request - Invalid PIN codes",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  async checkBulkServiceability(
+    @Body() dto: BulkCheckServiceabilityDto,
+  ): Promise<BulkServiceabilityResponseDto> {
+    const results = await this.shippingRulesService.checkBulkServiceability(
+      dto.pincodes,
+    );
+    return { results: Object.fromEntries(results) };
+  }
+
+  @Post("calculate-rate")
+  @ApiOperation({
+    summary: "Calculate shipping rate",
+    description:
+      "Calculates shipping rate based on PIN code, weight, and COD requirements.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Shipping rate calculation result",
+    type: ShippingCalculationResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request - Invalid input or non-serviceable PIN code",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  async calculateShippingRate(
+    @Body() dto: CalculateShippingRateDto,
+  ): Promise<ShippingCalculationResponseDto> {
+    return this.shippingRulesService.calculateShippingRate({
+      pincode: dto.pincode,
+      weight: dto.weight,
+      isCod: dto.isCod || false,
+    });
+  }
+
+  // Shipping Rules Management Endpoints (Admin only)
+
+  @Get("rules")
+  @Roles("admin")
+  @ApiOperation({
+    summary: "Get all shipping rules",
+    description: "Retrieves all active shipping rules. Admin access required.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "List of shipping rules",
+    type: [ShippingRuleDto],
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  async getShippingRules(): Promise<ShippingRuleDto[]> {
+    return this.shippingRulesService.getShippingRules();
+  }
+
+  @Get("zone-rates")
+  @Roles("admin")
+  @ApiOperation({
+    summary: "Get shipping zone rates",
+    description:
+      "Retrieves all active shipping zone rates. Admin access required.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "List of shipping zone rates",
+    type: [ShippingZoneRateDto],
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  async getShippingZoneRates(): Promise<ShippingZoneRateDto[]> {
+    return this.shippingRulesService.getShippingZoneRates();
+  }
+
+  @Get("state-rules")
+  @Roles("admin")
+  @ApiOperation({
+    summary: "Get state shipping rules",
+    description:
+      "Retrieves all active state shipping rules. Admin access required.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "List of state shipping rules",
+    type: [StateShippingRuleDto],
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  async getStateShippingRules(): Promise<StateShippingRuleDto[]> {
+    return this.shippingRulesService.getStateShippingRules();
   }
 }

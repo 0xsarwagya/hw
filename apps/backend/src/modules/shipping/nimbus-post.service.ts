@@ -363,6 +363,9 @@ export class NimbusPostService implements OnModuleInit {
       );
     }
 
+    // Ensure we have a valid weight (fallback to 0.5kg minimum)
+    calculatedWeight = calculatedWeight || 0.5;
+
     // Prepare shipment creation payload for Nimbus Post API
     const shipmentPayload = {
       order_id: order.orderNumber,

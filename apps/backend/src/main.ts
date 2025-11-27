@@ -1,7 +1,16 @@
+import { resolve } from "node:path";
 import { ExecutionContext } from "@nestjs/common";
 import { NestFactory, Reflector } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import cookieParser from "cookie-parser";
+import { config } from "dotenv";
 import { AppModule } from "./app.module";
+
+// Load .env file before anything else
+// Load from apps/backend/.env or fallback to root .env
+config({ path: resolve(__dirname, "../.env") });
+config({ path: resolve(__dirname, "../../.env") }); // Fallback to root
+
 import { IS_PUBLIC_KEY } from "./common/decorators/public.decorator";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
@@ -17,6 +26,9 @@ async function bootstrap() {
   const allowedOrigins = process.env.FRONTEND_URL
     ? process.env.FRONTEND_URL.split(",")
     : ["http://localhost:3000"];
+
+  // Enable cookie parser
+  app.use(cookieParser());
 
   app.enableCors({
     origin: (origin, callback) => {

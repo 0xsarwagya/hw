@@ -43,7 +43,7 @@ describe("adminApi", () => {
     });
 
     it("includes auth token when available", async () => {
-      localStorage.setItem("admin_token", "test-token");
+      localStorage.setItem("admin_access_token", "test-token");
 
       mockFetch.mockResolvedValueOnce({
         ok: true,

@@ -61,13 +61,12 @@ async function fetchApi<T>(
   options?: RequestInit,
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-  const token = localStorage.getItem("admin_token"); // TODO: Replace with proper auth
 
   const response = await fetch(url, {
     ...options,
+    credentials: "include", // Include cookies in requests
     headers: {
       "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
       ...options?.headers,
     },
   });
@@ -135,7 +134,36 @@ export interface QueryProductsParams {
   categoryId?: string;
 }
 
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  refresh_token: string;
+}
+
 export const adminApi = {
+  /**
+   * Login user (sets httpOnly cookies)
+   */
+  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    return fetchApi<AuthResponse>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify(credentials),
+    });
+  },
+
+  /**
+   * Logout user (clears httpOnly cookies)
+   */
+  async logout(): Promise<{ message: string }> {
+    return fetchApi<{ message: string }>("/auth/logout", {
+      method: "POST",
+    });
+  },
+
   /**
    * Get dashboard statistics
    */

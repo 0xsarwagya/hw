@@ -3,6 +3,10 @@ import { renderWithQueryClient } from "@/__tests__/utils/test-utils";
 import DashboardPage from "@/app/dashboard/page";
 import { adminApi } from "@/lib/api";
 
+jest.mock("@/components/layout/header", () => ({
+  Header: () => <div>Header</div>,
+}));
+
 // Mock the API
 jest.mock("@/lib/api", () => ({
   adminApi: {

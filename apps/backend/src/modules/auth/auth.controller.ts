@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Post,
   Request,
+  Response,
 } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
@@ -60,7 +61,7 @@ export class AuthController {
   @ApiOperation({
     summary: "Login user",
     description:
-      "Authenticate user with email and password, receive JWT access token and refresh token",
+      "Authenticate user with email and password, receive JWT access token and refresh token in httpOnly cookies",
   })
   @ApiOkResponse({
     description: "User successfully authenticated",
@@ -72,12 +73,33 @@ export class AuthController {
   @ApiBadRequestResponse({
     description: "Invalid input",
   })
-  async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
+  async login(
+    @Body() loginDto: LoginDto,
+    @Response({ passthrough: true }) res: any,
+  ): Promise<AuthResponseDto> {
     const user = await this.authService.validateUser(
       loginDto.email,
       loginDto.password,
     );
-    return this.authService.login(user);
+    const tokens = await this.authService.login(user);
+
+    // Set httpOnly cookies
+    const isProduction = process.env.NODE_ENV === "production";
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: "lax" as const,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: "/",
+    };
+
+    res.cookie("admin_access_token", tokens.access_token, cookieOptions);
+    res.cookie("admin_refresh_token", tokens.refresh_token, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    return tokens;
   }
 
   @Public()
@@ -100,8 +122,53 @@ export class AuthController {
   })
   async refresh(
     @Body() refreshTokenDto: RefreshTokenDto,
+    @Request() req: any,
+    @Response({ passthrough: true }) res: any,
   ): Promise<AuthResponseDto> {
-    return this.authService.refreshToken(refreshTokenDto.refresh_token);
+    // Try to get refresh token from cookie first, then from body
+    const refreshToken =
+      req.cookies?.admin_refresh_token || refreshTokenDto.refresh_token;
+    const tokens = await this.authService.refreshToken(refreshToken);
+
+    // Update cookies
+    const isProduction = process.env.NODE_ENV === "production";
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: "lax" as const,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: "/",
+    };
+
+    res.cookie("admin_access_token", tokens.access_token, cookieOptions);
+    res.cookie("admin_refresh_token", tokens.refresh_token, cookieOptions);
+
+    return tokens;
+  }
+
+  @Public()
+  @Post("logout")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Logout user",
+    description: "Clear authentication cookies",
+  })
+  @ApiOkResponse({
+    description: "Successfully logged out",
+    schema: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          example: "Logged out successfully",
+        },
+      },
+    },
+  })
+  async logout(@Response({ passthrough: true }) res: any) {
+    res.clearCookie("admin_access_token", { path: "/" });
+    res.clearCookie("admin_refresh_token", { path: "/" });
+    return { message: "Logged out successfully" };
   }
 
   @Get("profile")

@@ -363,6 +363,9 @@ export class ShiprocketService implements OnModuleInit {
       );
     }
 
+    // Ensure we have a valid weight (fallback to 0.5kg minimum)
+    calculatedWeight = calculatedWeight || 0.5;
+
     // Get seller pickup PIN code (from environment or use default)
     // Note: Currently not used in payload, but kept for future use
     const _sellerPincode =
