@@ -1,12 +1,11 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { db } from "@vcecom/db";
+import { and, db, desc, eq, gte } from "@vcecom/db";
 import {
   pincodes,
   shippingRules,
   shippingZoneRates,
   stateShippingRules,
 } from "@vcecom/db/src/schema";
-import { and, desc, eq, gte } from "@vcecom/db";
 import {
   checkPincodeServiceability,
   getShippingRateByZone,
