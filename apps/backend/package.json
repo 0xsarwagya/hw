@@ -16,7 +16,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "check-types": "tsc --noEmit --project tsconfig.build.json"
+    "check-types": "cd ../../packages/db && pnpm build && cd ../../apps/backend && tsc --noEmit --project tsconfig.build.json"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
