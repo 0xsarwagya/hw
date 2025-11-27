@@ -18,6 +18,10 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
+import {
+  Request as ExpressRequest,
+  Response as ExpressResponse,
+} from "express";
 import { Public } from "../../common/decorators/public.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { AuthService } from "./auth.service";
@@ -75,7 +79,7 @@ export class AuthController {
   })
   async login(
     @Body() loginDto: LoginDto,
-    @Response({ passthrough: true }) res: any,
+    @Response({ passthrough: true }) res: ExpressResponse,
   ): Promise<AuthResponseDto> {
     const user = await this.authService.validateUser(
       loginDto.email,
@@ -122,8 +126,8 @@ export class AuthController {
   })
   async refresh(
     @Body() refreshTokenDto: RefreshTokenDto,
-    @Request() req: any,
-    @Response({ passthrough: true }) res: any,
+    @Request() req: ExpressRequest,
+    @Response({ passthrough: true }) res: ExpressResponse,
   ): Promise<AuthResponseDto> {
     // Try to get refresh token from cookie first, then from body
     const refreshToken =
@@ -165,7 +169,7 @@ export class AuthController {
       },
     },
   })
-  async logout(@Response({ passthrough: true }) res: any) {
+  async logout(@Response({ passthrough: true }) res: ExpressResponse) {
     res.clearCookie("admin_access_token", { path: "/" });
     res.clearCookie("admin_refresh_token", { path: "/" });
     return { message: "Logged out successfully" };
