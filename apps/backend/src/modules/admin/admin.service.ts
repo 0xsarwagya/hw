@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import {
+  addresses,
   and,
   customers,
   db,
@@ -14,6 +15,7 @@ import {
   orders,
   products,
 } from "@vcecom/db";
+import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { ProductsService } from "../products/products.service";
 import { AdminQueryCustomersDto } from "./dto/admin-customers.dto";
 import { AdminQueryOrdersDto } from "./dto/admin-orders.dto";
@@ -85,7 +87,7 @@ export class AdminService {
       .offset(offset)
       .orderBy(desc(orders.createdAt));
 
-    // Get items for each order
+    // Get items and GST breakdown for each order
     const ordersWithItems = await Promise.all(
       allOrders.map(async (order) => {
         const items = await db
@@ -93,8 +95,44 @@ export class AdminService {
           .from(orderItems)
           .where(eq(orderItems.orderId, order.id));
 
+        // Get shipping address for GST calculation
+        const [shippingAddress] = await db
+          .select({ state: addresses.state })
+          .from(addresses)
+          .where(eq(addresses.id, order.shippingAddressId))
+          .limit(1);
+
+        // Calculate GST breakdown
+        const sellerState = "Maharashtra"; // Assuming seller is in Maharashtra
+        const buyerState = shippingAddress?.state || ""; // Handle undefined shippingAddress
+
+        let totalCgst = 0;
+        let totalSgst = 0;
+        let totalIgst = 0;
+
+        for (const item of items) {
+          const gstBreakdown = calculateGstBreakdown(
+            item.price * item.quantity,
+            item.gstRate,
+            sellerState,
+            buyerState,
+          );
+          totalCgst += gstBreakdown.cgst;
+          totalSgst += gstBreakdown.sgst;
+          totalIgst += gstBreakdown.igst;
+        }
+
+        const gstBreakdown = {
+          cgst: totalCgst,
+          sgst: totalSgst,
+          igst: totalIgst,
+          totalGst: order.gstAmount,
+          isIntraState: sellerState === buyerState,
+        };
+
         return {
           ...order,
+          gstBreakdown,
           items,
         };
       }),

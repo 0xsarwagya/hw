@@ -245,8 +245,8 @@ export class CartsService {
       .from(cartItems)
       .where(eq(cartItems.cartId, cart.id));
 
-    // Recalculate totals
-    await this.recalculateCartTotals(cart.id);
+    // Recalculate totals and get GST breakdown
+    const gstBreakdown = await this.recalculateCartTotals(cart.id);
 
     // Get updated cart
     const [updatedCart] = await db
@@ -257,6 +257,13 @@ export class CartsService {
 
     return {
       ...updatedCart,
+      gstBreakdown: {
+        cgst: gstBreakdown.cgst,
+        sgst: gstBreakdown.sgst,
+        igst: gstBreakdown.igst,
+        totalGst: gstBreakdown.gstAmount,
+        isIntraState: gstBreakdown.cgst > 0 || gstBreakdown.sgst > 0,
+      },
       items,
     };
   }

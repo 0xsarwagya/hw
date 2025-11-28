@@ -194,7 +194,9 @@ export class OrdersService {
     const buyerState = shippingAddress.state;
 
     let subtotal = 0;
-    let totalGstAmount = 0;
+    let totalCgst = 0;
+    let totalSgst = 0;
+    let totalIgst = 0;
 
     // Calculate subtotal and GST for each item
     for (const item of cartItemsWithVariants) {
@@ -208,9 +210,12 @@ export class OrdersService {
         sellerState,
         buyerState,
       );
-      totalGstAmount += gstBreakdown.totalGst;
+      totalCgst += gstBreakdown.cgst;
+      totalSgst += gstBreakdown.sgst;
+      totalIgst += gstBreakdown.igst;
     }
 
+    const totalGstAmount = totalCgst + totalSgst + totalIgst;
     const shippingCost = createOrderDto.shippingCost || 0;
     const total = subtotal + totalGstAmount + shippingCost;
 
@@ -271,9 +276,20 @@ export class OrdersService {
     // Clear cart
     await this.cartsService.clearCart(userId, null);
 
+    // Calculate overall GST breakdown
+    const isIntraState = sellerState === buyerState;
+    const gstBreakdown = {
+      cgst: totalCgst,
+      sgst: totalSgst,
+      igst: totalIgst,
+      totalGst: totalGstAmount,
+      isIntraState,
+    };
+
     // Return order with items
     return {
       ...order,
+      gstBreakdown,
       items: insertedOrderItems,
     } as OrderResponseDto;
   }
@@ -294,16 +310,125 @@ export class OrdersService {
       throw new NotFoundException("Order not found");
     }
 
-    // Get order items
+    // Get order items with GST rates
     const items = await db
-      .select()
+      .select({
+        id: orderItems.id,
+        orderId: orderItems.orderId,
+        productVariantId: orderItems.productVariantId,
+        quantity: orderItems.quantity,
+        price: orderItems.price,
+        gstRate: orderItems.gstRate,
+        gstAmount: orderItems.gstAmount,
+        createdAt: orderItems.createdAt,
+        updatedAt: orderItems.updatedAt,
+      })
       .from(orderItems)
       .where(eq(orderItems.orderId, orderId));
 
+    // Get shipping address for GST calculation
+    const [shippingAddress] = await db
+      .select({ state: addresses.state })
+      .from(addresses)
+      .where(eq(addresses.id, order.shippingAddressId))
+      .limit(1);
+
+    // Calculate GST breakdown
+    const sellerState = this.getSellerState();
+    const buyerState = shippingAddress?.state || "";
+
+    let totalCgst = 0;
+    let totalSgst = 0;
+    let totalIgst = 0;
+
+    for (const item of items) {
+      const itemSubtotal = item.price * item.quantity;
+      const gstBreakdown = calculateGstBreakdown(
+        itemSubtotal,
+        item.gstRate,
+        sellerState,
+        buyerState,
+      );
+      totalCgst += gstBreakdown.cgst;
+      totalSgst += gstBreakdown.sgst;
+      totalIgst += gstBreakdown.igst;
+    }
+
+    const gstBreakdown = {
+      cgst: totalCgst,
+      sgst: totalSgst,
+      igst: totalIgst,
+      totalGst: order.gstAmount,
+      isIntraState: sellerState === buyerState,
+    };
+
     return {
       ...order,
+      gstBreakdown,
       items,
     } as OrderResponseDto;
+  }
+
+  /**
+   * Calculate GST breakdown for an order
+   */
+  private async calculateOrderGstBreakdown(
+    orderId: string,
+    shippingAddressId: string,
+  ): Promise<{
+    cgst: number;
+    sgst: number;
+    igst: number;
+    totalGst: number;
+    isIntraState: boolean;
+  }> {
+    // Get order items with GST rates
+    const items = await db
+      .select({
+        quantity: orderItems.quantity,
+        price: orderItems.price,
+        gstRate: orderItems.gstRate,
+      })
+      .from(orderItems)
+      .where(eq(orderItems.orderId, orderId));
+
+    // Get shipping address state
+    const [shippingAddress] = await db
+      .select({ state: addresses.state })
+      .from(addresses)
+      .where(eq(addresses.id, shippingAddressId))
+      .limit(1);
+
+    const sellerState = this.getSellerState();
+    const buyerState = shippingAddress?.state || "";
+
+    let totalCgst = 0;
+    let totalSgst = 0;
+    let totalIgst = 0;
+
+    // Ensure items is an array (for test compatibility)
+    const itemsArray = Array.isArray(items) ? items : [];
+
+    for (const item of itemsArray) {
+      const itemSubtotal = item.price * item.quantity;
+      const gstBreakdown = calculateGstBreakdown(
+        itemSubtotal,
+        item.gstRate,
+        sellerState,
+        buyerState,
+      );
+      totalCgst += gstBreakdown.cgst;
+      totalSgst += gstBreakdown.sgst;
+      totalIgst += gstBreakdown.igst;
+    }
+
+    return {
+      cgst: totalCgst,
+      sgst: totalSgst,
+      igst: totalIgst,
+      totalGst: totalCgst + totalSgst + totalIgst,
+      isIntraState: sellerState === buyerState,
+    };
   }
 
   /**
@@ -324,7 +449,7 @@ export class OrdersService {
       .where(whereConditions)
       .orderBy(desc(orders.createdAt));
 
-    // Get items for each order
+    // Get items and GST breakdown for each order
     const ordersWithItems = await Promise.all(
       customerOrders.map(async (order) => {
         const items = await db
@@ -332,8 +457,14 @@ export class OrdersService {
           .from(orderItems)
           .where(eq(orderItems.orderId, order.id));
 
+        const gstBreakdown = await this.calculateOrderGstBreakdown(
+          order.id,
+          order.shippingAddressId,
+        );
+
         return {
           ...order,
+          gstBreakdown,
           items,
         } as OrderResponseDto;
       }),
@@ -411,8 +542,14 @@ export class OrdersService {
       .from(orderItems)
       .where(eq(orderItems.orderId, orderId));
 
+    const gstBreakdown = await this.calculateOrderGstBreakdown(
+      orderId,
+      updatedOrder.shippingAddressId,
+    );
+
     return {
       ...updatedOrder,
+      gstBreakdown,
       items,
     } as OrderResponseDto;
   }

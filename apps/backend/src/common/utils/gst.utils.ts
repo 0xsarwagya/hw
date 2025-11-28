@@ -132,6 +132,29 @@ export function isIntraStateTransaction(
 }
 
 /**
+ * GST rates for different product categories (simplified)
+ * In real implementation, this would come from a database or configuration
+ */
+export const GST_RATES_BY_CATEGORY = {
+  essential: 0, // Essential goods (food, medicine)
+  standard: 5, // Standard goods
+  luxury: 12, // Luxury goods
+  services: 18, // Services, electronics, appliances
+  luxury_services: 28, // Luxury services, cars
+} as const;
+
+export type ProductCategory = keyof typeof GST_RATES_BY_CATEGORY;
+
+/**
+ * Get GST rate for a product category
+ * @param category - Product category
+ * @returns GST rate percentage
+ */
+export function getGstRateForCategory(category: ProductCategory): ValidGstRate {
+  return GST_RATES_BY_CATEGORY[category] as ValidGstRate;
+}
+
+/**
  * Calculate GST breakdown (CGST/SGST for intra-state, IGST for inter-state)
  * @param amount - Base amount
  * @param gstRate - GST rate percentage
@@ -172,4 +195,199 @@ export function calculateGstBreakdown(
       isIntraState: false,
     };
   }
+}
+
+/**
+ * Calculate GST for order items (products)
+ * @param items - Array of order items
+ * @param sellerState - Seller's state
+ * @param buyerState - Buyer's state
+ * @returns GST breakdown for all items
+ */
+export function calculateOrderGst(
+  items: Array<{
+    basePrice: number;
+    quantity: number;
+    gstRate: number;
+  }>,
+  sellerState: string,
+  buyerState: string,
+): {
+  totalBaseAmount: number;
+  totalGstAmount: number;
+  gstBreakdown: {
+    cgst: number;
+    sgst: number;
+    igst: number;
+  };
+  itemBreakdowns: Array<{
+    baseAmount: number;
+    gstAmount: number;
+    gstBreakdown: {
+      cgst: number;
+      sgst: number;
+      igst: number;
+    };
+  }>;
+} {
+  const isIntraState = isIntraStateTransaction(sellerState, buyerState);
+
+  let totalBaseAmount = 0;
+  let totalCgst = 0;
+  let totalSgst = 0;
+  let totalIgst = 0;
+
+  const itemBreakdowns = items.map((item) => {
+    const itemBaseAmount = item.basePrice * item.quantity;
+    const itemGstAmount = calculateGstAmount(itemBaseAmount, item.gstRate);
+
+    totalBaseAmount += itemBaseAmount;
+
+    let itemBreakdown: { cgst: number; sgst: number; igst: number };
+    if (isIntraState) {
+      const { cgst, sgst } = calculateCgstSgst(itemBaseAmount, item.gstRate);
+      itemBreakdown = { cgst, sgst, igst: 0 };
+      totalCgst += cgst;
+      totalSgst += sgst;
+    } else {
+      const igst = calculateIgst(itemBaseAmount, item.gstRate);
+      itemBreakdown = { cgst: 0, sgst: 0, igst };
+      totalIgst += igst;
+    }
+
+    return {
+      baseAmount: itemBaseAmount,
+      gstAmount: itemGstAmount,
+      gstBreakdown: itemBreakdown,
+    };
+  });
+
+  return {
+    totalBaseAmount,
+    totalGstAmount: totalCgst + totalSgst + totalIgst,
+    gstBreakdown: {
+      cgst: totalCgst,
+      sgst: totalSgst,
+      igst: totalIgst,
+    },
+    itemBreakdowns,
+  };
+}
+
+/**
+ * Calculate GST for shipping (typically 18% IGST regardless of states)
+ * @param shippingAmount - Shipping amount
+ * @returns GST breakdown for shipping
+ */
+export function calculateShippingGst(shippingAmount: number): {
+  gstRate: number;
+  gstAmount: number;
+  igst: number; // Shipping is always IGST
+} {
+  const gstRate = 18; // Standard rate for shipping services
+  const gstAmount = calculateGstAmount(shippingAmount, gstRate);
+
+  return {
+    gstRate,
+    gstAmount,
+    igst: gstAmount,
+  };
+}
+
+/**
+ * Calculate complete order GST including products and shipping
+ * @param productItems - Array of product items
+ * @param shippingAmount - Shipping amount (0 if free shipping)
+ * @param sellerState - Seller's state
+ * @param buyerState - Buyer's state
+ * @returns Complete GST calculation for the order
+ */
+export function calculateCompleteOrderGst(
+  productItems: Array<{
+    basePrice: number;
+    quantity: number;
+    gstRate: number;
+  }>,
+  shippingAmount: number,
+  sellerState: string,
+  buyerState: string,
+): {
+  products: {
+    totalBaseAmount: number;
+    totalGstAmount: number;
+    gstBreakdown: {
+      cgst: number;
+      sgst: number;
+      igst: number;
+    };
+  };
+  shipping: {
+    baseAmount: number;
+    gstRate: number;
+    gstAmount: number;
+    igst: number;
+  };
+  totals: {
+    totalBaseAmount: number;
+    totalGstAmount: number;
+    totalAmountWithGst: number;
+    gstBreakdown: {
+      cgst: number;
+      sgst: number;
+      igst: number;
+    };
+  };
+} {
+  // Calculate GST for products
+  const productGst = calculateOrderGst(productItems, sellerState, buyerState);
+
+  // Calculate GST for shipping (always IGST)
+  const shippingGst = calculateShippingGst(shippingAmount);
+
+  // Calculate totals
+  const totalBaseAmount = productGst.totalBaseAmount + shippingAmount;
+  const totalGstAmount = productGst.totalGstAmount + shippingGst.gstAmount;
+
+  return {
+    products: productGst,
+    shipping: {
+      baseAmount: shippingAmount,
+      ...shippingGst,
+    },
+    totals: {
+      totalBaseAmount,
+      totalGstAmount,
+      totalAmountWithGst: totalBaseAmount + totalGstAmount,
+      gstBreakdown: {
+        cgst: productGst.gstBreakdown.cgst,
+        sgst: productGst.gstBreakdown.sgst,
+        igst: productGst.gstBreakdown.igst + shippingGst.igst,
+      },
+    },
+  };
+}
+
+/**
+ * Validate GSTIN format (simplified validation)
+ * @param gstin - GSTIN to validate
+ * @returns true if valid format, false otherwise
+ */
+export function validateGstinFormat(gstin: string): boolean {
+  // GSTIN format: 2 digits (state code) + 10 chars PAN + 1 entity code + 1 checksum + Z
+  // Format: XXAAAAAAAAAAXZX
+  const gstinRegex =
+    /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+  return gstinRegex.test(gstin.toUpperCase());
+}
+
+/**
+ * Extract state code from GSTIN
+ * @param gstin - GSTIN
+ * @returns State code (first 2 digits)
+ */
+export function getStateCodeFromGstin(gstin: string): string | null {
+  if (!validateGstinFormat(gstin)) {
+    return null;
+  }
+  return gstin.substring(0, 2);
 }
