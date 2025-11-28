@@ -1,5 +1,0 @@
-
-> @vestcodes/vcecom@0.0.0 format-and-lint /Users/sarwagya/Desktop/personal/vestcodes/ecommerce
-> biome check .
-
-Checked 184 files in 47ms. No fixes applied.
