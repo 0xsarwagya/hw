@@ -1,5 +1,13 @@
 #!/usr/bin/env node
 
+// Load .env file before checking DATABASE_URL
+import { resolve } from "node:path";
+import { config } from "dotenv";
+
+// Load from packages/db/.env first, then root .env (root takes precedence)
+config({ path: resolve(__dirname, "../.env") });
+config({ path: resolve(__dirname, "../../.env") });
+
 // Check DATABASE_URL before importing db (which throws if not set)
 if (!process.env.DATABASE_URL) {
   console.log("⚠️  DATABASE_URL not set, skipping seed");
