@@ -62,8 +62,8 @@ export class ShippingRulesService {
         return {
           isValid: true,
           isServiceable: data.isServiceable,
-          codAvailable: data.codAvailable,
-          shippingZone: data.shippingZone,
+          codAvailable: data.codAvailable ?? false,
+          shippingZone: data.shippingZone ?? "zone_c",
           state: data.state,
           district: data.district,
           city: data.city,
@@ -103,12 +103,13 @@ export class ShippingRulesService {
     const zone = serviceability.shippingZone;
 
     // Get zone-based rates from database
+    const defaultZone = zone || "zone_c";
     const zoneRates = await db
       .select()
       .from(shippingZoneRates)
       .where(
         and(
-          eq(shippingZoneRates.zone, zone),
+          eq(shippingZoneRates.zone, defaultZone),
           eq(shippingZoneRates.isActive, true),
           gte(shippingZoneRates.minWeight, 0),
         ),
@@ -138,8 +139,9 @@ export class ShippingRulesService {
       }
     } else {
       // Fallback to utility function
-      baseRate = getShippingRateByZone(zone, weight) || 100;
-      estimatedDays = zone === "metro" ? 2 : zone === "zone_a" ? 3 : 5;
+      baseRate = getShippingRateByZone(defaultZone, weight) || 100;
+      estimatedDays =
+        defaultZone === "metro" ? 2 : defaultZone === "zone_a" ? 3 : 5;
     }
 
     // Check state-specific rules
@@ -177,8 +179,8 @@ export class ShippingRulesService {
       codCharge: codChargeAmount,
       totalRate,
       estimatedDays: estimatedDays + additionalDays,
-      isCodAvailable: serviceability.codAvailable,
-      zone,
+      isCodAvailable: serviceability.codAvailable ?? false,
+      zone: defaultZone,
     };
   }
 
