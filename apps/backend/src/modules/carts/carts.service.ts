@@ -18,10 +18,14 @@ import {
 import { calculateDiscount } from "../../common/utils/discount.utils";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { DiscountsService } from "../discounts/discounts.service";
+import { InventoryStore } from "../redis-store/stores/inventory-store";
 
 @Injectable()
 export class CartsService {
-  constructor(private readonly discountsService: DiscountsService) {}
+  constructor(
+    private readonly discountsService: DiscountsService,
+    private readonly inventoryStore: InventoryStore,
+  ) {}
   private readonly CART_EXPIRY_DAYS = 30; // Cart expires after 30 days
 
   /**
@@ -381,7 +385,6 @@ export class CartsService {
       .select({
         id: productVariants.id,
         price: productVariants.price,
-        inventory: productVariants.inventory,
         productId: productVariants.productId,
       })
       .from(productVariants)
@@ -390,13 +393,6 @@ export class CartsService {
 
     if (!variant) {
       throw new NotFoundException("Product variant not found");
-    }
-
-    // Check inventory
-    if (variant.inventory < addItemDto.quantity) {
-      throw new BadRequestException(
-        `Insufficient inventory. Available: ${variant.inventory}`,
-      );
     }
 
     // Check if item already exists in cart
@@ -415,18 +411,59 @@ export class CartsService {
       // Update quantity
       const newQuantity = existingItem.quantity + addItemDto.quantity;
 
-      // Check inventory again
-      if (variant.inventory < newQuantity) {
+      // Check available inventory using InventoryStore
+      const availableInventory =
+        (await this.inventoryStore.getAvailableInventory(
+          addItemDto.productVariantId,
+        )) ?? 0;
+      const reservedInventory = await this.inventoryStore.getReservedInventory(
+        addItemDto.productVariantId,
+      );
+      const available = availableInventory - reservedInventory;
+
+      if (available < newQuantity) {
         throw new BadRequestException(
-          `Insufficient inventory. Available: ${variant.inventory}`,
+          `Insufficient inventory. Available: ${available}`,
         );
       }
+
+      // Release old reservation and reserve new quantity
+      await this.inventoryStore.releaseInventory(
+        addItemDto.productVariantId,
+        existingItem.quantity,
+      );
+      await this.inventoryStore.reserveInventory(
+        addItemDto.productVariantId,
+        newQuantity,
+      );
 
       await db
         .update(cartItems)
         .set({ quantity: newQuantity })
         .where(eq(cartItems.id, existingItem.id));
     } else {
+      // Check available inventory using InventoryStore
+      const availableInventory =
+        (await this.inventoryStore.getAvailableInventory(
+          addItemDto.productVariantId,
+        )) ?? 0;
+      const reservedInventory = await this.inventoryStore.getReservedInventory(
+        addItemDto.productVariantId,
+      );
+      const available = availableInventory - reservedInventory;
+
+      if (available < addItemDto.quantity) {
+        throw new BadRequestException(
+          `Insufficient inventory. Available: ${available}`,
+        );
+      }
+
+      // Reserve inventory
+      await this.inventoryStore.reserveInventory(
+        addItemDto.productVariantId,
+        addItemDto.quantity,
+      );
+
       // Create new cart item
       await db.insert(cartItems).values({
         cartId: cart.id,
@@ -463,6 +500,7 @@ export class CartsService {
       .select({
         id: cartItems.id,
         productVariantId: cartItems.productVariantId,
+        quantity: cartItems.quantity,
       })
       .from(cartItems)
       .where(and(eq(cartItems.id, itemId), eq(cartItems.cartId, cart.id)))
@@ -472,20 +510,36 @@ export class CartsService {
       throw new NotFoundException("Cart item not found");
     }
 
-    // Check inventory
-    const [variant] = await db
-      .select({
-        inventory: productVariants.inventory,
-      })
-      .from(productVariants)
-      .where(eq(productVariants.id, item.productVariantId))
-      .limit(1);
+    // Calculate quantity delta
+    const delta = updateDto.quantity - item.quantity;
 
-    if (variant.inventory < updateDto.quantity) {
-      throw new BadRequestException(
-        `Insufficient inventory. Available: ${variant.inventory}`,
+    if (delta > 0) {
+      // Increasing quantity - check available inventory and reserve additional
+      const availableInventory =
+        (await this.inventoryStore.getAvailableInventory(
+          item.productVariantId,
+        )) ?? 0;
+      const reservedInventory = await this.inventoryStore.getReservedInventory(
+        item.productVariantId,
+      );
+      const available = availableInventory - reservedInventory;
+
+      if (available < updateDto.quantity) {
+        throw new BadRequestException(
+          `Insufficient inventory. Available: ${available}`,
+        );
+      }
+
+      // Reserve additional quantity
+      await this.inventoryStore.reserveInventory(item.productVariantId, delta);
+    } else if (delta < 0) {
+      // Decreasing quantity - release excess reservation
+      await this.inventoryStore.releaseInventory(
+        item.productVariantId,
+        Math.abs(delta),
       );
     }
+    // If delta === 0, no change needed
 
     // Update quantity
     await db
@@ -524,6 +578,12 @@ export class CartsService {
     if (!item) {
       throw new NotFoundException("Cart item not found");
     }
+
+    // Release reservation before deleting item
+    await this.inventoryStore.releaseInventory(
+      item.productVariantId,
+      item.quantity,
+    );
 
     // Delete item
     await db.delete(cartItems).where(eq(cartItems.id, itemId));

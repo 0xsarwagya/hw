@@ -19,12 +19,12 @@ import {
   products,
   productVariants,
   shipments,
-  sql,
 } from "@vcecom/db";
 import { calculateDiscount } from "../../common/utils/discount.utils";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { CartsService } from "../carts/carts.service";
 import { DiscountsService } from "../discounts/discounts.service";
+import { InventoryStore } from "../redis-store/stores/inventory-store";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { OrderResponseDto } from "./dto/order-response.dto";
 import {
@@ -43,6 +43,7 @@ export class OrdersService {
   constructor(
     private readonly cartsService: CartsService,
     private readonly discountsService: DiscountsService,
+    private readonly inventoryStore: InventoryStore,
   ) {}
 
   /**
@@ -178,7 +179,6 @@ export class OrdersService {
         productVariantId: cartItems.productVariantId,
         quantity: cartItems.quantity,
         price: cartItems.price,
-        variantInventory: productVariants.inventory,
         productGstRate: products.gstRate,
       })
       .from(cartItems)
@@ -188,15 +188,6 @@ export class OrdersService {
       )
       .innerJoin(products, eq(productVariants.productId, products.id))
       .where(inArray(cartItems.id, cartItemIds));
-
-    // Validate inventory
-    for (const item of cartItemsWithVariants) {
-      if (item.variantInventory < item.quantity) {
-        throw new BadRequestException(
-          `Insufficient inventory for product variant ${item.productVariantId}. Available: ${item.variantInventory}, Requested: ${item.quantity}`,
-        );
-      }
-    }
 
     // Calculate totals
     const sellerState = this.getSellerState();
@@ -358,14 +349,12 @@ export class OrdersService {
       .values(orderItemsToInsert)
       .returning();
 
-    // Update inventory (reduce stock)
+    // Commit reservations (convert reserved → consumed)
     for (const item of cartItemsWithVariants) {
-      await db
-        .update(productVariants)
-        .set({
-          inventory: sql`${productVariants.inventory} - ${item.quantity}`,
-        })
-        .where(eq(productVariants.id, item.productVariantId));
+      await this.inventoryStore.commitReservation(
+        item.productVariantId,
+        item.quantity,
+      );
     }
 
     // Clear cart

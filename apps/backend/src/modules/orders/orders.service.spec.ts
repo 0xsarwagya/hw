@@ -21,6 +21,7 @@ import {
 } from "@vcecom/db";
 import { CartsService } from "../carts/carts.service";
 import { DiscountsService } from "../discounts/discounts.service";
+import { InventoryStore } from "../redis-store/stores/inventory-store";
 import { OrdersService } from "./orders.service";
 
 // Mock dependencies
@@ -53,6 +54,8 @@ jest.mock("@vcecom/db", () => ({
 describe("OrdersService", () => {
   let service: OrdersService;
   let cartsService: CartsService;
+  let discountsService: DiscountsService;
+  let inventoryStore: InventoryStore;
 
   const mockUserId = "user-123";
   const mockCustomerId = "customer-123";
@@ -165,12 +168,24 @@ describe("OrdersService", () => {
             recordUsage: jest.fn(),
           },
         },
+        {
+          provide: InventoryStore,
+          useValue: {
+            getAvailableInventory: jest.fn(),
+            getReservedInventory: jest.fn(),
+            reserveInventory: jest.fn(),
+            releaseInventory: jest.fn(),
+            commitReservation: jest.fn(),
+            incrementInventory: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<OrdersService>(OrdersService);
     cartsService = module.get<CartsService>(CartsService);
     discountsService = module.get<DiscountsService>(DiscountsService);
+    inventoryStore = module.get<InventoryStore>(InventoryStore);
   });
 
   afterEach(() => {
@@ -218,7 +233,6 @@ describe("OrdersService", () => {
             productVariantId: mockVariantId,
             quantity: 2,
             price: 500,
-            variantInventory: 10,
             productGstRate: 18,
           },
         ]),
@@ -275,12 +289,6 @@ describe("OrdersService", () => {
         ]),
       };
 
-      // Mock update inventory
-      const mockUpdateInventoryChain = {
-        set: jest.fn().mockReturnThis(),
-        where: jest.fn().mockResolvedValue(undefined),
-      };
-
       (db.select as jest.Mock)
         .mockReturnValueOnce(mockCustomerChain)
         .mockReturnValueOnce(mockShippingAddressChain)
@@ -292,12 +300,15 @@ describe("OrdersService", () => {
         .mockReturnValueOnce(mockInsertOrderChain)
         .mockReturnValueOnce(mockInsertOrderItemsChain);
 
-      (db.update as jest.Mock).mockReturnValue(mockUpdateInventoryChain);
-
       // Mock discount service (no discount code)
       (discountsService.validateDiscount as jest.Mock).mockResolvedValue({
         isValid: false,
       });
+
+      // Mock inventory store commit
+      (inventoryStore.commitReservation as jest.Mock).mockResolvedValue(
+        undefined,
+      );
 
       (cartsService.clearCart as jest.Mock).mockResolvedValue(mockCart);
 
@@ -308,6 +319,11 @@ describe("OrdersService", () => {
       expect(result.orderNumber).toBe("ORD-2025-000001");
       expect(result.status).toBe("pending");
       expect(result.total).toBe(1230);
+      // Verify reservation is committed (converted to consumed)
+      expect(inventoryStore.commitReservation).toHaveBeenCalledWith(
+        mockVariantId,
+        2,
+      );
       expect(cartsService.clearCart).toHaveBeenCalledWith(mockUserId, null);
     });
 
@@ -381,52 +397,6 @@ describe("OrdersService", () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it("should throw BadRequestException if insufficient inventory", async () => {
-      const mockCustomerChain = {
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockResolvedValue([mockCustomer]),
-      };
-
-      const mockShippingAddressChain = {
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockResolvedValue([mockShippingAddress]),
-      };
-
-      const mockBillingAddressChain = {
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockResolvedValue([mockBillingAddress]),
-      };
-
-      const mockCartItemsChain = {
-        from: jest.fn().mockReturnThis(),
-        innerJoin: jest.fn().mockReturnThis(),
-        where: jest.fn().mockResolvedValue([
-          {
-            cartItemId: "cart-item-123",
-            productVariantId: mockVariantId,
-            quantity: 20, // More than available
-            price: 500,
-            variantInventory: 10, // Only 10 available
-            productGstRate: 18,
-          },
-        ]),
-      };
-
-      (db.select as jest.Mock)
-        .mockReturnValueOnce(mockCustomerChain)
-        .mockReturnValueOnce(mockShippingAddressChain)
-        .mockReturnValueOnce(mockBillingAddressChain)
-        .mockReturnValueOnce(mockCartItemsChain);
-
-      (cartsService.getCart as jest.Mock).mockResolvedValue(mockCart);
-
-      await expect(
-        service.create(mockUserId, createOrderDto),
-      ).rejects.toThrow(BadRequestException);
-    });
 
     it("should create order with default shipping cost when not provided", async () => {
       const createOrderDtoWithoutShippingCost = {
@@ -463,7 +433,6 @@ describe("OrdersService", () => {
             productVariantId: mockVariantId,
             quantity: 2,
             price: 500,
-            variantInventory: 10,
             productGstRate: 18,
           },
         ]),
@@ -515,11 +484,6 @@ describe("OrdersService", () => {
         ]),
       };
 
-      const mockUpdateVariantChain = {
-        set: jest.fn().mockReturnThis(),
-        where: jest.fn().mockResolvedValue([]),
-      };
-
       (db.select as jest.Mock)
         .mockReturnValueOnce(mockCustomerChain)
         .mockReturnValueOnce(mockShippingAddressChain)
@@ -529,7 +493,12 @@ describe("OrdersService", () => {
       (db.insert as jest.Mock)
         .mockReturnValueOnce(mockInsertOrderChain)
         .mockReturnValueOnce(mockInsertOrderItemsChain);
-      (db.update as jest.Mock).mockReturnValue(mockUpdateVariantChain);
+
+      // Mock inventory store commit
+      (inventoryStore.commitReservation as jest.Mock).mockResolvedValue(
+        undefined,
+      );
+
       (cartsService.clearCart as jest.Mock).mockResolvedValue(undefined);
 
       const result = await service.create(
@@ -540,6 +509,11 @@ describe("OrdersService", () => {
       expect(result).toBeDefined();
       expect(result.shippingCost).toBe(0);
       expect(result.total).toBe(1180);
+      // Verify reservation is committed (converted to consumed)
+      expect(inventoryStore.commitReservation).toHaveBeenCalledWith(
+        mockVariantId,
+        2,
+      );
     });
   });
 

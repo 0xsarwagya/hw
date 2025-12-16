@@ -191,5 +191,33 @@ describe("InventoryStore", () => {
       expect(result).toBe(0);
     });
   });
+
+  describe("commitReservation", () => {
+    it("should commit reservation (release + decrement available)", async () => {
+      const variantId = "variant-123";
+      const quantity = 3;
+
+      // Mock releaseInventory calls
+      mockRedisClient.get
+        .mockResolvedValueOnce("3") // getReservedInventory for release
+        .mockResolvedValueOnce("3"); // getReservedInventory check
+      mockRedisClient.decrby.mockResolvedValue(0);
+      // Mock incrementInventory (decrement available)
+      mockRedisClient.incrby.mockResolvedValue(7); // 10 - 3 = 7
+
+      await store.commitReservation(variantId, quantity);
+
+      // Verify reservation was released
+      expect(mockRedisClient.decrby).toHaveBeenCalledWith(
+        KEY_PATTERNS.INVENTORY_RESERVED(variantId),
+        quantity,
+      );
+      // Verify available inventory was decremented
+      expect(mockRedisClient.incrby).toHaveBeenCalledWith(
+        KEY_PATTERNS.INVENTORY_VARIANT(variantId),
+        -quantity,
+      );
+    });
+  });
 });
 
