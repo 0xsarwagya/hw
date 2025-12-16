@@ -2,6 +2,7 @@ import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { db, eq, orders, payments } from "@vcecom/db";
 import Razorpay from "razorpay";
+import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import { PaymentsService } from "./payments.service";
 import { RazorpayConfigService } from "./razorpay-config.service";
 import { CreateRazorpayOrderDto } from "./dto/create-razorpay-order.dto";
@@ -46,6 +47,7 @@ jest.mock("@vcecom/db", () => ({
 describe("PaymentsService", () => {
   let service: PaymentsService;
   let razorpayConfigService: RazorpayConfigService;
+  let mockCheckoutStore: jest.Mocked<CheckoutStore>;
   let mockRazorpayInstance: any;
 
   beforeEach(async () => {
@@ -65,12 +67,25 @@ describe("PaymentsService", () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [PaymentsService, RazorpayConfigService],
+      providers: [
+        PaymentsService,
+        RazorpayConfigService,
+        {
+          provide: CheckoutStore,
+          useValue: {
+            getSessionByOrderId: jest.fn(),
+            setPaymentIntent: jest.fn(),
+            transitionState: jest.fn(),
+            failSession: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<PaymentsService>(PaymentsService);
     razorpayConfigService =
       module.get<RazorpayConfigService>(RazorpayConfigService);
+    mockCheckoutStore = module.get<CheckoutStore>(CheckoutStore);
 
     // Mock initialize method
     jest
@@ -94,7 +109,10 @@ describe("PaymentsService", () => {
       process.env.RAZORPAY_KEY_ID = "rzp_test_1234567890";
       process.env.RAZORPAY_KEY_SECRET = "secret_1234567890";
 
-      const newService = new PaymentsService(razorpayConfigService);
+      const newService = new PaymentsService(
+        razorpayConfigService,
+        mockCheckoutStore,
+      );
       newService.onModuleInit();
 
       expect(razorpayConfigService.initialize).toHaveBeenCalledWith({
@@ -108,7 +126,10 @@ describe("PaymentsService", () => {
       delete process.env.RAZORPAY_KEY_ID;
       process.env.RAZORPAY_KEY_SECRET = "secret_1234567890";
 
-      const newService = new PaymentsService(razorpayConfigService);
+      const newService = new PaymentsService(
+        razorpayConfigService,
+        mockCheckoutStore,
+      );
       newService.onModuleInit();
 
       expect(razorpayConfigService.initialize).not.toHaveBeenCalled();
@@ -119,7 +140,10 @@ describe("PaymentsService", () => {
       process.env.RAZORPAY_KEY_ID = "rzp_test_1234567890";
       delete process.env.RAZORPAY_KEY_SECRET;
 
-      const newService = new PaymentsService(razorpayConfigService);
+      const newService = new PaymentsService(
+        razorpayConfigService,
+        mockCheckoutStore,
+      );
       newService.onModuleInit();
 
       expect(razorpayConfigService.initialize).not.toHaveBeenCalled();
@@ -135,7 +159,10 @@ describe("PaymentsService", () => {
     });
 
     it("should throw error when Razorpay is not initialized", () => {
-      const newService = new PaymentsService(razorpayConfigService);
+      const newService = new PaymentsService(
+        razorpayConfigService,
+        mockCheckoutStore,
+      );
       expect(() => newService.getRazorpayInstance()).toThrow(
         "Razorpay is not initialized. Please configure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables.",
       );
@@ -144,7 +171,10 @@ describe("PaymentsService", () => {
 
   describe("isInitialized", () => {
     it("should return false when not initialized", () => {
-      const newService = new PaymentsService(razorpayConfigService);
+      const newService = new PaymentsService(
+        razorpayConfigService,
+        mockCheckoutStore,
+      );
       expect(newService.isInitialized()).toBe(false);
     });
 
@@ -155,7 +185,10 @@ describe("PaymentsService", () => {
 
   describe("initialize", () => {
     it("should initialize Razorpay with provided credentials", () => {
-      const newService = new PaymentsService(razorpayConfigService);
+      const newService = new PaymentsService(
+        razorpayConfigService,
+        mockCheckoutStore,
+      );
       newService.initialize("rzp_test_1234567890", "secret_1234567890");
 
       expect(razorpayConfigService.initialize).toHaveBeenCalledWith({

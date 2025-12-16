@@ -7,6 +7,8 @@ import {
 } from "@nestjs/common";
 import { db, eq, orders, payments } from "@vcecom/db";
 import Razorpay from "razorpay";
+import { CheckoutState } from "../redis-store/constants/checkout-states";
+import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import {
   CreateRazorpayOrderDto,
   RazorpayOrderResponseDto,
@@ -19,7 +21,10 @@ import { RazorpayConfigService } from "./razorpay-config.service";
 export class PaymentsService implements OnModuleInit {
   private razorpay: Razorpay | null = null;
 
-  constructor(private readonly razorpayConfigService: RazorpayConfigService) {}
+  constructor(
+    private readonly razorpayConfigService: RazorpayConfigService,
+    private readonly checkoutStore: CheckoutStore,
+  ) {}
 
   /**
    * Initialize Razorpay on module initialization
@@ -126,6 +131,39 @@ export class PaymentsService implements OnModuleInit {
           updatedAt: new Date(),
         })
         .where(eq(orders.id, order.id));
+
+      // Update checkout session with payment intent and transition state
+      // Note: In the current flow, order is created before payment intent.
+      // The session may be in ORDER_CREATED state. For now, we'll handle
+      // payment states separately. Ideally, payment should happen before order creation.
+      try {
+        const sessionData = await this.checkoutStore.getSessionByOrderId(
+          order.id,
+        );
+        if (sessionData) {
+          const { sessionId, session } = sessionData;
+          await this.checkoutStore.setPaymentIntent(
+            sessionId,
+            razorpayOrder.id,
+          );
+          // Only transition if in a state that allows PAYMENT_PENDING
+          // Note: Current flow creates order first, so session may already be ORDER_CREATED
+          // In ideal flow, payment happens before order creation
+          if (session.state === CheckoutState.LOCKED) {
+            await this.checkoutStore.transitionState(
+              sessionId,
+              CheckoutState.LOCKED,
+              CheckoutState.PAYMENT_PENDING,
+            );
+          }
+        }
+      } catch (error) {
+        // Log but don't fail payment creation if state update fails
+        console.error(
+          "Failed to update checkout session with payment intent:",
+          error,
+        );
+      }
 
       return razorpayOrder as RazorpayOrderResponseDto;
     } catch (error) {
@@ -326,6 +364,31 @@ export class PaymentsService implements OnModuleInit {
         })
         .where(eq(orders.id, order.id));
     }
+
+    // Transition checkout session to PAYMENT_CONFIRMED
+    try {
+      const sessionData = await this.checkoutStore.getSessionByOrderId(
+        order.id,
+      );
+      if (sessionData) {
+        const { sessionId, session } = sessionData;
+        // Assert session is in PAYMENT_PENDING before transitioning
+        // (idempotent if already PAYMENT_CONFIRMED)
+        if (session.state === CheckoutState.PAYMENT_PENDING) {
+          await this.checkoutStore.transitionState(
+            sessionId,
+            CheckoutState.PAYMENT_PENDING,
+            CheckoutState.PAYMENT_CONFIRMED,
+          );
+        }
+      }
+    } catch (error) {
+      // Log but don't fail webhook processing if state transition fails
+      console.error(
+        "Failed to transition checkout session to PAYMENT_CONFIRMED:",
+        error,
+      );
+    }
   }
 
   /**
@@ -348,6 +411,19 @@ export class PaymentsService implements OnModuleInit {
 
     if (!order) {
       return;
+    }
+
+    // Transition checkout session to FAILED
+    try {
+      const sessionData = await this.checkoutStore.getSessionByOrderId(
+        order.id,
+      );
+      if (sessionData) {
+        await this.checkoutStore.failSession(sessionData.sessionId);
+      }
+    } catch (error) {
+      // Log but don't fail webhook processing if state transition fails
+      console.error("Failed to transition checkout session to FAILED:", error);
     }
 
     // Check if payment exists

@@ -26,6 +26,7 @@ import { calculateDiscount } from "../../common/utils/discount.utils";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { CartsService } from "../carts/carts.service";
 import { DiscountsService } from "../discounts/discounts.service";
+import { CheckoutState } from "../redis-store/constants/checkout-states";
 import { KEY_PATTERNS } from "../redis-store/constants/key-patterns";
 import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import { IdempotencyStore } from "../redis-store/stores/idempotency-store";
@@ -207,17 +208,18 @@ export class OrdersService {
     let orderResponse: OrderResponseDto;
     let lockAcquired = false;
     let cartId: string | null = null;
+    let checkoutSessionId: string | null = null;
     try {
       const customerId = await this.getCustomerId(userId);
 
-      // Validate addresses
+      // Validate addresses first (before cart check to match test expectations)
       const { shippingAddress } = await this.validateAddresses(
         customerId,
         createOrderDto.shippingAddressId,
         createOrderDto.billingAddressId,
       );
 
-      // Get customer cart
+      // Get customer cart after address validation
       const cart = await this.cartsService.getCart(userId, null);
       if (!cart || !cart.items || cart.items.length === 0) {
         throw new BadRequestException("Cart is empty");
@@ -225,10 +227,41 @@ export class OrdersService {
 
       cartId = cart.id;
 
+      // Create checkout session (CREATED state) - wrap in try-catch to not break order creation
+      try {
+        const sessionResult = await this.checkoutStore.createSession(cart.id);
+        checkoutSessionId = sessionResult.sessionId;
+      } catch (error) {
+        // Log but continue - state machine is optional for order creation
+        console.error("Failed to create checkout session:", error);
+      }
+
       // Acquire checkout lock to prevent concurrent checkout attempts
       lockAcquired = await this.checkoutStore.acquireCheckoutLock(cart.id);
       if (!lockAcquired) {
+        // Transition session to FAILED if lock acquisition fails
+        if (checkoutSessionId) {
+          try {
+            await this.checkoutStore.failSession(checkoutSessionId);
+          } catch (error) {
+            console.error("Failed to fail checkout session:", error);
+          }
+        }
         throw new ConflictException("Cart is already being checked out");
+      }
+
+      // Transition to LOCKED state (lock acquired) - wrap in try-catch
+      if (checkoutSessionId) {
+        try {
+          await this.checkoutStore.transitionState(
+            checkoutSessionId,
+            CheckoutState.CREATED,
+            CheckoutState.LOCKED,
+          );
+        } catch (error) {
+          // Log but continue - state transition failure shouldn't break order creation
+          console.error("Failed to transition to LOCKED state:", error);
+        }
       }
 
       // Get discount code from cart
@@ -237,7 +270,7 @@ export class OrdersService {
 
       // Get cart items with product variant details
       const cartItemIds = cart.items.map((item) => item.id);
-      const cartItemsWithVariants = await db
+      const cartItemsWithVariantsResult = await db
         .select({
           cartItemId: cartItems.id,
           productVariantId: cartItems.productVariantId,
@@ -252,6 +285,15 @@ export class OrdersService {
         )
         .innerJoin(products, eq(productVariants.productId, products.id))
         .where(inArray(cartItems.id, cartItemIds));
+
+      // Ensure cartItemsWithVariants is always an array
+      const cartItemsWithVariants = Array.isArray(cartItemsWithVariantsResult)
+        ? cartItemsWithVariantsResult
+        : [];
+
+      if (cartItemsWithVariants.length === 0) {
+        throw new BadRequestException("Cart items not found or invalid");
+      }
 
       // Calculate totals
       const sellerState = this.getSellerState();
@@ -361,7 +403,12 @@ export class OrdersService {
       // Generate order number
       const orderNumber = await this.generateOrderNumber();
 
-      // Create order
+      // Note: Payment states (PAYMENT_PENDING, PAYMENT_CONFIRMED) are handled
+      // separately in PaymentsService. For now, we transition directly from
+      // LOCKED to ORDER_CREATED. When payment integration is complete, we should
+      // assert PAYMENT_CONFIRMED state before creating the order.
+
+      // Create order (inventory commit happens here - critical boundary)
       const [order] = await db
         .insert(orders)
         .values({
@@ -378,6 +425,21 @@ export class OrdersService {
           billingAddressId: createOrderDto.billingAddressId,
         })
         .returning();
+
+      // Transition to ORDER_CREATED and set orderId - wrap in try-catch
+      if (checkoutSessionId) {
+        try {
+          await this.checkoutStore.setOrder(checkoutSessionId, order.id);
+          await this.checkoutStore.transitionState(
+            checkoutSessionId,
+            CheckoutState.LOCKED,
+            CheckoutState.ORDER_CREATED,
+          );
+        } catch (error) {
+          // Log but continue - state transition failure shouldn't break order creation
+          console.error("Failed to transition to ORDER_CREATED state:", error);
+        }
+      }
 
       // Record discount usage if discount was applied
       if (discountCode && discountAmount > 0) {
@@ -465,6 +527,20 @@ export class OrdersService {
         console.error("Failed to store idempotency result:", error);
       }
 
+      // Transition to COMPLETED state (order finalized)
+      if (checkoutSessionId) {
+        try {
+          await this.checkoutStore.transitionState(
+            checkoutSessionId,
+            CheckoutState.ORDER_CREATED,
+            CheckoutState.COMPLETED,
+          );
+        } catch (error) {
+          // Log but don't fail order creation if state transition fails
+          console.error("Failed to transition to COMPLETED:", error);
+        }
+      }
+
       // Release checkout lock on successful order creation
       if (lockAcquired && cartId) {
         try {
@@ -477,7 +553,17 @@ export class OrdersService {
 
       return orderResponse;
     } catch (error) {
-      // If order creation failed, release checkout lock only if it was acquired
+      // Transition session to FAILED state on error
+      if (checkoutSessionId) {
+        try {
+          await this.checkoutStore.failSession(checkoutSessionId);
+        } catch (failError) {
+          // Log but don't fail - failure handling should be best-effort
+          console.error("Failed to fail checkout session:", failError);
+        }
+      }
+
+      // Release checkout lock only if it was acquired
       if (lockAcquired && cartId) {
         try {
           await this.checkoutStore.releaseCheckoutLock(cartId);

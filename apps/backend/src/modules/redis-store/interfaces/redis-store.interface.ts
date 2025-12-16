@@ -271,6 +271,94 @@ export interface ICheckoutStore extends IRedisStore {
    * @returns True if cart is locked, false otherwise
    */
   isCheckoutLocked(cartId: string): Promise<boolean>;
+
+  /**
+   * Create a new checkout session
+   * Creates session in CREATED state
+   * @param cartId - Cart ID (UUID)
+   * @returns CheckoutSession with generated sessionId
+   */
+  createSession(cartId: string): Promise<{
+    sessionId: string;
+    session: import("../dto/checkout-session.dto").CheckoutSession;
+  }>;
+
+  /**
+   * Get checkout session by session ID
+   * @param sessionId - Checkout session ID (UUID)
+   * @returns CheckoutSession or null if not found
+   */
+  getSession(
+    sessionId: string,
+  ): Promise<import("../dto/checkout-session.dto").CheckoutSession | null>;
+
+  /**
+   * Atomically transition checkout session state
+   * Validates transition against allowlist and throws if invalid
+   * @param sessionId - Checkout session ID
+   * @param from - Expected current state
+   * @param to - Target state
+   * @throws Error if transition is invalid or session not found
+   */
+  transitionState(
+    sessionId: string,
+    from: import("../constants/checkout-states").CheckoutState,
+    to: import("../constants/checkout-states").CheckoutState,
+  ): Promise<void>;
+
+  /**
+   * Set payment intent ID in checkout session
+   * @param sessionId - Checkout session ID
+   * @param paymentIntentId - Payment intent ID (e.g., Razorpay order ID)
+   */
+  setPaymentIntent(sessionId: string, paymentIntentId: string): Promise<void>;
+
+  /**
+   * Set order ID in checkout session
+   * @param sessionId - Checkout session ID
+   * @param orderId - Order ID
+   */
+  setOrder(sessionId: string, orderId: string): Promise<void>;
+
+  /**
+   * Transition session to FAILED state and release checkout lock
+   * Helper method for failure scenarios
+   * @param sessionId - Checkout session ID
+   */
+  failSession(sessionId: string): Promise<void>;
+
+  /**
+   * Assert that session is in expected state
+   * @param sessionId - Checkout session ID
+   * @param expectedState - Expected state
+   * @throws Error if state doesn't match
+   */
+  assertState(
+    sessionId: string,
+    expectedState: import("../constants/checkout-states").CheckoutState,
+  ): Promise<void>;
+
+  /**
+   * Assert that session is in one of the allowed states
+   * @param sessionId - Checkout session ID
+   * @param allowedStates - Array of allowed states
+   * @throws Error if state is not in allowed list
+   */
+  assertStateIn(
+    sessionId: string,
+    allowedStates: import("../constants/checkout-states").CheckoutState[],
+  ): Promise<void>;
+
+  /**
+   * Get checkout session by order ID
+   * Uses reverse lookup mapping
+   * @param orderId - Order ID
+   * @returns Session data with sessionId or null if not found
+   */
+  getSessionByOrderId(orderId: string): Promise<{
+    sessionId: string;
+    session: import("../dto/checkout-session.dto").CheckoutSession;
+  } | null>;
 }
 
 /**
