@@ -55,6 +55,24 @@ export class OrderResponseDto {
   gstAmount: number;
 
   @ApiProperty({
+    description: "GST breakdown details",
+    example: {
+      cgst: 180.0,
+      sgst: 180.0,
+      igst: 0,
+      totalGst: 359.99,
+      isIntraState: true,
+    },
+  })
+  gstBreakdown: {
+    cgst: number;
+    sgst: number;
+    igst: number;
+    totalGst: number;
+    isIntraState: boolean;
+  };
+
+  @ApiProperty({
     description: "Shipping cost",
     example: 50.0,
   })

@@ -31,6 +31,7 @@ jest.mock("@vcecom/db", () => ({
   orders: {},
   orderItems: {},
   products: {},
+  addresses: {},
 }));
 
 // Mock ProductsService
@@ -114,6 +115,7 @@ describe("AdminService", () => {
           productVariantId: "variant-1",
           quantity: 2,
           price: 500,
+          gstRate: 18,
         },
       ];
 
@@ -138,12 +140,20 @@ describe("AdminService", () => {
         where: jest.fn().mockResolvedValue(mockOrderItems),
       };
 
+      const mockAddressesChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnValue({
+          limit: jest.fn().mockResolvedValue([{ state: "Maharashtra" }]), // Mock shipping address
+        }),
+      };
+
       let callCount = 0;
       (db.select as jest.Mock).mockImplementation(() => {
         callCount++;
         if (callCount === 1) return mockCountChain; // Count query
         if (callCount === 2) return mockOrdersChain; // Orders query
-        return mockOrderItemsChain; // Order items query
+        if (callCount === 3) return mockOrderItemsChain; // Order items query
+        return mockAddressesChain; // Addresses query
       });
 
       const result = await service.getAllOrders(mockQuery);
@@ -152,6 +162,13 @@ describe("AdminService", () => {
         data: [
           {
             ...mockOrders[0],
+            gstBreakdown: {
+              cgst: 90,
+              sgst: 90,
+              igst: 0,
+              totalGst: 180,
+              isIntraState: true,
+            },
             items: mockOrderItems,
           },
         ],
