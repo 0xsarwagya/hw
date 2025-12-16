@@ -1,11 +1,51 @@
 /**
  * GSTIN (GST Identification Number) utility functions
- * Provides validation for Indian GSTIN format
+ * Provides validation for Indian GSTIN format including checksum validation
  */
 
 /**
- * Validate GSTIN format
- * GSTIN is 15 characters: 2 digits (state code) + 10 characters (PAN) + 1 digit (entity number) + 1 letter (Z by default) + 1 digit (check digit)
+ * Convert character to its numeric value for checksum calculation
+ * 0-9: 0-9, A-Z: 10-35
+ */
+function charToValue(char: string): number {
+  if (char >= "0" && char <= "9") {
+    return parseInt(char, 10);
+  }
+  if (char >= "A" && char <= "Z") {
+    return char.charCodeAt(0) - 55; // A=10, B=11, ..., Z=35
+  }
+  return 0;
+}
+
+/**
+ * Calculate GSTIN checksum using mod 36 algorithm
+ * Algorithm: Process first 14 characters with factors [1,2,1,2,...]
+ * Sum the weighted values, then calculate check digit as (36 - (sum % 36)) % 36
+ * @param gstin - GSTIN string (first 14 characters)
+ * @returns Calculated check digit (0-9 or A-Z)
+ */
+function calculateGstinChecksum(gstin: string): string {
+  const factor = [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2];
+  const codePointChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let sum = 0;
+
+  // Process all 14 characters (positions 0-13)
+  for (let i = 0; i < 14; i++) {
+    const char = gstin[i];
+    const value = charToValue(char);
+    const product = value * factor[i];
+    // Sum the quotient and remainder when divided by 36
+    sum += Math.floor(product / 36) + (product % 36);
+  }
+
+  // Calculate check digit: (36 - (sum % 36)) % 36
+  const checkCodePointValue = (36 - (sum % 36)) % 36;
+  return codePointChars[checkCodePointValue];
+}
+
+/**
+ * Validate GSTIN format and structure
+ * GSTIN is 15 characters: 2 digits (state code) + 10 characters (PAN) + 1 digit (entity number) + 1 letter (Z by default) + 1 digit/letter (check digit)
  * @param gstin - GSTIN to validate
  * @returns true if format is valid, false otherwise
  */
@@ -15,15 +55,15 @@ export function isValidGstinFormat(gstin: string): boolean {
   }
 
   // Remove spaces and convert to uppercase
-  const cleaned = gstin.trim().toUpperCase();
+  const cleaned = formatGstin(gstin);
 
   // GSTIN must be exactly 15 characters
   if (cleaned.length !== 15) {
     return false;
   }
 
-  // Pattern: 2 digits (state code) + 10 alphanumeric (PAN) + 1 digit (entity number) + 1 letter (usually Z) + 1 digit (check digit)
-  const gstinPattern = /^[0-9]{2}[A-Z0-9]{10}[0-9]{1}[A-Z]{1}[0-9]{1}$/;
+  // Pattern: 2 digits (state code) + 10 alphanumeric (PAN) + 1 digit (entity number) + 1 letter (usually Z) + 1 alphanumeric (check digit)
+  const gstinPattern = /^[0-9]{2}[A-Z0-9]{10}[0-9]{1}[A-Z]{1}[0-9A-Z]{1}$/;
 
   if (!gstinPattern.test(cleaned)) {
     return false;
@@ -54,13 +94,37 @@ export function isValidGstinFormat(gstin: string): boolean {
     return false;
   }
 
-  // Character 15: Check digit (0-9)
-  const checkDigit = cleaned.substring(14, 15);
-  if (!/^[0-9]$/.test(checkDigit)) {
+  return true;
+}
+
+/**
+ * Validate GSTIN checksum
+ * Validates the check digit using mod 36 algorithm
+ * @param gstin - GSTIN to validate
+ * @returns true if checksum is valid, false otherwise
+ */
+export function validateGstinChecksum(gstin: string): boolean {
+  if (!isValidGstinFormat(gstin)) {
     return false;
   }
 
-  return true;
+  const cleaned = formatGstin(gstin);
+  const first14Chars = cleaned.substring(0, 14);
+  const providedCheckDigit = cleaned.substring(14, 15);
+
+  const calculatedCheckDigit = calculateGstinChecksum(first14Chars);
+
+  return providedCheckDigit === calculatedCheckDigit;
+}
+
+/**
+ * Validate GSTIN format and checksum
+ * Complete validation including format, structure, and checksum
+ * @param gstin - GSTIN to validate
+ * @returns true if GSTIN is valid, false otherwise
+ */
+export function validateGstin(gstin: string): boolean {
+  return validateGstinChecksum(gstin);
 }
 
 /**
