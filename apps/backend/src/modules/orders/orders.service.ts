@@ -472,7 +472,8 @@ export class OrdersService {
         try {
           await this.checkoutStore.setOrder(checkoutSessionId, order.id);
           // Determine current state for transition
-          const session = await this.checkoutStore.getSession(checkoutSessionId);
+          const session =
+            await this.checkoutStore.getSession(checkoutSessionId);
           const currentState = session?.state || CheckoutState.LOCKED;
           await this.checkoutStore.transitionState(
             checkoutSessionId,
