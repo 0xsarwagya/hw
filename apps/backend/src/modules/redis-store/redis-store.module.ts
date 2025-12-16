@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { RedisStoreService } from "./redis-store.service";
+import { InventoryRecoveryService } from "./services/inventory-recovery.service";
 import { CartStore } from "./stores/cart-store";
 import { CheckoutStore } from "./stores/checkout-store";
 import { IdempotencyStore } from "./stores/idempotency-store";
@@ -12,6 +13,7 @@ import { InventoryStore } from "./stores/inventory-store";
     CartStore,
     CheckoutStore,
     IdempotencyStore,
+    InventoryRecoveryService,
   ],
   exports: [
     RedisStoreService,

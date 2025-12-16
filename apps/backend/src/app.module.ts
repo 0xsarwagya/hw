@@ -6,6 +6,7 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { CategoriesModule } from "./modules/categories/categories.module";
 import { CustomersModule } from "./modules/customers/customers.module";
 import { DiscountsModule } from "./modules/discounts/discounts.module";
+import { InventoryModule } from "./modules/inventory/inventory.module";
 import { InvoicesModule } from "./modules/invoices/invoices.module";
 import { OrdersModule } from "./modules/orders/orders.module";
 import { PaymentsModule } from "./modules/payments/payments.module";
@@ -29,6 +30,7 @@ import { StorageModule } from "./modules/storage/storage.module";
     DiscountsModule,
     StorageModule,
     RedisStoreModule,
+    InventoryModule,
   ],
   controllers: [AppController],
 })
