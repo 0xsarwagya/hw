@@ -6,22 +6,23 @@ function createPool(): Pool {
   const databaseUrl = process.env.DATABASE_URL;
   // During build time, allow pool creation without DATABASE_URL
   // The error will be thrown when the pool is actually used
-  const isBuildTime = process.env.NODE_ENV === undefined || 
-                      process.argv.some(arg => arg.includes('build') || arg.includes('tsc'));
-  
+  const isBuildTime =
+    process.env.NODE_ENV === undefined ||
+    process.argv.some((arg) => arg.includes("build") || arg.includes("tsc"));
+
   if (!databaseUrl && !isBuildTime) {
     throw new Error(
       "DATABASE_URL environment variable is not set. Please set it to a valid PostgreSQL connection string.",
     );
   }
-  
+
   // If no DATABASE_URL during build, create a pool that will fail on actual use
   if (!databaseUrl) {
     return new Pool({
       connectionString: "postgresql://placeholder",
     });
   }
-  
+
   return new Pool({
     connectionString: databaseUrl,
   });
