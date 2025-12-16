@@ -1,24 +1,32 @@
 import { ShippingRulesService } from "./shipping-rules.service";
 
 // Mock the database package
-jest.mock("@vcecom/db", () => ({
-  db: {
-    select: jest.fn().mockReturnThis(),
-    from: jest.fn().mockReturnThis(),
-    where: jest.fn().mockResolvedValue([]),
-    limit: jest.fn().mockResolvedValue([]),
-    orderBy: jest.fn().mockResolvedValue([]),
-  },
-  eq: jest.fn(),
-  and: jest.fn(),
-  desc: jest.fn(),
-  gte: jest.fn(),
-  lte: jest.fn(),
-  pincodes: {},
-  shippingRules: {},
-  shippingZoneRates: {},
-  stateShippingRules: {},
-}));
+jest.mock("@vcecom/db", () => {
+  const createMockChain = () => {
+    const limitFn = jest.fn().mockResolvedValue([]);
+    const whereFn = jest.fn().mockReturnValue({ limit: limitFn });
+    const fromFn = jest.fn().mockReturnValue({ where: whereFn });
+    return { from: fromFn };
+  };
+
+  return {
+    db: {
+      select: jest.fn(() => createMockChain()),
+      insert: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    eq: jest.fn(),
+    and: jest.fn(),
+    desc: jest.fn(),
+    gte: jest.fn(),
+    lte: jest.fn(),
+    pincodes: {},
+    shippingRules: {},
+    shippingZoneRates: {},
+    stateShippingRules: {},
+  };
+});
 
 describe("ShippingRulesService", () => {
   let service: ShippingRulesService;
