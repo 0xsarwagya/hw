@@ -66,14 +66,45 @@ cp .env.example .env
 
 ### Environment Variables
 
-Create a `.env` file in the root directory:
+Create a `.env` file in the root directory (or copy from `.env.example`):
+
+```bash
+cp .env.example .env
+```
+
+Or manually create `.env`:
 
 ```env
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/vcecom
+DATABASE_URL=postgresql://vcecom:vcecom_dev_password@localhost:5432/vcecom
+
+# Redis
+REDIS_URL=redis://localhost:6379
 
 # Backend
 PORT=3000
+NODE_ENV=development
+
+# Admin User Seed (optional)
+ADMIN_EMAIL=admin@vcecom.local
+ADMIN_PASSWORD=Admin@123
+```
+
+### Docker Development Setup
+
+Start PostgreSQL and Redis using Docker Compose:
+
+```bash
+docker-compose -f docker-compose.dev.yaml up -d
+```
+
+This will start:
+- PostgreSQL on `localhost:5432`
+- Redis on `localhost:6379`
+
+Stop services:
+```bash
+docker-compose -f docker-compose.dev.yaml down
 ```
 
 ## 💻 Development
