@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { productCollections } from "./product-collections";
 
 export const collections = pgTable(
   "collections",
@@ -18,7 +19,7 @@ export const collections = pgTable(
 );
 
 export const collectionsRelations = relations(collections, ({ many }) => ({
-  products: many("productCollections"),
+  products: many(productCollections),
 }));
 
 export type Collection = typeof collections.$inferSelect;
