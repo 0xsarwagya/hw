@@ -1,14 +1,20 @@
-# VCEcom - Lightweight Ecommerce Backend
+# VCEcom - Production-Ready, India-First Headless Commerce Platform
 
 > Built with ❤️ by [Vestcodes](https://vestcodes.co)
 
-A modern, lightweight ecommerce backend built with NestJS, Drizzle ORM, and Next.js. Inspired by Medusa.js but designed to be more lightweight and developer-friendly.
+A production-ready, India-first headless ecommerce platform built with NestJS, Drizzle ORM, and Next.js. Designed for the Indian market with deep GST integration, Razorpay payments, and seamless shipping provider integrations.
 
-**VCEcom** is an India-focused ecommerce platform developed by Vestcodes, featuring Razorpay integration, Indian shipping providers (Shiprocket, Nimbus Post, Unicommerce), and GST compliance.
+**VCEcom** is a complete ecommerce solution developed by Vestcodes, featuring **native GST compliance** (CGST/SGST/IGST), Razorpay integration, Indian shipping providers (Shiprocket, Nimbus Post), and comprehensive order lifecycle management.
 
 ## 🎯 Overview
 
-VCEcom is a headless ecommerce platform built as a monorepo using Turborepo. It provides a flexible, type-safe backend API for building modern ecommerce experiences with a focus on performance, developer experience, and extensibility.
+VCEcom is a production-ready, India-first headless commerce platform built as a monorepo using Turborepo. It provides a flexible, type-safe backend API for building modern ecommerce experiences with **native GST compliance**, comprehensive order lifecycle management, and deep integrations with Indian payment and shipping providers.
+
+**Core Differentiators:**
+- **GST-First Architecture**: GST calculation (CGST/SGST/IGST) is built into the core order and cart systems, not bolted on
+- **Complete Order Lifecycle**: State machine-driven order management with idempotent operations
+- **India-Optimized**: PIN code validation, Indian address formats, GSTIN validation, and phone number normalization
+- **Production-Ready**: Type-safe, tested, and documented APIs ready for scale
 
 ## 🏗️ Architecture
 
@@ -189,21 +195,23 @@ ecommerce/
 - ✅ Type-safe database queries
 - ✅ Code formatting and linting with Biome
 - ✅ Shared TypeScript configurations
-- ✅ Product catalog management
-- ✅ Shopping cart functionality
-- ✅ Order management system
-- ✅ Customer management
-- ✅ Payment processing integration (Razorpay)
-- ✅ Shipping and fulfillment (Shiprocket, Nimbus Post)
-- ✅ GST compliance (CGST/SGST/IGST)
-- ✅ Tax invoice generation
-- ✅ Indian address & phone validation
-- ✅ GSTIN validation
-- ✅ Product search & filtering
-- ✅ Pagination support
-- ✅ Discount code system
-- ✅ Cart discount application
-- ✅ Admin dashboard (basic)
+- ✅ **GST-First Architecture**: Native CGST/SGST/IGST calculation integrated into cart and orders
+- ✅ **Complete Order Lifecycle**: State machine-driven order management (pending → confirmed → processing → shipped → delivered → refunded)
+- ✅ **Idempotent Operations**: Safe retry mechanisms for order creation and status updates
+- ✅ Product catalog management with variants
+- ✅ Shopping cart with real-time GST calculations
+- ✅ Order management system with state transitions
+- ✅ Customer management with Indian address validation
+- ✅ Payment processing integration (Razorpay) with webhooks
+- ✅ Shipping and fulfillment (Shiprocket, Nimbus Post) with tracking
+- ✅ Tax invoice generation (PDF) with GST breakdown
+- ✅ Indian address & phone validation (PIN code, state, district)
+- ✅ GSTIN format & structure validation
+- ✅ Product search & filtering (full-text, SKU, advanced filters)
+- ✅ Pagination support (page-based & cursor-based)
+- ✅ Discount code system (STANDARD & BUY_GET types)
+- ✅ Cart discount application with validation
+- ✅ Admin dashboard (basic) with order management UI
 
 ### Planned
 
