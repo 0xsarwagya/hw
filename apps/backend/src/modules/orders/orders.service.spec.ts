@@ -21,6 +21,7 @@ import {
 } from "@vcecom/db";
 import { CartsService } from "../carts/carts.service";
 import { DiscountsService } from "../discounts/discounts.service";
+import { IdempotencyStore } from "../redis-store/stores/idempotency-store";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
 import { OrdersService } from "./orders.service";
 
@@ -56,6 +57,7 @@ describe("OrdersService", () => {
   let cartsService: CartsService;
   let discountsService: DiscountsService;
   let inventoryStore: InventoryStore;
+  let idempotencyStore: IdempotencyStore;
 
   const mockUserId = "user-123";
   const mockCustomerId = "customer-123";
@@ -177,6 +179,16 @@ describe("OrdersService", () => {
             releaseInventory: jest.fn(),
             commitReservation: jest.fn(),
             incrementInventory: jest.fn(),
+            releaseCartReservations: jest.fn(),
+          },
+        },
+        {
+          provide: IdempotencyStore,
+          useValue: {
+            getIdempotencyResult: jest.fn(),
+            checkAndSet: jest.fn(),
+            set: jest.fn(),
+            deleteIdempotency: jest.fn(),
           },
         },
       ],
@@ -186,6 +198,7 @@ describe("OrdersService", () => {
     cartsService = module.get<CartsService>(CartsService);
     discountsService = module.get<DiscountsService>(DiscountsService);
     inventoryStore = module.get<InventoryStore>(InventoryStore);
+    idempotencyStore = module.get<IdempotencyStore>(IdempotencyStore);
   });
 
   afterEach(() => {
@@ -300,15 +313,23 @@ describe("OrdersService", () => {
         .mockReturnValueOnce(mockInsertOrderChain)
         .mockReturnValueOnce(mockInsertOrderItemsChain);
 
+      // Mock idempotency store
+      (idempotencyStore.getIdempotencyResult as jest.Mock).mockResolvedValue(
+        null,
+      );
+      (idempotencyStore.checkAndSet as jest.Mock).mockResolvedValue(true);
+      (idempotencyStore.set as jest.Mock).mockResolvedValue(undefined);
+
       // Mock discount service (no discount code)
       (discountsService.validateDiscount as jest.Mock).mockResolvedValue({
         isValid: false,
       });
 
-      // Mock inventory store commit
-      (inventoryStore.commitReservation as jest.Mock).mockResolvedValue(
+      // Mock inventory store
+      (inventoryStore.releaseCartReservations as jest.Mock).mockResolvedValue(
         undefined,
       );
+      (inventoryStore.incrementInventory as jest.Mock).mockResolvedValue(8);
 
       (cartsService.clearCart as jest.Mock).mockResolvedValue(mockCart);
 
@@ -319,12 +340,81 @@ describe("OrdersService", () => {
       expect(result.orderNumber).toBe("ORD-2025-000001");
       expect(result.status).toBe("pending");
       expect(result.total).toBe(1230);
-      // Verify reservation is committed (converted to consumed)
-      expect(inventoryStore.commitReservation).toHaveBeenCalledWith(
-        mockVariantId,
-        2,
+      // Verify cart reservations are released
+      expect(inventoryStore.releaseCartReservations).toHaveBeenCalledWith(
+        mockCartId,
       );
       expect(cartsService.clearCart).toHaveBeenCalledWith(mockUserId, null);
+    });
+
+    it("should return stored result for idempotent order replay", async () => {
+      const createOrderDto = {
+        shippingAddressId: mockShippingAddressId,
+        billingAddressId: mockBillingAddressId,
+        shippingCost: 50,
+        idempotencyKey: "test-idempotency-key",
+      };
+
+      const storedOrderResult = {
+        id: mockOrderId,
+        orderNumber: "ORD-2025-000001",
+        status: "pending",
+        total: 1230,
+        items: [],
+      };
+
+      // Mock idempotency store to return stored result
+      (idempotencyStore.getIdempotencyResult as jest.Mock).mockResolvedValue(
+        storedOrderResult,
+      );
+
+      const result = await service.create(mockUserId, createOrderDto);
+
+      // Should return stored result without creating new order
+      expect(result).toEqual(storedOrderResult);
+      expect(idempotencyStore.getIdempotencyResult).toHaveBeenCalledWith(
+        "order:create",
+        "test-idempotency-key",
+      );
+      // Should not proceed with order creation
+      expect(db.insert).not.toHaveBeenCalled();
+    });
+
+    it("should delete idempotency key on order creation failure", async () => {
+      const createOrderDto = {
+        shippingAddressId: mockShippingAddressId,
+        billingAddressId: mockBillingAddressId,
+        shippingCost: 50,
+      };
+
+      // Mock idempotency store
+      (idempotencyStore.getIdempotencyResult as jest.Mock).mockResolvedValue(
+        null,
+      );
+      (idempotencyStore.checkAndSet as jest.Mock).mockResolvedValue(true);
+      (idempotencyStore.deleteIdempotency as jest.Mock).mockResolvedValue(
+        undefined,
+      );
+
+      // Mock getCart for idempotency key generation (first call succeeds)
+      (cartsService.getCart as jest.Mock)
+        .mockResolvedValueOnce(mockCart) // For idempotency key generation
+        .mockRejectedValueOnce(new Error("Cart error")); // For actual order creation
+
+      // Mock getCustomerId to throw error (this happens inside try block)
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([]), // No customer found
+      };
+      (db.select as jest.Mock).mockReturnValue(mockCustomerChain);
+
+      await expect(
+        service.create(mockUserId, createOrderDto),
+      ).rejects.toThrow(NotFoundException);
+
+      // Should delete idempotency key on failure
+      expect(idempotencyStore.deleteIdempotency).toHaveBeenCalled();
     });
 
     it("should throw NotFoundException if customer not found", async () => {
@@ -494,10 +584,18 @@ describe("OrdersService", () => {
         .mockReturnValueOnce(mockInsertOrderChain)
         .mockReturnValueOnce(mockInsertOrderItemsChain);
 
-      // Mock inventory store commit
-      (inventoryStore.commitReservation as jest.Mock).mockResolvedValue(
+      // Mock idempotency store
+      (idempotencyStore.getIdempotencyResult as jest.Mock).mockResolvedValue(
+        null,
+      );
+      (idempotencyStore.checkAndSet as jest.Mock).mockResolvedValue(true);
+      (idempotencyStore.set as jest.Mock).mockResolvedValue(undefined);
+
+      // Mock inventory store - new implementation uses releaseCartReservations and incrementInventory
+      (inventoryStore.releaseCartReservations as jest.Mock).mockResolvedValue(
         undefined,
       );
+      (inventoryStore.incrementInventory as jest.Mock).mockResolvedValue(8);
 
       (cartsService.clearCart as jest.Mock).mockResolvedValue(undefined);
 
@@ -509,10 +607,14 @@ describe("OrdersService", () => {
       expect(result).toBeDefined();
       expect(result.shippingCost).toBe(0);
       expect(result.total).toBe(1180);
-      // Verify reservation is committed (converted to consumed)
-      expect(inventoryStore.commitReservation).toHaveBeenCalledWith(
+      // Verify cart reservations are released
+      expect(inventoryStore.releaseCartReservations).toHaveBeenCalledWith(
+        mockCartId,
+      );
+      // Verify available inventory is decremented
+      expect(inventoryStore.incrementInventory).toHaveBeenCalledWith(
         mockVariantId,
-        2,
+        -2,
       );
     });
   });

@@ -25,4 +25,11 @@ export class CreateOrderDto {
     required: false,
   })
   shippingCost?: number;
+
+  @ApiProperty({
+    description: "Idempotency key for ensuring order creation is idempotent",
+    example: "unique-request-id-12345",
+    required: false,
+  })
+  idempotencyKey?: string;
 }

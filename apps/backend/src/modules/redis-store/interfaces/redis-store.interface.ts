@@ -42,14 +42,28 @@ export interface IRedisStore {
  */
 export interface IInventoryStore extends IRedisStore {
   /**
-   * Reserve inventory for a variant
+   * Reserve inventory for a variant (atomic operation)
+   * @param cartId - Cart ID (UUID)
    * @param variantId - Product variant ID
    * @param quantity - Quantity to reserve
    * @param ttlSeconds - Optional TTL for reservation (default: 15 minutes)
    */
   reserveInventory(
+    cartId: string,
     variantId: string,
     quantity: number,
+    ttlSeconds?: number,
+  ): Promise<void>;
+
+  /**
+   * Refresh TTL for a reservation
+   * @param cartId - Cart ID (UUID)
+   * @param variantId - Product variant ID
+   * @param ttlSeconds - Optional TTL override (default: 15 minutes)
+   */
+  refreshReservationTTL(
+    cartId: string,
+    variantId: string,
     ttlSeconds?: number,
   ): Promise<void>;
 
@@ -96,6 +110,43 @@ export interface IInventoryStore extends IRedisStore {
    * @returns Reserved inventory count
    */
   getReservedInventory(variantId: string): Promise<number>;
+
+  /**
+   * Get all reservations for a cart
+   * @param cartId - Cart ID (UUID)
+   * @returns Array of reservations with variantId and quantity
+   */
+  getCartReservations(
+    cartId: string,
+  ): Promise<Array<{ variantId: string; quantity: number }>>;
+
+  /**
+   * Release all reservations for a cart
+   * @param cartId - Cart ID (UUID)
+   */
+  releaseCartReservations(cartId: string): Promise<void>;
+
+  /**
+   * Get a specific reservation
+   * @param cartId - Cart ID (UUID)
+   * @param variantId - Product variant ID
+   * @returns Reservation quantity or null if not found
+   */
+  getReservation(cartId: string, variantId: string): Promise<number | null>;
+
+  /**
+   * Reconcile reservations (for recovery after Redis restart)
+   * Detects and fixes expired reservations, orphaned reservations, negative states,
+   * impossible states, and aggregated counter mismatches
+   * @returns Object with detailed reconciliation metrics
+   */
+  reconcileReservations(): Promise<{
+    released: number;
+    inconsistencies: number;
+    orphaned: number;
+    negativeCorrections: number;
+    variantsProcessed: number;
+  }>;
 }
 
 /**

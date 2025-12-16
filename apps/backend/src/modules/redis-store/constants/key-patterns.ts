@@ -13,11 +13,19 @@ export const KEY_PATTERNS = {
   INVENTORY_VARIANT: (variantId: string) => `inventory:variant:${variantId}`,
 
   /**
-   * Reserved inventory keys
+   * Reserved inventory keys (aggregated per variant)
    * Format: inventory:reserved:{variantId}
    * TTL: None (persistent, managed separately)
    */
   INVENTORY_RESERVED: (variantId: string) => `inventory:reserved:${variantId}`,
+
+  /**
+   * Individual reservation keys (per cart/variant)
+   * Format: inventory:reservation:{cartId}:{variantId}
+   * TTL: 15 minutes (default), refreshed on cart updates
+   */
+  INVENTORY_RESERVATION: (cartId: string, variantId: string) =>
+    `inventory:reservation:${cartId}:${variantId}`,
 
   /**
    * Cart keys for customers

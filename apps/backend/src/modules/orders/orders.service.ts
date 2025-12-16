@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   BadRequestException,
   Injectable,
@@ -24,6 +25,8 @@ import { calculateDiscount } from "../../common/utils/discount.utils";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { CartsService } from "../carts/carts.service";
 import { DiscountsService } from "../discounts/discounts.service";
+import { KEY_PATTERNS } from "../redis-store/constants/key-patterns";
+import { IdempotencyStore } from "../redis-store/stores/idempotency-store";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { OrderResponseDto } from "./dto/order-response.dto";
@@ -44,6 +47,7 @@ export class OrdersService {
     private readonly cartsService: CartsService,
     private readonly discountsService: DiscountsService,
     private readonly inventoryStore: InventoryStore,
+    private readonly idempotencyStore: IdempotencyStore,
   ) {}
 
   /**
@@ -152,230 +156,319 @@ export class OrdersService {
    * Create order from cart
    */
   async create(userId: string, createOrderDto: CreateOrderDto) {
-    const customerId = await this.getCustomerId(userId);
+    // Generate or use provided idempotency key
+    let idempotencyKey = createOrderDto.idempotencyKey;
+    if (!idempotencyKey) {
+      // Generate key from userId + cartId + timestamp (rounded to minute)
+      const cart = await this.cartsService.getCart(userId, null);
+      const cartId = cart?.id || "unknown";
+      const timestamp = Math.floor(Date.now() / 60000); // Round to minute
+      const hashInput = `${userId}:${cartId}:${timestamp}`;
+      idempotencyKey = createHash("sha256").update(hashInput).digest("hex");
+    }
 
-    // Validate addresses
-    const { shippingAddress } = await this.validateAddresses(
-      customerId,
-      createOrderDto.shippingAddressId,
-      createOrderDto.billingAddressId,
+    // Check idempotency
+    const operation = "order:create";
+    const existingResult =
+      await this.idempotencyStore.getIdempotencyResult<OrderResponseDto>(
+        operation,
+        idempotencyKey,
+      );
+
+    if (existingResult) {
+      // Return stored result for duplicate request
+      return existingResult;
+    }
+
+    // Check if idempotency key was already set (race condition check)
+    const wasSet = await this.idempotencyStore.checkAndSet(
+      operation,
+      idempotencyKey,
+      { pending: true }, // Temporary value
     );
 
-    // Get customer cart
-    const cart = await this.cartsService.getCart(userId, null);
-    if (!cart || !cart.items || cart.items.length === 0) {
-      throw new BadRequestException("Cart is empty");
-    }
-
-    // Get discount code from cart
-    const discountCode =
-      "discountCode" in cart ? (cart.discountCode as string | null) : null;
-
-    // Get cart items with product variant details
-    const cartItemIds = cart.items.map((item) => item.id);
-    const cartItemsWithVariants = await db
-      .select({
-        cartItemId: cartItems.id,
-        productVariantId: cartItems.productVariantId,
-        quantity: cartItems.quantity,
-        price: cartItems.price,
-        productGstRate: products.gstRate,
-      })
-      .from(cartItems)
-      .innerJoin(
-        productVariants,
-        eq(cartItems.productVariantId, productVariants.id),
-      )
-      .innerJoin(products, eq(productVariants.productId, products.id))
-      .where(inArray(cartItems.id, cartItemIds));
-
-    // Calculate totals
-    const sellerState = this.getSellerState();
-    const buyerState = shippingAddress.state;
-
-    let subtotal = 0;
-    let totalCgst = 0;
-    let totalSgst = 0;
-    let totalIgst = 0;
-
-    // Calculate subtotal and GST for each item
-    for (const item of cartItemsWithVariants) {
-      const itemSubtotal = item.price * item.quantity;
-      subtotal += itemSubtotal;
-
-      // Calculate GST breakdown
-      const gstBreakdown = calculateGstBreakdown(
-        itemSubtotal,
-        item.productGstRate,
-        sellerState,
-        buyerState,
-      );
-      totalCgst += gstBreakdown.cgst;
-      totalSgst += gstBreakdown.sgst;
-      totalIgst += gstBreakdown.igst;
-    }
-
-    const totalGstAmount = totalCgst + totalSgst + totalIgst;
-    const shippingCost = createOrderDto.shippingCost || 0;
-
-    // Calculate discount if discount code exists
-    let discountAmount = 0;
-    if (discountCode) {
-      try {
-        // Get product IDs from variants
-        const variantIds = cartItemsWithVariants.map(
-          (item) => item.productVariantId,
+    if (!wasSet) {
+      // Another request is processing, wait a bit and return stored result
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const result =
+        await this.idempotencyStore.getIdempotencyResult<OrderResponseDto>(
+          operation,
+          idempotencyKey,
         );
-        const variantProductMap = await db
-          .select({
-            variantId: productVariants.id,
-            productId: productVariants.productId,
-          })
-          .from(productVariants)
-          .where(inArray(productVariants.id, variantIds));
-
-        const productIds = Array.from(
-          new Set(variantProductMap.map((v) => v.productId)),
-        );
-
-        // Get product details for discount calculation
-        const productDetails = await db
-          .select({
-            productId: products.id,
-            categoryId: products.categoryId,
-          })
-          .from(products)
-          .where(inArray(products.id, productIds));
-
-        const variantToProduct = new Map(
-          variantProductMap.map((v) => [v.variantId, v.productId]),
-        );
-
-        const productMap = new Map(productDetails.map((p) => [p.productId, p]));
-
-        // Build cart items for discount calculation
-        const cartItemsForDiscount = cartItemsWithVariants.map((item) => {
-          const productId = variantToProduct.get(item.productVariantId);
-          const product = productId ? productMap.get(productId) : null;
-          return {
-            productId: productId || "",
-            categoryId: product?.categoryId || null,
-            collectionIds: [], // TODO: Add when product-collections junction table exists
-            tagIds: [], // TODO: Add when product-tags junction table exists
-            price: item.price,
-            quantity: item.quantity,
-          };
-        });
-
-        // Validate discount
-        const validation = await this.discountsService.validateDiscount(
-          discountCode,
-          userId,
-          subtotal,
-        );
-
-        if (validation.isValid && validation.discount) {
-          // Calculate discount
-          const discountResult = calculateDiscount(
-            validation.discount,
-            cartItemsForDiscount,
-          );
-          discountAmount = discountResult.discountAmount;
-        }
-      } catch (_error) {
-        // Discount validation failed, continue without discount
-        discountAmount = 0;
+      if (result && !("pending" in result)) {
+        return result;
       }
+      // If still pending or no result, proceed (edge case)
     }
 
-    // Calculate total after discount (discount applies to subtotal before GST)
-    const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
-    const total = subtotalAfterDiscount + totalGstAmount + shippingCost;
+    let orderResponse: OrderResponseDto;
+    try {
+      const customerId = await this.getCustomerId(userId);
 
-    // Generate order number
-    const orderNumber = await this.generateOrderNumber();
-
-    // Create order
-    const [order] = await db
-      .insert(orders)
-      .values({
+      // Validate addresses
+      const { shippingAddress } = await this.validateAddresses(
         customerId,
-        orderNumber,
-        status: "pending",
-        subtotal,
-        gstAmount: totalGstAmount,
-        discountCode,
-        discountAmount,
-        shippingCost,
-        total,
-        shippingAddressId: createOrderDto.shippingAddressId,
-        billingAddressId: createOrderDto.billingAddressId,
-      })
-      .returning();
+        createOrderDto.shippingAddressId,
+        createOrderDto.billingAddressId,
+      );
 
-    // Record discount usage if discount was applied
-    if (discountCode && discountAmount > 0) {
-      try {
-        const discount = await this.discountsService.findByCode(discountCode);
-        await this.discountsService.recordUsage(discount.id, order.id, userId);
-      } catch (error) {
-        // Log error but don't fail order creation
-        console.error("Failed to record discount usage:", error);
+      // Get customer cart
+      const cart = await this.cartsService.getCart(userId, null);
+      if (!cart || !cart.items || cart.items.length === 0) {
+        throw new BadRequestException("Cart is empty");
       }
-    }
 
-    // Create order items
-    const orderItemsToInsert = cartItemsWithVariants.map((item) => {
-      const itemSubtotal = item.price * item.quantity;
-      const gstBreakdown = calculateGstBreakdown(
-        itemSubtotal,
-        item.productGstRate,
-        sellerState,
-        buyerState,
-      );
+      // Get discount code from cart
+      const discountCode =
+        "discountCode" in cart ? (cart.discountCode as string | null) : null;
 
-      return {
-        orderId: order.id,
-        productVariantId: item.productVariantId,
-        quantity: item.quantity,
-        price: item.price,
-        gstRate: item.productGstRate,
-        gstAmount: gstBreakdown.totalGst,
+      // Get cart items with product variant details
+      const cartItemIds = cart.items.map((item) => item.id);
+      const cartItemsWithVariants = await db
+        .select({
+          cartItemId: cartItems.id,
+          productVariantId: cartItems.productVariantId,
+          quantity: cartItems.quantity,
+          price: cartItems.price,
+          productGstRate: products.gstRate,
+        })
+        .from(cartItems)
+        .innerJoin(
+          productVariants,
+          eq(cartItems.productVariantId, productVariants.id),
+        )
+        .innerJoin(products, eq(productVariants.productId, products.id))
+        .where(inArray(cartItems.id, cartItemIds));
+
+      // Calculate totals
+      const sellerState = this.getSellerState();
+      const buyerState = shippingAddress.state;
+
+      let subtotal = 0;
+      let totalCgst = 0;
+      let totalSgst = 0;
+      let totalIgst = 0;
+
+      // Calculate subtotal and GST for each item
+      for (const item of cartItemsWithVariants) {
+        const itemSubtotal = item.price * item.quantity;
+        subtotal += itemSubtotal;
+
+        // Calculate GST breakdown
+        const gstBreakdown = calculateGstBreakdown(
+          itemSubtotal,
+          item.productGstRate,
+          sellerState,
+          buyerState,
+        );
+        totalCgst += gstBreakdown.cgst;
+        totalSgst += gstBreakdown.sgst;
+        totalIgst += gstBreakdown.igst;
+      }
+
+      const totalGstAmount = totalCgst + totalSgst + totalIgst;
+      const shippingCost = createOrderDto.shippingCost || 0;
+
+      // Calculate discount if discount code exists
+      let discountAmount = 0;
+      if (discountCode) {
+        try {
+          // Get product IDs from variants
+          const variantIds = cartItemsWithVariants.map(
+            (item) => item.productVariantId,
+          );
+          const variantProductMap = await db
+            .select({
+              variantId: productVariants.id,
+              productId: productVariants.productId,
+            })
+            .from(productVariants)
+            .where(inArray(productVariants.id, variantIds));
+
+          const productIds = Array.from(
+            new Set(variantProductMap.map((v) => v.productId)),
+          );
+
+          // Get product details for discount calculation
+          const productDetails = await db
+            .select({
+              productId: products.id,
+              categoryId: products.categoryId,
+            })
+            .from(products)
+            .where(inArray(products.id, productIds));
+
+          const variantToProduct = new Map(
+            variantProductMap.map((v) => [v.variantId, v.productId]),
+          );
+
+          const productMap = new Map(
+            productDetails.map((p) => [p.productId, p]),
+          );
+
+          // Build cart items for discount calculation
+          const cartItemsForDiscount = cartItemsWithVariants.map((item) => {
+            const productId = variantToProduct.get(item.productVariantId);
+            const product = productId ? productMap.get(productId) : null;
+            return {
+              productId: productId || "",
+              categoryId: product?.categoryId || null,
+              collectionIds: [], // TODO: Add when product-collections junction table exists
+              tagIds: [], // TODO: Add when product-tags junction table exists
+              price: item.price,
+              quantity: item.quantity,
+            };
+          });
+
+          // Validate discount
+          const validation = await this.discountsService.validateDiscount(
+            discountCode,
+            userId,
+            subtotal,
+          );
+
+          if (validation.isValid && validation.discount) {
+            // Calculate discount
+            const discountResult = calculateDiscount(
+              validation.discount,
+              cartItemsForDiscount,
+            );
+            discountAmount = discountResult.discountAmount;
+          }
+        } catch (_error) {
+          // Discount validation failed, continue without discount
+          discountAmount = 0;
+        }
+      }
+
+      // Calculate total after discount (discount applies to subtotal before GST)
+      const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
+      const total = subtotalAfterDiscount + totalGstAmount + shippingCost;
+
+      // Generate order number
+      const orderNumber = await this.generateOrderNumber();
+
+      // Create order
+      const [order] = await db
+        .insert(orders)
+        .values({
+          customerId,
+          orderNumber,
+          status: "pending",
+          subtotal,
+          gstAmount: totalGstAmount,
+          discountCode,
+          discountAmount,
+          shippingCost,
+          total,
+          shippingAddressId: createOrderDto.shippingAddressId,
+          billingAddressId: createOrderDto.billingAddressId,
+        })
+        .returning();
+
+      // Record discount usage if discount was applied
+      if (discountCode && discountAmount > 0) {
+        try {
+          const discount = await this.discountsService.findByCode(discountCode);
+          await this.discountsService.recordUsage(
+            discount.id,
+            order.id,
+            userId,
+          );
+        } catch (error) {
+          // Log error but don't fail order creation
+          console.error("Failed to record discount usage:", error);
+        }
+      }
+
+      // Create order items
+      const orderItemsToInsert = cartItemsWithVariants.map((item) => {
+        const itemSubtotal = item.price * item.quantity;
+        const gstBreakdown = calculateGstBreakdown(
+          itemSubtotal,
+          item.productGstRate,
+          sellerState,
+          buyerState,
+        );
+
+        return {
+          orderId: order.id,
+          productVariantId: item.productVariantId,
+          quantity: item.quantity,
+          price: item.price,
+          gstRate: item.productGstRate,
+          gstAmount: gstBreakdown.totalGst,
+        };
+      });
+
+      const insertedOrderItems = await db
+        .insert(orderItems)
+        .values(orderItemsToInsert)
+        .returning();
+
+      // Release all cart reservations (individual reservation keys)
+      // This must happen before committing to avoid double-counting
+      await this.inventoryStore.releaseCartReservations(cart.id);
+
+      // Commit reservations (convert reserved → consumed)
+      // Note: releaseCartReservations already decremented aggregated reserved count
+      // So we just need to decrement available inventory
+      for (const item of cartItemsWithVariants) {
+        await this.inventoryStore.incrementInventory(
+          item.productVariantId,
+          -item.quantity,
+        );
+      }
+
+      // Clear cart
+      await this.cartsService.clearCart(userId, null);
+
+      // Calculate overall GST breakdown
+      const isIntraState = sellerState === buyerState;
+      const gstBreakdown = {
+        cgst: totalCgst,
+        sgst: totalSgst,
+        igst: totalIgst,
+        totalGst: totalGstAmount,
+        isIntraState,
       };
-    });
 
-    const insertedOrderItems = await db
-      .insert(orderItems)
-      .values(orderItemsToInsert)
-      .returning();
+      // Build order response
+      orderResponse = {
+        ...order,
+        gstBreakdown,
+        items: insertedOrderItems,
+      } as OrderResponseDto;
 
-    // Commit reservations (convert reserved → consumed)
-    for (const item of cartItemsWithVariants) {
-      await this.inventoryStore.commitReservation(
-        item.productVariantId,
-        item.quantity,
-      );
+      // Store result in idempotency store (update the placeholder)
+      try {
+        const idempotencyRedisKey = KEY_PATTERNS.IDEMPOTENCY(
+          operation,
+          idempotencyKey,
+        );
+        await this.idempotencyStore.set(idempotencyRedisKey, orderResponse);
+      } catch (error) {
+        // Log but don't fail order creation if idempotency store fails
+        console.error("Failed to store idempotency result:", error);
+      }
+
+      return orderResponse;
+    } catch (error) {
+      // If order creation failed, delete idempotency key to allow retry
+      try {
+        await this.idempotencyStore.deleteIdempotency(
+          operation,
+          idempotencyKey,
+        );
+      } catch (deleteError) {
+        // Log but don't fail
+        console.error(
+          "Failed to delete idempotency key on error:",
+          deleteError,
+        );
+      }
+      throw error;
     }
-
-    // Clear cart
-    await this.cartsService.clearCart(userId, null);
-
-    // Calculate overall GST breakdown
-    const isIntraState = sellerState === buyerState;
-    const gstBreakdown = {
-      cgst: totalCgst,
-      sgst: totalSgst,
-      igst: totalIgst,
-      totalGst: totalGstAmount,
-      isIntraState,
-    };
-
-    // Return order with items
-    return {
-      ...order,
-      gstBreakdown,
-      items: insertedOrderItems,
-    } as OrderResponseDto;
   }
 
   /**
