@@ -426,28 +426,110 @@ This roadmap outlines the development phases for building VCEcom, a **production
 
 ## 🔄 Future Phases (Post-MVP)
 
-### Phase 11: Advanced Inventory Management
-- Stock tracking
-- Low stock alerts
-- Multi-warehouse support
-- Inventory adjustments
+### Phase 11: Checkout Hardening 🔴 (Top Priority)
 
-### Phase 12: Unicommerce Integration (Optional)
-- Warehouse management
-- Advanced fulfillment
-- Inventory sync
+**Status:** Not Started  
+**Priority:** Top Priority  
+**Duration:** TBD  
+**Dependencies:** Phase 10  
 
-### Phase 13: Advanced Analytics
-- Sales reports
-- Product performance
-- Customer analytics
-- Revenue forecasting
+**Strategic Importance:** Critical for production readiness. Prevents double checkout, double payment, and ensures final consistency guarantees before money moves.
 
-### Phase 14: Marketing & Promotions
-- Advanced discount rules
-- Flash sales
-- Email campaigns
-- Coupon management
+#### 11.1 Cart-Level Checkout Locks
+- Prevent double checkout / double payment
+- Cart-level locking mechanism during checkout
+- Idempotent checkout initiation
+
+#### 11.2 Payment Retry Safety
+- Safe payment retry mechanisms
+- Idempotent payment processing
+- Payment state reconciliation
+
+#### 11.3 Final Consistency Guarantees
+- Final consistency checks before money moves
+- Transaction validation
+- Order-payment consistency verification
+
+**Deliverables:**
+- Cart-level checkout locks
+- Double checkout prevention
+- Payment retry safety mechanisms
+- Final consistency guarantees
+
+---
+
+### Phase 12: Discount Engine v2
+
+**Status:** Not Started  
+**Priority:** High  
+**Duration:** TBD  
+**Dependencies:** Phase 10  
+
+**Strategic Importance:** Enhanced discount system with priority rules, stacking, and deterministic application.
+
+#### 12.1 Priority & Stacking Rules
+- Discount priority system
+- Stacking rules configuration
+- Conflict resolution
+
+#### 12.2 Deterministic Application
+- Deterministic discount application order
+- Consistent discount calculation
+- Predictable discount behavior
+
+#### 12.3 Idempotent Discount Resolution
+- Idempotent discount calculation
+- Consistent discount application
+- Discount state management
+
+**Deliverables:**
+- Priority-based discount system
+- Discount stacking rules
+- Deterministic discount application
+- Idempotent discount resolution
+
+---
+
+### Phase 13: Multi-Location / Warehouse Inventory
+
+**Status:** Not Started  
+**Priority:** Medium  
+**Duration:** TBD  
+**Dependencies:** Phase 10  
+
+**Strategic Note:** You are already architecturally ready. This becomes mostly data modeling + routing.
+
+#### 13.1 Multi-Location Data Modeling
+- Warehouse/location schema
+- Inventory allocation per location
+- Location-based inventory tracking
+
+#### 13.2 Inventory Routing
+- Location-based inventory routing
+- Fulfillment location selection
+- Inventory allocation logic
+
+#### 13.3 Multi-Location Operations
+- Cross-location inventory transfers
+- Location-specific inventory management
+- Multi-location order fulfillment
+
+**Deliverables:**
+- Multi-location inventory schema
+- Location-based inventory routing
+- Multi-location fulfillment logic
+- Inventory allocation system
+
+---
+
+### Phase 14: TBD
+
+**Status:** Not Started  
+**Priority:** TBD  
+**Duration:** TBD  
+**Dependencies:** TBD  
+
+_Phase 14 details to be defined._
 
 ### Phase 15: Customer Features
 - Wishlist
