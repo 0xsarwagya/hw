@@ -55,6 +55,13 @@ export const KEY_PATTERNS = {
    */
   IDEMPOTENCY: (operation: string, key: string) =>
     `idempotency:${operation}:${key}`,
+
+  /**
+   * Checkout lock keys
+   * Format: checkout:lock:{cartId}
+   * TTL: 10 minutes (default)
+   */
+  CHECKOUT_LOCK: (cartId: string) => `checkout:lock:${cartId}`,
 } as const;
 
 /**
@@ -81,4 +88,10 @@ export const TTL = {
    * Used for temporary inventory reservations during checkout
    */
   INVENTORY_RESERVATION: 15 * 60, // 15 minutes in seconds
+
+  /**
+   * Checkout lock TTL: 10 minutes
+   * Used to prevent concurrent checkout attempts on the same cart
+   */
+  CHECKOUT_LOCK: 10 * 60, // 10 minutes in seconds
 } as const;

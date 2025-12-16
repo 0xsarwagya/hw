@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   NotFoundException,
 } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
@@ -21,6 +22,7 @@ import {
 } from "@vcecom/db";
 import { CartsService } from "../carts/carts.service";
 import { DiscountsService } from "../discounts/discounts.service";
+import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import { IdempotencyStore } from "../redis-store/stores/idempotency-store";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
 import { OrdersService } from "./orders.service";
@@ -58,6 +60,7 @@ describe("OrdersService", () => {
   let discountsService: DiscountsService;
   let inventoryStore: InventoryStore;
   let idempotencyStore: IdempotencyStore;
+  let checkoutStore: CheckoutStore;
 
   const mockUserId = "user-123";
   const mockCustomerId = "customer-123";
@@ -191,6 +194,14 @@ describe("OrdersService", () => {
             deleteIdempotency: jest.fn(),
           },
         },
+        {
+          provide: CheckoutStore,
+          useValue: {
+            acquireCheckoutLock: jest.fn(),
+            releaseCheckoutLock: jest.fn(),
+            isCheckoutLocked: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -199,6 +210,7 @@ describe("OrdersService", () => {
     discountsService = module.get<DiscountsService>(DiscountsService);
     inventoryStore = module.get<InventoryStore>(InventoryStore);
     idempotencyStore = module.get<IdempotencyStore>(IdempotencyStore);
+    checkoutStore = module.get<CheckoutStore>(CheckoutStore);
   });
 
   afterEach(() => {
@@ -313,6 +325,12 @@ describe("OrdersService", () => {
         .mockReturnValueOnce(mockInsertOrderChain)
         .mockReturnValueOnce(mockInsertOrderItemsChain);
 
+      // Mock checkout store - lock acquired successfully
+      (checkoutStore.acquireCheckoutLock as jest.Mock).mockResolvedValue(true);
+      (checkoutStore.releaseCheckoutLock as jest.Mock).mockResolvedValue(
+        undefined,
+      );
+
       // Mock idempotency store
       (idempotencyStore.getIdempotencyResult as jest.Mock).mockResolvedValue(
         null,
@@ -345,6 +363,13 @@ describe("OrdersService", () => {
         mockCartId,
       );
       expect(cartsService.clearCart).toHaveBeenCalledWith(mockUserId, null);
+      // Verify checkout lock was acquired and released
+      expect(checkoutStore.acquireCheckoutLock).toHaveBeenCalledWith(
+        mockCartId,
+      );
+      expect(checkoutStore.releaseCheckoutLock).toHaveBeenCalledWith(
+        mockCartId,
+      );
     });
 
     it("should return stored result for idempotent order replay", async () => {
@@ -487,6 +512,260 @@ describe("OrdersService", () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it("should throw ConflictException when cart is already locked for checkout", async () => {
+      // Mock getCustomerId
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      // Mock validateAddresses
+      const mockShippingAddressChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockShippingAddress]),
+      };
+
+      const mockBillingAddressChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockBillingAddress]),
+      };
+
+      // Mock getCart
+      (cartsService.getCart as jest.Mock).mockResolvedValue(mockCart);
+
+      // Mock checkout store - lock acquisition fails (cart already locked)
+      (checkoutStore.acquireCheckoutLock as jest.Mock).mockResolvedValue(false);
+
+      // Mock idempotency store
+      (idempotencyStore.getIdempotencyResult as jest.Mock).mockResolvedValue(
+        null,
+      );
+      (idempotencyStore.checkAndSet as jest.Mock).mockResolvedValue(true);
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockShippingAddressChain)
+        .mockReturnValueOnce(mockBillingAddressChain);
+
+      await expect(
+        service.create(mockUserId, createOrderDto),
+      ).rejects.toThrow(ConflictException);
+
+      // Verify lock was attempted
+      expect(checkoutStore.acquireCheckoutLock).toHaveBeenCalledWith(
+        mockCartId,
+      );
+      // Verify lock was not released (since it wasn't acquired)
+      expect(checkoutStore.releaseCheckoutLock).not.toHaveBeenCalled();
+    });
+
+    it("should release checkout lock on successful order creation", async () => {
+      // Mock getCustomerId
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      // Mock validateAddresses
+      const mockShippingAddressChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockShippingAddress]),
+      };
+
+      const mockBillingAddressChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockBillingAddress]),
+      };
+
+      // Mock getCart
+      (cartsService.getCart as jest.Mock).mockResolvedValue(mockCart);
+
+      // Mock checkout store - lock acquired and released
+      (checkoutStore.acquireCheckoutLock as jest.Mock).mockResolvedValue(true);
+      (checkoutStore.releaseCheckoutLock as jest.Mock).mockResolvedValue(
+        undefined,
+      );
+
+      // Mock cartItemsWithVariants query
+      const mockCartItemsChain = {
+        from: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue([
+          {
+            cartItemId: "cart-item-123",
+            productVariantId: mockVariantId,
+            quantity: 2,
+            price: 500,
+            productGstRate: 18,
+          },
+        ]),
+      };
+
+      // Mock generateOrderNumber
+      const mockOrdersChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([]),
+      };
+
+      // Mock insert order
+      const mockInsertOrderChain = {
+        values: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([
+          {
+            id: mockOrderId,
+            customerId: mockCustomerId,
+            orderNumber: "ORD-2025-000001",
+            status: "pending",
+            subtotal: 1000,
+            gstAmount: 180,
+            discountCode: null,
+            discountAmount: 0,
+            shippingCost: 50,
+            total: 1230,
+            shippingAddressId: mockShippingAddressId,
+            billingAddressId: mockBillingAddressId,
+            razorpayOrderId: null,
+            shippingProvider: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ]),
+      };
+
+      // Mock insert order items
+      const mockInsertOrderItemsChain = {
+        values: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([
+          {
+            id: "order-item-123",
+            orderId: mockOrderId,
+            productVariantId: mockVariantId,
+            quantity: 2,
+            price: 500,
+            gstRate: 18,
+            gstAmount: 180,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ]),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockShippingAddressChain)
+        .mockReturnValueOnce(mockBillingAddressChain)
+        .mockReturnValueOnce(mockCartItemsChain)
+        .mockReturnValueOnce(mockOrdersChain);
+
+      (db.insert as jest.Mock)
+        .mockReturnValueOnce(mockInsertOrderChain)
+        .mockReturnValueOnce(mockInsertOrderItemsChain);
+
+      // Mock idempotency store
+      (idempotencyStore.getIdempotencyResult as jest.Mock).mockResolvedValue(
+        null,
+      );
+      (idempotencyStore.checkAndSet as jest.Mock).mockResolvedValue(true);
+      (idempotencyStore.set as jest.Mock).mockResolvedValue(undefined);
+
+      // Mock discount service (no discount code)
+      (discountsService.validateDiscount as jest.Mock).mockResolvedValue({
+        isValid: false,
+      });
+
+      // Mock inventory store
+      (inventoryStore.releaseCartReservations as jest.Mock).mockResolvedValue(
+        undefined,
+      );
+      (inventoryStore.incrementInventory as jest.Mock).mockResolvedValue(8);
+
+      (cartsService.clearCart as jest.Mock).mockResolvedValue(mockCart);
+
+      const result = await service.create(mockUserId, createOrderDto);
+
+      expect(result).toBeDefined();
+      // Verify lock was acquired and released
+      expect(checkoutStore.acquireCheckoutLock).toHaveBeenCalledWith(
+        mockCartId,
+      );
+      expect(checkoutStore.releaseCheckoutLock).toHaveBeenCalledWith(
+        mockCartId,
+      );
+    });
+
+    it("should release checkout lock on error during order creation", async () => {
+      // Mock getCustomerId
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      // Mock validateAddresses
+      const mockShippingAddressChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockShippingAddress]),
+      };
+
+      const mockBillingAddressChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockBillingAddress]),
+      };
+
+      // Mock getCart
+      (cartsService.getCart as jest.Mock).mockResolvedValue(mockCart);
+
+      // Mock checkout store - lock acquired, will be released on error
+      (checkoutStore.acquireCheckoutLock as jest.Mock).mockResolvedValue(true);
+      (checkoutStore.releaseCheckoutLock as jest.Mock).mockResolvedValue(
+        undefined,
+      );
+
+      // Mock idempotency store
+      (idempotencyStore.getIdempotencyResult as jest.Mock).mockResolvedValue(
+        null,
+      );
+      (idempotencyStore.checkAndSet as jest.Mock).mockResolvedValue(true);
+      (idempotencyStore.deleteIdempotency as jest.Mock).mockResolvedValue(
+        undefined,
+      );
+
+      // Mock cartItemsWithVariants query to throw error
+      const mockCartItemsChain = {
+        from: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockRejectedValue(new Error("Database error")),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockShippingAddressChain)
+        .mockReturnValueOnce(mockBillingAddressChain)
+        .mockReturnValueOnce(mockCartItemsChain);
+
+      await expect(
+        service.create(mockUserId, createOrderDto),
+      ).rejects.toThrow("Database error");
+
+      // Verify lock was acquired
+      expect(checkoutStore.acquireCheckoutLock).toHaveBeenCalledWith(
+        mockCartId,
+      );
+      // Verify lock was released on error
+      expect(checkoutStore.releaseCheckoutLock).toHaveBeenCalledWith(
+        mockCartId,
+      );
+    });
 
     it("should create order with default shipping cost when not provided", async () => {
       const createOrderDtoWithoutShippingCost = {
@@ -513,6 +792,12 @@ describe("OrdersService", () => {
       };
 
       (cartsService.getCart as jest.Mock).mockResolvedValue(mockCart);
+
+      // Mock checkout store - lock acquired successfully
+      (checkoutStore.acquireCheckoutLock as jest.Mock).mockResolvedValue(true);
+      (checkoutStore.releaseCheckoutLock as jest.Mock).mockResolvedValue(
+        undefined,
+      );
 
       const mockCartItemsChain = {
         from: jest.fn().mockReturnThis(),
@@ -583,6 +868,12 @@ describe("OrdersService", () => {
       (db.insert as jest.Mock)
         .mockReturnValueOnce(mockInsertOrderChain)
         .mockReturnValueOnce(mockInsertOrderItemsChain);
+
+      // Mock checkout store - lock acquired successfully
+      (checkoutStore.acquireCheckoutLock as jest.Mock).mockResolvedValue(true);
+      (checkoutStore.releaseCheckoutLock as jest.Mock).mockResolvedValue(
+        undefined,
+      );
 
       // Mock idempotency store
       (idempotencyStore.getIdempotencyResult as jest.Mock).mockResolvedValue(
