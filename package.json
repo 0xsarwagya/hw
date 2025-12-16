@@ -40,6 +40,7 @@
     "commitlint": "commitlint",
     "changelog": "git-cliff",
     "changelog:unreleased": "git-cliff --unreleased",
+    "commit-history": "bash scripts/generate-commit-history.sh",
     "semantic-release": "semantic-release",
     "semantic-release:beta": "semantic-release --config .releaserc.beta.js",
     "semantic-release:prod": "semantic-release --config .releaserc.prod.js",
