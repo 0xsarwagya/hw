@@ -22,6 +22,12 @@ import {
 } from "@vcecom/db";
 import { CartsService } from "../carts/carts.service";
 import { DiscountsService } from "../discounts/discounts.service";
+import { PaymentsService } from "../payments/payments.service";
+import { CheckoutState } from "../redis-store/constants/checkout-states";
+import {
+  PaymentIntent,
+  PaymentIntentStatus,
+} from "../redis-store/dto/payment-intent.dto";
 import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import { IdempotencyStore } from "../redis-store/stores/idempotency-store";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
@@ -62,6 +68,7 @@ describe("OrdersService", () => {
   let inventoryStore: InventoryStore;
   let idempotencyStore: IdempotencyStore;
   let checkoutStore: CheckoutStore;
+  let paymentsService: PaymentsService;
 
   const mockUserId = "user-123";
   const mockCustomerId = "customer-123";
@@ -206,7 +213,14 @@ describe("OrdersService", () => {
             setOrder: jest.fn(),
             failSession: jest.fn(),
             assertStateIn: jest.fn(),
+            assertState: jest.fn(),
             getSession: jest.fn(),
+          },
+        },
+        {
+          provide: PaymentsService,
+          useValue: {
+            createPaymentIntent: jest.fn(),
           },
         },
       ],
@@ -218,6 +232,7 @@ describe("OrdersService", () => {
     inventoryStore = module.get<InventoryStore>(InventoryStore);
     idempotencyStore = module.get<IdempotencyStore>(IdempotencyStore);
     checkoutStore = module.get<CheckoutStore>(CheckoutStore);
+    paymentsService = module.get<PaymentsService>(PaymentsService);
   });
 
   afterEach(() => {
@@ -370,6 +385,25 @@ describe("OrdersService", () => {
 
       (cartsService.clearCart as jest.Mock).mockResolvedValue(mockCart);
 
+      // Mock payments service
+      const mockCheckoutSessionId = "checkout-session-123";
+      (paymentsService.createPaymentIntent as jest.Mock).mockResolvedValue({
+        paymentIntentId: "pi-456",
+        paymentProvider: "razorpay",
+        status: "CREATED",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      (checkoutStore.assertState as jest.Mock).mockResolvedValue(undefined);
+      (checkoutStore.assertStateIn as jest.Mock).mockResolvedValue(undefined);
+      (checkoutStore.getSession as jest.Mock).mockResolvedValue({
+        state: CheckoutState.PAYMENT_PENDING,
+        cartId: mockCartId,
+        paymentIntentId: "pi-456",
+        orderId: null,
+        updatedAt: new Date().toISOString(),
+      });
+
       const result = await service.create(mockUserId, createOrderDto);
 
       expect(result).toBeDefined();
@@ -377,6 +411,18 @@ describe("OrdersService", () => {
       expect(result.orderNumber).toBe("ORD-2025-000001");
       expect(result.status).toBe("pending");
       expect(result.total).toBe(1230);
+      // Verify payment intent was created before order creation
+      expect(paymentsService.createPaymentIntent).toHaveBeenCalledWith(
+        mockCheckoutSessionId,
+        expect.any(Number), // Amount in paise
+        "INR",
+        undefined,
+        expect.any(Object),
+      );
+      expect(checkoutStore.assertStateIn).toHaveBeenCalledWith(
+        mockCheckoutSessionId,
+        [CheckoutState.PAYMENT_PENDING, CheckoutState.PAYMENT_CONFIRMED],
+      );
       // Verify cart reservations are released
       expect(inventoryStore.releaseCartReservations).toHaveBeenCalledWith(
         mockCartId,
@@ -671,6 +717,23 @@ describe("OrdersService", () => {
       (cartsService.getCart as jest.Mock).mockResolvedValue(mockCart);
       (cartsService.clearCart as jest.Mock).mockResolvedValue(mockCart);
 
+      // Mock payments service
+      (paymentsService.createPaymentIntent as jest.Mock).mockResolvedValue({
+        paymentIntentId: "pi-456",
+        paymentProvider: "razorpay",
+        status: "CREATED",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      (checkoutStore.assertStateIn as jest.Mock).mockResolvedValue(undefined);
+      (checkoutStore.getSession as jest.Mock).mockResolvedValue({
+        state: CheckoutState.PAYMENT_PENDING,
+        cartId: mockCartId,
+        paymentIntentId: "pi-456",
+        orderId: null,
+        updatedAt: new Date().toISOString(),
+      });
+
       await service.create(mockUserId, createOrderDto);
 
       // Verify state machine integration
@@ -686,7 +749,7 @@ describe("OrdersService", () => {
       );
       expect(checkoutStore.transitionState).toHaveBeenCalledWith(
         "checkout-session-123",
-        "LOCKED",
+        "PAYMENT_PENDING",
         "ORDER_CREATED",
       );
       expect(checkoutStore.transitionState).toHaveBeenCalledWith(
@@ -901,6 +964,24 @@ describe("OrdersService", () => {
       (inventoryStore.incrementInventory as jest.Mock).mockResolvedValue(8);
 
       (cartsService.clearCart as jest.Mock).mockResolvedValue(mockCart);
+
+      // Mock payments service
+      const mockCheckoutSessionId = "checkout-session-123";
+      (paymentsService.createPaymentIntent as jest.Mock).mockResolvedValue({
+        paymentIntentId: "pi-456",
+        paymentProvider: "razorpay",
+        status: "CREATED",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      (checkoutStore.assertStateIn as jest.Mock).mockResolvedValue(undefined);
+      (checkoutStore.getSession as jest.Mock).mockResolvedValue({
+        state: CheckoutState.PAYMENT_PENDING,
+        cartId: mockCartId,
+        paymentIntentId: "pi-456",
+        orderId: null,
+        updatedAt: new Date().toISOString(),
+      });
 
       const result = await service.create(mockUserId, createOrderDto);
 
@@ -1144,6 +1225,24 @@ describe("OrdersService", () => {
       (inventoryStore.incrementInventory as jest.Mock).mockResolvedValue(8);
 
       (cartsService.clearCart as jest.Mock).mockResolvedValue(undefined);
+
+      // Mock payments service
+      const mockCheckoutSessionId = "checkout-session-123";
+      (paymentsService.createPaymentIntent as jest.Mock).mockResolvedValue({
+        paymentIntentId: "pi-456",
+        paymentProvider: "razorpay",
+        status: "CREATED",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      (checkoutStore.assertStateIn as jest.Mock).mockResolvedValue(undefined);
+      (checkoutStore.getSession as jest.Mock).mockResolvedValue({
+        state: CheckoutState.PAYMENT_PENDING,
+        cartId: mockCartId,
+        paymentIntentId: "pi-456",
+        orderId: null,
+        updatedAt: new Date().toISOString(),
+      });
 
       const result = await service.create(
         mockUserId,
