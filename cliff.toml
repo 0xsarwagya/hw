@@ -50,14 +50,11 @@ link_parsers = [
     { pattern = "\\[([^\\]]+)\\]\\(([^)]+)\\)", href = "$2", text = "$1" },
 ]
 tag_pattern = "v?[0-9]+\\.[0-9]+\\.[0-9]+.*"
-skip_tags = ["v0.1.0-test", "v0.1.0-test2"]
+skip_tags = "v0.1.0-test|v0.1.0-test2"
 topo_order = false
 sort_commits = "oldest"
 
 [changelog.preprocessor]
 pattern = '^(.+)$'
 replace = '$1'
-
-[changelog.postprocessors]
-unwrap = true
 
