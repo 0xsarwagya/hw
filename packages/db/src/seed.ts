@@ -26,7 +26,7 @@ async function seedAdminUser() {
       .values({
         email: ADMIN_EMAIL,
         passwordHash,
-        role: "admin",
+        role: "admin" as const,
       })
       .returning();
 
