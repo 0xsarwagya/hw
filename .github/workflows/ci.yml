@@ -59,6 +59,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate build-info.ts
+        run: pnpm --filter @vestcodes/vcecom-backend run generate-build-info
+
       - name: Run type check
         run: pnpm run check-types
 
@@ -82,6 +85,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Generate build-info.ts
+        run: pnpm --filter @vestcodes/vcecom-backend run generate-build-info
 
       # Database setup skipped - DB tests are disabled
       # Only backend tests run (using MSW for mocking)

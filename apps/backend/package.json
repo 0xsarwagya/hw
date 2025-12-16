@@ -7,16 +7,17 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "node scripts/generate-build-info.js && nest build",
+    "generate-build-info": "node scripts/generate-build-info.js",
     "dev": "nodemon",
     "start": "node dist/main.js",
     "start:dev": "nodemon",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "test": "jest",
+    "test": "node scripts/generate-build-info.js && jest",
     "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
+    "test:cov": "node scripts/generate-build-info.js && jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "check-types": "cd ../../packages/db && pnpm build && cd ../../apps/backend && tsc --noEmit --project tsconfig.build.json"
+    "check-types": "cd ../../packages/db && pnpm build && cd ../../apps/backend && node scripts/generate-build-info.js && tsc --noEmit --project tsconfig.build.json"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
