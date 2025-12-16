@@ -16,7 +16,9 @@
     "db:push:ci": "drizzle-kit push --force",
     "db:studio": "drizzle-kit studio",
     "db:migrate:run": "tsx src/migrate-cli.ts",
+    "db:seed": "tsx src/seed.ts",
     "build": "tsc",
+    "postbuild": "pnpm db:seed",
     "check-types": "tsc --noEmit --project tsconfig.json",
     "check-types:test": "tsc --noEmit --project tsconfig.test.json",
     "test": "echo 'Skipping DB tests' && exit 0",
@@ -25,6 +27,7 @@
     "test:cov": "vitest run --coverage"
   },
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "drizzle-orm": "^0.36.4",
     "pg": "^8.13.1"
   },
