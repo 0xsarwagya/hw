@@ -1,17 +1,5 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import {
-  db,
-  discounts,
-  discountCategories,
-  discountCollections,
-  discountGetCategories,
-  discountGetCollections,
-  discountGetProducts,
-  discountGetTags,
-  discountProducts,
-  discountTags,
-  discountUsages,
-} from "@vcecom/db";
+import { db, discounts } from "@vcecom/db";
 import { DiscountsService } from "./discounts.service";
 import { CreateDiscountDto } from "./dto/create-discount.dto";
 import { DiscountType, DiscountValueType } from "./dto/create-discount.dto";
@@ -48,90 +36,48 @@ describe("DiscountsService", () => {
     jest.clearAllMocks();
   });
 
-  // Helper to create mock query chain with where and limit
-  const createMockSelectChain = (results: unknown[]) => {
+  // Helper to create proper mock chain
+  const createSelectChain = (results: unknown[]) => {
     const limitFn = jest.fn().mockResolvedValue(results);
     const whereFn = jest.fn().mockReturnValue({ limit: limitFn });
     const fromFn = jest.fn().mockReturnValue({ where: whereFn });
-    return {
-      from: fromFn,
-    };
+    return { from: fromFn };
   };
 
-  // Helper to create mock select chain without limit (for where-only queries)
-  const createMockSelectChainWhereOnly = (results: unknown[]) => {
+  const createSelectChainWithOrderBy = (results: unknown[]) => {
+    const offsetFn = jest.fn().mockResolvedValue(results);
+    const limitFn = jest.fn().mockReturnValue({ offset: offsetFn });
+    const orderByFn = jest.fn().mockReturnValue({ limit: limitFn });
+    const fromFn = jest.fn().mockReturnValue({ orderBy: orderByFn });
+    return { from: fromFn };
+  };
+
+  const createSelectChainWhereOnly = (results: unknown[]) => {
     const whereFn = jest.fn().mockResolvedValue(results);
     const fromFn = jest.fn().mockReturnValue({ where: whereFn });
-    return {
-      from: fromFn,
-    };
+    return { from: fromFn };
   };
 
-  // Helper to create mock select chain without where
-  const createMockSelectChainNoWhere = (results: unknown[]) => {
-    return {
-      from: jest.fn().mockResolvedValue(results),
-    };
+  const createInsertChain = (results: unknown[]) => {
+    const returningFn = jest.fn().mockResolvedValue(results);
+    const valuesFn = jest.fn().mockReturnValue({ returning: returningFn });
+    return { values: valuesFn };
   };
 
-  // Helper to create mock insert chain
-  const createMockInsertChain = (results: unknown[]) => {
-    return {
-      values: jest.fn().mockReturnValue({
-        returning: jest.fn().mockResolvedValue(results),
-      }),
-    };
+  const createUpdateChain = (results: unknown[]) => {
+    const returningFn = jest.fn().mockResolvedValue(results);
+    const whereFn = jest.fn().mockReturnValue({ returning: returningFn });
+    const setFn = jest.fn().mockReturnValue({ where: whereFn });
+    return { set: setFn };
   };
 
-  // Helper to create mock update chain
-  const createMockUpdateChain = (results: unknown[]) => {
-    return {
-      set: jest.fn().mockReturnValue({
-        where: jest.fn().mockReturnValue({
-          returning: jest.fn().mockResolvedValue(results),
-        }),
-      }),
-    };
-  };
-
-  // Helper to mock enrichDiscountWithRelations
   const mockEnrichDiscount = (discount: unknown) => {
-    // Mock: Get discount
-    (db.select as jest.Mock).mockReturnValueOnce(createMockSelectChain([discount]));
-
-    // Mock: Get all relation queries (8 queries total)
-    // 1. discountProducts
-    (db.select as jest.Mock).mockReturnValueOnce(
-      createMockSelectChainWhereOnly([]),
-    );
-    // 2. discountCategories
-    (db.select as jest.Mock).mockReturnValueOnce(
-      createMockSelectChainWhereOnly([]),
-    );
-    // 3. discountCollections
-    (db.select as jest.Mock).mockReturnValueOnce(
-      createMockSelectChainWhereOnly([]),
-    );
-    // 4. discountTags
-    (db.select as jest.Mock).mockReturnValueOnce(
-      createMockSelectChainWhereOnly([]),
-    );
-    // 5. discountGetProducts
-    (db.select as jest.Mock).mockReturnValueOnce(
-      createMockSelectChainWhereOnly([]),
-    );
-    // 6. discountGetCategories
-    (db.select as jest.Mock).mockReturnValueOnce(
-      createMockSelectChainWhereOnly([]),
-    );
-    // 7. discountGetCollections
-    (db.select as jest.Mock).mockReturnValueOnce(
-      createMockSelectChainWhereOnly([]),
-    );
-    // 8. discountGetTags
-    (db.select as jest.Mock).mockReturnValueOnce(
-      createMockSelectChainWhereOnly([]),
-    );
+    // Get discount
+    (db.select as jest.Mock).mockReturnValueOnce(createSelectChain([discount]));
+    // Get 8 relation queries
+    for (let i = 0; i < 8; i++) {
+      (db.select as jest.Mock).mockReturnValueOnce(createSelectChainWhereOnly([]));
+    }
   };
 
   describe("create", () => {
@@ -171,17 +117,13 @@ describe("DiscountsService", () => {
       };
 
       // Mock: Check if code exists (should not exist)
-      (db.select as jest.Mock).mockReturnValueOnce(createMockSelectChain([]));
+      (db.select as jest.Mock).mockReturnValueOnce(createSelectChain([]));
 
       // Mock: Insert discount
-      (db.insert as jest.Mock).mockReturnValueOnce(
-        createMockInsertChain([mockDiscount]),
-      );
+      (db.insert as jest.Mock).mockReturnValueOnce(createInsertChain([mockDiscount]));
 
       // Mock: Insert product relationships
-      (db.insert as jest.Mock).mockReturnValueOnce({
-        values: jest.fn().mockResolvedValue([]),
-      });
+      (db.insert as jest.Mock).mockReturnValueOnce(createInsertChain([]));
 
       // Mock: Enrich discount with relations
       mockEnrichDiscount(mockDiscount);
@@ -193,9 +135,8 @@ describe("DiscountsService", () => {
     });
 
     it("should throw error if discount code already exists", async () => {
-      // Mock: Check if code exists (should exist)
       (db.select as jest.Mock).mockReturnValueOnce(
-        createMockSelectChain([{ code: "SAVE20" }]),
+        createSelectChain([{ code: "SAVE20" }]),
       );
 
       await expect(service.create(createDto)).rejects.toThrow(
@@ -210,8 +151,7 @@ describe("DiscountsService", () => {
         endDate: "2025-01-01T00:00:00.000Z",
       };
 
-      // Mock: Check if code exists
-      (db.select as jest.Mock).mockReturnValueOnce(createMockSelectChain([]));
+      (db.select as jest.Mock).mockReturnValueOnce(createSelectChain([]));
 
       await expect(service.create(invalidDto)).rejects.toThrow(
         BadRequestException,
@@ -256,21 +196,17 @@ describe("DiscountsService", () => {
         },
       ];
 
-      // Mock: Get discounts
-      const mockDiscountsChain = {
-        from: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        offset: jest.fn().mockResolvedValue(mockDiscounts),
-      };
-      (db.select as jest.Mock).mockReturnValueOnce(mockDiscountsChain);
+      // Mock: Get discounts with pagination
+      (db.select as jest.Mock).mockReturnValueOnce(
+        createSelectChainWithOrderBy(mockDiscounts),
+      );
 
-      // Mock: Count discounts (for total calculation)
+      // Mock: Count discounts
       (db.select as jest.Mock).mockReturnValueOnce({
         from: jest.fn().mockResolvedValue(mockDiscounts),
       });
 
-      // Mock: Enrich each discount (2 discounts * 9 queries each = 18 queries)
+      // Mock: Enrich each discount
       mockDiscounts.forEach((discount) => {
         mockEnrichDiscount(discount);
       });
@@ -290,14 +226,20 @@ describe("DiscountsService", () => {
         id: "discount-1",
         code: "SAVE20",
         name: "20% Off",
+        type: DiscountType.STANDARD,
+        applicationType: "MANUAL",
+        valueType: DiscountValueType.PERCENTAGE,
+        value: 20,
+        scope: "PRODUCT",
+        startDate: new Date(),
+        endDate: new Date(),
+        isActive: true,
+        usageCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
-      // Mock: Get discount
-      (db.select as jest.Mock).mockReturnValueOnce(
-        createMockSelectChain([mockDiscount]),
-      );
-
-      // Mock: Enrich discount
+      (db.select as jest.Mock).mockReturnValueOnce(createSelectChain([mockDiscount]));
       mockEnrichDiscount(mockDiscount);
 
       const result = await service.findOne("discount-1");
@@ -307,8 +249,7 @@ describe("DiscountsService", () => {
     });
 
     it("should throw error if discount not found", async () => {
-      // Mock: Get discount (not found)
-      (db.select as jest.Mock).mockReturnValueOnce(createMockSelectChain([]));
+      (db.select as jest.Mock).mockReturnValueOnce(createSelectChain([]));
 
       await expect(service.findOne("invalid-id")).rejects.toThrow(
         NotFoundException,
@@ -322,14 +263,20 @@ describe("DiscountsService", () => {
         id: "discount-1",
         code: "SAVE20",
         name: "20% Off",
+        type: DiscountType.STANDARD,
+        applicationType: "MANUAL",
+        valueType: DiscountValueType.PERCENTAGE,
+        value: 20,
+        scope: "PRODUCT",
+        startDate: new Date(),
+        endDate: new Date(),
+        isActive: true,
+        usageCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
-      // Mock: Get discount
-      (db.select as jest.Mock).mockReturnValueOnce(
-        createMockSelectChain([mockDiscount]),
-      );
-
-      // Mock: Enrich discount
+      (db.select as jest.Mock).mockReturnValueOnce(createSelectChain([mockDiscount]));
       mockEnrichDiscount(mockDiscount);
 
       const result = await service.findByCode("SAVE20");
@@ -339,8 +286,7 @@ describe("DiscountsService", () => {
     });
 
     it("should throw error if discount not found", async () => {
-      // Mock: Get discount (not found)
-      (db.select as jest.Mock).mockReturnValueOnce(createMockSelectChain([]));
+      (db.select as jest.Mock).mockReturnValueOnce(createSelectChain([]));
 
       await expect(service.findByCode("INVALID")).rejects.toThrow(
         NotFoundException,
@@ -384,15 +330,10 @@ describe("DiscountsService", () => {
     };
 
     it("should validate active discount", async () => {
-      // Mock: Find by code
-      (db.select as jest.Mock).mockReturnValueOnce(
-        createMockSelectChain([mockDiscount]),
-      );
-
-      // Mock: Enrich discount
+      (db.select as jest.Mock).mockReturnValueOnce(createSelectChain([mockDiscount]));
       mockEnrichDiscount(mockDiscount);
 
-      // Mock: Check user usage (empty)
+      // Mock: Check user usage
       (db.select as jest.Mock).mockReturnValueOnce({
         from: jest.fn().mockReturnValue({
           where: jest.fn().mockResolvedValue([]),
@@ -408,12 +349,9 @@ describe("DiscountsService", () => {
     it("should return invalid if discount is not active", async () => {
       const inactiveDiscount = { ...mockDiscount, isActive: false };
 
-      // Mock: Find by code
       (db.select as jest.Mock).mockReturnValueOnce(
-        createMockSelectChain([inactiveDiscount]),
+        createSelectChain([inactiveDiscount]),
       );
-
-      // Mock: Enrich discount
       mockEnrichDiscount(inactiveDiscount);
 
       const result = await service.validateDiscount("SAVE20");
@@ -428,12 +366,9 @@ describe("DiscountsService", () => {
         endDate: new Date("2024-12-31"),
       };
 
-      // Mock: Find by code
       (db.select as jest.Mock).mockReturnValueOnce(
-        createMockSelectChain([expiredDiscount]),
+        createSelectChain([expiredDiscount]),
       );
-
-      // Mock: Enrich discount
       mockEnrichDiscount(expiredDiscount);
 
       const result = await service.validateDiscount("SAVE20");
@@ -449,12 +384,9 @@ describe("DiscountsService", () => {
         usageCount: 100,
       };
 
-      // Mock: Find by code
       (db.select as jest.Mock).mockReturnValueOnce(
-        createMockSelectChain([limitReachedDiscount]),
+        createSelectChain([limitReachedDiscount]),
       );
-
-      // Mock: Enrich discount
       mockEnrichDiscount(limitReachedDiscount);
 
       const result = await service.validateDiscount("SAVE20");
@@ -467,15 +399,20 @@ describe("DiscountsService", () => {
       const minAmountDiscount = {
         ...mockDiscount,
         minOrderAmount: 1000,
+        isActive: true,
       };
 
-      // Mock: Find by code
       (db.select as jest.Mock).mockReturnValueOnce(
-        createMockSelectChain([minAmountDiscount]),
+        createSelectChain([minAmountDiscount]),
       );
-
-      // Mock: Enrich discount
       mockEnrichDiscount(minAmountDiscount);
+
+      // Mock: Check user usage (empty)
+      (db.select as jest.Mock).mockReturnValueOnce({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue([]),
+        }),
+      });
 
       const result = await service.validateDiscount("SAVE20", undefined, 500);
 
@@ -490,7 +427,14 @@ describe("DiscountsService", () => {
         id: "discount-1",
         code: "SAVE20",
         type: DiscountType.STANDARD,
+        applicationType: "MANUAL",
+        valueType: DiscountValueType.PERCENTAGE,
+        value: 20,
         name: "Old Name",
+        isActive: true,
+        usageCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       const updatedDiscount = {
@@ -500,12 +444,12 @@ describe("DiscountsService", () => {
 
       // Mock: Find existing discount
       (db.select as jest.Mock).mockReturnValueOnce(
-        createMockSelectChain([existingDiscount]),
+        createSelectChain([existingDiscount]),
       );
 
       // Mock: Update discount
       (db.update as jest.Mock).mockReturnValueOnce(
-        createMockUpdateChain([updatedDiscount]),
+        createUpdateChain([updatedDiscount]),
       );
 
       // Mock: Delete relations
@@ -513,10 +457,8 @@ describe("DiscountsService", () => {
         where: jest.fn().mockResolvedValue(undefined),
       });
 
-      // Mock: Insert relations (empty)
-      (db.insert as jest.Mock).mockReturnValue({
-        values: jest.fn().mockResolvedValue([]),
-      });
+      // Mock: Insert relations
+      (db.insert as jest.Mock).mockReturnValue(createInsertChain([]));
 
       // Mock: Enrich discount
       mockEnrichDiscount(updatedDiscount);
@@ -528,8 +470,7 @@ describe("DiscountsService", () => {
     });
 
     it("should throw error if discount not found", async () => {
-      // Mock: Find existing discount (not found)
-      (db.select as jest.Mock).mockReturnValueOnce(createMockSelectChain([]));
+      (db.select as jest.Mock).mockReturnValueOnce(createSelectChain([]));
 
       await expect(service.update("invalid-id", {})).rejects.toThrow(
         NotFoundException,
@@ -542,15 +483,21 @@ describe("DiscountsService", () => {
       const existingDiscount = {
         id: "discount-1",
         code: "SAVE20",
+        type: DiscountType.STANDARD,
+        applicationType: "MANUAL",
+        valueType: DiscountValueType.PERCENTAGE,
+        value: 20,
+        isActive: true,
+        usageCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
-      // Mock: Find existing discount
       (db.select as jest.Mock).mockReturnValueOnce(
-        createMockSelectChain([existingDiscount]),
+        createSelectChain([existingDiscount]),
       );
 
-      // Mock: Delete discount
-      (db.delete as jest.Mock).mockReturnValueOnce({
+      (db.delete as jest.Mock).mockReturnValue({
         where: jest.fn().mockResolvedValue(undefined),
       });
 
@@ -560,8 +507,7 @@ describe("DiscountsService", () => {
     });
 
     it("should throw error if discount not found", async () => {
-      // Mock: Find existing discount (not found)
-      (db.select as jest.Mock).mockReturnValueOnce(createMockSelectChain([]));
+      (db.select as jest.Mock).mockReturnValueOnce(createSelectChain([]));
 
       await expect(service.remove("invalid-id")).rejects.toThrow(
         NotFoundException,
@@ -577,17 +523,15 @@ describe("DiscountsService", () => {
       };
 
       // Mock: Insert usage
-      (db.insert as jest.Mock).mockReturnValueOnce({
-        values: jest.fn().mockResolvedValue([]),
-      });
+      (db.insert as jest.Mock).mockReturnValue(createInsertChain([]));
 
       // Mock: Get current usage count
       (db.select as jest.Mock).mockReturnValueOnce(
-        createMockSelectChain([mockDiscount]),
+        createSelectChain([mockDiscount]),
       );
 
       // Mock: Update usage count
-      (db.update as jest.Mock).mockReturnValueOnce({
+      (db.update as jest.Mock).mockReturnValue({
         set: jest.fn().mockReturnValue({
           where: jest.fn().mockResolvedValue(undefined),
         }),
