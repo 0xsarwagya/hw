@@ -26,6 +26,10 @@ import {
   isValidGstRate,
 } from "../../common/utils/gst.utils";
 import {
+  generatePaginationMetadata,
+  normalizePaginationParams,
+} from "../../common/utils/pagination.utils";
+import {
   calculateRelevanceScore,
   isLikelySku,
   parseSearchQuery,
@@ -91,9 +95,10 @@ export class ProductsService {
    * Get all products with pagination, search, and filters
    */
   async findAll(query: QueryProductsDto) {
-    const page = query.page || 1;
-    const limit = query.limit || 10;
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = normalizePaginationParams(
+      query.page,
+      query.limit,
+    );
 
     // Build where conditions array
     const conditions: ReturnType<
@@ -169,12 +174,15 @@ export class ProductsService {
           conditions.push(inArray(products.id, productIdsInStock));
         } else {
           // No products in stock, return empty result
+          const pagination = generatePaginationMetadata(0, page, limit);
           return {
             data: [],
-            total: 0,
-            page,
-            limit,
-            totalPages: 0,
+            total: pagination.total,
+            page: pagination.page,
+            limit: pagination.limit,
+            totalPages: pagination.totalPages,
+            hasNextPage: pagination.hasNextPage,
+            hasPreviousPage: pagination.hasPreviousPage,
           };
         }
       } else {
@@ -229,14 +237,16 @@ export class ProductsService {
       .offset(offset)
       .orderBy(orderBy);
 
-    const totalPages = Math.ceil(total / limit);
+    const pagination = generatePaginationMetadata(Number(total), page, limit);
 
     return {
       data: allProducts.map((product) => this.enrichProductWithGst(product)),
-      total: Number(total),
-      page,
-      limit,
-      totalPages,
+      total: pagination.total,
+      page: pagination.page,
+      limit: pagination.limit,
+      totalPages: pagination.totalPages,
+      hasNextPage: pagination.hasNextPage,
+      hasPreviousPage: pagination.hasPreviousPage,
     };
   }
 
@@ -246,9 +256,10 @@ export class ProductsService {
    * Supports sorting by price, name, or date
    */
   async filter(filterDto: FilterProductsDto) {
-    const page = filterDto.page || 1;
-    const limit = filterDto.limit || 10;
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = normalizePaginationParams(
+      filterDto.page,
+      filterDto.limit,
+    );
 
     // Build where conditions array
     const conditions: ReturnType<
@@ -292,12 +303,15 @@ export class ProductsService {
           conditions.push(inArray(products.id, productIdsInStock));
         } else {
           // No products in stock, return empty result
+          const pagination = generatePaginationMetadata(0, page, limit);
           return {
             data: [],
-            total: 0,
-            page,
-            limit,
-            totalPages: 0,
+            total: pagination.total,
+            page: pagination.page,
+            limit: pagination.limit,
+            totalPages: pagination.totalPages,
+            hasNextPage: pagination.hasNextPage,
+            hasPreviousPage: pagination.hasPreviousPage,
           };
         }
       } else {
@@ -356,14 +370,16 @@ export class ProductsService {
       .offset(offset)
       .orderBy(orderBy);
 
-    const totalPages = Math.ceil(total / limit);
+    const pagination = generatePaginationMetadata(Number(total), page, limit);
 
     return {
       data: allProducts.map((product) => this.enrichProductWithGst(product)),
-      total: Number(total),
-      page,
-      limit,
-      totalPages,
+      total: pagination.total,
+      page: pagination.page,
+      limit: pagination.limit,
+      totalPages: pagination.totalPages,
+      hasNextPage: pagination.hasNextPage,
+      hasPreviousPage: pagination.hasPreviousPage,
     };
   }
 
@@ -465,9 +481,10 @@ export class ProductsService {
    * Uses fuse.js for fuzzy search and relevance scoring
    */
   async search(searchDto: SearchProductsDto): Promise<SearchResponseDto> {
-    const page = searchDto.page || 1;
-    const limit = searchDto.limit || 10;
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = normalizePaginationParams(
+      searchDto.page,
+      searchDto.limit,
+    );
 
     // Parse search query
     const parsedQuery = parseSearchQuery(searchDto.query);
@@ -515,12 +532,15 @@ export class ProductsService {
           conditions.push(inArray(products.id, productIdsInStock));
         } else {
           // No products in stock
+          const pagination = generatePaginationMetadata(0, page, limit);
           return {
             results: [],
-            total: 0,
-            page,
-            limit,
-            totalPages: 0,
+            total: pagination.total,
+            page: pagination.page,
+            limit: pagination.limit,
+            totalPages: pagination.totalPages,
+            hasNextPage: pagination.hasNextPage,
+            hasPreviousPage: pagination.hasPreviousPage,
             query: searchDto.query,
           };
         }
@@ -743,14 +763,16 @@ export class ProductsService {
       matchingSku: item.matchingSku,
     }));
 
-    const totalPages = Math.ceil(total / limit);
+    const pagination = generatePaginationMetadata(total, page, limit);
 
     return {
       results: searchResults,
-      total,
-      page,
-      limit,
-      totalPages,
+      total: pagination.total,
+      page: pagination.page,
+      limit: pagination.limit,
+      totalPages: pagination.totalPages,
+      hasNextPage: pagination.hasNextPage,
+      hasPreviousPage: pagination.hasPreviousPage,
       query: searchDto.query,
     };
   }

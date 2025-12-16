@@ -200,6 +200,18 @@ export class SearchResponseDto {
   totalPages: number;
 
   @ApiProperty({
+    description: "Whether there is a next page",
+    example: true,
+  })
+  hasNextPage: boolean;
+
+  @ApiProperty({
+    description: "Whether there is a previous page",
+    example: false,
+  })
+  hasPreviousPage: boolean;
+
+  @ApiProperty({
     description: "Search query used",
     example: "wireless headphones",
   })
