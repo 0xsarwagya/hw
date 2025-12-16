@@ -2,9 +2,10 @@
 import { resolve } from "node:path";
 import { config } from "dotenv";
 
-// Load from root .env first, then apps/backend/.env (root takes precedence)
-config({ path: resolve(__dirname, "../../.env") });
-config({ path: resolve(__dirname, "../.env") });
+// Only load from root .env (when compiled, __dirname is apps/backend/dist)
+// 2 levels up: dist -> backend -> ecommerce (root)
+const rootEnvPath = resolve(__dirname, "../../.env");
+config({ path: rootEnvPath });
 
 // Now import everything else after .env is loaded
 import { ExecutionContext } from "@nestjs/common";
