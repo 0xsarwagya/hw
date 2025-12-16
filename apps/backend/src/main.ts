@@ -1,15 +1,17 @@
+// Load .env file FIRST before any other imports
 import { resolve } from "node:path";
+import { config } from "dotenv";
+
+// Load from root .env first, then apps/backend/.env (root takes precedence)
+config({ path: resolve(__dirname, "../../.env") });
+config({ path: resolve(__dirname, "../.env") });
+
+// Now import everything else after .env is loaded
 import { ExecutionContext } from "@nestjs/common";
 import { NestFactory, Reflector } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import cookieParser from "cookie-parser";
-import { config } from "dotenv";
 import { AppModule } from "./app.module";
-
-// Load .env file before anything else
-// Load from apps/backend/.env or fallback to root .env
-config({ path: resolve(__dirname, "../.env") });
-config({ path: resolve(__dirname, "../../.env") }); // Fallback to root
 
 import { IS_PUBLIC_KEY } from "./common/decorators/public.decorator";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
