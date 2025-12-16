@@ -15,6 +15,7 @@ import {
   inArray,
   lte,
   or,
+  productImages,
   products,
   productVariants,
   sql,
@@ -34,6 +35,7 @@ import {
   isLikelySku,
   parseSearchQuery,
 } from "../../common/utils/search.utils";
+import { StorageService } from "../storage/storage.service";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { FilterProductsDto, SortField, SortOrder } from "./dto/filter.dto";
 import { QueryProductsDto } from "./dto/query-products.dto";
@@ -47,6 +49,7 @@ import { UpdateProductDto } from "./dto/update-product.dto";
 
 @Injectable()
 export class ProductsService {
+  constructor(private readonly storageService: StorageService) {}
   /**
    * Create a new product
    */
@@ -796,5 +799,170 @@ export class ProductsService {
       priceIncludingGst: Number(priceIncludingGst.toFixed(2)),
       hsnCode: product.hsnCode || null,
     };
+  }
+
+  /**
+   * Check if a URL is an S3 key (stored in our storage)
+   * S3 keys typically start with a prefix like "products/", "avatars/", etc.
+   */
+  private isS3Key(url: string): boolean {
+    // Check if it looks like an S3 key (has prefix pattern, no http/https)
+    return (
+      !url.startsWith("http://") &&
+      !url.startsWith("https://") &&
+      url.includes("/")
+    );
+  }
+
+  /**
+   * Get product images with resolved URLs
+   * Converts S3 keys to public URLs, keeps existing URLs as-is
+   */
+  async getProductImages(productId: string) {
+    const images = await db
+      .select()
+      .from(productImages)
+      .where(eq(productImages.productId, productId))
+      .orderBy(asc(productImages.order));
+
+    // Resolve S3 keys to URLs
+    const resolvedImages = await Promise.all(
+      images.map(async (image) => {
+        let url = image.url;
+        if (this.isS3Key(image.url)) {
+          try {
+            url = await this.storageService.getUrl(image.url);
+          } catch {
+            // If S3 key resolution fails, keep original
+            url = image.url;
+          }
+        }
+        return {
+          ...image,
+          url,
+        };
+      }),
+    );
+
+    return resolvedImages;
+  }
+
+  /**
+   * Add an image to a product
+   * @param productId - Product ID
+   * @param imageKey - S3 key or URL
+   * @param altText - Alt text for the image
+   * @param order - Display order
+   * @param variantId - Optional variant ID
+   */
+  async addProductImage(
+    productId: string,
+    imageKey: string,
+    altText?: string,
+    order = 0,
+    variantId?: string,
+  ) {
+    // Validate product exists
+    const [product] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, productId))
+      .limit(1);
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${productId} not found`);
+    }
+
+    // Validate variant exists if provided
+    if (variantId) {
+      const [variant] = await db
+        .select()
+        .from(productVariants)
+        .where(eq(productVariants.id, variantId))
+        .limit(1);
+
+      if (!variant) {
+        throw new NotFoundException(`Variant with ID ${variantId} not found`);
+      }
+    }
+
+    const [newImage] = await db
+      .insert(productImages)
+      .values({
+        productId,
+        variantId: variantId || null,
+        url: imageKey, // Store S3 key or URL
+        altText: altText || null,
+        order,
+      })
+      .returning();
+
+    // Resolve URL if it's an S3 key
+    let url = imageKey;
+    if (this.isS3Key(imageKey)) {
+      try {
+        url = await this.storageService.getUrl(imageKey);
+      } catch {
+        url = imageKey;
+      }
+    }
+
+    return {
+      ...newImage,
+      url,
+    };
+  }
+
+  /**
+   * Delete a product image
+   * Also deletes from S3 if it's an S3 key
+   */
+  async deleteProductImage(imageId: string) {
+    const [image] = await db
+      .select()
+      .from(productImages)
+      .where(eq(productImages.id, imageId))
+      .limit(1);
+
+    if (!image) {
+      throw new NotFoundException(`Image with ID ${imageId} not found`);
+    }
+
+    // Delete from S3 if it's an S3 key
+    if (this.isS3Key(image.url)) {
+      try {
+        await this.storageService.delete(image.url);
+      } catch {
+        // Continue even if S3 deletion fails
+      }
+    }
+
+    // Delete from database
+    await db.delete(productImages).where(eq(productImages.id, imageId));
+
+    return { message: "Image deleted successfully" };
+  }
+
+  /**
+   * Update product image order
+   */
+  async updateImageOrder(imageId: string, order: number) {
+    const [image] = await db
+      .select()
+      .from(productImages)
+      .where(eq(productImages.id, imageId))
+      .limit(1);
+
+    if (!image) {
+      throw new NotFoundException(`Image with ID ${imageId} not found`);
+    }
+
+    const [updated] = await db
+      .update(productImages)
+      .set({ order, updatedAt: new Date() })
+      .where(eq(productImages.id, imageId))
+      .returning();
+
+    return updated;
   }
 }
