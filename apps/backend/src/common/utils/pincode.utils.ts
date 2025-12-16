@@ -1,19 +1,155 @@
 /**
- * PIN code (Postal Index Number) utility functions for India
- * Provides validation, serviceability checks, and utilities for Indian PIN codes
+ * PIN Code (Postal Index Number) utility functions for Indian addresses
+ * PIN codes are 6-digit numbers used by India Post
  */
 
-export interface PincodeData {
-  pincode: string;
-  state: string;
-  stateCode: string;
-  district: string;
-  city: string;
-  isServiceable: boolean;
-  codAvailable: boolean;
-  shippingZone: string;
+/**
+ * Validate PIN code format
+ * PIN code must be exactly 6 digits
+ * @param pincode - PIN code to validate
+ * @returns true if format is valid, false otherwise
+ */
+export function isValidPincodeFormat(pincode: string): boolean {
+  if (!pincode || typeof pincode !== "string") {
+    return false;
+  }
+
+  // Remove spaces and check if it's exactly 6 digits
+  const cleaned = pincode.trim().replace(/\s+/g, "");
+
+  // Must be exactly 6 digits
+  const pincodePattern = /^[0-9]{6}$/;
+
+  return pincodePattern.test(cleaned);
 }
 
+/**
+ * Format PIN code (remove spaces, ensure 6 digits)
+ * @param pincode - PIN code to format
+ * @returns Formatted PIN code or empty string if invalid
+ */
+export function formatPincode(pincode: string): string {
+  if (!pincode || typeof pincode !== "string") {
+    return "";
+  }
+
+  const cleaned = pincode.trim().replace(/\s+/g, "");
+
+  // Return formatted if valid, otherwise return empty string
+  if (isValidPincodeFormat(cleaned)) {
+    return cleaned;
+  }
+
+  return "";
+}
+
+/**
+ * Extract first digit of PIN code (region indicator)
+ * First digit indicates the region:
+ * 1-2: Northern region
+ * 3-4: Western region
+ * 5-6: Southern region
+ * 7-8: Eastern region
+ * 9: Army Post Office (APO) and Field Post Office (FPO)
+ * @param pincode - PIN code
+ * @returns First digit (1-9) or null if invalid
+ */
+export function getPincodeRegion(pincode: string): number | null {
+  if (!isValidPincodeFormat(pincode)) {
+    return null;
+  }
+
+  const formatted = formatPincode(pincode);
+  const firstDigit = parseInt(formatted.charAt(0), 10);
+
+  return firstDigit >= 1 && firstDigit <= 9 ? firstDigit : null;
+}
+
+/**
+ * Get region name from PIN code first digit
+ * @param pincode - PIN code
+ * @returns Region name or null if invalid
+ */
+export function getPincodeRegionName(pincode: string): string | null {
+  const firstDigit = getPincodeRegion(pincode);
+
+  if (firstDigit === null) {
+    return null;
+  }
+
+  const regionMap: Record<number, string> = {
+    1: "Northern",
+    2: "Northern",
+    3: "Western",
+    4: "Western",
+    5: "Southern",
+    6: "Southern",
+    7: "Eastern",
+    8: "Eastern",
+    9: "APO/FPO",
+  };
+
+  return regionMap[firstDigit] || null;
+}
+
+/**
+ * Validate PIN code and check if it's serviceable
+ * This is a placeholder - in production, integrate with actual serviceability API
+ * @param pincode - PIN code to validate
+ * @returns Validation result with serviceability info
+ */
+export interface PincodeValidationResult {
+  isValid: boolean;
+  isServiceable: boolean;
+  state?: string;
+  district?: string;
+  city?: string;
+  error?: string;
+}
+
+export async function validatePincode(
+  pincode: string,
+): Promise<PincodeValidationResult> {
+  // Format validation
+  if (!isValidPincodeFormat(pincode)) {
+    return {
+      isValid: false,
+      isServiceable: false,
+      error: "Invalid PIN code format. PIN code must be exactly 6 digits",
+    };
+  }
+
+  // TODO: Integrate with actual PIN code serviceability API
+  // Example integration:
+  // try {
+  //   const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+  //   const data = await response.json();
+  //   if (data[0]?.Status === "Success" && data[0]?.PostOffice?.length > 0) {
+  //     const postOffice = data[0].PostOffice[0];
+  //     return {
+  //       isValid: true,
+  //       isServiceable: true,
+  //       state: postOffice.State,
+  //       district: postOffice.District,
+  //       city: postOffice.Name,
+  //     };
+  //   }
+  // } catch (error) {
+  //   return { isValid: true, isServiceable: false, error: "Serviceability check failed" };
+  // }
+
+  // Placeholder: Return basic validation result
+  // In production, this should check against actual PIN code database/API
+  return {
+    isValid: true,
+    isServiceable: true, // Would be determined by API
+  };
+}
+
+/**
+ * Serviceability result for PIN code
+ * Used by shipping service
+ */
 export interface ServiceabilityResult {
   isValid: boolean;
   isServiceable: boolean;
@@ -26,178 +162,97 @@ export interface ServiceabilityResult {
 }
 
 /**
- * Validate PIN code format
- * Indian PIN codes are 6 digits
- * @param pincode - PIN code to validate
- * @returns true if format is valid, false otherwise
- */
-export function isValidPincodeFormat(pincode: string): boolean {
-  if (!pincode || typeof pincode !== "string") {
-    return false;
-  }
-
-  // Remove spaces and check if exactly 6 digits
-  const cleaned = pincode.trim().replace(/\s+/g, "");
-
-  // PIN code must be exactly 6 digits
-  if (cleaned.length !== 6) {
-    return false;
-  }
-
-  // Must be all digits
-  const pincodePattern = /^\d{6}$/;
-  return pincodePattern.test(cleaned);
-}
-
-/**
- * Format PIN code (remove spaces, ensure 6 digits)
- * @param pincode - PIN code to format
- * @returns Formatted PIN code
- */
-export function formatPincode(pincode: string): string {
-  if (!pincode) {
-    return "";
-  }
-  return pincode.trim().replace(/\s+/g, "");
-}
-
-/**
- * Extract region code from PIN code (first digit)
- * Indian PIN codes are divided into 9 regions (1-9)
- * @param pincode - PIN code
- * @returns Region code (1-9) or null if invalid
- */
-export function extractRegionCodeFromPincode(pincode: string): number | null {
-  if (!isValidPincodeFormat(pincode)) {
-    return null;
-  }
-  const cleaned = formatPincode(pincode);
-  const firstDigit = parseInt(cleaned.substring(0, 1), 10);
-  return firstDigit >= 1 && firstDigit <= 9 ? firstDigit : null;
-}
-
-/**
- * Get state name from region code
- * Simplified mapping of Indian PIN code regions to states
- * Note: This is a basic mapping. Real implementation needs comprehensive database.
- * @param regionCode - Region code (1-9)
- * @returns State name or null
- */
-export function getStateFromRegionCode(regionCode: number): string | null {
-  const stateMapping: Record<number, string> = {
-    1: "Delhi",
-    2: "Haryana, Punjab, Himachal Pradesh, Jammu & Kashmir, Chandigarh",
-    3: "Rajasthan, Gujarat, Daman & Diu, Dadra & Nagar Haveli",
-    4: "Maharashtra, Goa",
-    5: "Tamil Nadu, Kerala, Lakshadweep, Puducherry",
-    6: "Karnataka",
-    7: "West Bengal, Andaman & Nicobar Islands",
-    8: "Bihar, Jharkhand",
-    9: "Uttar Pradesh, Uttarakhand",
-  };
-
-  return stateMapping[regionCode] || null;
-}
-
-/**
- * Check if PIN code is serviceable
- * This is a placeholder function. Real implementation should check against database/service.
+ * Check PIN code serviceability
+ * Used as fallback by shipping service when PIN code not in database
  * @param pincode - PIN code to check
  * @returns Serviceability result
  */
 export async function checkPincodeServiceability(
   pincode: string,
 ): Promise<ServiceabilityResult> {
+  // Format validation
   if (!isValidPincodeFormat(pincode)) {
     return {
       isValid: false,
       isServiceable: false,
       codAvailable: false,
-      shippingZone: "",
+      shippingZone: "zone_c",
       error: "Invalid PIN code format",
     };
   }
 
-  const cleaned = formatPincode(pincode);
-  const regionCode = extractRegionCodeFromPincode(cleaned);
-
-  if (!regionCode) {
-    return {
-      isValid: false,
-      isServiceable: false,
-      codAvailable: false,
-      shippingZone: "",
-      error: "Invalid region code",
-    };
-  }
-
-  // Placeholder logic - in real implementation, this would query a database
-  // For now, we'll assume most PIN codes are serviceable except some specific ones
-  const nonServiceablePincodes = ["000000", "999999"]; // Example non-serviceable codes
-  const isServiceable = !nonServiceablePincodes.includes(cleaned);
-
-  // Determine shipping zone based on region
-  const shippingZone = getShippingZoneFromRegion(regionCode);
-
-  // COD availability logic (simplified)
-  const codAvailable =
-    isServiceable && ["metro", "zone_a"].includes(shippingZone);
-
+  // TODO: Integrate with actual PIN code serviceability API
+  // For now, return basic validation result
+  // In production, this should check against actual PIN code database/API
   return {
     isValid: true,
-    isServiceable,
-    codAvailable,
-    shippingZone,
-    state: getStateFromRegionCode(regionCode) || undefined,
-    // district and city would be populated from database in real implementation
+    isServiceable: true, // Would be determined by API
+    codAvailable: true, // Would be determined by API
+    shippingZone: "zone_c", // Default zone, would be determined by API
   };
 }
 
 /**
- * Get shipping zone from region code
- * @param regionCode - Region code (1-9)
- * @returns Shipping zone
- */
-export function getShippingZoneFromRegion(regionCode: number): string {
-  // Simplified zone mapping
-  const zoneMapping: Record<number, string> = {
-    1: "metro", // Delhi
-    2: "zone_a", // North India
-    3: "zone_a", // West India
-    4: "zone_a", // Maharashtra, Goa
-    5: "zone_b", // South India
-    6: "zone_b", // Karnataka
-    7: "zone_b", // East India
-    8: "zone_c", // Bihar, Jharkhand
-    9: "zone_c", // UP, Uttarakhand
-  };
-
-  return zoneMapping[regionCode] || "zone_c";
-}
-
-/**
- * Get shipping rates based on zone
+ * Get shipping rate by zone and weight
  * @param zone - Shipping zone
  * @param weight - Weight in grams
- * @returns Shipping rate or null if not available
+ * @returns Shipping rate or null
  */
 export function getShippingRateByZone(
   zone: string,
-  weight: number = 500,
+  weight: number,
 ): number | null {
+  // Basic zone-based rate calculation
+  // In production, this would use actual rate tables
   const baseRates: Record<string, number> = {
     metro: 50,
-    zone_a: 80,
+    zone_a: 75,
     zone_b: 100,
-    zone_c: 120,
+    zone_c: 125,
+    zone_d: 150,
+    zone_e: 200,
   };
 
-  const baseRate = baseRates[zone];
-  if (!baseRate) return null;
+  const baseRate = baseRates[zone] || 100;
 
-  // Additional charge for weight over 500g
-  const additionalWeight = Math.max(0, weight - 500);
-  const additionalRate = Math.ceil(additionalWeight / 500) * 20;
+  // Add weight-based charges (per 500g)
+  const weightMultiplier = Math.ceil(weight / 500);
+  const totalRate = baseRate * weightMultiplier;
 
-  return baseRate + additionalRate;
+  return totalRate;
+}
+
+/**
+ * Get state and district from PIN code
+ * This can be integrated with PIN code lookup API
+ * @param pincode - PIN code
+ * @returns State and district info or null
+ */
+export interface PincodeLocationInfo {
+  state: string;
+  district: string;
+  city?: string;
+}
+
+export async function getPincodeLocation(
+  pincode: string,
+): Promise<PincodeLocationInfo | null> {
+  const validation = await validatePincode(pincode);
+
+  if (!validation.isValid || !validation.isServiceable) {
+    return null;
+  }
+
+  if (validation.state && validation.district) {
+    return {
+      state: validation.state,
+      district: validation.district,
+      city: validation.city,
+    };
+  }
+
+  // TODO: Query database or API for PIN code location
+  // This would typically query the pincodes table or external API
+
+  return null;
 }

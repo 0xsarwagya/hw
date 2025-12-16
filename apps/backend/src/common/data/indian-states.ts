@@ -1,67 +1,76 @@
 /**
- * Indian States and Union Territories
- * List of all 28 states and 8 union territories in India
+ * Indian States and Union Territories Data
+ * 28 States + 8 Union Territories = 36 total
  */
 
 export interface IndianState {
-  code: string;
   name: string;
+  code: string;
   type: "state" | "union_territory";
+  gstStateCode: number; // GST state code (01-38)
 }
 
 export const INDIAN_STATES: IndianState[] = [
-  // States
-  { code: "AP", name: "Andhra Pradesh", type: "state" },
-  { code: "AR", name: "Arunachal Pradesh", type: "state" },
-  { code: "AS", name: "Assam", type: "state" },
-  { code: "BR", name: "Bihar", type: "state" },
-  { code: "CT", name: "Chhattisgarh", type: "state" },
-  { code: "GA", name: "Goa", type: "state" },
-  { code: "GJ", name: "Gujarat", type: "state" },
-  { code: "HR", name: "Haryana", type: "state" },
-  { code: "HP", name: "Himachal Pradesh", type: "state" },
-  { code: "JK", name: "Jammu and Kashmir", type: "state" },
-  { code: "JH", name: "Jharkhand", type: "state" },
-  { code: "KA", name: "Karnataka", type: "state" },
-  { code: "KL", name: "Kerala", type: "state" },
-  { code: "MP", name: "Madhya Pradesh", type: "state" },
-  { code: "MH", name: "Maharashtra", type: "state" },
-  { code: "MN", name: "Manipur", type: "state" },
-  { code: "ML", name: "Meghalaya", type: "state" },
-  { code: "MZ", name: "Mizoram", type: "state" },
-  { code: "NL", name: "Nagaland", type: "state" },
-  { code: "OR", name: "Odisha", type: "state" },
-  { code: "PB", name: "Punjab", type: "state" },
-  { code: "RJ", name: "Rajasthan", type: "state" },
-  { code: "SK", name: "Sikkim", type: "state" },
-  { code: "TN", name: "Tamil Nadu", type: "state" },
-  { code: "TG", name: "Telangana", type: "state" },
-  { code: "TR", name: "Tripura", type: "state" },
-  { code: "UP", name: "Uttar Pradesh", type: "state" },
-  { code: "UK", name: "Uttarakhand", type: "state" },
-  { code: "WB", name: "West Bengal", type: "state" },
-  // Union Territories
-  { code: "AN", name: "Andaman and Nicobar Islands", type: "union_territory" },
-  { code: "CH", name: "Chandigarh", type: "union_territory" },
-  {
-    code: "DN",
-    name: "Dadra and Nagar Haveli and Daman and Diu",
-    type: "union_territory",
-  },
-  { code: "DL", name: "Delhi", type: "union_territory" },
-  { code: "LA", name: "Ladakh", type: "union_territory" },
-  { code: "LD", name: "Lakshadweep", type: "union_territory" },
-  { code: "PY", name: "Puducherry", type: "union_territory" },
-];
+  // States (28)
+  { name: "Andhra Pradesh", code: "AP", type: "state", gstStateCode: 37 },
+  { name: "Arunachal Pradesh", code: "AR", type: "state", gstStateCode: 12 },
+  { name: "Assam", code: "AS", type: "state", gstStateCode: 18 },
+  { name: "Bihar", code: "BR", type: "state", gstStateCode: 10 },
+  { name: "Chhattisgarh", code: "CT", type: "state", gstStateCode: 22 },
+  { name: "Goa", code: "GA", type: "state", gstStateCode: 30 },
+  { name: "Gujarat", code: "GJ", type: "state", gstStateCode: 24 },
+  { name: "Haryana", code: "HR", type: "state", gstStateCode: 6 },
+  { name: "Himachal Pradesh", code: "HP", type: "state", gstStateCode: 2 },
+  { name: "Jharkhand", code: "JH", type: "state", gstStateCode: 20 },
+  { name: "Karnataka", code: "KA", type: "state", gstStateCode: 29 },
+  { name: "Kerala", code: "KL", type: "state", gstStateCode: 32 },
+  { name: "Madhya Pradesh", code: "MP", type: "state", gstStateCode: 23 },
+  { name: "Maharashtra", code: "MH", type: "state", gstStateCode: 27 },
+  { name: "Manipur", code: "MN", type: "state", gstStateCode: 14 },
+  { name: "Meghalaya", code: "ML", type: "state", gstStateCode: 17 },
+  { name: "Mizoram", code: "MZ", type: "state", gstStateCode: 15 },
+  { name: "Nagaland", code: "NL", type: "state", gstStateCode: 13 },
+  { name: "Odisha", code: "OD", type: "state", gstStateCode: 21 },
+  { name: "Punjab", code: "PB", type: "state", gstStateCode: 3 },
+  { name: "Rajasthan", code: "RJ", type: "state", gstStateCode: 8 },
+  { name: "Sikkim", code: "SK", type: "state", gstStateCode: 11 },
+  { name: "Tamil Nadu", code: "TN", type: "state", gstStateCode: 33 },
+  { name: "Telangana", code: "TG", type: "state", gstStateCode: 36 },
+  { name: "Tripura", code: "TR", type: "state", gstStateCode: 16 },
+  { name: "Uttar Pradesh", code: "UP", type: "state", gstStateCode: 9 },
+  { name: "Uttarakhand", code: "UK", type: "state", gstStateCode: 5 },
+  { name: "West Bengal", code: "WB", type: "state", gstStateCode: 19 },
 
-/**
- * Get state by code
- */
-export function getStateByCode(code: string): IndianState | undefined {
-  return INDIAN_STATES.find(
-    (state) => state.code.toLowerCase() === code.toLowerCase(),
-  );
-}
+  // Union Territories (8)
+  {
+    name: "Andaman and Nicobar Islands",
+    code: "AN",
+    type: "union_territory",
+    gstStateCode: 35,
+  },
+  { name: "Chandigarh", code: "CH", type: "union_territory", gstStateCode: 4 },
+  {
+    name: "Dadra and Nagar Haveli and Daman and Diu",
+    code: "DH",
+    type: "union_territory",
+    gstStateCode: 26,
+  },
+  { name: "Delhi", code: "DL", type: "union_territory", gstStateCode: 7 },
+  {
+    name: "Jammu and Kashmir",
+    code: "JK",
+    type: "union_territory",
+    gstStateCode: 1,
+  },
+  { name: "Ladakh", code: "LA", type: "union_territory", gstStateCode: 38 },
+  {
+    name: "Lakshadweep",
+    code: "LD",
+    type: "union_territory",
+    gstStateCode: 31,
+  },
+  { name: "Puducherry", code: "PY", type: "union_territory", gstStateCode: 34 },
+];
 
 /**
  * Get state by name
@@ -73,8 +82,50 @@ export function getStateByName(name: string): IndianState | undefined {
 }
 
 /**
- * Validate state name
+ * Get state by code
+ */
+export function getStateByCode(code: string): IndianState | undefined {
+  return INDIAN_STATES.find(
+    (state) => state.code.toLowerCase() === code.toLowerCase(),
+  );
+}
+
+/**
+ * Get state by GST state code
+ */
+export function getStateByGstCode(gstCode: number): IndianState | undefined {
+  return INDIAN_STATES.find((state) => state.gstStateCode === gstCode);
+}
+
+/**
+ * Get all states
+ */
+export function getAllStates(): IndianState[] {
+  return INDIAN_STATES.filter((state) => state.type === "state");
+}
+
+/**
+ * Get all union territories
+ */
+export function getAllUnionTerritories(): IndianState[] {
+  return INDIAN_STATES.filter((state) => state.type === "union_territory");
+}
+
+/**
+ * Get all states and union territories
+ */
+export function getAllStatesAndUTs(): IndianState[] {
+  return INDIAN_STATES;
+}
+
+/**
+ * Check if state name is valid
+ * @param stateName - State name to validate
+ * @returns true if valid Indian state/UT, false otherwise
  */
 export function isValidStateName(stateName: string): boolean {
+  if (!stateName || typeof stateName !== "string") {
+    return false;
+  }
   return getStateByName(stateName) !== undefined;
 }
