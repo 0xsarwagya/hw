@@ -4,11 +4,24 @@ import * as schema from "../schema/index";
 
 function createPool(): Pool {
   const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
+  // During build time, allow pool creation without DATABASE_URL
+  // The error will be thrown when the pool is actually used
+  const isBuildTime = process.env.NODE_ENV === undefined || 
+                      process.argv.some(arg => arg.includes('build') || arg.includes('tsc'));
+  
+  if (!databaseUrl && !isBuildTime) {
     throw new Error(
       "DATABASE_URL environment variable is not set. Please set it to a valid PostgreSQL connection string.",
     );
   }
+  
+  // If no DATABASE_URL during build, create a pool that will fail on actual use
+  if (!databaseUrl) {
+    return new Pool({
+      connectionString: "postgresql://placeholder",
+    });
+  }
+  
   return new Pool({
     connectionString: databaseUrl,
   });
@@ -32,7 +45,22 @@ const pool = new Proxy({} as Pool, {
   },
 });
 
-export const db = drizzle(pool, { schema });
+// Lazy initialization of drizzle - only create when db is actually accessed
+let dbInstance: ReturnType<typeof drizzle> | null = null;
+
+function getDb() {
+  if (!dbInstance) {
+    dbInstance = drizzle(pool, { schema });
+  }
+  return dbInstance;
+}
+
+// Export db as a Proxy to ensure lazy initialization
+export const db = new Proxy({} as ReturnType<typeof drizzle>, {
+  get(_target, prop) {
+    return getDb()[prop as keyof ReturnType<typeof drizzle>];
+  },
+});
 
 export type Database = typeof db;
 
