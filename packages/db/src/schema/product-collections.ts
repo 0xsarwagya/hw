@@ -49,4 +49,3 @@ export const productCollectionsRelations = relations(
 
 export type ProductCollection = typeof productCollections.$inferSelect;
 export type NewProductCollection = typeof productCollections.$inferInsert;
-

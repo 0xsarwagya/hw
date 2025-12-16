@@ -42,4 +42,3 @@ export const productTagsRelations = relations(productTags, ({ one }) => ({
 
 export type ProductTag = typeof productTags.$inferSelect;
 export type NewProductTag = typeof productTags.$inferInsert;
-
