@@ -2,6 +2,11 @@ import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { db, eq, orders, payments } from "@vcecom/db";
 import Razorpay from "razorpay";
+import { CheckoutState } from "../redis-store/constants/checkout-states";
+import {
+  PaymentIntent,
+  PaymentIntentStatus,
+} from "../redis-store/dto/payment-intent.dto";
 import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import { PaymentsService } from "./payments.service";
 import { RazorpayConfigService } from "./razorpay-config.service";
@@ -77,6 +82,13 @@ describe("PaymentsService", () => {
             setPaymentIntent: jest.fn(),
             transitionState: jest.fn(),
             failSession: jest.fn(),
+            assertState: jest.fn(),
+            getPaymentIntent: jest.fn(),
+            createOrGetPaymentIntent: jest.fn(),
+            updatePaymentIntentStatus: jest.fn(),
+            getPaymentIntentByPaymentId: jest.fn(),
+            get: jest.fn(),
+            getSession: jest.fn(),
           },
         },
       ],
@@ -799,42 +811,46 @@ describe("PaymentsService", () => {
         razorpayPaymentId: "pay_EXISTING",
       };
 
-      const selectOrderMock = jest.fn().mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue([mockOrder]),
-          }),
-        }),
+      const selectOrderMock = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockOrder]),
+      };
+
+      const selectPaymentMock = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockPayment]),
+      };
+
+      const updatePaymentMock = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue(undefined),
+      };
+
+      const updateOrderMock = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue(undefined),
+      };
+
+      // Mock getRazorpayOrderDetails
+      jest.spyOn(service, "getRazorpayOrderDetails").mockResolvedValue({
+        id: "order_MNOPQRSTUVWXYZ",
+        notes: {},
       });
 
-      const selectPaymentMock = jest.fn().mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue([mockPayment]),
-          }),
-        }),
+      (db.select as jest.Mock).mockImplementation((args) => {
+        if (args === payments) {
+          return selectPaymentMock;
+        }
+        return selectOrderMock;
       });
-
-      const updatePaymentMock = jest.fn().mockReturnValue({
-        set: jest.fn().mockReturnValue({
-          where: jest.fn().mockResolvedValue(undefined),
-        }),
+      (db.update as jest.Mock).mockImplementation((args) => {
+        if (args === payments) {
+          return updatePaymentMock;
+        }
+        return updateOrderMock;
       });
-
-      const updateOrderMock = jest.fn().mockReturnValue({
-        set: jest.fn().mockReturnValue({
-          where: jest.fn().mockResolvedValue(undefined),
-        }),
-      });
-
-      (db.select as jest.Mock) = jest
-        .fn()
-        .mockReturnValueOnce(selectOrderMock())
-        .mockReturnValueOnce(selectPaymentMock());
-      (db.update as jest.Mock) = jest
-        .fn()
-        .mockReturnValueOnce(updatePaymentMock())
-        .mockReturnValueOnce(updateOrderMock());
 
       const result = await service.handleWebhook(webhookEvent, signature);
 
@@ -898,6 +914,514 @@ describe("PaymentsService", () => {
       await expect(service.createRazorpayOrder(createDto)).rejects.toThrow(
         BadRequestException,
       );
+    });
+  });
+
+  describe("createPaymentIntent", () => {
+    const checkoutSessionId = "checkout-session-123";
+    const amount = 100000; // 1000 INR in paise
+    const paymentIntentId = "order_123456";
+
+    it("should create payment intent idempotently", async () => {
+      const mockPaymentIntent: PaymentIntent = {
+        paymentProvider: "razorpay",
+        paymentIntentId,
+        status: PaymentIntentStatus.CREATED,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const mockRazorpayOrder = {
+        id: paymentIntentId,
+        amount: amount,
+        currency: "INR",
+        receipt: `checkout-${checkoutSessionId}`,
+        status: "created",
+        notes: {
+          checkout_session_id: checkoutSessionId,
+        },
+      };
+
+      mockCheckoutStore.assertState.mockResolvedValue(undefined);
+      // Mock createOrGetPaymentIntent to call the provider function (simulating new creation)
+      mockCheckoutStore.createOrGetPaymentIntent.mockImplementation(
+        async (sessionId, createFn) => {
+          // Simulate calling the provider
+          const intent = await createFn();
+          return intent;
+        },
+      );
+      mockCheckoutStore.transitionState.mockResolvedValue(undefined);
+      mockRazorpayInstance.orders.create.mockResolvedValue(mockRazorpayOrder);
+
+      const result = await service.createPaymentIntent(
+        checkoutSessionId,
+        amount,
+        "INR",
+      );
+
+      // Compare structure without exact timestamp matching (timestamps are generated dynamically)
+      expect(result).toMatchObject({
+        paymentProvider: mockPaymentIntent.paymentProvider,
+        paymentIntentId: mockPaymentIntent.paymentIntentId,
+        status: mockPaymentIntent.status,
+      });
+      expect(result.createdAt).toBeDefined();
+      expect(result.updatedAt).toBeDefined();
+      expect(typeof result.createdAt).toBe("string");
+      expect(typeof result.updatedAt).toBe("string");
+      expect(mockCheckoutStore.assertState).toHaveBeenCalledWith(
+        checkoutSessionId,
+        CheckoutState.LOCKED,
+      );
+      expect(mockCheckoutStore.createOrGetPaymentIntent).toHaveBeenCalled();
+      expect(mockRazorpayInstance.orders.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount,
+          currency: "INR",
+          receipt: expect.any(String),
+          payment_capture: 1,
+          notes: expect.objectContaining({
+            checkout_session_id: checkoutSessionId,
+          }),
+        }),
+      );
+    });
+
+    it("should return existing payment intent on retry (idempotent)", async () => {
+      const mockPaymentIntent: PaymentIntent = {
+        paymentProvider: "razorpay",
+        paymentIntentId,
+        status: PaymentIntentStatus.CREATED,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // createOrGetPaymentIntent returns existing (idempotent)
+      mockCheckoutStore.createOrGetPaymentIntent.mockResolvedValue(
+        mockPaymentIntent,
+      );
+      mockCheckoutStore.transitionState.mockResolvedValue(undefined);
+
+      const result = await service.createPaymentIntent(
+        checkoutSessionId,
+        amount,
+      );
+
+      expect(result).toEqual(mockPaymentIntent);
+      // Provider should not be called if payment intent already exists
+      expect(mockRazorpayInstance.orders.create).not.toHaveBeenCalled();
+    });
+
+    it("should throw if checkout state is not LOCKED", async () => {
+      mockCheckoutStore.assertState.mockRejectedValue(
+        new BadRequestException("Invalid state"),
+      );
+
+      await expect(
+        service.createPaymentIntent(checkoutSessionId, amount),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockCheckoutStore.createOrGetPaymentIntent).not.toHaveBeenCalled();
+    });
+
+    it("should handle provider failure gracefully", async () => {
+      mockRazorpayInstance.orders.create.mockRejectedValue(
+        new Error("Razorpay API error"),
+      );
+
+      // createOrGetPaymentIntent will call provider, which fails
+      mockCheckoutStore.createOrGetPaymentIntent.mockRejectedValue(
+        new BadRequestException("Failed to create Razorpay order"),
+      );
+
+      await expect(
+        service.createPaymentIntent(checkoutSessionId, amount),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockCheckoutStore.transitionState).not.toHaveBeenCalled();
+    });
+
+    it("should transition state to PAYMENT_PENDING after creation", async () => {
+      const mockPaymentIntent: PaymentIntent = {
+        paymentProvider: "razorpay",
+        paymentIntentId,
+        status: PaymentIntentStatus.CREATED,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      mockCheckoutStore.createOrGetPaymentIntent.mockResolvedValue(
+        mockPaymentIntent,
+      );
+      mockCheckoutStore.transitionState.mockResolvedValue(undefined);
+
+      await service.createPaymentIntent(checkoutSessionId, amount);
+
+      expect(mockCheckoutStore.transitionState).toHaveBeenCalledWith(
+        checkoutSessionId,
+        CheckoutState.LOCKED,
+        CheckoutState.PAYMENT_PENDING,
+      );
+    });
+  });
+
+  describe("handlePaymentCaptured - payment intent integration", () => {
+    const webhookSecret = "webhook_secret_123";
+    const signature = "valid_signature";
+
+    const createWebhookEvent = (
+      eventName: string,
+      paymentId?: string,
+      orderId?: string,
+    ): RazorpayWebhookEventDto => ({
+      entity: "event",
+      account_id: "acc_MNOPQRSTUVWXYZ",
+      event: eventName,
+      contains: ["payment", "order"],
+      payload: {
+        payment: paymentId
+          ? {
+              entity: {
+                id: paymentId,
+                entity: "payment",
+                amount: 100000,
+                currency: "INR",
+                status: "captured",
+                order_id: orderId || "order_MNOPQRSTUVWXYZ",
+                invoice_id: null,
+                international: false,
+                method: "card",
+                amount_refunded: 0,
+                refund_status: null,
+                captured: true,
+                description: null,
+                card_id: null,
+                bank: null,
+                wallet: null,
+                vpa: null,
+                email: "test@example.com",
+                contact: "+919999999999",
+                notes: {},
+                fee: 0,
+                tax: 0,
+                error_code: null,
+                error_description: null,
+                error_source: null,
+                error_step: null,
+                error_reason: null,
+                acquirer_data: {},
+                created_at: 1234567890,
+              },
+            }
+          : undefined,
+        order: orderId
+          ? {
+              entity: {
+                id: orderId,
+                entity: "order",
+                amount: 100000,
+                amount_paid: 0,
+                amount_due: 100000,
+                currency: "INR",
+                receipt: "receipt_123",
+                status: "created",
+                attempts: 0,
+                notes: {},
+                created_at: 1234567890,
+              },
+            }
+          : undefined,
+      },
+      created_at: 1234567890,
+    });
+
+    beforeEach(() => {
+      process.env.RAZORPAY_WEBHOOK_SECRET = webhookSecret;
+    });
+
+    it("should update payment intent status when payment is captured", async () => {
+      const crypto = require("crypto");
+      const mockHmac = {
+        update: jest.fn().mockReturnThis(),
+        digest: jest.fn().mockReturnValue(signature),
+      };
+      jest.spyOn(crypto, "createHmac").mockReturnValue(mockHmac);
+
+      const paymentIntentId = "order_123456";
+      const checkoutSessionId = "checkout-session-123";
+      const paymentId = "pay_123456";
+
+      const webhookEvent = createWebhookEvent(
+        "payment.captured",
+        paymentId,
+        paymentIntentId,
+      );
+
+      const mockRazorpayOrder = {
+        id: paymentIntentId,
+        notes: {
+          checkout_session_id: checkoutSessionId,
+        },
+      };
+
+      const mockPaymentIntent: PaymentIntent = {
+        paymentProvider: "razorpay",
+        paymentIntentId,
+        status: PaymentIntentStatus.CREATED,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const mockOrder = {
+        id: "order-id",
+        razorpayOrderId: paymentIntentId,
+        status: "pending",
+      };
+
+      // Mock getRazorpayOrderDetails to return the order
+      jest.spyOn(service, "getRazorpayOrderDetails").mockResolvedValue(mockRazorpayOrder);
+      mockCheckoutStore.get.mockResolvedValue(checkoutSessionId);
+      mockCheckoutStore.getPaymentIntent.mockResolvedValue(mockPaymentIntent);
+      mockCheckoutStore.updatePaymentIntentStatus.mockResolvedValue(
+        undefined,
+      );
+      mockCheckoutStore.getSession.mockResolvedValue({
+        state: CheckoutState.PAYMENT_PENDING,
+        cartId: "cart-123",
+        paymentIntentId: null,
+        orderId: null,
+        updatedAt: new Date().toISOString(),
+      });
+      mockCheckoutStore.transitionState.mockResolvedValue(undefined);
+
+      const selectOrderMock = jest.fn().mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      });
+
+      const updateOrderMock = jest.fn().mockReturnValue({
+        set: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue(undefined),
+        }),
+      });
+
+      const insertPaymentMock = jest.fn().mockReturnValue({
+        values: jest.fn().mockResolvedValue(undefined),
+      });
+
+      (db.select as jest.Mock) = selectOrderMock;
+      (db.update as jest.Mock) = updateOrderMock;
+      (db.insert as jest.Mock) = insertPaymentMock;
+
+      const result = await service.handleWebhook(webhookEvent, signature);
+
+      expect(result.processed).toBe(true);
+      expect(mockCheckoutStore.updatePaymentIntentStatus).toHaveBeenCalledWith(
+        checkoutSessionId,
+        PaymentIntentStatus.CONFIRMED,
+      );
+      expect(mockCheckoutStore.transitionState).toHaveBeenCalledWith(
+        checkoutSessionId,
+        CheckoutState.PAYMENT_PENDING,
+        CheckoutState.PAYMENT_CONFIRMED,
+      );
+    });
+
+    it("should use reverse lookup when checkoutSessionId not in notes", async () => {
+      const crypto = require("crypto");
+      const mockHmac = {
+        update: jest.fn().mockReturnThis(),
+        digest: jest.fn().mockReturnValue(signature),
+      };
+      jest.spyOn(crypto, "createHmac").mockReturnValue(mockHmac);
+
+      const paymentIntentId = "order_123456";
+      const checkoutSessionId = "checkout-session-123";
+      const paymentId = "pay_123456";
+
+      const webhookEvent = createWebhookEvent(
+        "payment.captured",
+        paymentId,
+        paymentIntentId,
+      );
+
+      const mockRazorpayOrder = {
+        id: paymentIntentId,
+        notes: {}, // No checkout_session_id in notes
+      };
+
+      const mockPaymentIntent: PaymentIntent = {
+        paymentProvider: "razorpay",
+        paymentIntentId,
+        status: PaymentIntentStatus.CREATED,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const mockOrder = {
+        id: "order-id",
+        razorpayOrderId: paymentIntentId,
+        status: "pending",
+      };
+
+      // Mock getRazorpayOrderDetails to return the order
+      jest.spyOn(service, "getRazorpayOrderDetails").mockResolvedValue(mockRazorpayOrder);
+      // Reverse lookup
+      mockCheckoutStore.get.mockResolvedValue(checkoutSessionId);
+      mockCheckoutStore.getPaymentIntent.mockResolvedValue(mockPaymentIntent);
+      mockCheckoutStore.updatePaymentIntentStatus.mockResolvedValue(
+        undefined,
+      );
+      mockCheckoutStore.getSession.mockResolvedValue({
+        state: CheckoutState.PAYMENT_PENDING,
+        cartId: "cart-123",
+        paymentIntentId: null,
+        orderId: null,
+        updatedAt: new Date().toISOString(),
+      });
+      mockCheckoutStore.transitionState.mockResolvedValue(undefined);
+
+      const selectOrderMock = jest.fn().mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([mockOrder]),
+          }),
+        }),
+      });
+
+      const updateOrderMock = jest.fn().mockReturnValue({
+        set: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue(undefined),
+        }),
+      });
+
+      const insertPaymentMock = jest.fn().mockReturnValue({
+        values: jest.fn().mockResolvedValue(undefined),
+      });
+
+      (db.select as jest.Mock) = selectOrderMock;
+      (db.update as jest.Mock) = updateOrderMock;
+      (db.insert as jest.Mock) = insertPaymentMock;
+
+      const result = await service.handleWebhook(webhookEvent, signature);
+
+      expect(result.processed).toBe(true);
+      // Should use reverse lookup
+      expect(mockCheckoutStore.get).toHaveBeenCalledWith(
+        `payment:intent:by-id:${paymentIntentId}`,
+      );
+      expect(mockCheckoutStore.updatePaymentIntentStatus).toHaveBeenCalledWith(
+        checkoutSessionId,
+        PaymentIntentStatus.CONFIRMED,
+      );
+    });
+
+    it("should handle duplicate webhooks idempotently", async () => {
+      const crypto = require("crypto");
+      const mockHmac = {
+        update: jest.fn().mockReturnThis(),
+        digest: jest.fn().mockReturnValue(signature),
+      };
+      jest.spyOn(crypto, "createHmac").mockReturnValue(mockHmac);
+
+      const paymentIntentId = "order_123456";
+      const checkoutSessionId = "checkout-session-123";
+      const paymentId = "pay_123456";
+
+      const webhookEvent = createWebhookEvent(
+        "payment.captured",
+        paymentId,
+        paymentIntentId,
+      );
+
+      const mockRazorpayOrder = {
+        id: paymentIntentId,
+        notes: {
+          checkout_session_id: checkoutSessionId,
+        },
+      };
+
+      const mockPaymentIntent: PaymentIntent = {
+        paymentProvider: "razorpay",
+        paymentIntentId,
+        status: PaymentIntentStatus.CONFIRMED, // Already confirmed
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const mockOrder = {
+        id: "order-id",
+        razorpayOrderId: paymentIntentId,
+        status: "confirmed", // Already confirmed
+      };
+
+      const mockExistingPayment = {
+        id: "payment-id",
+        razorpayPaymentId: paymentId,
+        status: "captured",
+      };
+
+      // Mock getRazorpayOrderDetails to return the order
+      jest.spyOn(service, "getRazorpayOrderDetails").mockResolvedValue(mockRazorpayOrder);
+      mockCheckoutStore.getPaymentIntent.mockResolvedValue(mockPaymentIntent);
+      mockCheckoutStore.updatePaymentIntentStatus.mockResolvedValue(
+        undefined,
+      );
+      mockCheckoutStore.getSession.mockResolvedValue({
+        state: CheckoutState.PAYMENT_CONFIRMED, // Already confirmed
+        cartId: "cart-123",
+        paymentIntentId: null,
+        orderId: null,
+        updatedAt: new Date().toISOString(),
+      });
+
+      const selectOrderMock = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockOrder]),
+      };
+
+      const selectPaymentMock = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockExistingPayment]),
+      };
+
+      const updateOrderMock = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue(undefined),
+      };
+
+      const updatePaymentMock = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue(undefined),
+      };
+
+      // Mock payment selection - return different mocks based on what table is selected
+      (db.select as jest.Mock).mockImplementation((args) => {
+        if (args === payments) {
+          return selectPaymentMock;
+        }
+        return selectOrderMock;
+      });
+      (db.update as jest.Mock).mockImplementation((args) => {
+        if (args === payments) {
+          return updatePaymentMock;
+        }
+        return updateOrderMock;
+      });
+
+      const result = await service.handleWebhook(webhookEvent, signature);
+
+      expect(result.processed).toBe(true);
+      // Should still update payment intent status (idempotent)
+      expect(mockCheckoutStore.updatePaymentIntentStatus).toHaveBeenCalled();
+      // Should not transition if already confirmed
+      expect(mockCheckoutStore.transitionState).not.toHaveBeenCalled();
     });
   });
 });

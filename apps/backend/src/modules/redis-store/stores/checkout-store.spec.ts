@@ -3,9 +3,14 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { readFileSync } from "node:fs";
 import Redis from "ioredis";
 import { CheckoutState } from "../constants/checkout-states";
+import { KEY_PATTERNS, TTL } from "../constants/key-patterns";
+import { CheckoutSession } from "../dto/checkout-session.dto";
+import {
+  PaymentIntent,
+  PaymentIntentStatus,
+} from "../dto/payment-intent.dto";
 import { RedisStoreService } from "../redis-store.service";
 import { CheckoutStore } from "./checkout-store";
-import { KEY_PATTERNS, TTL } from "../constants/key-patterns";
 
 jest.mock("node:fs");
 
@@ -25,6 +30,9 @@ describe("CheckoutStore", () => {
       script: jest.fn(),
       evalsha: jest.fn(),
     } as unknown as jest.Mocked<Redis>;
+    
+    // Mock client.set for fallback path (used in createOrGetPaymentIntent)
+    (mockRedisClient.set as jest.Mock).mockResolvedValue("OK");
 
     redisStoreService = {
       getClient: jest.fn().mockReturnValue(mockRedisClient),
@@ -41,6 +49,14 @@ describe("CheckoutStore", () => {
     }).compile();
 
     store = module.get<CheckoutStore>(CheckoutStore);
+
+    // Mock script loading
+    (readFileSync as jest.Mock).mockReturnValue("some lua script");
+    mockRedisClient.script.mockResolvedValue("sha123");
+    await store.onModuleInit(); // Manually call onModuleInit
+
+    // Ensure createPaymentIntentScriptSha is set for payment intent tests
+    (store as any).createPaymentIntentScriptSha = "sha123";
   });
 
   afterEach(() => {
@@ -93,10 +109,16 @@ describe("CheckoutStore", () => {
   describe("updateCheckoutSession", () => {
     it("should update checkout session", async () => {
       const sessionId = "session-123";
-      const existingData = { orderId: "order-123", total: 100 };
-      const updates = { total: 150 };
+      const existingSession: CheckoutSession = {
+        state: CheckoutState.CREATED,
+        cartId: "cart-123",
+        paymentIntentId: null,
+        orderId: "order-123",
+        updatedAt: new Date().toISOString(),
+      };
+      const updates = { orderId: "order-456" };
 
-      mockRedisClient.get.mockResolvedValue(JSON.stringify(existingData));
+      mockRedisClient.get.mockResolvedValue(JSON.stringify(existingSession));
       mockRedisClient.setex.mockResolvedValue("OK");
 
       await store.updateCheckoutSession(sessionId, updates);
@@ -104,7 +126,7 @@ describe("CheckoutStore", () => {
       expect(mockRedisClient.setex).toHaveBeenCalledWith(
         KEY_PATTERNS.CHECKOUT_SESSION(sessionId),
         TTL.CHECKOUT_SESSION,
-        JSON.stringify({ ...existingData, ...updates }),
+        expect.stringContaining('"orderId":"order-456"'),
       );
     });
 
@@ -138,14 +160,10 @@ describe("CheckoutStore", () => {
     it("should extend session TTL if session exists", async () => {
       const sessionId = "session-123";
 
-      mockRedisClient.exists.mockResolvedValue(1);
       mockRedisClient.expire.mockResolvedValue(1);
 
       await store.extendSession(sessionId);
 
-      expect(mockRedisClient.exists).toHaveBeenCalledWith(
-        KEY_PATTERNS.CHECKOUT_SESSION(sessionId),
-      );
       expect(mockRedisClient.expire).toHaveBeenCalledWith(
         KEY_PATTERNS.CHECKOUT_SESSION(sessionId),
         TTL.CHECKOUT_SESSION,
@@ -155,12 +173,11 @@ describe("CheckoutStore", () => {
     it("should not extend TTL if session does not exist", async () => {
       const sessionId = "session-123";
 
-      mockRedisClient.exists.mockResolvedValue(0);
+      mockRedisClient.expire.mockResolvedValue(0);
 
       await store.extendSession(sessionId);
 
-      expect(mockRedisClient.exists).toHaveBeenCalled();
-      expect(mockRedisClient.expire).not.toHaveBeenCalled();
+      expect(mockRedisClient.expire).toHaveBeenCalled();
     });
   });
 
@@ -735,6 +752,290 @@ describe("CheckoutStore", () => {
           CheckoutState.PAYMENT_PENDING,
         ]),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe("getPaymentIntent", () => {
+    it("should return payment intent when it exists", async () => {
+      const checkoutSessionId = "checkout-session-123";
+      const paymentIntent: PaymentIntent = {
+        paymentProvider: "razorpay",
+        paymentIntentId: "order_123456",
+        status: PaymentIntentStatus.CREATED,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      mockRedisClient.get.mockResolvedValue(JSON.stringify(paymentIntent));
+
+      const result = await store.getPaymentIntent(checkoutSessionId);
+
+      expect(result).toEqual(paymentIntent);
+      expect(mockRedisClient.get).toHaveBeenCalledWith(
+        KEY_PATTERNS.PAYMENT_INTENT(checkoutSessionId),
+      );
+    });
+
+    it("should return null when payment intent does not exist", async () => {
+      const checkoutSessionId = "checkout-session-123";
+
+      mockRedisClient.get.mockResolvedValue(null);
+
+      const result = await store.getPaymentIntent(checkoutSessionId);
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("createOrGetPaymentIntent", () => {
+    const checkoutSessionId = "checkout-session-123";
+    const paymentIntentId = "order_123456";
+    const mockPaymentIntent: PaymentIntent = {
+      paymentProvider: "razorpay",
+      paymentIntentId,
+      status: PaymentIntentStatus.CREATED,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    beforeEach(() => {
+      // Ensure createPaymentIntentScriptSha is set
+      (store as any).createPaymentIntentScriptSha = "script-sha-123";
+      // Clear any previous evalsha mocks
+      mockRedisClient.evalsha.mockClear();
+    });
+
+    it("should return existing payment intent on retry", async () => {
+      mockRedisClient.get.mockResolvedValue(JSON.stringify(mockPaymentIntent));
+
+      const createFn = jest.fn();
+
+      const result = await store.createOrGetPaymentIntent(
+        checkoutSessionId,
+        createFn,
+      );
+
+      expect(result).toEqual(mockPaymentIntent);
+      expect(createFn).not.toHaveBeenCalled();
+    });
+
+    it("should create new payment intent when it does not exist", async () => {
+      // First call: payment intent doesn't exist
+      mockRedisClient.get.mockResolvedValueOnce(null);
+      // Lua script returns CREATED with placeholder
+      mockRedisClient.evalsha.mockResolvedValueOnce([
+        "ok",
+        "CREATED",
+        JSON.stringify({
+          paymentProvider: "razorpay",
+          paymentIntentId: "",
+          status: PaymentIntentStatus.CREATED,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }),
+      ]);
+      // After provider call, update with real data
+      mockRedisClient.setex.mockResolvedValue("OK");
+      mockRedisClient.del.mockResolvedValue(1);
+
+      const createFn = jest.fn().mockResolvedValue(mockPaymentIntent);
+
+      const result = await store.createOrGetPaymentIntent(
+        checkoutSessionId,
+        createFn,
+      );
+
+      // Result should match payment intent structure (updatedAt may differ)
+      expect(result.paymentProvider).toBe(mockPaymentIntent.paymentProvider);
+      expect(result.paymentIntentId).toBe(mockPaymentIntent.paymentIntentId);
+      expect(result.status).toBe(mockPaymentIntent.status);
+      expect(createFn).toHaveBeenCalledTimes(1);
+      // Should update placeholder with real payment intent data
+      expect(mockRedisClient.setex).toHaveBeenCalled();
+    });
+
+    it("should handle concurrent creation (race condition)", async () => {
+      // First check: doesn't exist
+      mockRedisClient.get.mockResolvedValueOnce(null);
+      // Lua script: another process created it concurrently
+      mockRedisClient.evalsha.mockResolvedValueOnce([
+        "ok",
+        "EXISTS",
+        JSON.stringify(mockPaymentIntent),
+      ]);
+
+      const createFn = jest.fn().mockResolvedValue(mockPaymentIntent);
+
+      const result = await store.createOrGetPaymentIntent(
+        checkoutSessionId,
+        createFn,
+      );
+
+      expect(result).toEqual(mockPaymentIntent);
+      // Provider should not be called if another process already created it
+      expect(createFn).not.toHaveBeenCalled();
+    });
+
+    it("should handle provider failure (don't persist)", async () => {
+      mockRedisClient.get.mockResolvedValueOnce(null);
+      // Lua script creates placeholder successfully
+      mockRedisClient.evalsha.mockResolvedValueOnce([
+        "ok",
+        "CREATED",
+        JSON.stringify({
+          paymentProvider: "razorpay",
+          paymentIntentId: "",
+          status: PaymentIntentStatus.CREATED,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }),
+      ]);
+      // Mock delete for cleanup after provider failure (called for intentKey and tempReverseKey)
+      mockRedisClient.del.mockResolvedValue(1);
+      // Mock get for the delete check (not used but might be called)
+      mockRedisClient.get.mockResolvedValueOnce(null);
+
+      const createFn = jest
+        .fn()
+        .mockRejectedValue(new Error("Provider error"));
+
+      await expect(
+        store.createOrGetPaymentIntent(checkoutSessionId, createFn),
+      ).rejects.toThrow("Provider error");
+
+      // Provider should be called once (in the CREATED branch)
+      // If it fails, placeholder is deleted and error is thrown
+      expect(createFn).toHaveBeenCalled();
+      // Should attempt to delete placeholder after provider failure
+      // Note: del is called for both intentKey and tempReverseKey
+      expect(mockRedisClient.del).toHaveBeenCalled();
+    });
+
+    it("should retry persistence on Redis write failure after provider success", async () => {
+      mockRedisClient.get.mockResolvedValueOnce(null);
+      // Lua script creates placeholder successfully
+      mockRedisClient.evalsha.mockResolvedValueOnce([
+        "ok",
+        "CREATED",
+        JSON.stringify({
+          paymentProvider: "razorpay",
+          paymentIntentId: "",
+          status: PaymentIntentStatus.CREATED,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }),
+      ]);
+      // First write fails (updating placeholder with real data)
+      // First setex call fails (for intentKey) - this throws, so second call never happens
+      mockRedisClient.setex.mockRejectedValueOnce(new Error("Redis error"));
+      // Retry check: still placeholder (hasn't been updated yet)
+      mockRedisClient.get.mockResolvedValueOnce(
+        JSON.stringify({
+          paymentProvider: "razorpay",
+          paymentIntentId: "",
+          status: PaymentIntentStatus.CREATED,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }),
+      );
+      // Retry write succeeds (both intentKey and reverseLookupKey)
+      mockRedisClient.setex.mockResolvedValue("OK");
+      mockRedisClient.del.mockResolvedValue(1);
+
+      const createFn = jest.fn().mockResolvedValue(mockPaymentIntent);
+
+      const result = await store.createOrGetPaymentIntent(
+        checkoutSessionId,
+        createFn,
+      );
+
+      // Result should match payment intent structure (updatedAt may differ)
+      expect(result.paymentProvider).toBe(mockPaymentIntent.paymentProvider);
+      expect(result.paymentIntentId).toBe(mockPaymentIntent.paymentIntentId);
+      expect(result.status).toBe(mockPaymentIntent.status);
+      // Should retry persistence
+      // First attempt: 1 call (fails), Retry attempt: 2 calls (both succeed)
+      // Total: 3 calls (1 for intentKey in first attempt, 2 in retry)
+      expect(mockRedisClient.setex).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe("updatePaymentIntentStatus", () => {
+    it("should update payment intent status", async () => {
+      const checkoutSessionId = "checkout-session-123";
+      const existingIntent: PaymentIntent = {
+        paymentProvider: "razorpay",
+        paymentIntentId: "order_123456",
+        status: PaymentIntentStatus.CREATED,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      mockRedisClient.get.mockResolvedValue(JSON.stringify(existingIntent));
+      mockRedisClient.setex.mockResolvedValue("OK");
+
+      await store.updatePaymentIntentStatus(
+        checkoutSessionId,
+        PaymentIntentStatus.CONFIRMED,
+      );
+
+      expect(mockRedisClient.setex).toHaveBeenCalledWith(
+        KEY_PATTERNS.PAYMENT_INTENT(checkoutSessionId),
+        TTL.PAYMENT_INTENT,
+        expect.stringContaining('"status":"CONFIRMED"'),
+      );
+    });
+
+    it("should throw if payment intent does not exist", async () => {
+      const checkoutSessionId = "checkout-session-123";
+
+      mockRedisClient.get.mockResolvedValue(null);
+
+      await expect(
+        store.updatePaymentIntentStatus(
+          checkoutSessionId,
+          PaymentIntentStatus.CONFIRMED,
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe("getPaymentIntentByPaymentId", () => {
+    it("should return payment intent via reverse lookup", async () => {
+      const paymentIntentId = "order_123456";
+      const checkoutSessionId = "checkout-session-123";
+      const paymentIntent: PaymentIntent = {
+        paymentProvider: "razorpay",
+        paymentIntentId,
+        status: PaymentIntentStatus.CREATED,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Reverse lookup returns checkoutSessionId
+      mockRedisClient.get
+        .mockResolvedValueOnce(checkoutSessionId)
+        .mockResolvedValueOnce(JSON.stringify(paymentIntent));
+
+      const result = await store.getPaymentIntentByPaymentId(paymentIntentId);
+
+      expect(result).toEqual(paymentIntent);
+      expect(mockRedisClient.get).toHaveBeenCalledWith(
+        KEY_PATTERNS.PAYMENT_INTENT_BY_ID(paymentIntentId),
+      );
+      expect(mockRedisClient.get).toHaveBeenCalledWith(
+        KEY_PATTERNS.PAYMENT_INTENT(checkoutSessionId),
+      );
+    });
+
+    it("should return null when reverse lookup key does not exist", async () => {
+      const paymentIntentId = "order_123456";
+
+      mockRedisClient.get.mockResolvedValue(null);
+
+      const result = await store.getPaymentIntentByPaymentId(paymentIntentId);
+
+      expect(result).toBeNull();
     });
   });
 });

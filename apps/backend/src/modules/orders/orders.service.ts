@@ -27,6 +27,7 @@ import { calculateDiscount } from "../../common/utils/discount.utils";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { CartsService } from "../carts/carts.service";
 import { DiscountsService } from "../discounts/discounts.service";
+import { PaymentsService } from "../payments/payments.service";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
 import { KEY_PATTERNS } from "../redis-store/constants/key-patterns";
 import { CheckoutStore } from "../redis-store/stores/checkout-store";
@@ -55,6 +56,7 @@ export class OrdersService {
     private readonly inventoryStore: InventoryStore,
     private readonly idempotencyStore: IdempotencyStore,
     private readonly checkoutStore: CheckoutStore,
+    private readonly paymentsService: PaymentsService,
   ) {}
 
   /**
@@ -413,6 +415,50 @@ export class OrdersService {
       const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
       const total = subtotalAfterDiscount + totalGstAmount + shippingCost;
 
+      // Create payment intent BEFORE order creation (idempotent)
+      // This ensures payment is initiated before order is created
+      let paymentIntentId: string | null = null;
+      if (checkoutSessionId) {
+        try {
+          // Assert checkout state is LOCKED before creating payment intent
+          await this.checkoutStore.assertState(
+            checkoutSessionId,
+            CheckoutState.LOCKED,
+          );
+
+          // Create payment intent idempotently
+          // Amount is in rupees, convert to paise for Razorpay
+          const amountInPaise = Math.round(total * 100);
+          const paymentIntent = await this.paymentsService.createPaymentIntent(
+            checkoutSessionId,
+            amountInPaise,
+            "INR",
+            undefined, // receipt will be generated from checkoutSessionId
+            {
+              order_number: `pending-${Date.now()}`, // Temporary, will be updated after order creation
+            },
+          );
+          if (!paymentIntent || !paymentIntent.paymentIntentId) {
+            throw new ConflictException(
+              "Payment intent creation returned invalid result",
+            );
+          }
+          paymentIntentId = paymentIntent.paymentIntentId;
+          this.logger.debug(
+            `Payment intent created: checkoutSessionId=${checkoutSessionId}, paymentIntentId=${paymentIntentId}`,
+          );
+        } catch (error) {
+          // Payment intent creation failure - MUST BLOCK order creation
+          // This is a critical failure - we cannot create order without payment intent
+          this.logger.error(
+            `Failed to create payment intent for checkoutSessionId=${checkoutSessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+          );
+          throw new ConflictException(
+            "Failed to create payment intent - cannot proceed with order creation",
+          );
+        }
+      }
+
       // Generate order number
       const orderNumber = await this.generateOrderNumber();
 
@@ -422,11 +468,11 @@ export class OrdersService {
       if (checkoutSessionId) {
         try {
           // Assert we're in a valid state to create an order
-          // For now, we allow LOCKED state (direct checkout flow)
-          // When payment integration is complete, this should assert PAYMENT_CONFIRMED
+          // After payment intent creation, state should be PAYMENT_PENDING
+          // We also allow PAYMENT_CONFIRMED (if webhook already processed)
           await this.checkoutStore.assertStateIn(checkoutSessionId, [
-            CheckoutState.LOCKED,
-            CheckoutState.PAYMENT_CONFIRMED, // Future: payment flow
+            CheckoutState.PAYMENT_PENDING,
+            CheckoutState.PAYMENT_CONFIRMED,
           ]);
         } catch (error) {
           // State validation failure - MUST BLOCK order creation
@@ -446,6 +492,7 @@ export class OrdersService {
       // 1. Checkout lock (prevents concurrent checkouts)
       // 2. Idempotency (prevents duplicate orders)
       // 3. State validation above (ensures valid state)
+      // 4. Payment intent creation (ensures payment is initiated)
       const [order] = await db
         .insert(orders)
         .values({
@@ -460,6 +507,7 @@ export class OrdersService {
           total,
           shippingAddressId: createOrderDto.shippingAddressId,
           billingAddressId: createOrderDto.billingAddressId,
+          razorpayOrderId: paymentIntentId || null, // Store payment intent ID (Razorpay order ID)
         })
         .returning();
 

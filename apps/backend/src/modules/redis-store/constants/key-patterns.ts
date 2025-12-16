@@ -70,6 +70,22 @@ export const KEY_PATTERNS = {
    */
   CHECKOUT_SESSION_BY_ORDER: (orderId: string) =>
     `checkout:session:by-order:${orderId}`,
+
+  /**
+   * Payment intent keys
+   * Format: payment:intent:{checkoutSessionId}
+   * TTL: 24 hours (must not expire before checkout completion)
+   */
+  PAYMENT_INTENT: (checkoutSessionId: string) =>
+    `payment:intent:${checkoutSessionId}`,
+
+  /**
+   * Payment intent by payment ID (reverse lookup)
+   * Format: payment:intent:by-id:{paymentIntentId}
+   * TTL: Same as payment intent (24 hours)
+   */
+  PAYMENT_INTENT_BY_ID: (paymentIntentId: string) =>
+    `payment:intent:by-id:${paymentIntentId}`,
 } as const;
 
 /**
@@ -102,4 +118,10 @@ export const TTL = {
    * Used to prevent concurrent checkout attempts on the same cart
    */
   CHECKOUT_LOCK: 10 * 60, // 10 minutes in seconds
+
+  /**
+   * Payment intent TTL: 24 hours
+   * Must not expire before checkout completion
+   */
+  PAYMENT_INTENT: 24 * 60 * 60, // 24 hours in seconds
 } as const;

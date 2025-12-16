@@ -359,6 +359,47 @@ export interface ICheckoutStore extends IRedisStore {
     sessionId: string;
     session: import("../dto/checkout-session.dto").CheckoutSession;
   } | null>;
+
+  /**
+   * Get payment intent for a checkout session
+   * @param checkoutSessionId - Checkout session ID
+   * @returns Payment intent or null if not found
+   */
+  getPaymentIntent(
+    checkoutSessionId: string,
+  ): Promise<import("../dto/payment-intent.dto").PaymentIntent | null>;
+
+  /**
+   * Create or get payment intent atomically
+   * Ensures exactly one payment intent per checkout session
+   * @param checkoutSessionId - Checkout session ID
+   * @param createFn - Function to create payment intent (calls payment provider)
+   * @returns Payment intent (existing or newly created)
+   */
+  createOrGetPaymentIntent(
+    checkoutSessionId: string,
+    createFn: () => Promise<import("../dto/payment-intent.dto").PaymentIntent>,
+  ): Promise<import("../dto/payment-intent.dto").PaymentIntent>;
+
+  /**
+   * Update payment intent status
+   * @param checkoutSessionId - Checkout session ID
+   * @param status - New status (CONFIRMED or FAILED)
+   */
+  updatePaymentIntentStatus(
+    checkoutSessionId: string,
+    status: import("../dto/payment-intent.dto").PaymentIntentStatus,
+  ): Promise<void>;
+
+  /**
+   * Get payment intent by payment intent ID (reverse lookup)
+   * Used for webhook handling when checkoutSessionId is not available
+   * @param paymentIntentId - Payment intent ID from provider
+   * @returns Payment intent or null if not found
+   */
+  getPaymentIntentByPaymentId(
+    paymentIntentId: string,
+  ): Promise<import("../dto/payment-intent.dto").PaymentIntent | null>;
 }
 
 /**
