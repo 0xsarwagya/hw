@@ -167,7 +167,8 @@ export class OrdersService {
     }
 
     // Get discount code from cart
-    const discountCode = (cart as any).discountCode || null;
+    const discountCode =
+      "discountCode" in cart ? (cart.discountCode as string | null) : null;
 
     // Get cart items with product variant details
     const cartItemIds = cart.items.map((item) => item.id);
