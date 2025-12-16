@@ -235,69 +235,75 @@ This roadmap outlines the development phases for building VCEcom, a lightweight 
 
 ---
 
-### Phase 8: GST Compliance & Indian Features
+### Phase 8: GST Compliance & Indian Features ✅
 
-**Status:** Not Started  
+**Status:** Complete  
 **Priority:** High  
 **Duration:** Week 16  
 **Dependencies:** Phase 4, Phase 5  
-**Issue:** [#8](https://github.com/Vestcodes/vcecom/issues/8)
+**Issue:** [#8](https://github.com/Vestcodes/vcecom/issues/8) ✅
 
-#### 8.1 GST Implementation (Week 16)
+#### 8.1 GST Implementation (Week 16) ✅
 
-- [#43](https://github.com/Vestcodes/vcecom/issues/43) **GST Calculation Logic (CGST/SGST/IGST)**
-- [#44](https://github.com/Vestcodes/vcecom/issues/44) **Tax Invoice Generation**
-- [#45](https://github.com/Vestcodes/vcecom/issues/45) **GSTIN Validation**
+- [x] [#43](https://github.com/Vestcodes/vcecom/issues/43) **GST Calculation Logic (CGST/SGST/IGST)** ✅
+- [x] [#44](https://github.com/Vestcodes/vcecom/issues/44) **Tax Invoice Generation** ✅
+- [x] [#45](https://github.com/Vestcodes/vcecom/issues/45) **GSTIN Validation** ✅
 
-#### 8.2 Indian Address Features
+#### 8.2 Indian Address Features ✅
 
-- [#46](https://github.com/Vestcodes/vcecom/issues/46) **Indian Address & Phone Validation**
+- [x] [#46](https://github.com/Vestcodes/vcecom/issues/46) **Indian Address & Phone Validation** ✅
 
 **Deliverables:**
-- Complete GST calculation
-- Tax invoice generation
-- Indian address validation
-- Phone number validation
+- ✅ Complete GST calculation (CGST/SGST/IGST)
+- ✅ Tax invoice generation (PDF)
+- ✅ Indian address validation (PIN code, state, district)
+- ✅ Phone number validation (10-digit, +91)
+- ✅ GSTIN format & structure validation
 
 ---
 
-### Phase 9: Search & Filtering
+### Phase 9: Search & Filtering ✅
 
-**Status:** Not Started  
+**Status:** Complete  
 **Priority:** Medium  
 **Duration:** Week 17  
 **Dependencies:** Phase 2  
-**Issue:** [#9](https://github.com/Vestcodes/vcecom/issues/9)
+**Issue:** [#9](https://github.com/Vestcodes/vcecom/issues/9) ✅
 
-#### 9.1 Product Search (Week 17)
+#### 9.1 Product Search (Week 17) ✅
 
-- [#47](https://github.com/Vestcodes/vcecom/issues/47) **Product Search Implementation**
-- [#48](https://github.com/Vestcodes/vcecom/issues/48) **Product Filtering & Sorting**
-- [#49](https://github.com/Vestcodes/vcecom/issues/49) **Pagination Implementation**
+- [x] [#47](https://github.com/Vestcodes/vcecom/issues/47) **Product Search Implementation** ✅
+- [x] [#48](https://github.com/Vestcodes/vcecom/issues/48) **Product Filtering & Sorting** ✅
+- [x] [#49](https://github.com/Vestcodes/vcecom/issues/49) **Pagination Implementation** ✅
 
 **Deliverables:**
-- Product search API
-- Advanced filtering
-- Pagination support
+- ✅ Product search API (full-text search, SKU search)
+- ✅ Advanced filtering (category, price, availability, status)
+- ✅ Sorting (price, name, date)
+- ✅ Pagination support (page-based & cursor-based)
 
 ---
 
-### Phase 10: Discounts & Promotions (Basic)
+### Phase 10: Discounts & Promotions (Basic) ✅
 
-**Status:** Not Started  
+**Status:** Complete  
 **Priority:** Low  
 **Duration:** Week 18  
 **Dependencies:** Phase 3, Phase 4  
-**Issue:** [#10](https://github.com/Vestcodes/vcecom/issues/10)
+**Issue:** [#10](https://github.com/Vestcodes/vcecom/issues/10) ✅
 
-#### 10.1 Discount System (Week 18)
+#### 10.1 Discount System (Week 18) ✅
 
-- [#50](https://github.com/Vestcodes/vcecom/issues/50) **Discount Code System**
-- [#51](https://github.com/Vestcodes/vcecom/issues/51) **Apply Discount to Cart**
+- [x] [#50](https://github.com/Vestcodes/vcecom/issues/50) **Discount Code System** ✅
+- [x] [#51](https://github.com/Vestcodes/vcecom/issues/51) **Apply Discount to Cart** ✅
 
 **Deliverables:**
-- Basic discount code system
-- Cart discount application
+- ✅ Discount code system (STANDARD & BUY_GET types)
+- ✅ Cart discount application
+- ✅ Discount validation (expiry, usage limits, minimum order)
+- ✅ Discount calculation (percentage & fixed amount)
+- ✅ Order discount integration
+- ✅ Admin discount management API
 
 ---
 
@@ -348,30 +354,36 @@ This roadmap outlines the development phases for building VCEcom, a lightweight 
 - Admin can process orders via UI
 - Dashboard shows key metrics
 
-### Milestone 4: India Compliance (Week 16)
+### Milestone 4: India Compliance (Week 16) ✅
 **Target:** End of Week 16
 
-- ✅ GST calculation
-- ✅ Tax invoices
-- ✅ Indian address validation
-- ✅ Phone validation
+- ✅ GST calculation (CGST/SGST/IGST)
+- ✅ Tax invoices (PDF generation)
+- ✅ Indian address validation (PIN code, state, district)
+- ✅ Phone validation (10-digit, +91)
+- ✅ GSTIN validation
 
 **Success Criteria:**
-- All orders include GST
-- Tax invoices generated
-- Indian addresses validated
+- ✅ All orders include GST
+- ✅ Tax invoices generated
+- ✅ Indian addresses validated
+- ✅ GSTIN format validated
 
-### Milestone 5: Enhanced Features (Week 17-18)
+### Milestone 5: Enhanced Features (Week 17-18) ✅
 **Target:** End of Week 18
 
-- ✅ Product search
-- ✅ Advanced filtering
-- ✅ Discount codes
+- ✅ Product search (full-text, SKU)
+- ✅ Advanced filtering (category, price, availability)
+- ✅ Sorting (price, name, date)
+- ✅ Pagination (page-based & cursor-based)
+- ✅ Discount codes (STANDARD & BUY_GET)
+- ✅ Cart discount application
 
 **Success Criteria:**
-- Customers can search products
-- Discount codes work
-- Enhanced user experience
+- ✅ Customers can search products
+- ✅ Discount codes work
+- ✅ Enhanced user experience
+- ✅ All features tested and documented
 
 ---
 
@@ -474,6 +486,6 @@ Week 18:    Phase 10 - Discounts
 
 ---
 
-**Last Updated:** 2025-01-28  
-**Next Review:** After Phase 7 completion
+**Last Updated:** 2025-12-16  
+**Next Review:** After Phase 11 completion
 

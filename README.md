@@ -189,20 +189,32 @@ ecommerce/
 - ✅ Type-safe database queries
 - ✅ Code formatting and linting with Biome
 - ✅ Shared TypeScript configurations
+- ✅ Product catalog management
+- ✅ Shopping cart functionality
+- ✅ Order management system
+- ✅ Customer management
+- ✅ Payment processing integration (Razorpay)
+- ✅ Shipping and fulfillment (Shiprocket, Nimbus Post)
+- ✅ GST compliance (CGST/SGST/IGST)
+- ✅ Tax invoice generation
+- ✅ Indian address & phone validation
+- ✅ GSTIN validation
+- ✅ Product search & filtering
+- ✅ Pagination support
+- ✅ Discount code system
+- ✅ Cart discount application
+- ✅ Admin dashboard (basic)
 
 ### Planned
 
-- 🔄 Product catalog management
-- 🔄 Shopping cart functionality
-- 🔄 Order management system
-- 🔄 Customer management
-- 🔄 Payment processing integration
-- 🔄 Shipping and fulfillment
-- 🔄 Inventory management
+- 🔄 Advanced inventory management
+- 🔄 Multi-warehouse support
+- 🔄 Advanced analytics
+- 🔄 Marketing & promotions (advanced)
+- 🔄 Customer features (wishlist, reviews)
 - 🔄 Multi-region support
 - 🔄 Plugin system for extensibility
-- 🔄 Admin dashboard features
-- 🔄 Storefront API
+- 🔄 Storefront API optimization
 
 ## 🏛️ Architecture Principles
 
