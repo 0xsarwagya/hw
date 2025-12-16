@@ -114,4 +114,16 @@ export class PaginatedProductsResponseDto {
     example: 10,
   })
   totalPages: number;
+
+  @ApiProperty({
+    description: "Whether there is a next page",
+    example: true,
+  })
+  hasNextPage: boolean;
+
+  @ApiProperty({
+    description: "Whether there is a previous page",
+    example: false,
+  })
+  hasPreviousPage: boolean;
 }
