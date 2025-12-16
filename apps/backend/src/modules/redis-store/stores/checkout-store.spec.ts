@@ -156,5 +156,135 @@ describe("CheckoutStore", () => {
       expect(mockRedisClient.expire).not.toHaveBeenCalled();
     });
   });
+
+  describe("acquireCheckoutLock", () => {
+    it("should acquire lock when cart is not locked", async () => {
+      const cartId = "cart-123";
+      const lockKey = KEY_PATTERNS.CHECKOUT_LOCK(cartId);
+      const expectedTtl = TTL.CHECKOUT_LOCK * 1000; // Convert to milliseconds
+
+      // SET key value PX ttl NX returns "OK" when key doesn't exist
+      mockRedisClient.set.mockResolvedValue("OK");
+
+      const result = await store.acquireCheckoutLock(cartId);
+
+      expect(result).toBe(true);
+      expect(mockRedisClient.set).toHaveBeenCalledWith(
+        lockKey,
+        expect.any(String), // timestamp value
+        "PX",
+        expectedTtl,
+        "NX",
+      );
+    });
+
+    it("should return false when cart is already locked", async () => {
+      const cartId = "cart-123";
+      const lockKey = KEY_PATTERNS.CHECKOUT_LOCK(cartId);
+
+      // SET key value PX ttl NX returns null when key already exists
+      mockRedisClient.set.mockResolvedValue(null);
+
+      const result = await store.acquireCheckoutLock(cartId);
+
+      expect(result).toBe(false);
+      expect(mockRedisClient.set).toHaveBeenCalledWith(
+        lockKey,
+        expect.any(String),
+        "PX",
+        TTL.CHECKOUT_LOCK * 1000,
+        "NX",
+      );
+    });
+
+    it("should use custom TTL when provided", async () => {
+      const cartId = "cart-123";
+      const customTtlMs = 300000; // 5 minutes
+
+      mockRedisClient.set.mockResolvedValue("OK");
+
+      await store.acquireCheckoutLock(cartId, customTtlMs);
+
+      expect(mockRedisClient.set).toHaveBeenCalledWith(
+        KEY_PATTERNS.CHECKOUT_LOCK(cartId),
+        expect.any(String),
+        "PX",
+        customTtlMs,
+        "NX",
+      );
+    });
+
+    it("should throw error on Redis failure", async () => {
+      const cartId = "cart-123";
+      const error = new Error("Redis connection failed");
+
+      mockRedisClient.set.mockRejectedValue(error);
+
+      await expect(store.acquireCheckoutLock(cartId)).rejects.toThrow(
+        "Redis connection failed",
+      );
+    });
+  });
+
+  describe("releaseCheckoutLock", () => {
+    it("should release lock successfully", async () => {
+      const cartId = "cart-123";
+      const lockKey = KEY_PATTERNS.CHECKOUT_LOCK(cartId);
+
+      mockRedisClient.del.mockResolvedValue(1);
+
+      await store.releaseCheckoutLock(cartId);
+
+      expect(mockRedisClient.del).toHaveBeenCalledWith(lockKey);
+    });
+
+    it("should handle error when releasing lock", async () => {
+      const cartId = "cart-123";
+      const error = new Error("Redis deletion failed");
+
+      mockRedisClient.del.mockRejectedValue(error);
+
+      await expect(store.releaseCheckoutLock(cartId)).rejects.toThrow(
+        "Redis deletion failed",
+      );
+    });
+  });
+
+  describe("isCheckoutLocked", () => {
+    it("should return true when cart is locked", async () => {
+      const cartId = "cart-123";
+      const lockKey = KEY_PATTERNS.CHECKOUT_LOCK(cartId);
+
+      mockRedisClient.exists.mockResolvedValue(1);
+
+      const result = await store.isCheckoutLocked(cartId);
+
+      expect(result).toBe(true);
+      expect(mockRedisClient.exists).toHaveBeenCalledWith(lockKey);
+    });
+
+    it("should return false when cart is not locked", async () => {
+      const cartId = "cart-123";
+      const lockKey = KEY_PATTERNS.CHECKOUT_LOCK(cartId);
+
+      mockRedisClient.exists.mockResolvedValue(0);
+
+      const result = await store.isCheckoutLocked(cartId);
+
+      expect(result).toBe(false);
+      expect(mockRedisClient.exists).toHaveBeenCalledWith(lockKey);
+    });
+
+    it("should throw error on Redis failure", async () => {
+      const cartId = "cart-123";
+      const error = new Error("Redis connection failed");
+
+      mockRedisClient.exists.mockRejectedValue(error);
+
+      await expect(store.isCheckoutLocked(cartId)).rejects.toThrow(
+        "Redis connection failed",
+      );
+    });
+  });
 });
 

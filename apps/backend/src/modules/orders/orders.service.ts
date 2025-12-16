@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -26,6 +27,7 @@ import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { CartsService } from "../carts/carts.service";
 import { DiscountsService } from "../discounts/discounts.service";
 import { KEY_PATTERNS } from "../redis-store/constants/key-patterns";
+import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import { IdempotencyStore } from "../redis-store/stores/idempotency-store";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
 import { CreateOrderDto } from "./dto/create-order.dto";
@@ -48,6 +50,7 @@ export class OrdersService {
     private readonly discountsService: DiscountsService,
     private readonly inventoryStore: InventoryStore,
     private readonly idempotencyStore: IdempotencyStore,
+    private readonly checkoutStore: CheckoutStore,
   ) {}
 
   /**
@@ -202,6 +205,8 @@ export class OrdersService {
     }
 
     let orderResponse: OrderResponseDto;
+    let lockAcquired = false;
+    let cartId: string | null = null;
     try {
       const customerId = await this.getCustomerId(userId);
 
@@ -216,6 +221,14 @@ export class OrdersService {
       const cart = await this.cartsService.getCart(userId, null);
       if (!cart || !cart.items || cart.items.length === 0) {
         throw new BadRequestException("Cart is empty");
+      }
+
+      cartId = cart.id;
+
+      // Acquire checkout lock to prevent concurrent checkout attempts
+      lockAcquired = await this.checkoutStore.acquireCheckoutLock(cart.id);
+      if (!lockAcquired) {
+        throw new ConflictException("Cart is already being checked out");
       }
 
       // Get discount code from cart
@@ -452,9 +465,28 @@ export class OrdersService {
         console.error("Failed to store idempotency result:", error);
       }
 
+      // Release checkout lock on successful order creation
+      if (lockAcquired && cartId) {
+        try {
+          await this.checkoutStore.releaseCheckoutLock(cartId);
+        } catch (error) {
+          // Log but don't fail order creation if lock release fails
+          console.error("Failed to release checkout lock:", error);
+        }
+      }
+
       return orderResponse;
     } catch (error) {
-      // If order creation failed, delete idempotency key to allow retry
+      // If order creation failed, release checkout lock only if it was acquired
+      if (lockAcquired && cartId) {
+        try {
+          await this.checkoutStore.releaseCheckoutLock(cartId);
+        } catch (lockError) {
+          // Log but don't fail
+          console.error("Failed to release checkout lock on error:", lockError);
+        }
+      }
+
       try {
         await this.idempotencyStore.deleteIdempotency(
           operation,

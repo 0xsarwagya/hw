@@ -198,4 +198,73 @@ export class CheckoutStore implements ICheckoutStore {
       throw error;
     }
   }
+
+  /**
+   * Get checkout lock key
+   */
+  private getLockKey(cartId: string): string {
+    return KEY_PATTERNS.CHECKOUT_LOCK(cartId);
+  }
+
+  /**
+   * Acquire checkout lock for a cart
+   * Uses atomic Redis SET NX PX operation to prevent concurrent checkouts
+   */
+  async acquireCheckoutLock(cartId: string, ttlMs?: number): Promise<boolean> {
+    const key = this.getLockKey(cartId);
+    const ttl = ttlMs ?? TTL.CHECKOUT_LOCK * 1000; // Convert seconds to milliseconds
+    const lockValue = Date.now().toString(); // Store timestamp for debugging
+
+    try {
+      // Use SET key value NX PX ttl for atomic lock acquisition
+      // NX = only set if key does not exist
+      // PX = set expiration in milliseconds
+      const result = await this.client.set(key, lockValue, "PX", ttl, "NX");
+
+      if (result === "OK") {
+        this.logger.debug(`Checkout lock acquired for cartId=${cartId}`);
+        return true;
+      }
+
+      // Lock already exists
+      this.logger.debug(`Checkout lock already exists for cartId=${cartId}`);
+      return false;
+    } catch (error) {
+      this.logger.error(
+        `Failed to acquire checkout lock for cartId=${cartId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Release checkout lock for a cart
+   */
+  async releaseCheckoutLock(cartId: string): Promise<void> {
+    const key = this.getLockKey(cartId);
+    try {
+      await this.delete(key);
+      this.logger.debug(`Checkout lock released for cartId=${cartId}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to release checkout lock for cartId=${cartId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Check if a cart is currently locked for checkout
+   */
+  async isCheckoutLocked(cartId: string): Promise<boolean> {
+    const key = this.getLockKey(cartId);
+    try {
+      return await this.exists(key);
+    } catch (error) {
+      this.logger.error(
+        `Failed to check checkout lock status for cartId=${cartId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
+    }
+  }
 }

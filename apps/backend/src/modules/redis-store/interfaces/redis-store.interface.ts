@@ -249,6 +249,28 @@ export interface ICheckoutStore extends IRedisStore {
    * @param sessionId - Session ID
    */
   extendSession(sessionId: string): Promise<void>;
+
+  /**
+   * Acquire checkout lock for a cart
+   * Uses atomic Redis SET NX PX operation to prevent concurrent checkouts
+   * @param cartId - Cart ID (UUID)
+   * @param ttlMs - Optional TTL in milliseconds (default: 10 minutes)
+   * @returns True if lock was acquired, false if cart is already locked
+   */
+  acquireCheckoutLock(cartId: string, ttlMs?: number): Promise<boolean>;
+
+  /**
+   * Release checkout lock for a cart
+   * @param cartId - Cart ID (UUID)
+   */
+  releaseCheckoutLock(cartId: string): Promise<void>;
+
+  /**
+   * Check if a cart is currently locked for checkout
+   * @param cartId - Cart ID (UUID)
+   * @returns True if cart is locked, false otherwise
+   */
+  isCheckoutLocked(cartId: string): Promise<boolean>;
 }
 
 /**
