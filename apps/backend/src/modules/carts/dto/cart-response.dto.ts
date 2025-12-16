@@ -72,6 +72,19 @@ export class CartResponseDto {
   gstAmount: number;
 
   @ApiProperty({
+    description: "Discount code applied",
+    example: "SAVE20",
+    nullable: true,
+  })
+  discountCode: string | null;
+
+  @ApiProperty({
+    description: "Discount amount",
+    example: 200.0,
+  })
+  discountAmount: number;
+
+  @ApiProperty({
     description: "GST breakdown details",
     example: {
       cgst: 180.0,

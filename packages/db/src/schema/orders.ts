@@ -35,6 +35,8 @@ export const orders = pgTable(
     status: orderStatusEnum("status").notNull().default("pending"),
     subtotal: real("subtotal").notNull().default(0),
     gstAmount: real("gst_amount").notNull().default(0),
+    discountCode: text("discount_code"),
+    discountAmount: real("discount_amount").notNull().default(0),
     shippingCost: real("shipping_cost").notNull().default(0),
     total: real("total").notNull().default(0),
     razorpayOrderId: text("razorpay_order_id").unique(),

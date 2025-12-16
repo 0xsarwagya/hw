@@ -20,6 +20,8 @@ export const carts = pgTable(
     sessionId: text("session_id").unique(),
     subtotal: real("subtotal").notNull().default(0),
     gstAmount: real("gst_amount").notNull().default(0),
+    discountCode: text("discount_code"),
+    discountAmount: real("discount_amount").notNull().default(0),
     total: real("total").notNull().default(0),
     expiresAt: timestamp("expires_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),

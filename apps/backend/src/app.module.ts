@@ -5,6 +5,7 @@ import { AdminModule } from "./modules/admin/admin.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { CategoriesModule } from "./modules/categories/categories.module";
 import { CustomersModule } from "./modules/customers/customers.module";
+import { DiscountsModule } from "./modules/discounts/discounts.module";
 import { InvoicesModule } from "./modules/invoices/invoices.module";
 import { OrdersModule } from "./modules/orders/orders.module";
 import { PaymentsModule } from "./modules/payments/payments.module";
@@ -23,6 +24,7 @@ import { ShippingModule } from "./modules/shipping/shipping.module";
     AdminModule,
     InvoicesModule,
     AddressAutocompleteModule,
+    DiscountsModule,
   ],
   controllers: [AppController],
 })

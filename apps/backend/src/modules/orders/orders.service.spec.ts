@@ -20,6 +20,7 @@ import {
   users,
 } from "@vcecom/db";
 import { CartsService } from "../carts/carts.service";
+import { DiscountsService } from "../discounts/discounts.service";
 import { OrdersService } from "./orders.service";
 
 // Mock dependencies
@@ -156,11 +157,20 @@ describe("OrdersService", () => {
             clearCart: jest.fn(),
           },
         },
+        {
+          provide: DiscountsService,
+          useValue: {
+            validateDiscount: jest.fn(),
+            findByCode: jest.fn(),
+            recordUsage: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<OrdersService>(OrdersService);
     cartsService = module.get<CartsService>(CartsService);
+    discountsService = module.get<DiscountsService>(DiscountsService);
   });
 
   afterEach(() => {
@@ -233,6 +243,8 @@ describe("OrdersService", () => {
             status: "pending",
             subtotal: 1000,
             gstAmount: 180,
+            discountCode: null,
+            discountAmount: 0,
             shippingCost: 50,
             total: 1230,
             shippingAddressId: mockShippingAddressId,
@@ -281,6 +293,11 @@ describe("OrdersService", () => {
         .mockReturnValueOnce(mockInsertOrderItemsChain);
 
       (db.update as jest.Mock).mockReturnValue(mockUpdateInventoryChain);
+
+      // Mock discount service (no discount code)
+      (discountsService.validateDiscount as jest.Mock).mockResolvedValue({
+        isValid: false,
+      });
 
       (cartsService.clearCart as jest.Mock).mockResolvedValue(mockCart);
 
