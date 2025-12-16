@@ -25,6 +25,7 @@ import {
 import { Public } from "../../common/decorators/public.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { CreateProductDto } from "./dto/create-product.dto";
+import { FilterProductsDto } from "./dto/filter.dto";
 import {
   PaginatedProductsResponseDto,
   ProductResponseDto,
@@ -136,6 +137,27 @@ export class ProductsController {
     @Body() searchDto: SearchProductsDto,
   ): Promise<SearchResponseDto> {
     return this.productsService.search(searchDto);
+  }
+
+  @Public()
+  @Post("filter")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Filter and sort products",
+    description:
+      "Filter products by category, price range, availability, and status. Sort by price, name, or date. All filters can be combined.",
+  })
+  @ApiOkResponse({
+    description: "Filtered and sorted products",
+    type: PaginatedProductsResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: "Invalid filter parameters",
+  })
+  async filter(
+    @Body() filterDto: FilterProductsDto,
+  ): Promise<PaginatedProductsResponseDto> {
+    return this.productsService.filter(filterDto);
   }
 
   @Public()

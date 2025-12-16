@@ -31,6 +31,7 @@ import {
   parseSearchQuery,
 } from "../../common/utils/search.utils";
 import { CreateProductDto } from "./dto/create-product.dto";
+import { FilterProductsDto, SortField, SortOrder } from "./dto/filter.dto";
 import { QueryProductsDto } from "./dto/query-products.dto";
 import {
   SearchProductsDto,
@@ -152,11 +153,14 @@ export class ProductsService {
     if (query.inStock !== undefined) {
       // Get products with at least one variant with inventory > 0
       const productsInStock = await db
-        .selectDistinct({ productId: productVariants.productId })
+        .select({ productId: productVariants.productId })
         .from(productVariants)
         .where(sql`${productVariants.inventory} > 0`);
 
-      const productIdsInStock = productsInStock.map((p) => p.productId);
+      // Get unique product IDs
+      const productIdsInStock = Array.from(
+        new Set(productsInStock.map((p) => p.productId)),
+      );
 
       if (query.inStock) {
         // Filter to only products in stock
@@ -211,6 +215,133 @@ export class ProductsService {
       // date (default)
       orderBy =
         sortOrder === "asc"
+          ? asc(products.createdAt)
+          : desc(products.createdAt);
+    }
+
+    // Get products
+    const productsQuery = db.select().from(products);
+    if (whereCondition) {
+      productsQuery.where(whereCondition);
+    }
+    const allProducts = await productsQuery
+      .limit(limit)
+      .offset(offset)
+      .orderBy(orderBy);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: allProducts.map((product) => this.enrichProductWithGst(product)),
+      total: Number(total),
+      page,
+      limit,
+      totalPages,
+    };
+  }
+
+  /**
+   * Filter products with advanced filtering and sorting options
+   * Supports filtering by category, price range, availability, and status
+   * Supports sorting by price, name, or date
+   */
+  async filter(filterDto: FilterProductsDto) {
+    const page = filterDto.page || 1;
+    const limit = filterDto.limit || 10;
+    const offset = (page - 1) * limit;
+
+    // Build where conditions array
+    const conditions: ReturnType<
+      typeof eq | typeof and | typeof gte | typeof lte | typeof inArray
+    >[] = [];
+
+    // Status filter
+    if (filterDto.status) {
+      conditions.push(eq(products.status, filterDto.status));
+    }
+
+    // Category filter
+    if (filterDto.categoryId) {
+      conditions.push(eq(products.categoryId, filterDto.categoryId));
+    }
+
+    // Price range filters
+    if (filterDto.minPrice !== undefined) {
+      conditions.push(gte(products.price, filterDto.minPrice));
+    }
+    if (filterDto.maxPrice !== undefined) {
+      conditions.push(lte(products.price, filterDto.maxPrice));
+    }
+
+    // Availability filter (in stock/out of stock)
+    if (filterDto.inStock !== undefined) {
+      // Get products with at least one variant with inventory > 0
+      const productsInStock = await db
+        .select({ productId: productVariants.productId })
+        .from(productVariants)
+        .where(sql`${productVariants.inventory} > 0`);
+
+      // Get unique product IDs
+      const productIdsInStock = Array.from(
+        new Set(productsInStock.map((p) => p.productId)),
+      );
+
+      if (filterDto.inStock) {
+        // Filter to only products in stock
+        if (productIdsInStock.length > 0) {
+          conditions.push(inArray(products.id, productIdsInStock));
+        } else {
+          // No products in stock, return empty result
+          return {
+            data: [],
+            total: 0,
+            page,
+            limit,
+            totalPages: 0,
+          };
+        }
+      } else {
+        // Filter to only products out of stock (not in the in-stock list)
+        if (productIdsInStock.length > 0) {
+          const { notInArray } = await import("@vcecom/db");
+          conditions.push(notInArray(products.id, productIdsInStock));
+        }
+        // If no products are in stock, all products are out of stock, so no additional filter needed
+      }
+    }
+
+    // Build final where condition
+    let whereCondition: ReturnType<typeof and> | undefined;
+    if (conditions.length > 0) {
+      whereCondition = and(...conditions);
+    }
+
+    // Get total count
+    const countQuery = db.select().from(products);
+    if (whereCondition) {
+      countQuery.where(whereCondition);
+    }
+    const allProductsForCount = await countQuery;
+    const total = allProductsForCount.length;
+
+    // Build sort order
+    const sortBy = filterDto.sortBy || SortField.DATE;
+    const sortOrder = filterDto.sortOrder || SortOrder.DESC;
+    let orderBy: ReturnType<typeof asc> | ReturnType<typeof desc>;
+    if (sortBy === SortField.PRICE) {
+      orderBy =
+        sortOrder === SortOrder.ASC
+          ? asc(products.price)
+          : desc(products.price);
+    } else if (sortBy === SortField.NAME) {
+      orderBy =
+        sortOrder === SortOrder.ASC
+          ? asc(products.title)
+          : desc(products.title);
+    } else {
+      // DATE (default)
+      orderBy =
+        sortOrder === SortOrder.ASC
           ? asc(products.createdAt)
           : desc(products.createdAt);
     }
