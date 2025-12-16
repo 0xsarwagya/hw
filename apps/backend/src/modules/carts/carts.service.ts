@@ -18,6 +18,7 @@ import {
 import { calculateDiscount } from "../../common/utils/discount.utils";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { DiscountsService } from "../discounts/discounts.service";
+import { KEY_PATTERNS } from "../redis-store/constants/key-patterns";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
 
 @Injectable()
@@ -427,14 +428,16 @@ export class CartsService {
         );
       }
 
-      // Release old reservation and reserve new quantity
-      await this.inventoryStore.releaseInventory(
-        addItemDto.productVariantId,
-        existingItem.quantity,
-      );
+      // Reserve new quantity (Lua script handles delta automatically)
       await this.inventoryStore.reserveInventory(
+        cart.id,
         addItemDto.productVariantId,
         newQuantity,
+      );
+      // Refresh TTL for the reservation
+      await this.inventoryStore.refreshReservationTTL(
+        cart.id,
+        addItemDto.productVariantId,
       );
 
       await db
@@ -460,8 +463,14 @@ export class CartsService {
 
       // Reserve inventory
       await this.inventoryStore.reserveInventory(
+        cart.id,
         addItemDto.productVariantId,
         addItemDto.quantity,
+      );
+      // Refresh TTL for the reservation
+      await this.inventoryStore.refreshReservationTTL(
+        cart.id,
+        addItemDto.productVariantId,
       );
 
       // Create new cart item
@@ -530,16 +539,27 @@ export class CartsService {
         );
       }
 
-      // Reserve additional quantity
-      await this.inventoryStore.reserveInventory(item.productVariantId, delta);
-    } else if (delta < 0) {
-      // Decreasing quantity - release excess reservation
-      await this.inventoryStore.releaseInventory(
+      // Reserve new quantity (Lua script handles delta automatically)
+      await this.inventoryStore.reserveInventory(
+        cart.id,
         item.productVariantId,
-        Math.abs(delta),
+        updateDto.quantity,
+      );
+    } else if (delta < 0) {
+      // Decreasing quantity - reserve new quantity (Lua script handles release)
+      await this.inventoryStore.reserveInventory(
+        cart.id,
+        item.productVariantId,
+        updateDto.quantity,
       );
     }
-    // If delta === 0, no change needed
+    // If delta === 0, refresh TTL only
+
+    // Refresh TTL for the reservation
+    await this.inventoryStore.refreshReservationTTL(
+      cart.id,
+      item.productVariantId,
+    );
 
     // Update quantity
     await db
@@ -580,10 +600,23 @@ export class CartsService {
     }
 
     // Release reservation before deleting item
-    await this.inventoryStore.releaseInventory(
+    const reservation = await this.inventoryStore.getReservation(
+      cart.id,
       item.productVariantId,
-      item.quantity,
     );
+    if (reservation !== null && reservation > 0) {
+      // Delete individual reservation
+      const reservationKey = KEY_PATTERNS.INVENTORY_RESERVATION(
+        cart.id,
+        item.productVariantId,
+      );
+      await this.inventoryStore.delete(reservationKey);
+      // Decrement aggregated reserved count
+      await this.inventoryStore.releaseInventory(
+        item.productVariantId,
+        reservation,
+      );
+    }
 
     // Delete item
     await db.delete(cartItems).where(eq(cartItems.id, itemId));
