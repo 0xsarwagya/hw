@@ -205,6 +205,8 @@ describe("OrdersService", () => {
             transitionState: jest.fn(),
             setOrder: jest.fn(),
             failSession: jest.fn(),
+            assertStateIn: jest.fn(),
+            getSession: jest.fn(),
           },
         },
       ],

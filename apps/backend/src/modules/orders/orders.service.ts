@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import {
@@ -46,6 +47,8 @@ import {
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     private readonly cartsService: CartsService,
     private readonly discountsService: DiscountsService,
@@ -227,13 +230,19 @@ export class OrdersService {
 
       cartId = cart.id;
 
-      // Create checkout session (CREATED state) - wrap in try-catch to not break order creation
+      // Create checkout session (CREATED state)
+      // Session creation failure is acceptable - we can proceed without state machine
+      // but if session exists, we MUST validate its state before proceeding
       try {
         const sessionResult = await this.checkoutStore.createSession(cart.id);
         checkoutSessionId = sessionResult.sessionId;
       } catch (error) {
-        // Log but continue - state machine is optional for order creation
-        console.error("Failed to create checkout session:", error);
+        // Write failure - log but continue (order creation can proceed without session)
+        this.logger.warn(
+          `Failed to create checkout session for cart ${cart.id}, proceeding without state machine`,
+          error,
+        );
+        // checkoutSessionId remains null - order creation will skip state validation
       }
 
       // Acquire checkout lock to prevent concurrent checkout attempts
@@ -250,7 +259,8 @@ export class OrdersService {
         throw new ConflictException("Cart is already being checked out");
       }
 
-      // Transition to LOCKED state (lock acquired) - wrap in try-catch
+      // Transition to LOCKED state (lock acquired)
+      // Write failure is acceptable - lock is already acquired, preventing duplicates
       if (checkoutSessionId) {
         try {
           await this.checkoutStore.transitionState(
@@ -259,8 +269,11 @@ export class OrdersService {
             CheckoutState.LOCKED,
           );
         } catch (error) {
-          // Log but continue - state transition failure shouldn't break order creation
-          console.error("Failed to transition to LOCKED state:", error);
+          // Write failure - log but continue (lock is held, preventing duplicates)
+          this.logger.error(
+            `State transition to LOCKED failed for session ${checkoutSessionId}, but lock is acquired`,
+            error,
+          );
         }
       }
 
@@ -403,12 +416,36 @@ export class OrdersService {
       // Generate order number
       const orderNumber = await this.generateOrderNumber();
 
-      // Note: Payment states (PAYMENT_PENDING, PAYMENT_CONFIRMED) are handled
-      // separately in PaymentsService. For now, we transition directly from
-      // LOCKED to ORDER_CREATED. When payment integration is complete, we should
-      // assert PAYMENT_CONFIRMED state before creating the order.
+      // CRITICAL: Validate checkout state before order creation
+      // State machine READ/validation failures MUST BLOCK - we cannot proceed
+      // with unknown or invalid states as this could lead to duplicate orders
+      if (checkoutSessionId) {
+        try {
+          // Assert we're in a valid state to create an order
+          // For now, we allow LOCKED state (direct checkout flow)
+          // When payment integration is complete, this should assert PAYMENT_CONFIRMED
+          await this.checkoutStore.assertStateIn(checkoutSessionId, [
+            CheckoutState.LOCKED,
+            CheckoutState.PAYMENT_CONFIRMED, // Future: payment flow
+          ]);
+        } catch (error) {
+          // State validation failure - MUST BLOCK order creation
+          // This is a read/validation failure, not a write failure
+          this.logger.error(
+            `Cannot create order: invalid checkout state for session ${checkoutSessionId}`,
+            error,
+          );
+          throw new ConflictException(
+            "Invalid checkout state - cannot proceed with order creation",
+          );
+        }
+      }
 
       // Create order (inventory commit happens here - critical boundary)
+      // Note: This is guarded by:
+      // 1. Checkout lock (prevents concurrent checkouts)
+      // 2. Idempotency (prevents duplicate orders)
+      // 3. State validation above (ensures valid state)
       const [order] = await db
         .insert(orders)
         .values({
@@ -426,18 +463,32 @@ export class OrdersService {
         })
         .returning();
 
-      // Transition to ORDER_CREATED and set orderId - wrap in try-catch
+      // Transition to ORDER_CREATED and set orderId
+      // State machine WRITE failures can be soft-failed because:
+      // 1. Order is already created (idempotent)
+      // 2. Checkout lock is held (prevents duplicates)
+      // 3. State was validated above (we know we're in valid state)
       if (checkoutSessionId) {
         try {
           await this.checkoutStore.setOrder(checkoutSessionId, order.id);
+          // Determine current state for transition
+          const session = await this.checkoutStore.getSession(checkoutSessionId);
+          const currentState = session?.state || CheckoutState.LOCKED;
           await this.checkoutStore.transitionState(
             checkoutSessionId,
-            CheckoutState.LOCKED,
+            currentState,
             CheckoutState.ORDER_CREATED,
           );
         } catch (error) {
-          // Log but continue - state transition failure shouldn't break order creation
-          console.error("Failed to transition to ORDER_CREATED state:", error);
+          // Write failure - log but continue ONLY because:
+          // - Order creation is idempotent
+          // - Checkout lock prevents concurrent execution
+          // - State was validated before order creation
+          this.logger.error(
+            `State transition to ORDER_CREATED failed for session ${checkoutSessionId}, but order ${order.id} was created successfully`,
+            error,
+          );
+          // Continue - order is already created and guarded by idempotency + lock
         }
       }
 
@@ -528,6 +579,7 @@ export class OrdersService {
       }
 
       // Transition to COMPLETED state (order finalized)
+      // Write failure is acceptable here - order is already complete
       if (checkoutSessionId) {
         try {
           await this.checkoutStore.transitionState(
@@ -536,8 +588,11 @@ export class OrdersService {
             CheckoutState.COMPLETED,
           );
         } catch (error) {
-          // Log but don't fail order creation if state transition fails
-          console.error("Failed to transition to COMPLETED:", error);
+          // Write failure - log but continue (order is already complete)
+          this.logger.error(
+            `State transition to COMPLETED failed for session ${checkoutSessionId}, but order ${orderResponse.id} is complete`,
+            error,
+          );
         }
       }
 
