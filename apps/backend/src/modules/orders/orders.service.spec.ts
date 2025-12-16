@@ -25,6 +25,7 @@ import { DiscountsService } from "../discounts/discounts.service";
 import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import { IdempotencyStore } from "../redis-store/stores/idempotency-store";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
+import { OrderStatus } from "./dto/update-order-status.dto";
 import { OrdersService } from "./orders.service";
 
 // Mock dependencies
@@ -200,6 +201,12 @@ describe("OrdersService", () => {
             acquireCheckoutLock: jest.fn(),
             releaseCheckoutLock: jest.fn(),
             isCheckoutLocked: jest.fn(),
+            createSession: jest.fn(),
+            transitionState: jest.fn(),
+            setOrder: jest.fn(),
+            failSession: jest.fn(),
+            assertStateIn: jest.fn(),
+            getSession: jest.fn(),
           },
         },
       ],
@@ -325,8 +332,20 @@ describe("OrdersService", () => {
         .mockReturnValueOnce(mockInsertOrderChain)
         .mockReturnValueOnce(mockInsertOrderItemsChain);
 
-      // Mock checkout store - lock acquired successfully
+      // Mock checkout store - session created and lock acquired successfully
+      (checkoutStore.createSession as jest.Mock).mockResolvedValue({
+        sessionId: "checkout-session-123",
+        session: {
+          state: "CREATED",
+          cartId: mockCartId,
+          paymentIntentId: null,
+          orderId: null,
+          updatedAt: new Date().toISOString(),
+        },
+      });
       (checkoutStore.acquireCheckoutLock as jest.Mock).mockResolvedValue(true);
+      (checkoutStore.transitionState as jest.Mock).mockResolvedValue(undefined);
+      (checkoutStore.setOrder as jest.Mock).mockResolvedValue(undefined);
       (checkoutStore.releaseCheckoutLock as jest.Mock).mockResolvedValue(
         undefined,
       );
@@ -424,7 +443,24 @@ describe("OrdersService", () => {
       // Mock getCart for idempotency key generation (first call succeeds)
       (cartsService.getCart as jest.Mock)
         .mockResolvedValueOnce(mockCart) // For idempotency key generation
-        .mockRejectedValueOnce(new Error("Cart error")); // For actual order creation
+        .mockResolvedValueOnce(mockCart); // For actual order creation
+
+      // Mock checkout store - session created
+      (checkoutStore.createSession as jest.Mock).mockResolvedValue({
+        sessionId: "checkout-session-123",
+        session: {
+          state: "CREATED",
+          cartId: mockCartId,
+          paymentIntentId: null,
+          orderId: null,
+          updatedAt: new Date().toISOString(),
+        },
+      });
+      (checkoutStore.acquireCheckoutLock as jest.Mock).mockResolvedValue(true);
+      (checkoutStore.failSession as jest.Mock).mockResolvedValue(undefined);
+      (checkoutStore.releaseCheckoutLock as jest.Mock).mockResolvedValue(
+        undefined,
+      );
 
       // Mock getCustomerId to throw error (this happens inside try block)
       const mockCustomerChain = {
@@ -512,6 +548,154 @@ describe("OrdersService", () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it("should create checkout session and transition states during order creation", async () => {
+      // Similar setup to successful order creation test
+      const mockCustomerChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCustomer]),
+      };
+
+      const mockShippingAddressChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockShippingAddress]),
+      };
+
+      const mockBillingAddressChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockBillingAddress]),
+      };
+
+      const mockCart = {
+        id: mockCartId,
+        customerId: mockCustomerId,
+        items: [
+          {
+            id: "cart-item-1",
+            productVariantId: mockVariantId,
+            quantity: 2,
+            price: 500,
+          },
+        ],
+      };
+
+      const mockCartChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockCart]),
+      };
+
+      const mockCartItemsChain = {
+        from: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue([
+          {
+            cartItemId: "cart-item-1",
+            productVariantId: mockVariantId,
+            quantity: 2,
+            price: 500,
+            productGstRate: 18,
+          },
+        ]),
+      };
+
+      const mockOrder = {
+        id: mockOrderId,
+        orderNumber: "ORD-2025-000001",
+        status: "pending",
+        total: 1230,
+      };
+
+      const mockInsertOrderChain = {
+        values: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([mockOrder]),
+      };
+
+      const mockInsertOrderItemsChain = {
+        values: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([]),
+      };
+
+      const mockOrdersChain = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([]),
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce(mockCustomerChain)
+        .mockReturnValueOnce(mockShippingAddressChain)
+        .mockReturnValueOnce(mockBillingAddressChain)
+        .mockReturnValueOnce(mockCartItemsChain)
+        .mockReturnValueOnce(mockOrdersChain);
+
+      (db.insert as jest.Mock)
+        .mockReturnValueOnce(mockInsertOrderChain)
+        .mockReturnValueOnce(mockInsertOrderItemsChain);
+
+      (checkoutStore.createSession as jest.Mock).mockResolvedValue({
+        sessionId: "checkout-session-123",
+        session: {
+          state: "CREATED",
+          cartId: mockCartId,
+          paymentIntentId: null,
+          orderId: null,
+          updatedAt: new Date().toISOString(),
+        },
+      });
+      (checkoutStore.acquireCheckoutLock as jest.Mock).mockResolvedValue(true);
+      (checkoutStore.transitionState as jest.Mock).mockResolvedValue(undefined);
+      (checkoutStore.setOrder as jest.Mock).mockResolvedValue(undefined);
+      (checkoutStore.releaseCheckoutLock as jest.Mock).mockResolvedValue(
+        undefined,
+      );
+
+      (idempotencyStore.getIdempotencyResult as jest.Mock).mockResolvedValue(
+        null,
+      );
+      (idempotencyStore.checkAndSet as jest.Mock).mockResolvedValue(true);
+      (idempotencyStore.set as jest.Mock).mockResolvedValue(undefined);
+
+      (discountsService.validateDiscount as jest.Mock).mockResolvedValue({
+        isValid: false,
+      });
+
+      (inventoryStore.releaseCartReservations as jest.Mock).mockResolvedValue(
+        undefined,
+      );
+      (inventoryStore.incrementInventory as jest.Mock).mockResolvedValue(8);
+
+      (cartsService.getCart as jest.Mock).mockResolvedValue(mockCart);
+      (cartsService.clearCart as jest.Mock).mockResolvedValue(mockCart);
+
+      await service.create(mockUserId, createOrderDto);
+
+      // Verify state machine integration
+      expect(checkoutStore.createSession).toHaveBeenCalledWith(mockCartId);
+      expect(checkoutStore.transitionState).toHaveBeenCalledWith(
+        "checkout-session-123",
+        "CREATED",
+        "LOCKED",
+      );
+      expect(checkoutStore.setOrder).toHaveBeenCalledWith(
+        "checkout-session-123",
+        mockOrderId,
+      );
+      expect(checkoutStore.transitionState).toHaveBeenCalledWith(
+        "checkout-session-123",
+        "LOCKED",
+        "ORDER_CREATED",
+      );
+      expect(checkoutStore.transitionState).toHaveBeenCalledWith(
+        "checkout-session-123",
+        "ORDER_CREATED",
+        "COMPLETED",
+      );
+    });
+
     it("should throw ConflictException when cart is already locked for checkout", async () => {
       // Mock getCustomerId
       const mockCustomerChain = {
@@ -536,8 +720,19 @@ describe("OrdersService", () => {
       // Mock getCart
       (cartsService.getCart as jest.Mock).mockResolvedValue(mockCart);
 
-      // Mock checkout store - lock acquisition fails (cart already locked)
+      // Mock checkout store - session created but lock acquisition fails (cart already locked)
+      (checkoutStore.createSession as jest.Mock).mockResolvedValue({
+        sessionId: "checkout-session-123",
+        session: {
+          state: "CREATED",
+          cartId: mockCartId,
+          paymentIntentId: null,
+          orderId: null,
+          updatedAt: new Date().toISOString(),
+        },
+      });
       (checkoutStore.acquireCheckoutLock as jest.Mock).mockResolvedValue(false);
+      (checkoutStore.failSession as jest.Mock).mockResolvedValue(undefined);
 
       // Mock idempotency store
       (idempotencyStore.getIdempotencyResult as jest.Mock).mockResolvedValue(
@@ -554,9 +749,15 @@ describe("OrdersService", () => {
         service.create(mockUserId, createOrderDto),
       ).rejects.toThrow(ConflictException);
 
+      // Verify session was created
+      expect(checkoutStore.createSession).toHaveBeenCalledWith(mockCartId);
       // Verify lock was attempted
       expect(checkoutStore.acquireCheckoutLock).toHaveBeenCalledWith(
         mockCartId,
+      );
+      // Verify session was failed when lock acquisition failed
+      expect(checkoutStore.failSession).toHaveBeenCalledWith(
+        "checkout-session-123",
       );
       // Verify lock was not released (since it wasn't acquired)
       expect(checkoutStore.releaseCheckoutLock).not.toHaveBeenCalled();
@@ -586,8 +787,20 @@ describe("OrdersService", () => {
       // Mock getCart
       (cartsService.getCart as jest.Mock).mockResolvedValue(mockCart);
 
-      // Mock checkout store - lock acquired and released
+      // Mock checkout store - session created, lock acquired and released
+      (checkoutStore.createSession as jest.Mock).mockResolvedValue({
+        sessionId: "checkout-session-123",
+        session: {
+          state: "CREATED",
+          cartId: mockCartId,
+          paymentIntentId: null,
+          orderId: null,
+          updatedAt: new Date().toISOString(),
+        },
+      });
       (checkoutStore.acquireCheckoutLock as jest.Mock).mockResolvedValue(true);
+      (checkoutStore.transitionState as jest.Mock).mockResolvedValue(undefined);
+      (checkoutStore.setOrder as jest.Mock).mockResolvedValue(undefined);
       (checkoutStore.releaseCheckoutLock as jest.Mock).mockResolvedValue(
         undefined,
       );
@@ -701,7 +914,7 @@ describe("OrdersService", () => {
       );
     });
 
-    it("should release checkout lock on error during order creation", async () => {
+    it("should fail checkout session and release lock on error during order creation", async () => {
       // Mock getCustomerId
       const mockCustomerChain = {
         from: jest.fn().mockReturnThis(),
@@ -725,8 +938,20 @@ describe("OrdersService", () => {
       // Mock getCart
       (cartsService.getCart as jest.Mock).mockResolvedValue(mockCart);
 
-      // Mock checkout store - lock acquired, will be released on error
+      // Mock checkout store - session created, lock acquired, will be failed and released on error
+      (checkoutStore.createSession as jest.Mock).mockResolvedValue({
+        sessionId: "checkout-session-123",
+        session: {
+          state: "CREATED",
+          cartId: mockCartId,
+          paymentIntentId: null,
+          orderId: null,
+          updatedAt: new Date().toISOString(),
+        },
+      });
       (checkoutStore.acquireCheckoutLock as jest.Mock).mockResolvedValue(true);
+      (checkoutStore.transitionState as jest.Mock).mockResolvedValue(undefined);
+      (checkoutStore.failSession as jest.Mock).mockResolvedValue(undefined);
       (checkoutStore.releaseCheckoutLock as jest.Mock).mockResolvedValue(
         undefined,
       );
@@ -757,9 +982,15 @@ describe("OrdersService", () => {
         service.create(mockUserId, createOrderDto),
       ).rejects.toThrow("Database error");
 
+      // Verify session was created
+      expect(checkoutStore.createSession).toHaveBeenCalledWith(mockCartId);
       // Verify lock was acquired
       expect(checkoutStore.acquireCheckoutLock).toHaveBeenCalledWith(
         mockCartId,
+      );
+      // Verify session was failed on error
+      expect(checkoutStore.failSession).toHaveBeenCalledWith(
+        "checkout-session-123",
       );
       // Verify lock was released on error
       expect(checkoutStore.releaseCheckoutLock).toHaveBeenCalledWith(
@@ -793,8 +1024,20 @@ describe("OrdersService", () => {
 
       (cartsService.getCart as jest.Mock).mockResolvedValue(mockCart);
 
-      // Mock checkout store - lock acquired successfully
+      // Mock checkout store - session created, lock acquired successfully
+      (checkoutStore.createSession as jest.Mock).mockResolvedValue({
+        sessionId: "checkout-session-123",
+        session: {
+          state: "CREATED",
+          cartId: mockCartId,
+          paymentIntentId: null,
+          orderId: null,
+          updatedAt: new Date().toISOString(),
+        },
+      });
       (checkoutStore.acquireCheckoutLock as jest.Mock).mockResolvedValue(true);
+      (checkoutStore.transitionState as jest.Mock).mockResolvedValue(undefined);
+      (checkoutStore.setOrder as jest.Mock).mockResolvedValue(undefined);
       (checkoutStore.releaseCheckoutLock as jest.Mock).mockResolvedValue(
         undefined,
       );
@@ -869,8 +1112,20 @@ describe("OrdersService", () => {
         .mockReturnValueOnce(mockInsertOrderChain)
         .mockReturnValueOnce(mockInsertOrderItemsChain);
 
-      // Mock checkout store - lock acquired successfully
+      // Mock checkout store - session created and lock acquired successfully
+      (checkoutStore.createSession as jest.Mock).mockResolvedValue({
+        sessionId: "checkout-session-123",
+        session: {
+          state: "CREATED",
+          cartId: mockCartId,
+          paymentIntentId: null,
+          orderId: null,
+          updatedAt: new Date().toISOString(),
+        },
+      });
       (checkoutStore.acquireCheckoutLock as jest.Mock).mockResolvedValue(true);
+      (checkoutStore.transitionState as jest.Mock).mockResolvedValue(undefined);
+      (checkoutStore.setOrder as jest.Mock).mockResolvedValue(undefined);
       (checkoutStore.releaseCheckoutLock as jest.Mock).mockResolvedValue(
         undefined,
       );
@@ -1125,6 +1380,19 @@ describe("OrdersService", () => {
 
       (cartsService.getCart as jest.Mock).mockResolvedValue(null);
 
+      // Mock checkout store - createSession will be called even if cart is null
+      (checkoutStore.createSession as jest.Mock).mockResolvedValue({
+        sessionId: "checkout-session-123",
+        session: {
+          state: "CREATED",
+          cartId: "cart-123",
+          paymentIntentId: null,
+          orderId: null,
+          updatedAt: new Date().toISOString(),
+        },
+      });
+      (checkoutStore.failSession as jest.Mock).mockResolvedValue(undefined);
+
       await expect(
         service.create(mockUserId, createOrderDto),
       ).rejects.toThrow(BadRequestException);
@@ -1158,6 +1426,19 @@ describe("OrdersService", () => {
         ...mockCart,
         items: null,
       });
+
+      // Mock checkout store - createSession will be called
+      (checkoutStore.createSession as jest.Mock).mockResolvedValue({
+        sessionId: "checkout-session-123",
+        session: {
+          state: "CREATED",
+          cartId: mockCartId,
+          paymentIntentId: null,
+          orderId: null,
+          updatedAt: new Date().toISOString(),
+        },
+      });
+      (checkoutStore.failSession as jest.Mock).mockResolvedValue(undefined);
 
       await expect(
         service.create(mockUserId, createOrderDto),
@@ -1502,7 +1783,7 @@ describe("OrdersService", () => {
         .mockReturnValueOnce(mockOrdersChain)
         .mockReturnValueOnce(mockOrderItemsChain);
 
-      const result = await service.findAll(mockUserId, "pending");
+      const result = await service.findAll(mockUserId, OrderStatus.PENDING);
 
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
@@ -1582,7 +1863,7 @@ describe("OrdersService", () => {
       (db.update as jest.Mock).mockReturnValue(mockUpdateChain);
 
       const result = await service.updateStatus(mockUserId, mockOrderId, {
-        status: "confirmed",
+        status: OrderStatus.CONFIRMED,
       });
 
       expect(result).toBeDefined();
@@ -1612,7 +1893,7 @@ describe("OrdersService", () => {
 
       await expect(
         service.updateStatus(mockUserId, "non-existent-order", {
-          status: "confirmed",
+          status: OrderStatus.CONFIRMED,
         }),
       ).rejects.toThrow(NotFoundException);
     });
@@ -1638,7 +1919,7 @@ describe("OrdersService", () => {
 
       await expect(
         service.updateStatus(mockUserId, mockOrderId, {
-          status: "delivered",
+          status: OrderStatus.DELIVERED,
         }),
       ).rejects.toThrow(BadRequestException);
     });
@@ -1666,7 +1947,7 @@ describe("OrdersService", () => {
 
       await expect(
         service.updateStatus(mockUserId, mockOrderId, {
-          status: "delivered",
+          status: OrderStatus.DELIVERED,
         }),
       ).rejects.toThrow(BadRequestException);
     });
@@ -1694,7 +1975,7 @@ describe("OrdersService", () => {
 
       await expect(
         service.updateStatus(mockUserId, mockOrderId, {
-          status: "confirmed",
+          status: OrderStatus.CONFIRMED,
         }),
       ).rejects.toThrow(BadRequestException);
     });
@@ -1733,7 +2014,7 @@ describe("OrdersService", () => {
       (db.update as jest.Mock).mockReturnValue(mockUpdateChain);
 
       const result = await service.updateStatus(mockUserId, mockOrderId, {
-        status: "confirmed",
+        status: OrderStatus.CONFIRMED,
       });
 
       expect(result.status).toBe("confirmed");
@@ -1780,7 +2061,7 @@ describe("OrdersService", () => {
       (db.update as jest.Mock).mockReturnValue(mockUpdateChain);
 
       const result = await service.updateStatus(mockUserId, mockOrderId, {
-        status: "processing",
+        status: OrderStatus.PROCESSING,
       });
 
       expect(result.status).toBe("processing");
@@ -1827,7 +2108,7 @@ describe("OrdersService", () => {
       (db.update as jest.Mock).mockReturnValue(mockUpdateChain);
 
       const result = await service.updateStatus(mockUserId, mockOrderId, {
-        status: "shipped",
+        status: OrderStatus.SHIPPED,
       });
 
       expect(result.status).toBe("shipped");
@@ -1874,7 +2155,7 @@ describe("OrdersService", () => {
       (db.update as jest.Mock).mockReturnValue(mockUpdateChain);
 
       const result = await service.updateStatus(mockUserId, mockOrderId, {
-        status: "delivered",
+        status: OrderStatus.DELIVERED,
       });
 
       expect(result.status).toBe("delivered");
@@ -1921,7 +2202,7 @@ describe("OrdersService", () => {
       (db.update as jest.Mock).mockReturnValue(mockUpdateChain);
 
       const result = await service.updateStatus(mockUserId, mockOrderId, {
-        status: "refunded",
+        status: OrderStatus.REFUNDED,
       });
 
       expect(result.status).toBe("refunded");
@@ -1967,7 +2248,7 @@ describe("OrdersService", () => {
       (db.update as jest.Mock).mockReturnValue(mockUpdateChain);
 
       const result = await service.updateStatus(mockUserId, mockOrderId, {
-        status: "cancelled",
+        status: OrderStatus.CANCELLED,
       });
 
       expect(result.status).toBe("cancelled");
@@ -1999,7 +2280,7 @@ describe("OrdersService", () => {
 
       await expect(
         service.updateStatus(mockUserId, mockOrderId, {
-          status: "confirmed",
+          status: OrderStatus.CONFIRMED,
         }),
       ).rejects.toThrow(BadRequestException);
     });
@@ -2027,7 +2308,7 @@ describe("OrdersService", () => {
 
       await expect(
         service.updateStatus(mockUserId, mockOrderId, {
-          status: "confirmed",
+          status: OrderStatus.CONFIRMED,
         }),
       ).rejects.toThrow(BadRequestException);
     });
@@ -2055,7 +2336,7 @@ describe("OrdersService", () => {
 
       try {
         await service.updateStatus(mockUserId, mockOrderId, {
-          status: "confirmed",
+          status: OrderStatus.CONFIRMED,
         });
         fail("Should have thrown BadRequestException");
       } catch (error) {

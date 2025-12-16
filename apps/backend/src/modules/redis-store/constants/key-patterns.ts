@@ -62,6 +62,14 @@ export const KEY_PATTERNS = {
    * TTL: 10 minutes (default)
    */
   CHECKOUT_LOCK: (cartId: string) => `checkout:lock:${cartId}`,
+
+  /**
+   * Checkout session by order ID (reverse lookup)
+   * Format: checkout:session:by-order:{orderId}
+   * TTL: Same as checkout session (1 hour)
+   */
+  CHECKOUT_SESSION_BY_ORDER: (orderId: string) =>
+    `checkout:session:by-order:${orderId}`,
 } as const;
 
 /**
