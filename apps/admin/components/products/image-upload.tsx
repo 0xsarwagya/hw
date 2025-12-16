@@ -271,10 +271,14 @@ export function ImageUpload({
 
       {imageUrls.length > 0 && (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-          {imageUrls.map((urlOrKey) => {
+          {imageUrls.map((urlOrKey, index) => {
             const displayUrl = getDisplayUrl(urlOrKey);
             return (
-              <div key={urlOrKey} className="relative group">
+              <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: Index needed for remove handler and alt text
+                key={`${urlOrKey}-${index}`}
+                className="relative group"
+              >
                 {/* biome-ignore lint/performance/noImgElement: External URLs may not work with Next.js Image */}
                 <img
                   src={displayUrl}

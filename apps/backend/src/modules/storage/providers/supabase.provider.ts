@@ -59,7 +59,7 @@ export class SupabaseProvider implements StorageProvider {
     contentType: string,
   ): Promise<string> {
     try {
-      const { data, error } = await this.client.storage
+      const { error } = await this.client.storage
         .from(this.bucket)
         .upload(key, buffer, {
           contentType,
