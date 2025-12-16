@@ -136,11 +136,16 @@ export interface IInventoryStore extends IRedisStore {
 
   /**
    * Reconcile reservations (for recovery after Redis restart)
-   * @returns Object with released count and inconsistencies found
+   * Detects and fixes expired reservations, orphaned reservations, negative states,
+   * impossible states, and aggregated counter mismatches
+   * @returns Object with detailed reconciliation metrics
    */
   reconcileReservations(): Promise<{
     released: number;
     inconsistencies: number;
+    orphaned: number;
+    negativeCorrections: number;
+    variantsProcessed: number;
   }>;
 }
 

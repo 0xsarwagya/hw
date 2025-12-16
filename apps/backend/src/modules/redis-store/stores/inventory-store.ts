@@ -445,16 +445,28 @@ export class InventoryStore implements IInventoryStore, OnModuleInit {
 
   /**
    * Reconcile reservations (for recovery after Redis restart)
+   * Detects and fixes:
+   * - Expired reservations (releases them via aggregated count correction)
+   * - Orphaned reservations (missing TTL)
+   * - Negative reserved counts
+   * - Impossible states (reserved > total inventory)
+   * - Aggregated counter mismatches
    */
   async reconcileReservations(): Promise<{
     released: number;
     inconsistencies: number;
+    orphaned: number;
+    negativeCorrections: number;
+    variantsProcessed: number;
   }> {
     let released = 0;
     let inconsistencies = 0;
+    let orphaned = 0;
+    let negativeCorrections = 0;
+    const processedVariants = new Set<string>();
 
     try {
-      // Scan for all reservation keys
+      // Scan for all active reservation keys (SCAN only returns existing keys)
       let cursor = "0";
       const reservationKeys: string[] = [];
 
@@ -470,77 +482,247 @@ export class InventoryStore implements IInventoryStore, OnModuleInit {
         reservationKeys.push(...keys);
       } while (cursor !== "0");
 
-      // Group reservations by variantId
+      // Track orphaned reservations by variant to release them
+      const orphanedReservationsByVariant = new Map<string, number>();
+
+      // Group active reservations by variantId
       const variantReservations = new Map<
         string,
-        Array<{ cartId: string; quantity: number }>
+        Array<{ cartId: string; quantity: number; key: string }>
       >();
 
       for (const key of reservationKeys) {
-        // Check if key exists (not expired)
-        const exists = await this.client.exists(key);
-        if (!exists) {
-          // Key expired, extract info and release
-          const parts = key.split(":");
-          if (parts.length === 4) {
-            const cartId = parts[2];
-            const variantId = parts[3];
-            released++;
-            this.logger.debug(
-              `Found expired reservation: cart ${cartId}, variant ${variantId}`,
-            );
-          }
+        const parts = key.split(":");
+        if (parts.length !== 4) {
           continue;
         }
 
-        const parts = key.split(":");
-        if (parts.length === 4) {
-          const cartId = parts[2];
-          const variantId = parts[3];
-          const quantityStr = await this.client.get(key);
-          const quantity = quantityStr ? parseInt(quantityStr, 10) : 0;
+        const cartId = parts[2];
+        const variantId = parts[3];
 
+        // Check TTL - if -1, key has no expiration (orphaned)
+        const ttl = await this.client.ttl(key);
+        const quantityStr = await this.client.get(key);
+        const quantity = quantityStr ? parseInt(quantityStr, 10) : 0;
+
+        if (ttl === -1) {
+          // Orphaned reservation (no TTL)
+          orphaned++;
+          this.logger.warn(
+            `Found orphaned reservation (no TTL): cart ${cartId}, variant ${variantId}, quantity ${quantity}`,
+            {
+              variantId,
+              cartId,
+              action: "orphaned",
+              quantity,
+            },
+          );
+          // Delete orphaned reservation
+          await this.client.del(key);
+          // Track for release
+          const currentOrphaned =
+            orphanedReservationsByVariant.get(variantId) || 0;
+          orphanedReservationsByVariant.set(
+            variantId,
+            currentOrphaned + quantity,
+          );
+        } else {
+          // Valid reservation
           if (!variantReservations.has(variantId)) {
             variantReservations.set(variantId, []);
           }
-          variantReservations.get(variantId)?.push({ cartId, quantity });
+          variantReservations.get(variantId)?.push({ cartId, quantity, key });
         }
       }
 
-      // Check aggregated reserved counts against individual reservations
-      for (const [variantId, reservations] of variantReservations.entries()) {
-        const expectedReserved = reservations.reduce(
+      // Also check all variants that have aggregated reserved counts
+      // (in case they have reserved count but no active reservations - expired)
+      cursor = "0";
+      const reservedKeys: string[] = [];
+      do {
+        const [nextCursor, keys] = await this.client.scan(
+          cursor,
+          "MATCH",
+          "inventory:reserved:*",
+          "COUNT",
+          100,
+        );
+        cursor = nextCursor;
+        reservedKeys.push(...keys);
+      } while (cursor !== "0");
+
+      // Process each variant with aggregated reserved count
+      for (const reservedKey of reservedKeys) {
+        const parts = reservedKey.split(":");
+        if (parts.length !== 3) {
+          continue;
+        }
+        const variantId = parts[2];
+        processedVariants.add(variantId);
+
+        const actualReserved = await this.getReservedInventory(variantId);
+        const totalInventory =
+          (await this.getAvailableInventory(variantId)) || 0;
+        const activeReservations = variantReservations.get(variantId) || [];
+        const expectedReserved = activeReservations.reduce(
           (sum, r) => sum + r.quantity,
           0,
         );
-        const actualReserved = await this.getReservedInventory(variantId);
 
-        if (expectedReserved !== actualReserved) {
-          inconsistencies++;
-          this.logger.warn(
-            `Reservation inconsistency for variant ${variantId}: expected ${expectedReserved}, actual ${actualReserved}`,
+        // Check for negative reserved count
+        if (actualReserved < 0) {
+          negativeCorrections++;
+          const before = actualReserved;
+          await this.client.set(
+            KEY_PATTERNS.INVENTORY_RESERVED(variantId),
+            "0",
           );
-          // Fix inconsistency by adjusting aggregated count
-          const delta = expectedReserved - actualReserved;
-          if (delta > 0) {
+          this.logger.warn(
+            `Fixed negative reserved count for variant ${variantId}: ${before} -> 0`,
+            {
+              variantId,
+              action: "negative_correction",
+              before,
+              after: 0,
+            },
+          );
+          // Re-read after correction
+          const correctedReserved = 0;
+          if (correctedReserved > totalInventory && totalInventory >= 0) {
+            const after = totalInventory;
+            await this.client.set(
+              KEY_PATTERNS.INVENTORY_RESERVED(variantId),
+              after.toString(),
+            );
+            this.logger.warn(
+              `Fixed impossible state for variant ${variantId}: reserved ${correctedReserved} > total ${totalInventory}, set to ${after}`,
+              {
+                variantId,
+                action: "negative_correction",
+                before: correctedReserved,
+                after,
+              },
+            );
+            negativeCorrections++;
+          }
+        } else {
+          // Check for impossible state (reserved > total inventory)
+          if (actualReserved > totalInventory && totalInventory >= 0) {
+            const before = actualReserved;
+            const after = totalInventory;
+            await this.client.set(
+              KEY_PATTERNS.INVENTORY_RESERVED(variantId),
+              after.toString(),
+            );
+            this.logger.warn(
+              `Fixed impossible state for variant ${variantId}: reserved ${before} > total ${totalInventory}, set to ${after}`,
+              {
+                variantId,
+                action: "negative_correction",
+                before,
+                after,
+              },
+            );
+            negativeCorrections++;
+          }
+        }
+
+        // Check aggregated reserved counts against individual reservations
+        // If actualReserved > expectedReserved, it means there are expired reservations
+        // that weren't properly released
+        const currentReserved = await this.getReservedInventory(variantId);
+        if (expectedReserved !== currentReserved) {
+          inconsistencies++;
+          const before = currentReserved;
+          const delta = expectedReserved - currentReserved;
+          await this.client.incrby(
+            KEY_PATTERNS.INVENTORY_RESERVED(variantId),
+            delta,
+          );
+          const after = await this.getReservedInventory(variantId);
+
+          // If delta is negative, we released expired reservations
+          if (delta < 0) {
+            released += Math.abs(delta);
+          }
+
+          this.logger.warn(
+            `Fixed reservation inconsistency for variant ${variantId}: expected ${expectedReserved}, actual ${before}, corrected to ${after}`,
+            {
+              variantId,
+              action: "fixed_inconsistency",
+              before,
+              after,
+            },
+          );
+        }
+      }
+
+      // Process variants that have active reservations but no aggregated count yet
+      for (const [variantId, reservations] of variantReservations.entries()) {
+        if (!processedVariants.has(variantId)) {
+          processedVariants.add(variantId);
+          const expectedReserved = reservations.reduce(
+            (sum, r) => sum + r.quantity,
+            0,
+          );
+          const actualReserved = await this.getReservedInventory(variantId);
+
+          if (expectedReserved !== actualReserved) {
+            inconsistencies++;
+            const before = actualReserved;
+            const delta = expectedReserved - actualReserved;
             await this.client.incrby(
               KEY_PATTERNS.INVENTORY_RESERVED(variantId),
               delta,
             );
-          } else {
-            await this.client.incrby(
-              KEY_PATTERNS.INVENTORY_RESERVED(variantId),
-              delta,
+            const after = await this.getReservedInventory(variantId);
+            this.logger.warn(
+              `Fixed reservation inconsistency for variant ${variantId}: expected ${expectedReserved}, actual ${before}, corrected to ${after}`,
+              {
+                variantId,
+                action: "fixed_inconsistency",
+                before,
+                after,
+              },
             );
           }
+        }
+      }
+
+      // Release orphaned reservations (decrement aggregated count)
+      for (const [
+        variantId,
+        orphanedQuantity,
+      ] of orphanedReservationsByVariant.entries()) {
+        if (orphanedQuantity > 0) {
+          const before = await this.getReservedInventory(variantId);
+          await this.releaseInventory(variantId, orphanedQuantity);
+          const after = await this.getReservedInventory(variantId);
+          this.logger.debug(
+            `Released ${orphanedQuantity} orphaned reservation units for variant ${variantId}: ${before} -> ${after}`,
+            {
+              variantId,
+              action: "released",
+              before,
+              after,
+              quantity: orphanedQuantity,
+            },
+          );
         }
       }
 
       this.logger.log(
-        `Reservation reconciliation complete: ${released} expired reservations released, ${inconsistencies} inconsistencies fixed`,
+        `Reservation reconciliation complete: ${released} expired reservations released, ${inconsistencies} inconsistencies fixed, ${orphaned} orphaned reservations found, ${negativeCorrections} negative/impossible states corrected, ${processedVariants.size} variants processed`,
       );
 
-      return { released, inconsistencies };
+      return {
+        released,
+        inconsistencies,
+        orphaned,
+        negativeCorrections,
+        variantsProcessed: processedVariants.size,
+      };
     } catch (error) {
       this.logger.error(
         `Failed to reconcile reservations: ${error instanceof Error ? error.message : "Unknown error"}`,

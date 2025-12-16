@@ -360,24 +360,42 @@ describe("InventoryStore", () => {
             `inventory:reservation:cart-2:${variantId}`,
           ],
         ])
-        .mockResolvedValueOnce(["0", []]); // Second scan returns empty
+        .mockResolvedValueOnce([
+          "0",
+          [KEY_PATTERNS.INVENTORY_RESERVED(variantId)],
+        ]); // Second scan for reserved keys
+
+      // Mock TTL checks (valid TTL)
+      mockRedisClient.ttl.mockResolvedValue(900); // 15 minutes
 
       // Mock reservation values (for each reservation key)
       mockRedisClient.get
         .mockResolvedValueOnce("5") // cart-1 reservation
-        .mockResolvedValueOnce("3"); // cart-2 reservation
-
-      // Mock exists check (keys exist)
-      mockRedisClient.exists.mockResolvedValue(1);
+        .mockResolvedValueOnce("3") // cart-2 reservation
+        .mockResolvedValueOnce("10") // getReservedInventory
+        .mockResolvedValueOnce("100") // getAvailableInventory
+        .mockResolvedValueOnce("8"); // getReservedInventory after fix
 
       // Mock getReservedInventory for the variant (returns 10, but should be 8)
-      jest.spyOn(store, "getReservedInventory").mockResolvedValue(10);
+      jest
+        .spyOn(store, "getReservedInventory")
+        .mockResolvedValueOnce(10) // initial
+        .mockResolvedValueOnce(10) // before fix
+        .mockResolvedValueOnce(8); // after fix
+
+      jest.spyOn(store, "getAvailableInventory").mockResolvedValue(100);
 
       mockRedisClient.incrby.mockResolvedValue(8);
+      mockRedisClient.set.mockResolvedValue("OK");
 
       const result = await store.reconcileReservations();
 
-      expect(result.inconsistencies).toBeGreaterThan(0);
+      expect(result.inconsistencies).toBe(1);
+      expect(result.variantsProcessed).toBe(1);
+      // When delta < 0, we're releasing expired reservations (10 actual - 8 expected = 2 released)
+      expect(result.released).toBe(2);
+      expect(result.orphaned).toBe(0);
+      expect(result.negativeCorrections).toBe(0);
       // Should fix inconsistency by adjusting aggregated count
       expect(mockRedisClient.incrby).toHaveBeenCalledWith(
         KEY_PATTERNS.INVENTORY_RESERVED(variantId),
@@ -385,19 +403,159 @@ describe("InventoryStore", () => {
       );
     });
 
-    it("should handle expired reservations", async () => {
-      // Mock SCAN to return reservation keys
-      mockRedisClient.scan.mockResolvedValueOnce([
-        "0",
-        ["inventory:reservation:cart-1:variant-1"],
-      ]);
+    it("should detect and handle orphaned reservations", async () => {
+      const variantId = "variant-1";
 
-      // Mock key doesn't exist (expired)
-      mockRedisClient.exists.mockResolvedValue(0);
+      // Mock SCAN to return reservation keys
+      mockRedisClient.scan
+        .mockResolvedValueOnce([
+          "0",
+          [`inventory:reservation:cart-1:${variantId}`],
+        ])
+        .mockResolvedValueOnce([
+          "0",
+          [KEY_PATTERNS.INVENTORY_RESERVED(variantId)],
+        ]);
+
+      // Mock TTL check - returns -1 (no expiration, orphaned)
+      mockRedisClient.ttl.mockResolvedValue(-1);
+
+      // Mock reservation value
+      mockRedisClient.get
+        .mockResolvedValueOnce("5") // reservation quantity
+        .mockResolvedValueOnce("5") // getReservedInventory
+        .mockResolvedValueOnce("100") // getAvailableInventory
+        .mockResolvedValueOnce("0"); // getReservedInventory after release
+
+      jest.spyOn(store, "getReservedInventory").mockResolvedValue(5);
+      jest.spyOn(store, "getAvailableInventory").mockResolvedValue(100);
+      jest.spyOn(store, "releaseInventory").mockResolvedValue();
+
+      mockRedisClient.del.mockResolvedValue(1);
+      mockRedisClient.decrby.mockResolvedValue(0);
 
       const result = await store.reconcileReservations();
 
-      expect(result.released).toBeGreaterThanOrEqual(0);
+      expect(result.orphaned).toBe(1);
+      expect(mockRedisClient.del).toHaveBeenCalledWith(
+        `inventory:reservation:cart-1:${variantId}`,
+      );
+    });
+
+    it("should fix negative reserved counts", async () => {
+      const variantId = "variant-1";
+
+      // Mock SCAN - no active reservations, but has reserved key
+      mockRedisClient.scan
+        .mockResolvedValueOnce(["0", []]) // No active reservations
+        .mockResolvedValueOnce([
+          "0",
+          [KEY_PATTERNS.INVENTORY_RESERVED(variantId)],
+        ]);
+
+      jest.spyOn(store, "getReservedInventory").mockResolvedValue(-5);
+      jest.spyOn(store, "getAvailableInventory").mockResolvedValue(100);
+
+      mockRedisClient.get
+        .mockResolvedValueOnce("-5") // getReservedInventory
+        .mockResolvedValueOnce("100") // getAvailableInventory
+        .mockResolvedValueOnce("0"); // getReservedInventory after fix
+
+      mockRedisClient.set.mockResolvedValue("OK");
+
+      const result = await store.reconcileReservations();
+
+      expect(result.negativeCorrections).toBeGreaterThan(0);
+      expect(mockRedisClient.set).toHaveBeenCalledWith(
+        KEY_PATTERNS.INVENTORY_RESERVED(variantId),
+        "0",
+      );
+    });
+
+    it("should fix impossible states (reserved > total inventory)", async () => {
+      const variantId = "variant-1";
+
+      // Mock SCAN - no active reservations, but has reserved key
+      mockRedisClient.scan
+        .mockResolvedValueOnce(["0", []]) // No active reservations
+        .mockResolvedValueOnce([
+          "0",
+          [KEY_PATTERNS.INVENTORY_RESERVED(variantId)],
+        ]);
+
+      jest.spyOn(store, "getReservedInventory").mockResolvedValue(150);
+      jest.spyOn(store, "getAvailableInventory").mockResolvedValue(100);
+
+      mockRedisClient.get
+        .mockResolvedValueOnce("150") // getReservedInventory
+        .mockResolvedValueOnce("100") // getAvailableInventory
+        .mockResolvedValueOnce("100"); // getReservedInventory after fix
+
+      mockRedisClient.set.mockResolvedValue("OK");
+
+      const result = await store.reconcileReservations();
+
+      expect(result.negativeCorrections).toBeGreaterThan(0);
+      expect(mockRedisClient.set).toHaveBeenCalledWith(
+        KEY_PATTERNS.INVENTORY_RESERVED(variantId),
+        "100",
+      );
+    });
+
+    it("should handle multiple variants", async () => {
+      const variantId1 = "variant-1";
+      const variantId2 = "variant-2";
+
+      // Mock SCAN to return reservation keys for multiple variants
+      mockRedisClient.scan
+        .mockResolvedValueOnce([
+          "0",
+          [
+            `inventory:reservation:cart-1:${variantId1}`,
+            `inventory:reservation:cart-2:${variantId2}`,
+          ],
+        ])
+        .mockResolvedValueOnce([
+          "0",
+          [
+            KEY_PATTERNS.INVENTORY_RESERVED(variantId1),
+            KEY_PATTERNS.INVENTORY_RESERVED(variantId2),
+          ],
+        ]);
+
+      // Mock TTL checks
+      mockRedisClient.ttl.mockResolvedValue(900);
+
+      // Mock reservation values
+      mockRedisClient.get
+        .mockResolvedValueOnce("5") // variant1 reservation
+        .mockResolvedValueOnce("3") // variant2 reservation
+        .mockResolvedValueOnce("5") // variant1 getReservedInventory
+        .mockResolvedValueOnce("100") // variant1 getAvailableInventory
+        .mockResolvedValueOnce("5") // variant1 getReservedInventory after
+        .mockResolvedValueOnce("3") // variant2 getReservedInventory
+        .mockResolvedValueOnce("50") // variant2 getAvailableInventory
+        .mockResolvedValueOnce("3"); // variant2 getReservedInventory after
+
+      jest
+        .spyOn(store, "getReservedInventory")
+        .mockResolvedValueOnce(5) // variant1 initial
+        .mockResolvedValueOnce(5) // variant1 before
+        .mockResolvedValueOnce(5) // variant1 after
+        .mockResolvedValueOnce(3) // variant2 initial
+        .mockResolvedValueOnce(3) // variant2 before
+        .mockResolvedValueOnce(3); // variant2 after
+
+      jest
+        .spyOn(store, "getAvailableInventory")
+        .mockResolvedValueOnce(100) // variant1
+        .mockResolvedValueOnce(50); // variant2
+
+      mockRedisClient.incrby.mockResolvedValue(0);
+
+      const result = await store.reconcileReservations();
+
+      expect(result.variantsProcessed).toBe(2);
     });
   });
 
