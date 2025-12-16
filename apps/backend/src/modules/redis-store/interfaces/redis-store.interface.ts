@@ -54,11 +54,20 @@ export interface IInventoryStore extends IRedisStore {
   ): Promise<void>;
 
   /**
-   * Release reserved inventory
+   * Release reserved inventory (returns to available)
+   * Use this for cart removals or TTL expiry
    * @param variantId - Product variant ID
    * @param quantity - Quantity to release
    */
   releaseInventory(variantId: string, quantity: number): Promise<void>;
+
+  /**
+   * Commit reservation (convert reserved → consumed)
+   * Use this when an order is created to consume the reserved inventory
+   * @param variantId - Product variant ID
+   * @param quantity - Quantity to commit
+   */
+  commitReservation(variantId: string, quantity: number): Promise<void>;
 
   /**
    * Get available inventory count

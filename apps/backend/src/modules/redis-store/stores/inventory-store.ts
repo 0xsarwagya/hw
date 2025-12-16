@@ -117,7 +117,8 @@ export class InventoryStore implements IInventoryStore {
   }
 
   /**
-   * Release reserved inventory
+   * Release reserved inventory (returns to available)
+   * Use this for cart removals or TTL expiry
    */
   async releaseInventory(variantId: string, quantity: number): Promise<void> {
     const reservedKey = KEY_PATTERNS.INVENTORY_RESERVED(variantId);
@@ -139,6 +140,28 @@ export class InventoryStore implements IInventoryStore {
     } catch (error) {
       this.logger.error(
         `Failed to release inventory for variant ${variantId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Commit reservation (convert reserved → consumed)
+   * Use this when an order is created to consume the reserved inventory
+   * This releases the reservation AND decrements available inventory
+   */
+  async commitReservation(variantId: string, quantity: number): Promise<void> {
+    try {
+      // Release reservation (decrement reserved count)
+      await this.releaseInventory(variantId, quantity);
+      // Decrement available inventory (consume the inventory)
+      await this.incrementInventory(variantId, -quantity);
+      this.logger.debug(
+        `Committed ${quantity} units of reserved inventory for variant ${variantId} (converted to consumed)`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to commit reservation for variant ${variantId}: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       throw error;
     }
