@@ -30,6 +30,7 @@ import {
   ProductResponseDto,
 } from "./dto/product-response.dto";
 import { QueryProductsDto } from "./dto/query-products.dto";
+import { SearchProductsDto, SearchResponseDto } from "./dto/search.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { ProductsService } from "./products.service";
 
@@ -114,6 +115,27 @@ export class ProductsController {
     @Query() query: QueryProductsDto,
   ): Promise<PaginatedProductsResponseDto> {
     return this.productsService.findAll(query);
+  }
+
+  @Public()
+  @Post("search")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Advanced product search with ranking",
+    description:
+      "Perform advanced product search with full-text search, SKU search, fuzzy matching, and relevance ranking. Uses fuse.js for intelligent search matching.",
+  })
+  @ApiOkResponse({
+    description: "Search results with relevance scores",
+    type: SearchResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: "Invalid search query or parameters",
+  })
+  async search(
+    @Body() searchDto: SearchProductsDto,
+  ): Promise<SearchResponseDto> {
+    return this.productsService.search(searchDto);
   }
 
   @Public()
