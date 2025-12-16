@@ -1,5 +1,11 @@
 #!/usr/bin/env node
 
+// Check DATABASE_URL before importing db (which throws if not set)
+if (!process.env.DATABASE_URL) {
+  console.log("⚠️  DATABASE_URL not set, skipping seed");
+  process.exit(0);
+}
+
 import * as bcrypt from "bcrypt";
 import { db } from "./db/index";
 import { users } from "./schema";
@@ -26,8 +32,8 @@ async function seedAdminUser() {
       .values({
         email: ADMIN_EMAIL,
         passwordHash,
-        role: "admin" as const,
-      })
+        role: "admin",
+      } as typeof users.$inferInsert)
       .returning();
 
     if (!adminUser) {
