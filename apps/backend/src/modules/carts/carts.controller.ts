@@ -24,6 +24,7 @@ import {
 import { Public } from "../../common/decorators/public.decorator";
 import { CartsService } from "./carts.service";
 import { AddItemDto } from "./dto/add-item.dto";
+import { ApplyDiscountDto } from "./dto/apply-discount.dto";
 import { CartResponseDto } from "./dto/cart-response.dto";
 import { UpdateItemDto } from "./dto/update-item.dto";
 
@@ -185,5 +186,63 @@ export class CartsController {
   ): Promise<CartResponseDto> {
     const userId = req.user?.id || null;
     return this.cartsService.clearCart(userId, sessionId || null);
+  }
+
+  @Post("discount")
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Apply discount code to cart",
+    description:
+      "Apply a discount code to the cart. Validates the code and recalculates totals.",
+  })
+  @ApiHeader({
+    name: "X-Session-Id",
+    description: "Session ID for guest carts (optional if authenticated)",
+    required: false,
+  })
+  @ApiOkResponse({
+    description: "Discount applied successfully",
+    type: CartResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: "Invalid discount code or discount not applicable",
+  })
+  async applyDiscount(
+    @Request() req,
+    @Body() applyDiscountDto: ApplyDiscountDto,
+    @Headers("x-session-id") sessionId?: string,
+  ): Promise<CartResponseDto> {
+    const userId = req.user?.id || null;
+    return this.cartsService.applyDiscount(
+      userId,
+      sessionId || null,
+      applyDiscountDto.code,
+    );
+  }
+
+  @Delete("discount")
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Remove discount code from cart",
+    description:
+      "Remove the applied discount code from the cart and recalculate totals.",
+  })
+  @ApiHeader({
+    name: "X-Session-Id",
+    description: "Session ID for guest carts (optional if authenticated)",
+    required: false,
+  })
+  @ApiOkResponse({
+    description: "Discount removed successfully",
+    type: CartResponseDto,
+  })
+  async removeDiscount(
+    @Request() req,
+    @Headers("x-session-id") sessionId?: string,
+  ): Promise<CartResponseDto> {
+    const userId = req.user?.id || null;
+    return this.cartsService.removeDiscount(userId, sessionId || null);
   }
 }

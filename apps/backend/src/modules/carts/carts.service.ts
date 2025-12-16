@@ -15,10 +15,13 @@ import {
   products,
   productVariants,
 } from "@vcecom/db";
+import { calculateDiscount } from "../../common/utils/discount.utils";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
+import { DiscountsService } from "../discounts/discounts.service";
 
 @Injectable()
 export class CartsService {
+  constructor(private readonly discountsService: DiscountsService) {}
   private readonly CART_EXPIRY_DAYS = 30; // Cart expires after 30 days
 
   /**
@@ -126,7 +129,7 @@ export class CartsService {
   }
 
   /**
-   * Recalculate cart totals with proper CGST/SGST/IGST calculation
+   * Recalculate cart totals with proper CGST/SGST/IGST calculation and discounts
    */
   private async recalculateCartTotals(
     cartId: string,
@@ -206,7 +209,78 @@ export class CartsService {
     }
 
     const totalGstAmount = totalCgst + totalSgst + totalIgst;
-    const total = subtotal + totalGstAmount;
+
+    // Get cart to check for discount code
+    const [cart] = await db
+      .select({ discountCode: carts.discountCode })
+      .from(carts)
+      .where(eq(carts.id, cartId))
+      .limit(1);
+
+    // Calculate discount if discount code exists
+    let discountAmount = 0;
+    if (cart?.discountCode) {
+      try {
+        // Get product details for discount eligibility
+        const productDetails = await db
+          .select({
+            productId: products.id,
+            categoryId: products.categoryId,
+          })
+          .from(products)
+          .where(inArray(products.id, productIds));
+
+        const productMap = new Map(productDetails.map((p) => [p.productId, p]));
+
+        // Build cart items with product info for discount calculation
+        const cartItemsForDiscount = items.map((item) => {
+          const product = productMap.get(item.productId);
+          return {
+            productId: item.productId,
+            categoryId: product?.categoryId || null,
+            collectionIds: [], // TODO: Add when product-collections junction table exists
+            tagIds: [], // TODO: Add when product-tags junction table exists
+            price: item.price,
+            quantity: item.quantity,
+          };
+        });
+
+        // Validate and get discount
+        const userId = customerId
+          ? await this.getUserIdFromCustomerId(customerId)
+          : undefined;
+        const validation = await this.discountsService.validateDiscount(
+          cart.discountCode,
+          userId,
+          subtotal,
+        );
+
+        if (validation.isValid && validation.discount) {
+          // Calculate discount
+          const discountResult = calculateDiscount(
+            validation.discount,
+            cartItemsForDiscount,
+          );
+          discountAmount = discountResult.discountAmount;
+        } else {
+          // Invalid discount, remove it
+          await db
+            .update(carts)
+            .set({ discountCode: null })
+            .where(eq(carts.id, cartId));
+        }
+      } catch (_error) {
+        // Discount validation failed, remove discount code
+        await db
+          .update(carts)
+          .set({ discountCode: null })
+          .where(eq(carts.id, cartId));
+      }
+    }
+
+    // Calculate total after discount (discount applies to subtotal before GST)
+    const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
+    const total = subtotalAfterDiscount + totalGstAmount;
 
     // Update cart totals
     await db
@@ -214,6 +288,7 @@ export class CartsService {
       .set({
         subtotal,
         gstAmount: totalGstAmount,
+        discountAmount,
         total,
       })
       .where(eq(carts.id, cartId));
@@ -221,11 +296,27 @@ export class CartsService {
     return {
       subtotal,
       gstAmount: totalGstAmount,
+      discountAmount,
       cgst: totalCgst,
       sgst: totalSgst,
       igst: totalIgst,
       total,
     };
+  }
+
+  /**
+   * Get user ID from customer ID
+   */
+  private async getUserIdFromCustomerId(
+    customerId: string,
+  ): Promise<string | undefined> {
+    const [customer] = await db
+      .select({ userId: customers.userId })
+      .from(customers)
+      .where(eq(customers.id, customerId))
+      .limit(1);
+
+    return customer?.userId || undefined;
   }
 
   /**
@@ -246,7 +337,7 @@ export class CartsService {
       .where(eq(cartItems.cartId, cart.id));
 
     // Recalculate totals and get GST breakdown
-    const gstBreakdown = await this.recalculateCartTotals(cart.id);
+    const gstBreakdown = await this.recalculateCartTotals(cart.id, customerId);
 
     // Get updated cart
     const [updatedCart] = await db
@@ -257,6 +348,8 @@ export class CartsService {
 
     return {
       ...updatedCart,
+      discountCode: updatedCart.discountCode,
+      discountAmount: Number(updatedCart.discountAmount || 0),
       gstBreakdown: {
         cgst: gstBreakdown.cgst,
         sgst: gstBreakdown.sgst,
@@ -533,5 +626,83 @@ export class CartsService {
 
     // Recalculate customer cart totals
     await this.recalculateCartTotals(customerCart.id, customerId);
+  }
+
+  /**
+   * Apply discount code to cart
+   */
+  async applyDiscount(
+    userId: string | null,
+    sessionId: string | null,
+    discountCode: string,
+  ) {
+    let customerId: string | null = null;
+    if (userId) {
+      customerId = await this.getCustomerId(userId);
+    }
+
+    const cart = await this.getOrCreateCart(customerId, sessionId);
+
+    // Validate discount
+    const userIdForValidation = customerId
+      ? await this.getUserIdFromCustomerId(customerId)
+      : undefined;
+
+    // Get cart subtotal for validation
+    const items = await db
+      .select({
+        price: cartItems.price,
+        quantity: cartItems.quantity,
+      })
+      .from(cartItems)
+      .where(eq(cartItems.cartId, cart.id));
+
+    const subtotal = items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0,
+    );
+
+    const validation = await this.discountsService.validateDiscount(
+      discountCode,
+      userIdForValidation,
+      subtotal,
+    );
+
+    if (!validation.isValid || !validation.discount) {
+      throw new BadRequestException(
+        validation.error || "Invalid discount code",
+      );
+    }
+
+    // Apply discount code
+    await db.update(carts).set({ discountCode }).where(eq(carts.id, cart.id));
+
+    // Recalculate totals with discount
+    await this.recalculateCartTotals(cart.id, customerId);
+
+    return this.getCart(userId, sessionId);
+  }
+
+  /**
+   * Remove discount code from cart
+   */
+  async removeDiscount(userId: string | null, sessionId: string | null) {
+    let customerId: string | null = null;
+    if (userId) {
+      customerId = await this.getCustomerId(userId);
+    }
+
+    const cart = await this.getOrCreateCart(customerId, sessionId);
+
+    // Remove discount code
+    await db
+      .update(carts)
+      .set({ discountCode: null, discountAmount: 0 })
+      .where(eq(carts.id, cart.id));
+
+    // Recalculate totals without discount
+    await this.recalculateCartTotals(cart.id, customerId);
+
+    return this.getCart(userId, sessionId);
   }
 }

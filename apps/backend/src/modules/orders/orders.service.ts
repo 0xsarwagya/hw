@@ -21,8 +21,10 @@ import {
   shipments,
   sql,
 } from "@vcecom/db";
+import { calculateDiscount } from "../../common/utils/discount.utils";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { CartsService } from "../carts/carts.service";
+import { DiscountsService } from "../discounts/discounts.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { OrderResponseDto } from "./dto/order-response.dto";
 import {
@@ -38,7 +40,10 @@ import {
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly cartsService: CartsService) {}
+  constructor(
+    private readonly cartsService: CartsService,
+    private readonly discountsService: DiscountsService,
+  ) {}
 
   /**
    * Generate unique order number
@@ -161,6 +166,9 @@ export class OrdersService {
       throw new BadRequestException("Cart is empty");
     }
 
+    // Get discount code from cart
+    const discountCode = (cart as any).discountCode || null;
+
     // Get cart items with product variant details
     const cartItemIds = cart.items.map((item) => item.id);
     const cartItemsWithVariants = await db
@@ -217,7 +225,80 @@ export class OrdersService {
 
     const totalGstAmount = totalCgst + totalSgst + totalIgst;
     const shippingCost = createOrderDto.shippingCost || 0;
-    const total = subtotal + totalGstAmount + shippingCost;
+
+    // Calculate discount if discount code exists
+    let discountAmount = 0;
+    if (discountCode) {
+      try {
+        // Get product IDs from variants
+        const variantIds = cartItemsWithVariants.map(
+          (item) => item.productVariantId,
+        );
+        const variantProductMap = await db
+          .select({
+            variantId: productVariants.id,
+            productId: productVariants.productId,
+          })
+          .from(productVariants)
+          .where(inArray(productVariants.id, variantIds));
+
+        const productIds = Array.from(
+          new Set(variantProductMap.map((v) => v.productId)),
+        );
+
+        // Get product details for discount calculation
+        const productDetails = await db
+          .select({
+            productId: products.id,
+            categoryId: products.categoryId,
+          })
+          .from(products)
+          .where(inArray(products.id, productIds));
+
+        const variantToProduct = new Map(
+          variantProductMap.map((v) => [v.variantId, v.productId]),
+        );
+
+        const productMap = new Map(productDetails.map((p) => [p.productId, p]));
+
+        // Build cart items for discount calculation
+        const cartItemsForDiscount = cartItemsWithVariants.map((item) => {
+          const productId = variantToProduct.get(item.productVariantId);
+          const product = productId ? productMap.get(productId) : null;
+          return {
+            productId: productId || "",
+            categoryId: product?.categoryId || null,
+            collectionIds: [], // TODO: Add when product-collections junction table exists
+            tagIds: [], // TODO: Add when product-tags junction table exists
+            price: item.price,
+            quantity: item.quantity,
+          };
+        });
+
+        // Validate discount
+        const validation = await this.discountsService.validateDiscount(
+          discountCode,
+          userId,
+          subtotal,
+        );
+
+        if (validation.isValid && validation.discount) {
+          // Calculate discount
+          const discountResult = calculateDiscount(
+            validation.discount,
+            cartItemsForDiscount,
+          );
+          discountAmount = discountResult.discountAmount;
+        }
+      } catch (_error) {
+        // Discount validation failed, continue without discount
+        discountAmount = 0;
+      }
+    }
+
+    // Calculate total after discount (discount applies to subtotal before GST)
+    const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
+    const total = subtotalAfterDiscount + totalGstAmount + shippingCost;
 
     // Generate order number
     const orderNumber = await this.generateOrderNumber();
@@ -231,12 +312,25 @@ export class OrdersService {
         status: "pending",
         subtotal,
         gstAmount: totalGstAmount,
+        discountCode,
+        discountAmount,
         shippingCost,
         total,
         shippingAddressId: createOrderDto.shippingAddressId,
         billingAddressId: createOrderDto.billingAddressId,
       })
       .returning();
+
+    // Record discount usage if discount was applied
+    if (discountCode && discountAmount > 0) {
+      try {
+        const discount = await this.discountsService.findByCode(discountCode);
+        await this.discountsService.recordUsage(discount.id, order.id, userId);
+      } catch (error) {
+        // Log error but don't fail order creation
+        console.error("Failed to record discount usage:", error);
+      }
+    }
 
     // Create order items
     const orderItemsToInsert = cartItemsWithVariants.map((item) => {
