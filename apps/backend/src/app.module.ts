@@ -11,6 +11,7 @@ import { OrdersModule } from "./modules/orders/orders.module";
 import { PaymentsModule } from "./modules/payments/payments.module";
 import { ProductsModule } from "./modules/products/products.module";
 import { ShippingModule } from "./modules/shipping/shipping.module";
+import { StorageModule } from "./modules/storage/storage.module";
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ShippingModule } from "./modules/shipping/shipping.module";
     InvoicesModule,
     AddressAutocompleteModule,
     DiscountsModule,
+    StorageModule,
   ],
   controllers: [AppController],
 })

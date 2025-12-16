@@ -107,6 +107,38 @@ export interface EffectivePriceResponse {
   saleId?: string;
 }
 
+export interface FileUploadResponse {
+  key: string;
+  url: string;
+  size: number;
+  contentType: string;
+  originalName?: string;
+}
+
+export interface FileMetadata {
+  key: string;
+  url: string;
+  size?: number;
+  contentType?: string;
+}
+
+export interface PresignedUrlResponse {
+  key: string;
+  url: string;
+  expiresIn: number;
+}
+
+export interface ListFilesResponse {
+  files: string[];
+  total: number;
+  prefix: string;
+}
+
+export interface BatchDeleteResponse {
+  deleted: number;
+  failed: string[];
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -124,13 +156,19 @@ async function fetchApi<T>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
+  // Don't set Content-Type for FormData - browser will set it with boundary
+  const isFormData = options?.body instanceof FormData;
+  const headers: HeadersInit = isFormData
+    ? { ...options?.headers }
+    : {
+        "Content-Type": "application/json",
+        ...options?.headers,
+      };
+
   const response = await fetch(url, {
     ...options,
     credentials: "include", // Include cookies in requests
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -407,6 +445,126 @@ export const adminApi = {
   async deleteSale(id: string): Promise<{ message: string }> {
     return fetchApi<{ message: string }>(`/admin/sales/${id}`, {
       method: "DELETE",
+    });
+  },
+
+  /**
+   * Upload a file to storage
+   */
+  async uploadFile(
+    file: File,
+    prefix?: string,
+    compressionOptions?: {
+      quality?: number;
+      maxWidth?: number;
+      maxHeight?: number;
+      format?: "webp" | "jpeg" | "png";
+    },
+  ): Promise<FileUploadResponse> {
+    const formData = new FormData();
+    formData.append("file", file);
+    if (prefix) formData.append("prefix", prefix);
+    if (compressionOptions?.quality)
+      formData.append("quality", compressionOptions.quality.toString());
+    if (compressionOptions?.maxWidth)
+      formData.append("maxWidth", compressionOptions.maxWidth.toString());
+    if (compressionOptions?.maxHeight)
+      formData.append("maxHeight", compressionOptions.maxHeight.toString());
+    if (compressionOptions?.format)
+      formData.append("format", compressionOptions.format);
+
+    return fetchApi<FileUploadResponse>("/admin/storage/upload", {
+      method: "POST",
+      body: formData,
+    });
+  },
+
+  /**
+   * Upload multiple files to storage
+   */
+  async uploadFiles(
+    files: File[],
+    prefix?: string,
+    compressionOptions?: {
+      quality?: number;
+      maxWidth?: number;
+      maxHeight?: number;
+      format?: "webp" | "jpeg" | "png";
+    },
+  ): Promise<FileUploadResponse[]> {
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append("files", file);
+    }
+    if (prefix) formData.append("prefix", prefix);
+    if (compressionOptions?.quality)
+      formData.append("quality", compressionOptions.quality.toString());
+    if (compressionOptions?.maxWidth)
+      formData.append("maxWidth", compressionOptions.maxWidth.toString());
+    if (compressionOptions?.maxHeight)
+      formData.append("maxHeight", compressionOptions.maxHeight.toString());
+    if (compressionOptions?.format)
+      formData.append("format", compressionOptions.format);
+
+    return fetchApi<FileUploadResponse[]>("/admin/storage/upload/batch", {
+      method: "POST",
+      body: formData,
+    });
+  },
+
+  /**
+   * Delete a file from storage
+   */
+  async deleteFile(key: string): Promise<void> {
+    return fetchApi<void>(`/admin/storage/${encodeURIComponent(key)}`, {
+      method: "DELETE",
+    });
+  },
+
+  /**
+   * Get file metadata
+   */
+  async getFile(key: string): Promise<FileMetadata> {
+    return fetchApi<FileMetadata>(`/admin/storage/${encodeURIComponent(key)}`);
+  },
+
+  /**
+   * List files in storage
+   */
+  async listFiles(
+    prefix?: string,
+    maxKeys?: number,
+  ): Promise<ListFilesResponse> {
+    const searchParams = new URLSearchParams();
+    if (prefix) searchParams.append("prefix", prefix);
+    if (maxKeys) searchParams.append("maxKeys", maxKeys.toString());
+
+    const query = searchParams.toString();
+    return fetchApi<ListFilesResponse>(
+      `/admin/storage/list${query ? `?${query}` : ""}`,
+    );
+  },
+
+  /**
+   * Generate presigned URL for direct upload
+   */
+  async generatePresignedUrl(
+    key: string,
+    expiresIn?: number,
+  ): Promise<PresignedUrlResponse> {
+    return fetchApi<PresignedUrlResponse>("/admin/storage/presigned-url", {
+      method: "POST",
+      body: JSON.stringify({ key, expiresIn }),
+    });
+  },
+
+  /**
+   * Batch delete files
+   */
+  async batchDeleteFiles(keys: string[]): Promise<BatchDeleteResponse> {
+    return fetchApi<BatchDeleteResponse>("/admin/storage/batch", {
+      method: "DELETE",
+      body: JSON.stringify({ keys }),
     });
   },
 };

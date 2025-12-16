@@ -1,8 +1,9 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { and, db, eq, inArray, products, productVariants } from "@vcecom/db";
+import { and, db, eq, inArray, products, productVariants, productImages } from "@vcecom/db";
 import { ProductsService } from "./products.service";
 import { FilterProductsDto, SortField, SortOrder } from "./dto/filter.dto";
 import { SearchProductsDto, SearchSortBy } from "./dto/search.dto";
+import { StorageService } from "../storage/storage.service";
 
 // Mock database
 jest.mock("@vcecom/db", () => ({
@@ -28,18 +29,36 @@ jest.mock("@vcecom/db", () => ({
   })),
   products: {},
   productVariants: {},
+  productImages: {},
   categories: {},
 }));
 
 describe("ProductsService", () => {
   let service: ProductsService;
+  let storageService: jest.Mocked<StorageService>;
+
+  const mockStorageService = {
+    upload: jest.fn(),
+    delete: jest.fn(),
+    getUrl: jest.fn(),
+    getPresignedUrl: jest.fn(),
+    exists: jest.fn(),
+    list: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ProductsService],
+      providers: [
+        ProductsService,
+        {
+          provide: StorageService,
+          useValue: mockStorageService,
+        },
+      ],
     }).compile();
 
     service = module.get<ProductsService>(ProductsService);
+    storageService = module.get(StorageService) as jest.Mocked<StorageService>;
     jest.clearAllMocks();
   });
 
