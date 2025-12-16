@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsOptional, IsString, Matches, MaxLength } from "class-validator";
+import { IsGstin } from "../../../common/validators/gstin.validator";
 
 export class UpdateProfileDto {
   @ApiProperty({
@@ -26,13 +27,16 @@ export class UpdateProfileDto {
   phone?: string;
 
   @ApiProperty({
-    description: "GSTIN (GST Identification Number) - 15 characters",
+    description:
+      "GSTIN (GST Identification Number) - 15 characters with valid format and checksum",
     example: "27ABCDE1234F1Z5",
     required: false,
     maxLength: 15,
   })
   @IsOptional()
   @IsString({ message: "GSTIN must be a string" })
-  @MaxLength(15, { message: "GSTIN must be exactly 15 characters" })
+  @IsGstin({
+    message: "GSTIN must be a valid 15-character GST Identification Number",
+  })
   gstin?: string;
 }

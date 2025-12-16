@@ -7,10 +7,7 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import { customers, db, eq, users } from "@vcecom/db";
 import * as bcrypt from "bcrypt";
-import {
-  formatGstin,
-  isValidGstinFormat,
-} from "../../common/utils/gstin.utils";
+import { formatGstin, validateGstin } from "../../common/utils/gstin.utils";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { RegisterCustomerDto } from "./dto/register-customer.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
@@ -57,9 +54,9 @@ export class CustomersService {
     // Validate GSTIN if provided
     if (registerDto.gstin) {
       const formattedGstin = formatGstin(registerDto.gstin);
-      if (!isValidGstinFormat(formattedGstin)) {
+      if (!validateGstin(formattedGstin)) {
         throw new BadRequestException(
-          "Invalid GSTIN format. GSTIN must be 15 characters: 2 digits (state) + 10 alphanumeric (PAN) + 1 digit (entity) + 1 letter + 1 digit (check)",
+          "Invalid GSTIN. GSTIN must be a valid 15-character GST Identification Number with correct format and checksum",
         );
       }
 
@@ -186,9 +183,9 @@ export class CustomersService {
     if (updateDto.gstin !== undefined) {
       if (updateDto.gstin) {
         const formattedGstin = formatGstin(updateDto.gstin);
-        if (!isValidGstinFormat(formattedGstin)) {
+        if (!validateGstin(formattedGstin)) {
           throw new BadRequestException(
-            "Invalid GSTIN format. GSTIN must be 15 characters: 2 digits (state) + 10 alphanumeric (PAN) + 1 digit (entity) + 1 letter + 1 digit (check)",
+            "Invalid GSTIN. GSTIN must be a valid 15-character GST Identification Number with correct format and checksum",
           );
         }
 

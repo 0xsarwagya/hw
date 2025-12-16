@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { CustomersController } from "./customers.controller";
 import { CustomersService } from "./customers.service";
+import { GstinVerificationService } from "./gstin-verification.service";
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { CustomersService } from "./customers.service";
     }),
   ],
   controllers: [CustomersController],
-  providers: [CustomersService],
-  exports: [CustomersService],
+  providers: [CustomersService, GstinVerificationService],
+  exports: [CustomersService, GstinVerificationService],
 })
 export class CustomersModule {}
