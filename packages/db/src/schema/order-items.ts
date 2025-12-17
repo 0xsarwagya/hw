@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
   index,
   integer,
+  jsonb,
   pgTable,
   real,
   timestamp,
@@ -24,6 +25,7 @@ export const orderItems = pgTable(
     price: real("price").notNull(),
     gstRate: real("gst_rate").notNull().default(0),
     gstAmount: real("gst_amount").notNull().default(0),
+    metadata: jsonb("metadata"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

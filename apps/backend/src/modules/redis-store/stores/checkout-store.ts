@@ -20,93 +20,86 @@ import { PaymentIntent, PaymentIntentStatus } from "../dto/payment-intent.dto";
 import { ICheckoutStore } from "../interfaces/redis-store.interface";
 import { RedisStoreService } from "../redis-store.service";
 
+/**
+ * Helper function to load Lua script with multiple path fallbacks
+ */
+function loadLuaScript(scriptName: string, currentDir: string): string {
+  const scriptPaths = [
+    // Compiled path (dist)
+    join(currentDir, "../scripts", scriptName),
+    // Source path from dist
+    join(currentDir, "../../../src/modules/redis-store/scripts", scriptName),
+    // Source path from process.cwd() (repo root)
+    join(
+      process.cwd(),
+      "apps/backend/src/modules/redis-store/scripts",
+      scriptName,
+    ),
+    // Absolute path fallback
+    join(process.cwd(), "src/modules/redis-store/scripts", scriptName),
+  ];
+
+  for (const scriptPath of scriptPaths) {
+    try {
+      return readFileSync(scriptPath, "utf-8");
+    } catch {}
+  }
+
+  throw new Error(
+    `Failed to load Lua script '${scriptName}' from any of the following paths: ${scriptPaths.join(", ")}`,
+  );
+}
+
 @Injectable()
 export class CheckoutStore implements ICheckoutStore, OnModuleInit {
   private readonly logger = new Logger(CheckoutStore.name);
-  private readonly client: Redis;
+  private client!: Redis;
+  private readonly redisStoreService: RedisStoreService;
   private transitionStateScriptSha: string | null = null;
   private createPaymentIntentScriptSha: string | null = null;
   private createOrderFromPaymentScriptSha: string | null = null;
 
   constructor(redisStoreService: RedisStoreService) {
-    this.client = redisStoreService.getClient();
+    this.redisStoreService = redisStoreService;
   }
 
   async onModuleInit() {
+    // Initialize Redis client
+    this.client = this.redisStoreService.getClient();
+
     // Load Lua script for atomic state transitions
     try {
-      const scriptPath = join(__dirname, "../scripts/transition-state.lua");
-      const script = readFileSync(scriptPath, "utf-8");
+      const script = loadLuaScript("transition-state.lua", __dirname);
       this.transitionStateScriptSha = (await this.client.script(
         "LOAD",
         script,
       )) as string;
       this.logger.log("State transition Lua script loaded successfully");
     } catch (error) {
-      // Try alternative path for production builds
-      try {
-        const altScriptPath = join(
-          process.cwd(),
-          "apps/backend/src/modules/redis-store/scripts/transition-state.lua",
-        );
-        const script = readFileSync(altScriptPath, "utf-8");
-        this.transitionStateScriptSha = (await this.client.script(
-          "LOAD",
-          script,
-        )) as string;
-        this.logger.log(
-          "State transition Lua script loaded successfully (alt path)",
-        );
-      } catch (_altError) {
-        this.logger.error(
-          `Failed to load state transition Lua script: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
-        throw error;
-      }
+      this.logger.error(
+        `Failed to load state transition Lua script: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
     }
 
     // Load Lua script for atomic payment intent creation
     try {
-      const scriptPath = join(
-        __dirname,
-        "../scripts/create-payment-intent.lua",
-      );
-      const script = readFileSync(scriptPath, "utf-8");
+      const script = loadLuaScript("create-payment-intent.lua", __dirname);
       this.createPaymentIntentScriptSha = (await this.client.script(
         "LOAD",
         script,
       )) as string;
       this.logger.log("Payment intent creation Lua script loaded successfully");
     } catch (error) {
-      // Try alternative path for production builds
-      try {
-        const altScriptPath = join(
-          process.cwd(),
-          "apps/backend/src/modules/redis-store/scripts/create-payment-intent.lua",
-        );
-        const script = readFileSync(altScriptPath, "utf-8");
-        this.createPaymentIntentScriptSha = (await this.client.script(
-          "LOAD",
-          script,
-        )) as string;
-        this.logger.log(
-          "Payment intent creation Lua script loaded successfully (alt path)",
-        );
-      } catch (_altError) {
-        this.logger.error(
-          `Failed to load payment intent creation Lua script: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
-        throw error;
-      }
+      this.logger.error(
+        `Failed to load payment intent creation Lua script: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
     }
 
     // Load Lua script for atomic order creation from payment
     try {
-      const scriptPath = join(
-        __dirname,
-        "../scripts/create-order-from-payment.lua",
-      );
-      const script = readFileSync(scriptPath, "utf-8");
+      const script = loadLuaScript("create-order-from-payment.lua", __dirname);
       this.createOrderFromPaymentScriptSha = (await this.client.script(
         "LOAD",
         script,
@@ -115,26 +108,10 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
         "Order creation from payment Lua script loaded successfully",
       );
     } catch (error) {
-      // Try alternative path for production builds
-      try {
-        const altScriptPath = join(
-          process.cwd(),
-          "apps/backend/src/modules/redis-store/scripts/create-order-from-payment.lua",
-        );
-        const script = readFileSync(altScriptPath, "utf-8");
-        this.createOrderFromPaymentScriptSha = (await this.client.script(
-          "LOAD",
-          script,
-        )) as string;
-        this.logger.log(
-          "Order creation from payment Lua script loaded successfully (alt path)",
-        );
-      } catch (_altError) {
-        this.logger.error(
-          `Failed to load order creation from payment Lua script: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
-        throw error;
-      }
+      this.logger.error(
+        `Failed to load order creation from payment Lua script: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
     }
   }
 

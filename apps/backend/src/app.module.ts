@@ -14,6 +14,7 @@ import { PaymentsModule } from "./modules/payments/payments.module";
 import { PricingModule } from "./modules/pricing/pricing.module";
 import { ProductsModule } from "./modules/products/products.module";
 import { RedisStoreModule } from "./modules/redis-store/redis-store.module";
+import { ReviewsModule } from "./modules/reviews/reviews.module";
 import { ShippingModule } from "./modules/shipping/shipping.module";
 import { StorageModule } from "./modules/storage/storage.module";
 
@@ -35,6 +36,7 @@ import { StorageModule } from "./modules/storage/storage.module";
     RedisStoreModule,
     InventoryModule,
     BundlesModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
 })

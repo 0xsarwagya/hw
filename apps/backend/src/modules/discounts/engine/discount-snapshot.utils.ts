@@ -1,6 +1,7 @@
 import { DiscountResponseDto } from "../dto/discount-response.dto";
 import { DISCOUNT_ENGINE_VERSION } from "./discount-engine.constants";
 import {
+  BundleDiscountBreakdown,
   DiscountEngineResult,
   DiscountSnapshot,
 } from "./discount-engine.types";
@@ -14,6 +15,7 @@ export function createDiscountSnapshot(
   engineResult: DiscountEngineResult,
   appliedDiscounts: DiscountResponseDto[],
   rulesetVersion: number,
+  bundleBreakdowns?: BundleDiscountBreakdown[],
 ): DiscountSnapshot {
   return {
     ...engineResult,
@@ -21,5 +23,6 @@ export function createDiscountSnapshot(
     computedAt: new Date().toISOString(),
     ruleHash: computeRuleHash(appliedDiscounts),
     rulesetVersion,
+    bundleBreakdowns,
   };
 }

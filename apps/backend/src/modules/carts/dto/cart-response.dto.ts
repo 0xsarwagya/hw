@@ -1,4 +1,25 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { UserBundleSelection } from "../../bundles/services/bundle-eligibility.service";
+
+export class BundleVariantBreakdownDto {
+  @ApiProperty({
+    description: "Variant ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  variantId: string;
+
+  @ApiProperty({
+    description: "Unit price for this variant",
+    example: 999.99,
+  })
+  unitPrice: number;
+
+  @ApiProperty({
+    description: "Quantity of this variant in the bundle",
+    example: 1,
+  })
+  quantity: number;
+}
 
 export class CartItemResponseDto {
   @ApiProperty({
@@ -8,10 +29,35 @@ export class CartItemResponseDto {
   id: string;
 
   @ApiProperty({
-    description: "Product variant ID",
+    description: "Item type: 'variant' or 'bundle'",
+    example: "variant",
+    enum: ["variant", "bundle"],
+  })
+  type: "variant" | "bundle";
+
+  @ApiProperty({
+    description:
+      "Product variant ID (for variant items, or first variant for bundles)",
     example: "123e4567-e89b-12d3-a456-426614174000",
   })
   productVariantId: string;
+
+  @ApiProperty({
+    description: "Bundle ID (only for bundle items)",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+    required: false,
+  })
+  bundleId?: string;
+
+  @ApiProperty({
+    description: "Bundle selections (only for bundle items)",
+    example: {
+      "set-1": ["variant-1"],
+      "set-2": ["variant-2"],
+    },
+    required: false,
+  })
+  selections?: UserBundleSelection;
 
   @ApiProperty({
     description: "Quantity",
@@ -20,10 +66,24 @@ export class CartItemResponseDto {
   quantity: number;
 
   @ApiProperty({
-    description: "Price at time of adding to cart",
+    description: "Price at time of adding to cart (unit price for bundles)",
     example: 999.99,
   })
   price: number;
+
+  @ApiProperty({
+    description: "Unit bundle price (only for bundle items)",
+    example: 1999.98,
+    required: false,
+  })
+  unitBundlePrice?: number;
+
+  @ApiProperty({
+    description: "Bundle variant breakdown (only for bundle items)",
+    type: [BundleVariantBreakdownDto],
+    required: false,
+  })
+  bundleVariantBreakdown?: BundleVariantBreakdownDto[];
 
   @ApiProperty({
     description: "Creation timestamp",

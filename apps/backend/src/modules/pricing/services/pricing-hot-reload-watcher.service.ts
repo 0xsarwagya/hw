@@ -16,25 +16,31 @@ import { PricingVersionManager } from "./pricing-version-manager.service";
 @Injectable()
 export class PricingHotReloadWatcher implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PricingHotReloadWatcher.name);
-  private readonly subscriber: Redis;
+  private subscriber!: Redis;
+  private readonly redisStoreService: RedisStoreService;
 
   // In-memory cache
   private currentBundle: PricingBundle | null = null;
   private currentVersion = 0;
 
   constructor(
-    readonly redisStoreService: RedisStoreService,
+    redisStoreService: RedisStoreService,
     private readonly versionManager: PricingVersionManager,
     private readonly bundleService: PricingBundleService,
   ) {
-    // Create separate subscriber client (required for pub/sub)
-    this.subscriber = redisStoreService.getClient().duplicate();
+    this.redisStoreService = redisStoreService;
   }
 
   /**
    * Initialize watcher on module startup
    */
   async onModuleInit(): Promise<void> {
+    // Create separate subscriber client (required for pub/sub)
+    // Disable ready check to avoid conflicts with subscriber mode
+    this.subscriber = this.redisStoreService.getClient().duplicate({
+      enableReadyCheck: false,
+      enableOfflineQueue: false,
+    });
     try {
       await this.refreshBundle(); // Initial load
       await this.subscribeToVersionChanges();

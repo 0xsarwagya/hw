@@ -43,6 +43,9 @@ describe("InventoryStore", () => {
     }).compile();
 
     store = module.get<InventoryStore>(InventoryStore);
+    
+    // Manually call onModuleInit to initialize the Redis client
+    await store.onModuleInit();
   });
 
   afterEach(() => {

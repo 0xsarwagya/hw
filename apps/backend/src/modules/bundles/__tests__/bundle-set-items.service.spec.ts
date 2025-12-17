@@ -9,6 +9,7 @@ import {
   eq,
   productVariants,
 } from "@vcecom/db";
+import { BundleCacheStore } from "../../redis-store/stores/bundle-cache-store";
 import { BundleSetItemsService } from "../services/bundle-set-items.service";
 import { AddBundleSetItemDto } from "../dto/add-bundle-set-item.dto";
 
@@ -29,9 +30,19 @@ jest.mock("@vcecom/db", () => ({
 describe("BundleSetItemsService", () => {
   let service: BundleSetItemsService;
 
+  const mockBundleCacheStore = {
+    invalidateBundle: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [BundleSetItemsService],
+      providers: [
+        BundleSetItemsService,
+        {
+          provide: BundleCacheStore,
+          useValue: mockBundleCacheStore,
+        },
+      ],
     }).compile();
 
     service = module.get<BundleSetItemsService>(BundleSetItemsService);

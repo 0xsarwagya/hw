@@ -28,6 +28,7 @@ import {
 } from "@vcecom/db";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { CartsService } from "../carts/carts.service";
+import { BundleCartItemMetadata } from "../carts/dto/bundle-cart-item.dto";
 import { DiscountsService } from "../discounts/discounts.service";
 import { runDiscountEngine } from "../discounts/engine/discount-engine";
 import {
@@ -49,6 +50,7 @@ import {
   PricingSnapshot,
 } from "../pricing/engine/pricing-engine.types";
 import { createPricingSnapshot } from "../pricing/engine/pricing-snapshot.utils";
+import { BundlePricingService } from "../pricing/services/bundle-pricing.service";
 import { CustomerGroupService } from "../pricing/services/customer-group.service";
 import { PriceListService } from "../pricing/services/price-list.service";
 import { PricingAuditService } from "../pricing/services/pricing-audit.service";
@@ -95,6 +97,7 @@ export class OrdersService {
     private readonly pricingSnapshotValidator: PricingSnapshotValidator,
     private readonly pricingAuditService: PricingAuditService,
     private readonly pricingDriftDetector: PricingDriftDetectorService,
+    private readonly bundlePricingService: BundlePricingService,
     @Inject(forwardRef(() => PaymentsService))
     private readonly paymentsService: PaymentsService,
   ) {}
@@ -369,32 +372,72 @@ export class OrdersService {
       const discountCode =
         "discountCode" in cart ? (cart.discountCode as string | null) : null;
 
-      // Get cart items with product variant details
+      // Get cart items with metadata
       const cartItemIds = cart.items.map((item) => item.id);
-      const cartItemsWithVariantsResult = await db
+      const allCartItems = await db
         .select({
-          cartItemId: cartItems.id,
+          id: cartItems.id,
           productVariantId: cartItems.productVariantId,
           quantity: cartItems.quantity,
           price: cartItems.price,
-          productGstRate: products.gstRate,
+          metadata: cartItems.metadata,
         })
         .from(cartItems)
-        .innerJoin(
-          productVariants,
-          eq(cartItems.productVariantId, productVariants.id),
-        )
-        .innerJoin(products, eq(productVariants.productId, products.id))
         .where(inArray(cartItems.id, cartItemIds));
 
-      // Ensure cartItemsWithVariants is always an array
+      if (allCartItems.length === 0) {
+        throw new BadRequestException("Cart items not found or invalid");
+      }
+
+      // Separate bundle and variant items
+      const bundleCartItems: Array<{
+        id: string;
+        productVariantId: string;
+        quantity: number;
+        price: number;
+        metadata: unknown;
+      }> = [];
+      const variantCartItems: Array<{
+        id: string;
+        productVariantId: string;
+        quantity: number;
+        price: number;
+        metadata: unknown;
+      }> = [];
+
+      for (const item of allCartItems) {
+        const metadata = item.metadata as BundleCartItemMetadata | null;
+        if (metadata?.type === "bundle") {
+          bundleCartItems.push(item);
+        } else {
+          variantCartItems.push(item);
+        }
+      }
+
+      // Get variant items with product details
+      const variantItemIds = variantCartItems.map((i) => i.id);
+      const cartItemsWithVariantsResult =
+        variantItemIds.length > 0
+          ? await db
+              .select({
+                cartItemId: cartItems.id,
+                productVariantId: cartItems.productVariantId,
+                quantity: cartItems.quantity,
+                price: cartItems.price,
+                productGstRate: products.gstRate,
+              })
+              .from(cartItems)
+              .innerJoin(
+                productVariants,
+                eq(cartItems.productVariantId, productVariants.id),
+              )
+              .innerJoin(products, eq(productVariants.productId, products.id))
+              .where(inArray(cartItems.id, variantItemIds))
+          : [];
+
       const cartItemsWithVariants = Array.isArray(cartItemsWithVariantsResult)
         ? cartItemsWithVariantsResult
         : [];
-
-      if (cartItemsWithVariants.length === 0) {
-        throw new BadRequestException("Cart items not found or invalid");
-      }
 
       // Calculate totals
       const sellerState = this.getSellerState();
@@ -405,7 +448,7 @@ export class OrdersService {
       let totalSgst = 0;
       let totalIgst = 0;
 
-      // Calculate subtotal and GST for each item
+      // Calculate subtotal and GST for variant items
       for (const item of cartItemsWithVariants) {
         const itemSubtotal = item.price * item.quantity;
         subtotal += itemSubtotal;
@@ -422,13 +465,105 @@ export class OrdersService {
         totalIgst += gstBreakdown.igst;
       }
 
+      // Calculate subtotal and GST for bundle items
+      for (const bundleItem of bundleCartItems) {
+        const itemSubtotal = bundleItem.price * bundleItem.quantity;
+        subtotal += itemSubtotal;
+
+        // Get GST rate from first variant's product
+        const [firstVariant] = await db
+          .select({
+            productId: productVariants.productId,
+          })
+          .from(productVariants)
+          .where(eq(productVariants.id, bundleItem.productVariantId))
+          .limit(1);
+
+        if (firstVariant) {
+          const [product] = await db
+            .select({
+              gstRate: products.gstRate,
+            })
+            .from(products)
+            .where(eq(products.id, firstVariant.productId))
+            .limit(1);
+
+          if (product) {
+            const gstBreakdown = calculateGstBreakdown(
+              itemSubtotal,
+              product.gstRate,
+              sellerState,
+              buyerState,
+            );
+            totalCgst += gstBreakdown.cgst;
+            totalSgst += gstBreakdown.sgst;
+            totalIgst += gstBreakdown.igst;
+          }
+        }
+      }
+
       const totalGstAmount = totalCgst + totalSgst + totalIgst;
       const shippingCost = createOrderDto.shippingCost || 0;
 
+      // Flatten bundles for pricing/discount engines
+      const bundleVariantMapping = new Map<string, string[]>(); // bundleLineId -> [variantIds]
+      const flattenedBundleVariants: Array<{
+        variantId: string;
+        productId: string;
+        categoryId: string | null;
+        basePrice: number;
+        quantity: number;
+        bundleLineId?: string;
+      }> = [];
+
+      for (const bundleItem of bundleCartItems) {
+        const metadata = bundleItem.metadata as BundleCartItemMetadata;
+        const variantQuantities =
+          this.bundlePricingService.flattenBundleSelections(
+            metadata.selections,
+            bundleItem.quantity,
+          );
+
+        const bundleVariantIds: string[] = [];
+        for (const vq of variantQuantities) {
+          const [variant] = await db
+            .select({
+              productId: productVariants.productId,
+            })
+            .from(productVariants)
+            .where(eq(productVariants.id, vq.variantId))
+            .limit(1);
+
+          if (variant) {
+            bundleVariantIds.push(vq.variantId);
+            const [product] = await db
+              .select({
+                categoryId: products.categoryId,
+              })
+              .from(products)
+              .where(eq(products.id, variant.productId))
+              .limit(1);
+
+            // Get unit price from bundle breakdown
+            const unitPrice = bundleItem.price / variantQuantities.length;
+            flattenedBundleVariants.push({
+              variantId: vq.variantId,
+              productId: variant.productId,
+              categoryId: product?.categoryId || null,
+              basePrice: unitPrice,
+              quantity: vq.quantity,
+              bundleLineId: bundleItem.id,
+            });
+          }
+        }
+        bundleVariantMapping.set(bundleItem.id, bundleVariantIds);
+      }
+
       // Get product IDs from variants (needed for both pricing and discount engines)
-      const variantIds = cartItemsWithVariants.map(
-        (item) => item.productVariantId,
-      );
+      const variantIds = [
+        ...cartItemsWithVariants.map((item) => item.productVariantId),
+        ...flattenedBundleVariants.map((v) => v.variantId),
+      ];
       const variantProductMap = await db
         .select({
           variantId: productVariants.id,
@@ -469,21 +604,33 @@ export class OrdersService {
         const activePriceLists =
           await this.getPriceListsForCustomer(customerGroupId);
 
-        // Build variant pricing input
-        const variantPricingInput = cartItemsWithVariants.map((item) => {
-          const productId = variantToProduct.get(item.productVariantId);
-          const product = productId ? productMap.get(productId) : null;
-          return {
-            variantId: item.productVariantId,
-            productId: productId || "",
-            categoryId: product?.categoryId || null,
-            basePrice: item.price,
-            compareAtPrice: undefined, // TODO: Load from variant
-            salePrice: undefined, // TODO: Load from variant
+        // Build variant pricing input (variants + flattened bundles)
+        const variantPricingInput = [
+          ...cartItemsWithVariants.map((item) => {
+            const productId = variantToProduct.get(item.productVariantId);
+            const product = productId ? productMap.get(productId) : null;
+            return {
+              variantId: item.productVariantId,
+              productId: productId || "",
+              categoryId: product?.categoryId || null,
+              basePrice: item.price,
+              compareAtPrice: undefined, // TODO: Load from variant
+              salePrice: undefined, // TODO: Load from variant
+              saleStartDate: undefined,
+              saleEndDate: undefined,
+            };
+          }),
+          ...flattenedBundleVariants.map((v) => ({
+            variantId: v.variantId,
+            productId: v.productId,
+            categoryId: v.categoryId,
+            basePrice: v.basePrice,
+            compareAtPrice: undefined,
+            salePrice: undefined,
             saleStartDate: undefined,
             saleEndDate: undefined,
-          };
-        });
+          })),
+        ];
 
         // Run pricing engine
         const pricingInput: PricingEngineInput = {
@@ -501,12 +648,54 @@ export class OrdersService {
         const pricingResult = runPricingEngine(pricingInput);
         effectiveSubtotal = pricingResult.totalEffectivePrice;
 
+        // Create bundle breakdowns for pricing snapshot
+        const bundlePricingBreakdowns: Array<{
+          bundleId: string;
+          bundleLineId: string;
+          unitBundlePrice: number;
+          variantBreakdown: Array<{
+            variantId: string;
+            unitPrice: number;
+            quantity: number;
+          }>;
+        }> = [];
+
+        for (const bundleItem of bundleCartItems) {
+          const metadata = bundleItem.metadata as BundleCartItemMetadata;
+          const variantQuantities =
+            this.bundlePricingService.flattenBundleSelections(
+              metadata.selections,
+              1, // unit quantity for breakdown
+            );
+
+          const variantBreakdown = variantQuantities.map((vq) => {
+            const pricingResultItem = pricingResult.variantPrices.find(
+              (vp) => vp.variantId === vq.variantId,
+            );
+            return {
+              variantId: vq.variantId,
+              unitPrice: pricingResultItem?.effectivePrice || vq.quantity,
+              quantity: vq.quantity,
+            };
+          });
+
+          bundlePricingBreakdowns.push({
+            bundleId: metadata.bundleId,
+            bundleLineId: bundleItem.id,
+            unitBundlePrice: bundleItem.price,
+            variantBreakdown,
+          });
+        }
+
         // Create pricing snapshot
         const rulesetVersion = this.pricingHotReloadWatcher.getCurrentVersion();
         pricingSnapshot = createPricingSnapshot(
           pricingResult,
           activePriceLists,
           rulesetVersion,
+          bundlePricingBreakdowns.length > 0
+            ? bundlePricingBreakdowns
+            : undefined,
         );
 
         // Log pricing engine run
@@ -584,8 +773,8 @@ export class OrdersService {
         );
         const productMap = new Map(productDetails.map((p) => [p.productId, p]));
 
-        // Build cart items for discount engine
-        const cartItemsForEngine = cartItemsWithVariants.map((item) => {
+        // Build cart items for discount engine (variants + flattened bundles)
+        const variantItemsForEngine = cartItemsWithVariants.map((item) => {
           const productId = variantToProduct.get(item.productVariantId);
           const product = productId ? productMap.get(productId) : null;
           return {
@@ -601,6 +790,31 @@ export class OrdersService {
             quantity: item.quantity,
           };
         });
+
+        // Add flattened bundle items to discount engine
+        const flattenedBundleItemsForEngine = flattenedBundleVariants.map(
+          (v) => {
+            const productId = variantToProduct.get(v.variantId);
+            const _product = productId ? productMap.get(productId) : null;
+            return {
+              id: `${v.bundleLineId}-${v.variantId}`, // Unique ID for flattened item
+              productVariantId: v.variantId,
+              productId: v.productId,
+              categoryId: v.categoryId,
+              collectionIds: productId
+                ? collectionsByProduct.get(productId) || []
+                : [],
+              tagIds: productId ? tagsByProduct.get(productId) || [] : [],
+              price: v.basePrice,
+              quantity: v.quantity,
+            };
+          },
+        );
+
+        const cartItemsForEngine = [
+          ...variantItemsForEngine,
+          ...flattenedBundleItemsForEngine,
+        ];
 
         // Get eligible discounts (use effective subtotal from pricing engine)
         const eligibleDiscounts =
@@ -645,11 +859,66 @@ export class OrdersService {
             true, // Cache hit (using in-memory bundle)
           );
 
+          // Create bundle discount breakdowns
+          const bundleDiscountBreakdowns: Array<{
+            bundleId: string;
+            bundleLineId: string;
+            lineDiscountTotal: number;
+            variantDiscounts: Array<{
+              variantId: string;
+              discountAmount: number;
+              quantity: number;
+            }>;
+          }> = [];
+
+          for (const bundleItem of bundleCartItems) {
+            const metadata = bundleItem.metadata as BundleCartItemMetadata;
+            const variantIds = bundleVariantMapping.get(bundleItem.id) || [];
+
+            // Find discount results for bundle variants
+            const variantDiscounts = variantIds.map((variantId) => {
+              const lineItem = engineResult.lineItems.find(
+                (li) => li.productVariantId === variantId,
+              );
+              const variantQuantity =
+                flattenedBundleVariants.find(
+                  (v) =>
+                    v.variantId === variantId &&
+                    v.bundleLineId === bundleItem.id,
+                )?.quantity || 0;
+
+              return {
+                variantId,
+                discountAmount:
+                  lineItem?.discounts.reduce(
+                    (sum, d) => sum + d.discountAmount,
+                    0,
+                  ) || 0,
+                quantity: variantQuantity,
+              };
+            });
+
+            const lineDiscountTotal = variantDiscounts.reduce(
+              (sum, vd) => sum + vd.discountAmount * vd.quantity,
+              0,
+            );
+
+            bundleDiscountBreakdowns.push({
+              bundleId: metadata.bundleId,
+              bundleLineId: bundleItem.id,
+              lineDiscountTotal,
+              variantDiscounts,
+            });
+          }
+
           // Create snapshot with versioning and integrity metadata
           discountSnapshot = createDiscountSnapshot(
             engineResult,
             eligibleDiscounts,
             rulesetVersion,
+            bundleDiscountBreakdowns.length > 0
+              ? bundleDiscountBreakdowns
+              : undefined,
           );
 
           // Log discount engine run
@@ -949,31 +1218,72 @@ export class OrdersService {
       throw new BadRequestException("Cart is empty or not found");
     }
 
-    // Get cart items with product variant details
+    // Get cart items with metadata
     const cartItemIds = cart.items.map((item) => item.id);
-    const cartItemsWithVariantsResult = await db
+    const allCartItems = await db
       .select({
-        cartItemId: cartItems.id,
+        id: cartItems.id,
         productVariantId: cartItems.productVariantId,
         quantity: cartItems.quantity,
         price: cartItems.price,
-        productGstRate: products.gstRate,
+        metadata: cartItems.metadata,
       })
       .from(cartItems)
-      .innerJoin(
-        productVariants,
-        eq(cartItems.productVariantId, productVariants.id),
-      )
-      .innerJoin(products, eq(productVariants.productId, products.id))
       .where(inArray(cartItems.id, cartItemIds));
+
+    if (allCartItems.length === 0) {
+      throw new BadRequestException("Cart items not found or invalid");
+    }
+
+    // Separate bundle and variant items
+    const bundleCartItems: Array<{
+      id: string;
+      productVariantId: string;
+      quantity: number;
+      price: number;
+      metadata: unknown;
+    }> = [];
+    const variantCartItems: Array<{
+      id: string;
+      productVariantId: string;
+      quantity: number;
+      price: number;
+      metadata: unknown;
+    }> = [];
+
+    for (const item of allCartItems) {
+      const metadata = item.metadata as BundleCartItemMetadata | null;
+      if (metadata?.type === "bundle") {
+        bundleCartItems.push(item);
+      } else {
+        variantCartItems.push(item);
+      }
+    }
+
+    // Get variant items with product details
+    const variantItemIds = variantCartItems.map((i) => i.id);
+    const cartItemsWithVariantsResult =
+      variantItemIds.length > 0
+        ? await db
+            .select({
+              cartItemId: cartItems.id,
+              productVariantId: cartItems.productVariantId,
+              quantity: cartItems.quantity,
+              price: cartItems.price,
+              productGstRate: products.gstRate,
+            })
+            .from(cartItems)
+            .innerJoin(
+              productVariants,
+              eq(cartItems.productVariantId, productVariants.id),
+            )
+            .innerJoin(products, eq(productVariants.productId, products.id))
+            .where(inArray(cartItems.id, variantItemIds))
+        : [];
 
     const cartItemsWithVariants = Array.isArray(cartItemsWithVariantsResult)
       ? cartItemsWithVariantsResult
       : [];
-
-    if (cartItemsWithVariants.length === 0) {
-      throw new BadRequestException("Cart items not found or invalid");
-    }
 
     // Get shipping address for GST calculation
     const [shippingAddress] = await db
@@ -1223,7 +1533,18 @@ export class OrdersService {
     }
 
     // Create order items using pricing snapshot prices (if available)
-    const orderItemsToInsert = cartItemsWithVariants.map((item) => {
+    const orderItemsToInsert: Array<{
+      orderId: string;
+      productVariantId: string;
+      quantity: number;
+      price: number;
+      gstRate: number;
+      gstAmount: number;
+      metadata?: unknown;
+    }> = [];
+
+    // Create order items for variant items
+    for (const item of cartItemsWithVariants) {
       // Use effective price from pricing snapshot if available, otherwise use cart price
       let itemPrice = item.price;
       if (metadata.pricingSnapshot) {
@@ -1243,15 +1564,153 @@ export class OrdersService {
         buyerState,
       );
 
-      return {
+      orderItemsToInsert.push({
         orderId,
         productVariantId: item.productVariantId,
         quantity: item.quantity,
         price: itemPrice, // Use effective price from pricing snapshot
         gstRate: item.productGstRate,
         gstAmount: gstBreakdown.totalGst,
-      };
-    });
+      });
+    }
+
+    // Expand bundles to multiple order items
+    for (const bundleItem of bundleCartItems) {
+      const bundleMetadata = bundleItem.metadata as BundleCartItemMetadata;
+      const bundleBreakdown =
+        metadata.pricingSnapshot?.bundleBreakdowns?.find(
+          (b) => b.bundleLineId === bundleItem.id,
+        ) ||
+        metadata.pricingSnapshot?.bundleBreakdowns?.find(
+          (b) => b.bundleId === bundleMetadata.bundleId,
+        );
+
+      if (bundleBreakdown) {
+        // Use snapshot breakdown
+        for (const variantBreakdown of bundleBreakdown.variantBreakdown) {
+          // Get variant details for GST
+          const [variant] = await db
+            .select({
+              productId: productVariants.productId,
+            })
+            .from(productVariants)
+            .where(eq(productVariants.id, variantBreakdown.variantId))
+            .limit(1);
+
+          if (variant) {
+            const [product] = await db
+              .select({
+                gstRate: products.gstRate,
+              })
+              .from(products)
+              .where(eq(products.id, variant.productId))
+              .limit(1);
+
+            if (product) {
+              const itemSubtotal =
+                variantBreakdown.unitPrice * variantBreakdown.quantity;
+              const gstBreakdown = calculateGstBreakdown(
+                itemSubtotal,
+                product.gstRate,
+                sellerState,
+                buyerState,
+              );
+
+              // Find which set this variant belongs to
+              let setId: string | undefined;
+              for (const [setIdKey, variantIds] of Object.entries(
+                bundleMetadata.selections,
+              )) {
+                if (variantIds.includes(variantBreakdown.variantId)) {
+                  setId = setIdKey;
+                  break;
+                }
+              }
+
+              orderItemsToInsert.push({
+                orderId,
+                productVariantId: variantBreakdown.variantId,
+                quantity: variantBreakdown.quantity,
+                price: variantBreakdown.unitPrice,
+                gstRate: product.gstRate,
+                gstAmount: gstBreakdown.totalGst,
+                metadata: {
+                  bundleId: bundleMetadata.bundleId,
+                  bundleLineId: bundleItem.id,
+                  setId,
+                  isBundleComponent: true,
+                } as unknown as Record<string, unknown>,
+              });
+            }
+          }
+        }
+      } else {
+        // Fallback: flatten bundle manually if snapshot not available
+        const variantQuantities =
+          this.bundlePricingService.flattenBundleSelections(
+            bundleMetadata.selections,
+            bundleItem.quantity,
+          );
+
+        for (const vq of variantQuantities) {
+          const [variant] = await db
+            .select({
+              productId: productVariants.productId,
+            })
+            .from(productVariants)
+            .where(eq(productVariants.id, vq.variantId))
+            .limit(1);
+
+          if (variant) {
+            const [product] = await db
+              .select({
+                gstRate: products.gstRate,
+              })
+              .from(products)
+              .where(eq(products.id, variant.productId))
+              .limit(1);
+
+            if (product) {
+              // Use unit bundle price divided by variant count
+              const unitPrice = bundleItem.price / variantQuantities.length;
+              const itemSubtotal = unitPrice * vq.quantity;
+              const gstBreakdown = calculateGstBreakdown(
+                itemSubtotal,
+                product.gstRate,
+                sellerState,
+                buyerState,
+              );
+
+              // Find which set this variant belongs to
+              let setId: string | undefined;
+              for (const [setIdKey, variantIds] of Object.entries(
+                bundleMetadata.selections,
+              )) {
+                if (variantIds.includes(vq.variantId)) {
+                  setId = setIdKey;
+                  break;
+                }
+              }
+
+              orderItemsToInsert.push({
+                orderId,
+                productVariantId: vq.variantId,
+                quantity: vq.quantity,
+                price: unitPrice,
+                gstRate: product.gstRate,
+                gstAmount: gstBreakdown.totalGst,
+                metadata: {
+                  bundleId: bundleMetadata.bundleId,
+                  bundleLineId: bundleItem.id,
+                  setId,
+                  isBundleComponent: true,
+                } as unknown as Record<string, unknown>,
+              });
+            }
+          }
+        }
+      }
+    }
 
     const insertedOrderItems = await db
       .insert(orderItems)
@@ -1264,12 +1723,29 @@ export class OrdersService {
       // Release all cart reservations (individual reservation keys)
       await this.inventoryStore.releaseCartReservations(cart.id);
 
-      // Commit reservations (decrement available inventory)
+      // Commit reservations for variant items
       for (const item of cartItemsWithVariants) {
         await this.inventoryStore.incrementInventory(
           item.productVariantId,
           -item.quantity,
         );
+      }
+
+      // Commit reservations for bundle items (all variants)
+      for (const bundleItem of bundleCartItems) {
+        const bundleMetadata = bundleItem.metadata as BundleCartItemMetadata;
+        const variantQuantities =
+          this.bundlePricingService.flattenBundleSelections(
+            bundleMetadata.selections,
+            bundleItem.quantity,
+          );
+
+        for (const vq of variantQuantities) {
+          await this.inventoryStore.incrementInventory(
+            vq.variantId,
+            -vq.quantity,
+          );
+        }
       }
     } catch (error) {
       this.logger.error(

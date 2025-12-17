@@ -1,19 +1,34 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
 import { RedisStoreService } from "../../redis-store/redis-store.service";
 
 @Injectable()
-export class PricingVersionManager {
+export class PricingVersionManager implements OnModuleInit {
   private readonly logger = new Logger(PricingVersionManager.name);
-  private readonly client: Redis;
+  private client!: Redis;
+  private readonly redisStoreService: RedisStoreService;
   private readonly versionKey = "pricing-ruleset-version";
   private readonly versionChannel = "pricing-ruleset-version";
 
   constructor(redisStoreService: RedisStoreService) {
-    this.client = redisStoreService.getClient();
+    this.redisStoreService = redisStoreService;
+  }
+
+  async onModuleInit() {
+    this.client = this.redisStoreService.getClient();
+  }
+
+  /**
+   * Ensure Redis client is initialized
+   */
+  private ensureClientInitialized(): void {
+    if (!this.client) {
+      this.client = this.redisStoreService.getClient();
+    }
   }
 
   async getCurrentVersion(): Promise<number> {
+    this.ensureClientInitialized();
     try {
       const versionStr = await this.client.get(this.versionKey);
       if (!versionStr) {
@@ -30,6 +45,7 @@ export class PricingVersionManager {
   }
 
   async incrementVersion(): Promise<number> {
+    this.ensureClientInitialized();
     try {
       const newVersion = await this.client.incr(this.versionKey);
       this.logger.log(`Pricing ruleset version incremented to ${newVersion}`);
@@ -50,6 +66,7 @@ export class PricingVersionManager {
   }
 
   async setVersion(version: number): Promise<void> {
+    this.ensureClientInitialized();
     try {
       await this.client.set(this.versionKey, version.toString());
       this.logger.log(`Pricing ruleset version set to ${version}`);

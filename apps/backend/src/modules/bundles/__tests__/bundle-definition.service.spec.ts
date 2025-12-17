@@ -10,6 +10,7 @@ import {
   desc,
   eq,
 } from "@vcecom/db";
+import { BundleCacheStore } from "../../redis-store/stores/bundle-cache-store";
 import { BundleDefinitionService } from "../services/bundle-definition.service";
 import { CreateBundleDto } from "../dto/create-bundle.dto";
 
@@ -32,13 +33,27 @@ jest.mock("@vcecom/db", () => ({
 
 describe("BundleDefinitionService", () => {
   let service: BundleDefinitionService;
+  let bundleCacheStore: jest.Mocked<BundleCacheStore>;
 
   beforeEach(async () => {
+    const mockBundleCacheStore = {
+      storeBundleDefinition: jest.fn().mockResolvedValue(undefined),
+      getBundleDefinition: jest.fn().mockResolvedValue(null),
+      invalidateBundle: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [BundleDefinitionService],
+      providers: [
+        BundleDefinitionService,
+        {
+          provide: BundleCacheStore,
+          useValue: mockBundleCacheStore,
+        },
+      ],
     }).compile();
 
     service = module.get<BundleDefinitionService>(BundleDefinitionService);
+    bundleCacheStore = module.get(BundleCacheStore);
     jest.clearAllMocks();
   });
 

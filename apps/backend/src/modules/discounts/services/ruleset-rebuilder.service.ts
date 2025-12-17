@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common";
 import { DiscountsService } from "../discounts.service";
 import { DiscountResponseDto } from "../dto/discount-response.dto";
 import { DiscountProfiler } from "./discount-profiler.service";
@@ -13,6 +13,7 @@ export class RulesetRebuilder {
   private readonly logger = new Logger(RulesetRebuilder.name);
 
   constructor(
+    @Inject(forwardRef(() => DiscountsService))
     private readonly discountsService: DiscountsService,
     private readonly bundleService: RulesetBundleService,
     private readonly profiler: DiscountProfiler,

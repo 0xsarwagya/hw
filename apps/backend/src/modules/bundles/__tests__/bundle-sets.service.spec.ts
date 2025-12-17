@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { and, bundleSets, bundles, db, eq } from "@vcecom/db";
+import { BundleCacheStore } from "../../redis-store/stores/bundle-cache-store";
 import { BundleDefinitionService } from "../services/bundle-definition.service";
 import { BundleSetsService } from "../services/bundle-sets.service";
 import { CreateBundleSetDto } from "../dto/create-bundle-set.dto";
@@ -29,6 +30,10 @@ describe("BundleSetsService", () => {
     validateBundleSetCount: jest.fn(),
   };
 
+  const mockBundleCacheStore = {
+    invalidateBundle: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -36,6 +41,10 @@ describe("BundleSetsService", () => {
         {
           provide: BundleDefinitionService,
           useValue: mockBundleDefinitionService,
+        },
+        {
+          provide: BundleCacheStore,
+          useValue: mockBundleCacheStore,
         },
       ],
     }).compile();

@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { and, bundleSetItems, bundleSets, bundles, db, eq } from "@vcecom/db";
+import { BundleCacheStore } from "../../redis-store/stores/bundle-cache-store";
 import { CreateBundleSetDto } from "../dto/create-bundle-set.dto";
 import { UpdateBundleSetDto } from "../dto/update-bundle-set.dto";
 import { BundleDefinitionService } from "./bundle-definition.service";
@@ -12,6 +13,7 @@ import { BundleDefinitionService } from "./bundle-definition.service";
 export class BundleSetsService {
   constructor(
     private readonly bundleDefinitionService: BundleDefinitionService,
+    private readonly bundleCacheStore: BundleCacheStore,
   ) {}
 
   /**
@@ -69,6 +71,9 @@ export class BundleSetsService {
         sortOrder: maxSortOrder + 1,
       })
       .returning();
+
+    // Invalidate bundle cache
+    await this.bundleCacheStore.invalidateBundle(bundleId);
 
     return {
       id: newSet.id,
@@ -148,6 +153,9 @@ export class BundleSetsService {
       })
       .where(eq(bundleSets.id, setId));
 
+    // Invalidate bundle cache
+    await this.bundleCacheStore.invalidateBundle(bundleId);
+
     return { message: "Bundle set updated successfully" };
   }
 
@@ -180,6 +188,9 @@ export class BundleSetsService {
     }
 
     await db.delete(bundleSets).where(eq(bundleSets.id, setId));
+
+    // Invalidate bundle cache
+    await this.bundleCacheStore.invalidateBundle(bundleId);
 
     return { message: "Bundle set deleted successfully" };
   }

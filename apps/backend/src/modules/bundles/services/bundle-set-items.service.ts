@@ -12,10 +12,12 @@ import {
   eq,
   productVariants,
 } from "@vcecom/db";
+import { BundleCacheStore } from "../../redis-store/stores/bundle-cache-store";
 import { AddBundleSetItemDto } from "../dto/add-bundle-set-item.dto";
 
 @Injectable()
 export class BundleSetItemsService {
+  constructor(private readonly bundleCacheStore: BundleCacheStore) {}
   /**
    * Add a variant to a bundle set
    */
@@ -91,6 +93,9 @@ export class BundleSetItemsService {
       })
       .returning();
 
+    // Invalidate bundle cache
+    await this.bundleCacheStore.invalidateBundle(bundleId);
+
     return {
       id: newItem.id,
       message: "Item added to bundle set successfully",
@@ -157,6 +162,9 @@ export class BundleSetItemsService {
     }
 
     await db.delete(bundleSetItems).where(eq(bundleSetItems.id, itemId));
+
+    // Invalidate bundle cache
+    await this.bundleCacheStore.invalidateBundle(bundleId);
 
     return { message: "Item removed from bundle set successfully" };
   }

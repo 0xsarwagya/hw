@@ -12,12 +12,14 @@ import {
   desc,
   eq,
 } from "@vcecom/db";
+import { BundleCacheStore } from "../../redis-store/stores/bundle-cache-store";
 import { BundleResponseDto } from "../dto/bundle-response.dto";
 import { CreateBundleDto } from "../dto/create-bundle.dto";
 import { UpdateBundleDto } from "../dto/update-bundle.dto";
 
 @Injectable()
 export class BundleDefinitionService {
+  constructor(private readonly bundleCacheStore: BundleCacheStore) {}
   /**
    * Create a new bundle
    * Note: Bundle must have at least 1 set (enforced when sets are added)
@@ -33,7 +35,16 @@ export class BundleDefinitionService {
       })
       .returning();
 
-    return this.hydrateBundle(newBundle.id);
+    const bundle = await this.hydrateBundle(newBundle.id);
+
+    // Cache the new bundle
+    try {
+      await this.bundleCacheStore.storeBundleDefinition(newBundle.id, bundle);
+    } catch (error) {
+      console.warn(`Failed to cache new bundle ${newBundle.id}:`, error);
+    }
+
+    return bundle;
   }
 
   /**
@@ -71,9 +82,27 @@ export class BundleDefinitionService {
 
   /**
    * Get a single bundle with all sets and items (hydrated)
+   * Tries cache first, falls back to DB
    */
   async findOne(id: string): Promise<BundleResponseDto> {
-    return this.hydrateBundle(id);
+    // Try cache first
+    const cached = await this.bundleCacheStore.getBundleDefinition(id);
+    if (cached) {
+      return cached;
+    }
+
+    // Fallback to DB
+    const bundle = await this.hydrateBundle(id);
+
+    // Store in cache for next time
+    try {
+      await this.bundleCacheStore.storeBundleDefinition(id, bundle);
+    } catch (error) {
+      // Log but don't throw - cache failure shouldn't break the request
+      console.warn(`Failed to cache bundle ${id}:`, error);
+    }
+
+    return bundle;
   }
 
   /**
@@ -105,7 +134,19 @@ export class BundleDefinitionService {
       .where(eq(bundles.id, id))
       .returning();
 
-    return this.hydrateBundle(updated.id);
+    // Invalidate cache
+    await this.bundleCacheStore.invalidateBundle(id);
+
+    const bundle = await this.hydrateBundle(updated.id);
+
+    // Re-cache updated bundle
+    try {
+      await this.bundleCacheStore.storeBundleDefinition(id, bundle);
+    } catch (error) {
+      console.warn(`Failed to cache updated bundle ${id}:`, error);
+    }
+
+    return bundle;
   }
 
   /**
@@ -123,6 +164,9 @@ export class BundleDefinitionService {
     }
 
     await db.delete(bundles).where(eq(bundles.id, id));
+
+    // Invalidate cache
+    await this.bundleCacheStore.invalidateBundle(id);
 
     return { message: "Bundle deleted successfully" };
   }

@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Injectable, Logger } from "@nestjs/common";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { StorageProvider } from "../interfaces/storage-provider.interface";

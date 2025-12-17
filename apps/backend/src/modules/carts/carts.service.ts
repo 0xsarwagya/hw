@@ -19,15 +19,21 @@ import {
   productVariants,
 } from "@vcecom/db";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
+import {
+  BundleEligibilityService,
+  UserBundleSelection,
+} from "../bundles/services/bundle-eligibility.service";
 import { DiscountsService } from "../discounts/discounts.service";
 import { runDiscountEngine } from "../discounts/engine/discount-engine";
 import { DiscountEngineInput } from "../discounts/engine/discount-engine.types";
 import { DiscountAuditService } from "../discounts/services/discount-audit.service";
 import { DiscountProfiler } from "../discounts/services/discount-profiler.service";
 import { HotReloadWatcher } from "../discounts/services/hot-reload-watcher.service";
+import { BundlePricingService } from "../pricing/services/bundle-pricing.service";
 import { KEY_PATTERNS } from "../redis-store/constants/key-patterns";
 import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
+import { BundleCartItemMetadata } from "./dto/bundle-cart-item.dto";
 
 @Injectable()
 export class CartsService {
@@ -38,6 +44,8 @@ export class CartsService {
     private readonly discountAuditService: DiscountAuditService,
     private readonly discountProfiler: DiscountProfiler,
     private readonly hotReloadWatcher: HotReloadWatcher,
+    private readonly bundleEligibilityService: BundleEligibilityService,
+    private readonly bundlePricingService: BundlePricingService,
   ) {}
   private readonly CART_EXPIRY_DAYS = 30; // Cart expires after 30 days
 
@@ -152,30 +160,82 @@ export class CartsService {
     cartId: string,
     customerId: string | null = null,
   ) {
-    // Get all cart items with product prices
+    // Get all cart items with metadata
     const items = await db
       .select({
         id: cartItems.id,
         quantity: cartItems.quantity,
         price: cartItems.price,
         productVariantId: cartItems.productVariantId,
-        productId: productVariants.productId,
+        metadata: cartItems.metadata,
       })
       .from(cartItems)
-      .innerJoin(
-        productVariants,
-        eq(cartItems.productVariantId, productVariants.id),
-      )
       .where(eq(cartItems.cartId, cartId));
 
-    // Calculate subtotal
-    const subtotal = items.reduce(
+    // Separate bundle and variant items
+    const bundleItems: Array<{
+      id: string;
+      quantity: number;
+      price: number;
+      productVariantId: string;
+      metadata: unknown;
+    }> = [];
+    const variantItems: Array<{
+      id: string;
+      quantity: number;
+      price: number;
+      productVariantId: string;
+      metadata: unknown;
+    }> = [];
+
+    for (const item of items) {
+      const metadata = item.metadata as BundleCartItemMetadata | null;
+      if (metadata?.type === "bundle") {
+        bundleItems.push(item);
+      } else {
+        variantItems.push(item);
+      }
+    }
+
+    // Get variant items with product info
+    const variantItemsWithProducts =
+      variantItems.length > 0
+        ? await db
+            .select({
+              id: cartItems.id,
+              quantity: cartItems.quantity,
+              price: cartItems.price,
+              productVariantId: cartItems.productVariantId,
+              productId: productVariants.productId,
+            })
+            .from(cartItems)
+            .innerJoin(
+              productVariants,
+              eq(cartItems.productVariantId, productVariants.id),
+            )
+            .where(
+              inArray(
+                cartItems.id,
+                variantItems.map((i) => i.id),
+              ),
+            )
+        : [];
+
+    // Calculate subtotal (bundles already have unit price calculated)
+    const bundleSubtotal = bundleItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0,
     );
+    const variantSubtotal = variantItemsWithProducts.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0,
+    );
+    const subtotal = bundleSubtotal + variantSubtotal;
 
-    // Get GST rates from products
-    const productIds = [...new Set(items.map((item) => item.productId))];
+    // Get GST rates from products (for variant items)
+    const productIds = [
+      ...new Set(variantItemsWithProducts.map((item) => item.productId)),
+    ];
     let productGstRates: Array<{ id: string; gstRate: number }> = [];
 
     if (productIds.length > 0) {
@@ -190,6 +250,35 @@ export class CartsService {
 
     const gstRateMap = new Map(productGstRates.map((p) => [p.id, p.gstRate]));
 
+    // For bundles, get GST rates from their component variants
+    // Use first variant's product GST rate for simplicity
+    const bundleGstRates = new Map<string, number>();
+    for (const bundleItem of bundleItems) {
+      const _metadata = bundleItem.metadata as BundleCartItemMetadata;
+      // Get first variant's product for GST
+      const [firstVariant] = await db
+        .select({
+          productId: productVariants.productId,
+        })
+        .from(productVariants)
+        .where(eq(productVariants.id, bundleItem.productVariantId))
+        .limit(1);
+
+      if (firstVariant) {
+        const [product] = await db
+          .select({
+            gstRate: products.gstRate,
+          })
+          .from(products)
+          .where(eq(products.id, firstVariant.productId))
+          .limit(1);
+
+        if (product) {
+          bundleGstRates.set(bundleItem.id, product.gstRate);
+        }
+      }
+    }
+
     // Get buyer state
     const buyerState = await this.getBuyerState(customerId);
     const sellerState = this.getSellerState();
@@ -199,7 +288,8 @@ export class CartsService {
     let totalSgst = 0;
     let totalIgst = 0;
 
-    for (const item of items) {
+    // Calculate GST for variant items
+    for (const item of variantItemsWithProducts) {
       const gstRate = gstRateMap.get(item.productId) || 0;
       const itemAmount = item.price * item.quantity;
 
@@ -225,6 +315,32 @@ export class CartsService {
       }
     }
 
+    // Calculate GST for bundle items
+    for (const bundleItem of bundleItems) {
+      const gstRate = bundleGstRates.get(bundleItem.id) || 0;
+      const itemAmount = bundleItem.price * bundleItem.quantity;
+
+      if (gstRate > 0 && buyerState) {
+        const breakdown = calculateGstBreakdown(
+          itemAmount,
+          gstRate,
+          sellerState,
+          buyerState,
+        );
+        totalCgst += breakdown.cgst;
+        totalSgst += breakdown.sgst;
+        totalIgst += breakdown.igst;
+      } else if (gstRate > 0) {
+        const breakdown = calculateGstBreakdown(
+          itemAmount,
+          gstRate,
+          sellerState,
+          "",
+        );
+        totalIgst += breakdown.igst;
+      }
+    }
+
     const totalGstAmount = totalCgst + totalSgst + totalIgst;
 
     // Get cart to check for discount code
@@ -234,6 +350,84 @@ export class CartsService {
       .where(eq(carts.id, cartId))
       .limit(1);
 
+    // Flatten bundles to variant list for discount engine
+    const bundleVariantMapping = new Map<string, string[]>(); // bundleLineId -> [variantIds]
+    const flattenedBundleItems: Array<{
+      id: string;
+      productVariantId: string;
+      productId: string;
+      categoryId: string | null;
+      collectionIds: string[];
+      tagIds: string[];
+      price: number;
+      quantity: number;
+      bundleLineId?: string; // Track which bundle this belongs to
+    }> = [];
+
+    for (const bundleItem of bundleItems) {
+      const metadata = bundleItem.metadata as BundleCartItemMetadata;
+      const variantQuantities =
+        this.bundlePricingService.flattenBundleSelections(
+          metadata.selections,
+          bundleItem.quantity,
+        );
+
+      const bundleVariantIds: string[] = [];
+      for (const vq of variantQuantities) {
+        // Get variant details
+        const [variant] = await db
+          .select({
+            productId: productVariants.productId,
+          })
+          .from(productVariants)
+          .where(eq(productVariants.id, vq.variantId))
+          .limit(1);
+
+        if (variant) {
+          bundleVariantIds.push(vq.variantId);
+          // Get unit price from bundle breakdown (simplified - use bundle unit price / variant count)
+          const unitPrice = bundleItem.price / variantQuantities.length;
+          flattenedBundleItems.push({
+            id: `${bundleItem.id}-${vq.variantId}`, // Unique ID for flattened item
+            productVariantId: vq.variantId,
+            productId: variant.productId,
+            categoryId: null, // Will be fetched below
+            collectionIds: [],
+            tagIds: [],
+            price: unitPrice,
+            quantity: vq.quantity,
+            bundleLineId: bundleItem.id,
+          });
+        }
+      }
+      bundleVariantMapping.set(bundleItem.id, bundleVariantIds);
+    }
+
+    // Get all product IDs (variant items + bundle variants)
+    const allVariantIds = [
+      ...variantItemsWithProducts.map((i) => i.productVariantId),
+      ...flattenedBundleItems.map((i) => i.productVariantId),
+    ];
+
+    const allVariants = await db
+      .select({
+        id: productVariants.id,
+        productId: productVariants.productId,
+      })
+      .from(productVariants)
+      .where(inArray(productVariants.id, allVariantIds));
+
+    const variantToProduct = new Map(
+      allVariants.map((v) => [v.id, v.productId]),
+    );
+
+    const allProductIds = [
+      ...new Set([
+        ...variantItemsWithProducts.map((i) => i.productId),
+        ...allVariants.map((v) => v.productId),
+      ]),
+    ];
+
     // Fetch product metadata (collections, tags) for discount engine
     const productDetails = await db
       .select({
@@ -241,7 +435,7 @@ export class CartsService {
         categoryId: products.categoryId,
       })
       .from(products)
-      .where(inArray(products.id, productIds));
+      .where(inArray(products.id, allProductIds));
 
     const productMap = new Map(productDetails.map((p) => [p.productId, p]));
 
@@ -252,7 +446,7 @@ export class CartsService {
         collectionId: productCollections.collectionId,
       })
       .from(productCollections)
-      .where(inArray(productCollections.productId, productIds));
+      .where(inArray(productCollections.productId, allProductIds));
 
     const collectionsByProduct = new Map<string, string[]>();
     for (const pc of productCollectionData) {
@@ -269,7 +463,7 @@ export class CartsService {
         tagId: productTags.tagId,
       })
       .from(productTags)
-      .where(inArray(productTags.productId, productIds));
+      .where(inArray(productTags.productId, allProductIds));
 
     const tagsByProduct = new Map<string, string[]>();
     for (const pt of productTagData) {
@@ -279,8 +473,8 @@ export class CartsService {
       tagsByProduct.get(pt.productId)?.push(pt.tagId);
     }
 
-    // Build cart items with full metadata for discount engine
-    const cartItemsForEngine = items.map((item) => {
+    // Build cart items with full metadata for discount engine (variant items + flattened bundles)
+    const variantItemsForEngine = variantItemsWithProducts.map((item) => {
       const product = productMap.get(item.productId);
       return {
         id: item.id,
@@ -294,6 +488,26 @@ export class CartsService {
       };
     });
 
+    // Enrich flattened bundle items with product metadata
+    const enrichedFlattenedBundleItems = flattenedBundleItems.map((item) => {
+      const productId = variantToProduct.get(item.productVariantId);
+      const product = productId ? productMap.get(productId) : null;
+      return {
+        ...item,
+        productId: productId || "",
+        categoryId: product?.categoryId || null,
+        collectionIds: productId
+          ? collectionsByProduct.get(productId) || []
+          : [],
+        tagIds: productId ? tagsByProduct.get(productId) || [] : [],
+      };
+    });
+
+    const cartItemsForEngine = [
+      ...variantItemsForEngine,
+      ...enrichedFlattenedBundleItems,
+    ];
+
     // Fetch eligible discounts using discount engine
     let discountAmount = 0;
     try {
@@ -302,7 +516,9 @@ export class CartsService {
         : undefined;
 
       // Extract variant IDs from cart items for eligibility filtering
-      const variantIds = items.map((item) => item.productVariantId);
+      const variantIds = cartItemsForEngine.map(
+        (item) => item.productVariantId,
+      );
 
       // Get eligible discounts (automatic + manual if code exists)
       // Pass variant IDs for Redis eligibility filtering
@@ -426,6 +642,22 @@ export class CartsService {
       .from(cartItems)
       .where(eq(cartItems.cartId, cart.id));
 
+    // Hydrate bundle items
+    const hydratedItems = await Promise.all(
+      items.map(async (item) => {
+        const metadata = item.metadata as BundleCartItemMetadata | null;
+        if (metadata?.type === "bundle") {
+          return this.hydrateBundleItem(item, customerId);
+        }
+        // Variant item - return as-is with type
+        return {
+          ...item,
+          type: "variant" as const,
+          price: Number(item.price),
+        };
+      }),
+    );
+
     // Recalculate totals and get GST breakdown
     const gstBreakdown = await this.recalculateCartTotals(cart.id, customerId);
 
@@ -447,7 +679,66 @@ export class CartsService {
         totalGst: gstBreakdown.gstAmount,
         isIntraState: gstBreakdown.cgst > 0 || gstBreakdown.sgst > 0,
       },
-      items,
+      items: hydratedItems,
+    };
+  }
+
+  /**
+   * Hydrate bundle cart item with full bundle structure
+   */
+  private async hydrateBundleItem(
+    item: {
+      id: string;
+      productVariantId: string;
+      quantity: number;
+      price: number;
+      metadata: unknown;
+      createdAt: Date;
+      updatedAt: Date;
+    },
+    customerId: string | null,
+  ) {
+    const metadata = item.metadata as BundleCartItemMetadata;
+    const bundle = await this.bundleEligibilityService.getBundle(
+      metadata.bundleId,
+    );
+
+    if (!bundle) {
+      throw new NotFoundException(`Bundle ${metadata.bundleId} not found`);
+    }
+
+    // Validate bundle is still active
+    if (!bundle.isActive) {
+      throw new BadRequestException(
+        `Bundle ${metadata.bundleId} is no longer active`,
+      );
+    }
+
+    // Get bundle variant breakdown
+    const variantBreakdown =
+      await this.bundlePricingService.getBundleVariantBreakdown(
+        metadata.bundleId,
+        metadata.selections,
+        item.quantity,
+        customerId,
+      );
+
+    return {
+      id: item.id,
+      type: "bundle" as const,
+      productVariantId: item.productVariantId,
+      bundleId: metadata.bundleId,
+      selections: metadata.selections,
+      quantity: item.quantity,
+      price: Number(item.price),
+      unitBundlePrice: Number(item.price),
+      bundleVariantBreakdown: variantBreakdown.map((vb) => ({
+        variantId: vb.variantId,
+        unitPrice: vb.unitPrice,
+        quantity: vb.quantity,
+      })),
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
     };
   }
 
@@ -473,12 +764,18 @@ export class CartsService {
   }
 
   /**
-   * Add item to cart
+   * Add item to cart (variant or bundle)
    */
   async addItem(
     userId: string | null,
     sessionId: string | null,
-    addItemDto: { productVariantId: string; quantity: number },
+    addItemDto: {
+      type?: "variant" | "bundle";
+      productVariantId?: string;
+      bundleId?: string;
+      selections?: UserBundleSelection;
+      quantity: number;
+    },
   ) {
     let customerId: string | null = null;
     if (userId) {
@@ -491,6 +788,32 @@ export class CartsService {
     if (await this.isCartSnapshotLocked(cart.id)) {
       throw new ConflictException(
         "Cannot modify cart after payment intent creation. Please start a new checkout.",
+      );
+    }
+
+    const itemType = addItemDto.type || "variant";
+
+    if (itemType === "bundle") {
+      if (!addItemDto.bundleId || !addItemDto.selections) {
+        throw new BadRequestException(
+          "Bundle ID and selections are required for bundle items",
+        );
+      }
+      return this.addBundleToCart(
+        cart.id,
+        userId,
+        sessionId,
+        addItemDto.bundleId,
+        addItemDto.selections,
+        addItemDto.quantity,
+        customerId,
+      );
+    }
+
+    // Variant item handling (existing logic)
+    if (!addItemDto.productVariantId) {
+      throw new BadRequestException(
+        "Product variant ID is required for variant items",
       );
     }
 
@@ -596,7 +919,191 @@ export class CartsService {
     }
 
     // Recalculate totals
-    await this.recalculateCartTotals(cart.id);
+    await this.recalculateCartTotals(cart.id, customerId);
+
+    return this.getCart(userId, sessionId);
+  }
+
+  /**
+   * Add bundle to cart
+   */
+  private async addBundleToCart(
+    cartId: string,
+    userId: string | null,
+    sessionId: string | null,
+    bundleId: string,
+    selections: UserBundleSelection,
+    bundleQuantity: number,
+    customerId: string | null,
+  ) {
+    // Get bundle from cache/DB
+    const bundle = await this.bundleEligibilityService.getBundle(bundleId);
+    if (!bundle) {
+      throw new NotFoundException(`Bundle with ID ${bundleId} not found`);
+    }
+
+    // Validate bundle is active
+    if (!bundle.isActive) {
+      throw new BadRequestException(`Bundle ${bundleId} is not active`);
+    }
+
+    // Validate selections
+    const validationResult =
+      await this.bundleEligibilityService.validateUserSelection(
+        bundleId,
+        selections,
+      );
+    if (!validationResult.isValid) {
+      throw new BadRequestException(
+        `Invalid bundle selections: ${validationResult.errors.join(", ")}`,
+      );
+    }
+
+    // Flatten selections to variant quantities
+    const variantQuantities = this.bundlePricingService.flattenBundleSelections(
+      selections,
+      bundleQuantity,
+    );
+
+    // Reserve inventory for each variant
+    for (const vq of variantQuantities) {
+      const availableInventory =
+        (await this.inventoryStore.getAvailableInventory(vq.variantId)) ?? 0;
+      const reservedInventory = await this.inventoryStore.getReservedInventory(
+        vq.variantId,
+      );
+      const available = availableInventory - reservedInventory;
+
+      if (available < vq.quantity) {
+        throw new BadRequestException(
+          `Insufficient inventory for variant ${vq.variantId}. Available: ${available}, Required: ${vq.quantity}`,
+        );
+      }
+
+      // Reserve inventory
+      await this.inventoryStore.reserveInventory(
+        cartId,
+        vq.variantId,
+        vq.quantity,
+      );
+      await this.inventoryStore.refreshReservationTTL(cartId, vq.variantId);
+    }
+
+    // Calculate bundle price
+    const unitBundlePrice =
+      await this.bundlePricingService.calculateBundlePrice(
+        bundleId,
+        selections,
+        1, // unit price
+        customerId,
+      );
+
+    // Get first variant ID for productVariantId (required by schema)
+    const firstVariantId = variantQuantities[0]?.variantId;
+    if (!firstVariantId) {
+      throw new BadRequestException("Bundle must have at least one variant");
+    }
+
+    // Create bundle cart item with metadata
+    const metadata: BundleCartItemMetadata = {
+      type: "bundle",
+      bundleId,
+      selections,
+      bundleTitle: bundle.title,
+    };
+
+    await db.insert(cartItems).values({
+      cartId,
+      productVariantId: firstVariantId, // Required by schema, but bundle uses metadata
+      quantity: bundleQuantity,
+      price: unitBundlePrice,
+      metadata: metadata as unknown as Record<string, unknown>,
+    });
+
+    // Recalculate totals
+    await this.recalculateCartTotals(cartId, customerId);
+
+    return this.getCart(userId, sessionId);
+  }
+
+  /**
+   * Update bundle quantity in cart
+   */
+  private async updateBundleInCart(
+    cartId: string,
+    userId: string | null,
+    sessionId: string | null,
+    itemId: string,
+    metadata: BundleCartItemMetadata,
+    oldQuantity: number,
+    newQuantity: number,
+    customerId: string | null,
+  ) {
+    const delta = newQuantity - oldQuantity;
+
+    if (delta === 0) {
+      // No change, just refresh TTLs
+      const variantQuantities =
+        this.bundlePricingService.flattenBundleSelections(
+          metadata.selections,
+          newQuantity,
+        );
+      for (const vq of variantQuantities) {
+        await this.inventoryStore.refreshReservationTTL(cartId, vq.variantId);
+      }
+      return this.getCart(userId, sessionId);
+    }
+
+    // Flatten selections to variant quantities for new quantity
+    const variantQuantities = this.bundlePricingService.flattenBundleSelections(
+      metadata.selections,
+      newQuantity,
+    );
+
+    // Adjust inventory reservations
+    for (const vq of variantQuantities) {
+      const availableInventory =
+        (await this.inventoryStore.getAvailableInventory(vq.variantId)) ?? 0;
+      const reservedInventory = await this.inventoryStore.getReservedInventory(
+        vq.variantId,
+      );
+      const available = availableInventory - reservedInventory;
+
+      if (available < vq.quantity) {
+        throw new BadRequestException(
+          `Insufficient inventory for variant ${vq.variantId}. Available: ${available}, Required: ${vq.quantity}`,
+        );
+      }
+
+      // Reserve new quantity (Lua script handles delta automatically)
+      await this.inventoryStore.reserveInventory(
+        cartId,
+        vq.variantId,
+        vq.quantity,
+      );
+      await this.inventoryStore.refreshReservationTTL(cartId, vq.variantId);
+    }
+
+    // Recalculate bundle price for new quantity
+    const unitBundlePrice =
+      await this.bundlePricingService.calculateBundlePrice(
+        metadata.bundleId,
+        metadata.selections,
+        1, // unit price
+        customerId,
+      );
+
+    // Update cart item
+    await db
+      .update(cartItems)
+      .set({
+        quantity: newQuantity,
+        price: unitBundlePrice,
+      })
+      .where(eq(cartItems.id, itemId));
+
+    // Recalculate totals
+    await this.recalculateCartTotals(cartId, customerId);
 
     return this.getCart(userId, sessionId);
   }
@@ -630,6 +1137,7 @@ export class CartsService {
         id: cartItems.id,
         productVariantId: cartItems.productVariantId,
         quantity: cartItems.quantity,
+        metadata: cartItems.metadata,
       })
       .from(cartItems)
       .where(and(eq(cartItems.id, itemId), eq(cartItems.cartId, cart.id)))
@@ -639,6 +1147,22 @@ export class CartsService {
       throw new NotFoundException("Cart item not found");
     }
 
+    // Check if item is a bundle
+    const metadata = item.metadata as BundleCartItemMetadata | null;
+    if (metadata?.type === "bundle") {
+      return this.updateBundleInCart(
+        cart.id,
+        userId,
+        sessionId,
+        itemId,
+        metadata,
+        item.quantity,
+        updateDto.quantity,
+        customerId,
+      );
+    }
+
+    // Variant item handling (existing logic)
     // Calculate quantity delta
     const delta = updateDto.quantity - item.quantity;
 
@@ -717,7 +1241,12 @@ export class CartsService {
 
     // Check if item exists and belongs to cart
     const [item] = await db
-      .select()
+      .select({
+        id: cartItems.id,
+        productVariantId: cartItems.productVariantId,
+        quantity: cartItems.quantity,
+        metadata: cartItems.metadata,
+      })
       .from(cartItems)
       .where(and(eq(cartItems.id, itemId), eq(cartItems.cartId, cart.id)))
       .limit(1);
@@ -726,23 +1255,49 @@ export class CartsService {
       throw new NotFoundException("Cart item not found");
     }
 
-    // Release reservation before deleting item
-    const reservation = await this.inventoryStore.getReservation(
-      cart.id,
-      item.productVariantId,
-    );
-    if (reservation !== null && reservation > 0) {
-      // Delete individual reservation
-      const reservationKey = KEY_PATTERNS.INVENTORY_RESERVATION(
+    // Check if item is a bundle
+    const metadata = item.metadata as BundleCartItemMetadata | null;
+    if (metadata?.type === "bundle") {
+      // Release reservations for all bundle variants
+      const variantQuantities =
+        this.bundlePricingService.flattenBundleSelections(
+          metadata.selections,
+          item.quantity,
+        );
+
+      for (const vq of variantQuantities) {
+        const reservation = await this.inventoryStore.getReservation(
+          cart.id,
+          vq.variantId,
+        );
+        if (reservation !== null && reservation > 0) {
+          const reservationKey = KEY_PATTERNS.INVENTORY_RESERVATION(
+            cart.id,
+            vq.variantId,
+          );
+          await this.inventoryStore.delete(reservationKey);
+          await this.inventoryStore.releaseInventory(vq.variantId, reservation);
+        }
+      }
+    } else {
+      // Variant item - release reservation
+      const reservation = await this.inventoryStore.getReservation(
         cart.id,
         item.productVariantId,
       );
-      await this.inventoryStore.delete(reservationKey);
-      // Decrement aggregated reserved count
-      await this.inventoryStore.releaseInventory(
-        item.productVariantId,
-        reservation,
-      );
+      if (reservation !== null && reservation > 0) {
+        // Delete individual reservation
+        const reservationKey = KEY_PATTERNS.INVENTORY_RESERVATION(
+          cart.id,
+          item.productVariantId,
+        );
+        await this.inventoryStore.delete(reservationKey);
+        // Decrement aggregated reserved count
+        await this.inventoryStore.releaseInventory(
+          item.productVariantId,
+          reservation,
+        );
+      }
     }
 
     // Delete item

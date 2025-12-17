@@ -91,6 +91,25 @@ export interface ResolvedDiscounts {
 }
 
 /**
+ * Bundle variant discount breakdown in discount snapshot
+ */
+export interface BundleVariantDiscountBreakdown {
+  variantId: string;
+  discountAmount: number;
+  quantity: number;
+}
+
+/**
+ * Bundle breakdown in discount snapshot
+ */
+export interface BundleDiscountBreakdown {
+  bundleId: string;
+  bundleLineId: string;
+  lineDiscountTotal: number;
+  variantDiscounts: BundleVariantDiscountBreakdown[];
+}
+
+/**
  * Discount snapshot extends engine result with versioning and integrity metadata
  * This is the immutable snapshot stored at payment intent creation
  */
@@ -117,4 +136,10 @@ export interface DiscountSnapshot extends DiscountEngineResult {
    * Locks snapshot to specific bundle version for historical accuracy
    */
   rulesetVersion: number;
+
+  /**
+   * Bundle breakdowns (if any bundles in cart)
+   * Contains discount breakdown for each bundle line item
+   */
+  bundleBreakdowns?: BundleDiscountBreakdown[];
 }

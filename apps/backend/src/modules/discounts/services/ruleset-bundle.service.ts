@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
 import { RedisStoreService } from "../../redis-store/redis-store.service";
 import { EligibilityStore } from "../../redis-store/stores/eligibility-store";
@@ -39,21 +39,26 @@ export interface RulesetBundle {
  * Ensures atomic, consistent rule updates with zero downtime
  */
 @Injectable()
-export class RulesetBundleService {
+export class RulesetBundleService implements OnModuleInit {
   private readonly logger = new Logger(RulesetBundleService.name);
-  private readonly client: Redis;
+  private client!: Redis;
+  private readonly redisStoreService: RedisStoreService;
   private readonly bundleKeyPrefix = "discount-ruleset-bundle:";
   private readonly metadataKeyPrefix = "discount-ruleset-metadata:";
 
   constructor(
-    readonly redisStoreService: RedisStoreService,
+    redisStoreService: RedisStoreService,
     private readonly versionManager: RulesetVersionManager,
     private readonly eligibilityBuilder: DiscountEligibilityBuilder,
     private readonly eligibilityStore: EligibilityStore,
     private readonly productMappingBuilder: ProductMappingBuilder,
     private readonly productMappingStore: ProductMappingStore,
   ) {
-    this.client = redisStoreService.getClient();
+    this.redisStoreService = redisStoreService;
+  }
+
+  async onModuleInit() {
+    this.client = this.redisStoreService.getClient();
   }
 
   /**
