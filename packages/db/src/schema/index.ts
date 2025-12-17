@@ -1,6 +1,9 @@
 // Export all schema definitions
 
 export * from "./addresses";
+export * from "./bundle-set-items";
+export * from "./bundle-sets";
+export * from "./bundles";
 export * from "./cart-items";
 export * from "./carts";
 export * from "./categories";

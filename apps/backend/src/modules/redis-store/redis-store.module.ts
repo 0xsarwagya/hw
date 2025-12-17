@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ScheduleModule } from "@nestjs/schedule";
 import { RedisStoreService } from "./redis-store.service";
 import { InventoryRecoveryService } from "./services/inventory-recovery.service";
+import { BundleCacheStore } from "./stores/bundle-cache-store";
 import { CartStore } from "./stores/cart-store";
 import { CheckoutStore } from "./stores/checkout-store";
 import { IdempotencyStore } from "./stores/idempotency-store";
@@ -16,6 +17,7 @@ import { InventoryStore } from "./stores/inventory-store";
     CheckoutStore,
     IdempotencyStore,
     InventoryRecoveryService,
+    BundleCacheStore,
   ],
   exports: [
     RedisStoreService,
@@ -23,6 +25,7 @@ import { InventoryStore } from "./stores/inventory-store";
     CartStore,
     CheckoutStore,
     IdempotencyStore,
+    BundleCacheStore,
   ],
 })
 export class RedisStoreModule {}
