@@ -1,10 +1,10 @@
 import { Module } from "@nestjs/common";
+import { DiscountValidationService } from "./discount-validation.service";
 import {
   DiscountsController,
   PublicDiscountsController,
 } from "./discounts.controller";
 import { DiscountsService } from "./discounts.service";
-import { DiscountValidationService } from "./discount-validation.service";
 
 @Module({
   controllers: [DiscountsController, PublicDiscountsController],

@@ -44,27 +44,35 @@ export class DiscountValidationService {
   ): void {
     // Check mutually exclusive rule
     if (discount.mutuallyExclusive && appliedDiscounts.length > 0) {
-      throw new Error("Mutually exclusive discount cannot be combined with other discounts");
+      throw new Error(
+        "Mutually exclusive discount cannot be combined with other discounts",
+      );
     }
 
     // Check if any applied discount is mutually exclusive
-    const hasMutuallyExclusive = appliedDiscounts.some(d => d.mutuallyExclusive);
+    const hasMutuallyExclusive = appliedDiscounts.some(
+      (d) => d.mutuallyExclusive,
+    );
     if (hasMutuallyExclusive) {
-      throw new Error("Cannot add discount when a mutually exclusive discount is already applied");
+      throw new Error(
+        "Cannot add discount when a mutually exclusive discount is already applied",
+      );
     }
 
     // Check stacking compatibility
     if (!discount.canStack) {
-      const incompatibleDiscounts = appliedDiscounts.filter(d => !d.canStack);
+      const incompatibleDiscounts = appliedDiscounts.filter((d) => !d.canStack);
       if (incompatibleDiscounts.length > 0) {
-        throw new Error("Non-stacking discount cannot be combined with other non-stacking discounts");
+        throw new Error(
+          "Non-stacking discount cannot be combined with other non-stacking discounts",
+        );
       }
     }
 
     // Check explicit exclusions
     const excludedIds = discount.excludedDiscountIds || [];
-    const conflictingDiscounts = appliedDiscounts.filter(d =>
-      excludedIds.includes(d.id)
+    const conflictingDiscounts = appliedDiscounts.filter((d) =>
+      excludedIds.includes(d.id),
     );
 
     if (conflictingDiscounts.length > 0) {
@@ -123,8 +131,13 @@ export class DiscountValidationService {
     }
 
     // Check minimum order amount (for cart-level discounts)
-    if (discount.minOrderAmount && context.cartTotal < discount.minOrderAmount) {
-      throw new Error(`Minimum order amount of ₹${discount.minOrderAmount} required`);
+    if (
+      discount.minOrderAmount &&
+      context.cartTotal < discount.minOrderAmount
+    ) {
+      throw new Error(
+        `Minimum order amount of ₹${discount.minOrderAmount} required`,
+      );
     }
 
     // Check minimum quantity (for tiered/product-level discounts)
@@ -157,7 +170,11 @@ export class DiscountValidationService {
    * Validate tiered discount rules
    */
   validateTieredRules(
-    tieredRules: Array<{ minQuantity: number; value: number; valueType: string }>,
+    tieredRules: Array<{
+      minQuantity: number;
+      value: number;
+      valueType: string;
+    }>,
   ): void {
     if (!tieredRules || tieredRules.length === 0) {
       throw new Error("Tiered discount must have at least one rule");
@@ -186,11 +203,17 @@ export class DiscountValidationService {
    * Get applicable tiered discount value
    */
   getTieredDiscountValue(
-    tieredRules: Array<{ minQuantity: number; value: number; valueType: string }>,
+    tieredRules: Array<{
+      minQuantity: number;
+      value: number;
+      valueType: string;
+    }>,
     quantity: number,
   ): { value: number; valueType: string } {
     // Sort by minQuantity descending to find the highest applicable tier
-    const sortedRules = [...tieredRules].sort((a, b) => b.minQuantity - a.minQuantity);
+    const sortedRules = [...tieredRules].sort(
+      (a, b) => b.minQuantity - a.minQuantity,
+    );
 
     for (const rule of sortedRules) {
       if (quantity >= rule.minQuantity) {
@@ -249,12 +272,14 @@ export class DiscountValidationService {
     }
 
     // Check collection match
-    if (discount.collectionIds?.some(id => product.collectionIds.includes(id))) {
+    if (
+      discount.collectionIds?.some((id) => product.collectionIds.includes(id))
+    ) {
       return true;
     }
 
     // Check tag match
-    if (discount.tagIds?.some(id => product.tagIds.includes(id))) {
+    if (discount.tagIds?.some((id) => product.tagIds.includes(id))) {
       return true;
     }
 
@@ -291,35 +316,43 @@ export class DiscountValidationService {
     // Count qualifying buy items
     let buyCount = 0;
     for (const item of cartItems) {
-      if (this.isQualifyingItem(item, {
-        productIds: discount.buyProductIds,
-        categoryIds: discount.buyCategoryIds,
-        collectionIds: discount.buyCollectionIds,
-        tagIds: discount.buyTagIds,
-      })) {
+      if (
+        this.isQualifyingItem(item, {
+          productIds: discount.buyProductIds,
+          categoryIds: discount.buyCategoryIds,
+          collectionIds: discount.buyCollectionIds,
+          tagIds: discount.buyTagIds,
+        })
+      ) {
         buyCount += item.quantity;
       }
     }
 
     if (buyCount < 1) {
-      throw new Error("Buy X Get Y discount requires at least one qualifying buy item");
+      throw new Error(
+        "Buy X Get Y discount requires at least one qualifying buy item",
+      );
     }
 
     // Validate that there are items to get discount on
     let getCount = 0;
     for (const item of cartItems) {
-      if (this.isQualifyingItem(item, {
-        productIds: discount.getProductIds,
-        categoryIds: discount.getCategoryIds,
-        collectionIds: discount.getCollectionIds,
-        tagIds: discount.getTagIds,
-      })) {
+      if (
+        this.isQualifyingItem(item, {
+          productIds: discount.getProductIds,
+          categoryIds: discount.getCategoryIds,
+          collectionIds: discount.getCollectionIds,
+          tagIds: discount.getTagIds,
+        })
+      ) {
         getCount += item.quantity;
       }
     }
 
     if (getCount < 1) {
-      throw new Error("Buy X Get Y discount requires at least one qualifying get item");
+      throw new Error(
+        "Buy X Get Y discount requires at least one qualifying get item",
+      );
     }
   }
 
@@ -351,12 +384,12 @@ export class DiscountValidationService {
     }
 
     // Check collection match
-    if (rules.collectionIds?.some(id => item.collectionIds.includes(id))) {
+    if (rules.collectionIds?.some((id) => item.collectionIds.includes(id))) {
       return true;
     }
 
     // Check tag match
-    if (rules.tagIds?.some(id => item.tagIds.includes(id))) {
+    if (rules.tagIds?.some((id) => item.tagIds.includes(id))) {
       return true;
     }
 

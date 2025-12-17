@@ -117,7 +117,9 @@ export const discounts = pgTable(
     isActiveIdx: index("discounts_is_active_idx").on(table.isActive),
     startDateIdx: index("discounts_start_date_idx").on(table.startDate),
     endDateIdx: index("discounts_end_date_idx").on(table.endDate),
-    minOrderAmountIdx: index("discounts_min_order_amount_idx").on(table.minOrderAmount),
+    minOrderAmountIdx: index("discounts_min_order_amount_idx").on(
+      table.minOrderAmount,
+    ),
     minQuantityIdx: index("discounts_min_quantity_idx").on(table.minQuantity),
   }),
 );
@@ -388,9 +390,9 @@ export const discountExclusions = pgTable(
     discountIdIdx: index("discount_exclusions_discount_id_idx").on(
       table.discountId,
     ),
-    excludedDiscountIdIdx: index("discount_exclusions_excluded_discount_id_idx").on(
-      table.excludedDiscountId,
-    ),
+    excludedDiscountIdIdx: index(
+      "discount_exclusions_excluded_discount_id_idx",
+    ).on(table.excludedDiscountId),
     uniqueExclusion: index("discount_exclusions_unique_idx").on(
       table.discountId,
       table.excludedDiscountId,

@@ -191,7 +191,8 @@ export class CreateDiscountDto {
   canStack?: boolean = true;
 
   @ApiProperty({
-    description: "Whether discount is mutually exclusive (cannot combine with others)",
+    description:
+      "Whether discount is mutually exclusive (cannot combine with others)",
     example: false,
     default: false,
     required: false,
@@ -206,7 +207,7 @@ export class CreateDiscountDto {
     example: [
       { minQuantity: 1, value: 10, valueType: "PERCENTAGE" },
       { minQuantity: 3, value: 20, valueType: "PERCENTAGE" },
-      { minQuantity: 5, value: 30, valueType: "PERCENTAGE" }
+      { minQuantity: 5, value: 30, valueType: "PERCENTAGE" },
     ],
     required: false,
     type: [TieredRuleDto],
@@ -224,7 +225,10 @@ export class CreateDiscountDto {
   })
   @IsOptional()
   @IsArray({ message: "Excluded discount IDs must be an array" })
-  @IsUUID(4, { each: true, message: "Each excluded discount ID must be a valid UUID" })
+  @IsUUID(4, {
+    each: true,
+    message: "Each excluded discount ID must be a valid UUID",
+  })
   excludedDiscountIds?: string[];
 
   // STANDARD type: Products/Categories/Collections/Tags to apply discount to

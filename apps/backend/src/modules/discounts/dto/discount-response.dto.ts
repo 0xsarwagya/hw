@@ -240,7 +240,7 @@ export class DiscountResponseDto {
     description: "Tiered pricing rules (TIERED type)",
     example: [
       { minQuantity: 1, value: 10, valueType: "PERCENTAGE" },
-      { minQuantity: 3, value: 20, valueType: "PERCENTAGE" }
+      { minQuantity: 3, value: 20, valueType: "PERCENTAGE" },
     ],
     type: [TieredRuleDto],
   })
