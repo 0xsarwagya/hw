@@ -14,10 +14,14 @@ import {
   Min,
   ValidateIf,
 } from "class-validator";
+import { TieredRuleDto } from "./tiered-rule.dto";
 
 export enum DiscountType {
-  STANDARD = "STANDARD",
-  BUY_GET = "BUY_GET",
+  FIXED_AMOUNT = "FIXED_AMOUNT",
+  PERCENTAGE = "PERCENTAGE",
+  BUY_X_GET_Y = "BUY_X_GET_Y",
+  TIERED = "TIERED",
+  CART_LEVEL = "CART_LEVEL",
 }
 
 export enum DiscountApplicationType {
@@ -131,6 +135,26 @@ export class CreateDiscountDto {
   maxDiscountAmount?: number;
 
   @ApiProperty({
+    description: "Minimum quantity for tiered/cart-level discounts",
+    example: 3,
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: "Min quantity must be an integer" })
+  @Min(1, { message: "Min quantity must be greater than 0" })
+  minQuantity?: number;
+
+  @ApiProperty({
+    description: "Customer group IDs that can use this discount (JSON array)",
+    example: '["vip", "premium"]',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: "Customer group IDs must be a JSON string" })
+  customerGroupIds?: string;
+
+  @ApiProperty({
     description: "Discount scope (ORDER or PRODUCT)",
     enum: DiscountScope,
     example: DiscountScope.PRODUCT,
@@ -142,6 +166,66 @@ export class CreateDiscountDto {
     message: `Scope must be one of: ${Object.values(DiscountScope).join(", ")}`,
   })
   scope?: DiscountScope = DiscountScope.PRODUCT;
+
+  @ApiProperty({
+    description: "Priority level (lower = higher priority, like Shopify)",
+    example: 1,
+    default: 1,
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: "Priority must be an integer" })
+  @Min(1, { message: "Priority must be greater than 0" })
+  priority?: number = 1;
+
+  @ApiProperty({
+    description: "Whether discount can stack with other discounts",
+    example: true,
+    default: true,
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean({ message: "Can stack must be a boolean" })
+  canStack?: boolean = true;
+
+  @ApiProperty({
+    description: "Whether discount is mutually exclusive (cannot combine with others)",
+    example: false,
+    default: false,
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean({ message: "Mutually exclusive must be a boolean" })
+  mutuallyExclusive?: boolean = false;
+
+  @ApiProperty({
+    description: "Tiered pricing rules (for TIERED type)",
+    example: [
+      { minQuantity: 1, value: 10, valueType: "PERCENTAGE" },
+      { minQuantity: 3, value: 20, valueType: "PERCENTAGE" },
+      { minQuantity: 5, value: 30, valueType: "PERCENTAGE" }
+    ],
+    required: false,
+    type: [TieredRuleDto],
+  })
+  @IsOptional()
+  @Type(() => TieredRuleDto)
+  @IsArray({ message: "Tiered rules must be an array" })
+  tieredRules?: TieredRuleDto[];
+
+  @ApiProperty({
+    description: "Discount IDs that cannot be combined with this discount",
+    example: ["123e4567-e89b-12d3-a456-426614174000"],
+    required: false,
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray({ message: "Excluded discount IDs must be an array" })
+  @IsUUID(4, { each: true, message: "Each excluded discount ID must be a valid UUID" })
+  excludedDiscountIds?: string[];
 
   // STANDARD type: Products/Categories/Collections/Tags to apply discount to
   @ApiProperty({

@@ -17,12 +17,18 @@ import { tags } from "./tags";
 
 /**
  * Discount type enum
- * - STANDARD: Regular discount (amount/percentage off)
- * - BUY_GET: Buy X get Y discount
+ * - FIXED_AMOUNT: Fixed amount off (₹100 off)
+ * - PERCENTAGE: Percentage off (10% off)
+ * - BUY_X_GET_Y: Buy X get Y (BOGO)
+ * - TIERED: Tiered pricing (Buy 3+, get 20% off)
+ * - CART_LEVEL: Cart-level discounts (order > ₹1499 → 10% off)
  */
 export const discountTypeEnum = pgEnum("discount_type", [
-  "STANDARD",
-  "BUY_GET",
+  "FIXED_AMOUNT",
+  "PERCENTAGE",
+  "BUY_X_GET_Y",
+  "TIERED",
+  "CART_LEVEL",
 ]);
 
 /**
@@ -73,12 +79,21 @@ export const discounts = pgTable(
     minOrderAmount: real("min_order_amount"), // Minimum order amount to apply discount
     maxDiscountAmount: real("max_discount_amount"), // Maximum discount cap (for percentage discounts)
 
+    // Enhanced constraints
+    minQuantity: integer("min_quantity"), // Minimum quantity for tiered/cart-level discounts
+    customerGroupIds: text("customer_group_ids"), // JSON array of customer group IDs
+
     // Scope
     scope: discountScopeEnum("scope").notNull().default("PRODUCT"), // ORDER or PRODUCT
 
     // Standard discount fields
     // For STANDARD type: applies to products/categories/collections/tags
     // For BUY_GET type: buy products/categories/collections/tags, get discount on order/product
+
+    // Priority and stacking (like Shopify: lower = stronger)
+    priority: integer("priority").notNull().default(1), // Lower number = higher priority
+    canStack: boolean("can_stack").notNull().default(true), // Whether discount can stack with others
+    mutuallyExclusive: boolean("mutually_exclusive").notNull().default(false), // Cannot combine with other discounts
 
     // Expiry and limits
     startDate: timestamp("start_date").notNull(),
@@ -98,9 +113,12 @@ export const discounts = pgTable(
     applicationTypeIdx: index("discounts_application_type_idx").on(
       table.applicationType,
     ),
+    priorityIdx: index("discounts_priority_idx").on(table.priority),
     isActiveIdx: index("discounts_is_active_idx").on(table.isActive),
     startDateIdx: index("discounts_start_date_idx").on(table.startDate),
     endDateIdx: index("discounts_end_date_idx").on(table.endDate),
+    minOrderAmountIdx: index("discounts_min_order_amount_idx").on(table.minOrderAmount),
+    minQuantityIdx: index("discounts_min_quantity_idx").on(table.minQuantity),
   }),
 );
 
@@ -322,6 +340,65 @@ export const discountGetTags = pgTable(
 );
 
 /**
+ * Tiered discount rules (for TIERED type)
+ * Multiple quantity thresholds with different discount values
+ */
+export const discountTieredRules = pgTable(
+  "discount_tiered_rules",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    discountId: uuid("discount_id")
+      .notNull()
+      .references(() => discounts.id, { onDelete: "cascade" }),
+    minQuantity: integer("min_quantity").notNull(), // Minimum quantity for this tier
+    value: real("value").notNull(), // Discount value for this tier
+    valueType: discountValueTypeEnum("value_type").notNull(), // AMOUNT or PERCENTAGE
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    discountIdIdx: index("discount_tiered_rules_discount_id_idx").on(
+      table.discountId,
+    ),
+    minQuantityIdx: index("discount_tiered_rules_min_quantity_idx").on(
+      table.minQuantity,
+    ),
+    uniqueTier: index("discount_tiered_rules_unique_idx").on(
+      table.discountId,
+      table.minQuantity,
+    ),
+  }),
+);
+
+/**
+ * Discount exclusion rules (mutually exclusive discounts)
+ */
+export const discountExclusions = pgTable(
+  "discount_exclusions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    discountId: uuid("discount_id")
+      .notNull()
+      .references(() => discounts.id, { onDelete: "cascade" }),
+    excludedDiscountId: uuid("excluded_discount_id")
+      .notNull()
+      .references(() => discounts.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    discountIdIdx: index("discount_exclusions_discount_id_idx").on(
+      table.discountId,
+    ),
+    excludedDiscountIdIdx: index("discount_exclusions_excluded_discount_id_idx").on(
+      table.excludedDiscountId,
+    ),
+    uniqueExclusion: index("discount_exclusions_unique_idx").on(
+      table.discountId,
+      table.excludedDiscountId,
+    ),
+  }),
+);
+
+/**
  * Discount usage tracking (for usage limits)
  */
 export const discountUsages = pgTable(
@@ -356,6 +433,8 @@ export const discountsRelations = relations(discounts, ({ many }) => ({
   getCategories: many(discountGetCategories),
   getCollections: many(discountGetCollections),
   getTags: many(discountGetTags),
+  tieredRules: many(discountTieredRules),
+  exclusions: many(discountExclusions),
   usages: many(discountUsages),
 }));
 
@@ -464,6 +543,30 @@ export const discountGetTagsRelations = relations(
     tag: one(tags, {
       fields: [discountGetTags.tagId],
       references: [tags.id],
+    }),
+  }),
+);
+
+export const discountTieredRulesRelations = relations(
+  discountTieredRules,
+  ({ one }) => ({
+    discount: one(discounts, {
+      fields: [discountTieredRules.discountId],
+      references: [discounts.id],
+    }),
+  }),
+);
+
+export const discountExclusionsRelations = relations(
+  discountExclusions,
+  ({ one }) => ({
+    discount: one(discounts, {
+      fields: [discountExclusions.discountId],
+      references: [discounts.id],
+    }),
+    excludedDiscount: one(discounts, {
+      fields: [discountExclusions.excludedDiscountId],
+      references: [discounts.id],
     }),
   }),
 );

@@ -5,6 +5,7 @@ import {
   DiscountType,
   DiscountValueType,
 } from "./create-discount.dto";
+import { TieredRuleDto } from "./tiered-rule.dto";
 
 export class DiscountResponseDto {
   @ApiProperty({
@@ -74,11 +75,43 @@ export class DiscountResponseDto {
   maxDiscountAmount: number | null;
 
   @ApiProperty({
+    description: "Minimum quantity for tiered/cart-level discounts",
+    example: 3,
+    nullable: true,
+  })
+  minQuantity: number | null;
+
+  @ApiProperty({
+    description: "Customer group IDs (JSON array)",
+    example: '["vip", "premium"]',
+    nullable: true,
+  })
+  customerGroupIds: string | null;
+
+  @ApiProperty({
     description: "Discount scope",
     enum: DiscountScope,
     example: DiscountScope.PRODUCT,
   })
   scope: DiscountScope;
+
+  @ApiProperty({
+    description: "Priority level (lower = higher priority)",
+    example: 1,
+  })
+  priority: number;
+
+  @ApiProperty({
+    description: "Whether discount can stack with others",
+    example: true,
+  })
+  canStack: boolean;
+
+  @ApiProperty({
+    description: "Whether discount is mutually exclusive",
+    example: false,
+  })
+  mutuallyExclusive: boolean;
 
   @ApiProperty({
     description: "Start date",
@@ -202,6 +235,23 @@ export class DiscountResponseDto {
     type: [String],
   })
   getTagIds: string[];
+
+  @ApiProperty({
+    description: "Tiered pricing rules (TIERED type)",
+    example: [
+      { minQuantity: 1, value: 10, valueType: "PERCENTAGE" },
+      { minQuantity: 3, value: 20, valueType: "PERCENTAGE" }
+    ],
+    type: [TieredRuleDto],
+  })
+  tieredRules: TieredRuleDto[];
+
+  @ApiProperty({
+    description: "Excluded discount IDs (mutually exclusive)",
+    example: ["123e4567-e89b-12d3-a456-426614174000"],
+    type: [String],
+  })
+  excludedDiscountIds: string[];
 
   @ApiProperty({
     description: "Creation timestamp",
