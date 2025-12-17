@@ -1,9 +1,11 @@
 import { Module } from "@nestjs/common";
 import { ScheduleModule } from "@nestjs/schedule";
+import { BundlesModule } from "../bundles/bundles.module";
 import { RedisStoreModule } from "../redis-store/redis-store.module";
 import { CustomerGroupsController } from "./customer-groups.controller";
 import { PriceListsController } from "./price-lists.controller";
 import { AdminPricingDriftReportService } from "./services/admin-pricing-drift-report.service";
+import { BundlePricingService } from "./services/bundle-pricing.service";
 import { CustomerGroupService } from "./services/customer-group.service";
 import { PriceListService } from "./services/price-list.service";
 import { PriceListChangeTracker } from "./services/price-list-change-tracker.service";
@@ -19,7 +21,7 @@ import { PricingWarmupWorker } from "./services/pricing-warmup-worker.service";
 import { VariantPricingService } from "./services/variant-pricing.service";
 
 @Module({
-  imports: [RedisStoreModule, ScheduleModule],
+  imports: [RedisStoreModule, ScheduleModule, BundlesModule],
   controllers: [PriceListsController, CustomerGroupsController],
   providers: [
     PriceListService,
@@ -27,6 +29,7 @@ import { VariantPricingService } from "./services/variant-pricing.service";
     CustomerGroupService,
     PricingVersionManager,
     PricingBundleService,
+    BundlePricingService,
     PricingHotReloadWatcher,
     PricingRebuilder,
     PricingCacheHydrationService,
@@ -41,6 +44,7 @@ import { VariantPricingService } from "./services/variant-pricing.service";
     PriceListService,
     VariantPricingService,
     CustomerGroupService,
+    BundlePricingService,
     PricingHotReloadWatcher,
     PricingRebuilder,
     PricingSnapshotValidator,

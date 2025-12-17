@@ -3,6 +3,7 @@ import { AppController } from "./app.controller";
 import { AddressAutocompleteModule } from "./modules/address-autocomplete/address-autocomplete.module";
 import { AdminModule } from "./modules/admin/admin.module";
 import { AuthModule } from "./modules/auth/auth.module";
+import { BundlesModule } from "./modules/bundles/bundles.module";
 import { CategoriesModule } from "./modules/categories/categories.module";
 import { CustomersModule } from "./modules/customers/customers.module";
 import { DiscountsModule } from "./modules/discounts/discounts.module";
@@ -13,6 +14,7 @@ import { PaymentsModule } from "./modules/payments/payments.module";
 import { PricingModule } from "./modules/pricing/pricing.module";
 import { ProductsModule } from "./modules/products/products.module";
 import { RedisStoreModule } from "./modules/redis-store/redis-store.module";
+import { ReviewsModule } from "./modules/reviews/reviews.module";
 import { ShippingModule } from "./modules/shipping/shipping.module";
 import { StorageModule } from "./modules/storage/storage.module";
 
@@ -33,6 +35,8 @@ import { StorageModule } from "./modules/storage/storage.module";
     StorageModule,
     RedisStoreModule,
     InventoryModule,
+    BundlesModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
 })

@@ -624,3 +624,80 @@ export interface IIdempotencyStore extends IRedisStore {
    */
   deleteIdempotency(operation: string, key: string): Promise<void>;
 }
+
+/**
+ * Bundle cache store interface
+ */
+export interface IBundleCacheStore extends IRedisStore {
+  /**
+   * Store bundle definition (full bundle with sets and items)
+   * @param bundleId - Bundle ID
+   * @param bundle - Bundle data
+   */
+  storeBundleDefinition(
+    bundleId: string,
+    bundle: import("../../bundles/dto/bundle-response.dto").BundleResponseDto,
+  ): Promise<void>;
+
+  /**
+   * Get bundle definition from cache
+   * @param bundleId - Bundle ID
+   * @returns Bundle data or null if not cached
+   */
+  getBundleDefinition(
+    bundleId: string,
+  ): Promise<
+    import("../../bundles/dto/bundle-response.dto").BundleResponseDto | null
+  >;
+
+  /**
+   * Store bundle sets metadata
+   * @param bundleId - Bundle ID
+   * @param sets - Sets data
+   */
+  storeBundleSets(
+    bundleId: string,
+    sets: import("../../bundles/dto/bundle-set-response.dto").BundleSetResponseDto[],
+  ): Promise<void>;
+
+  /**
+   * Get bundle sets from cache
+   * @param bundleId - Bundle ID
+   * @returns Sets data or null if not cached
+   */
+  getBundleSets(
+    bundleId: string,
+  ): Promise<
+    | import("../../bundles/dto/bundle-set-response.dto").BundleSetResponseDto[]
+    | null
+  >;
+
+  /**
+   * Store bundle eligibility (variant IDs allowed in a set)
+   * @param bundleId - Bundle ID
+   * @param setId - Set ID
+   * @param variantIds - Array of allowed variant IDs
+   */
+  storeBundleEligibility(
+    bundleId: string,
+    setId: string,
+    variantIds: string[],
+  ): Promise<void>;
+
+  /**
+   * Get bundle eligibility from cache
+   * @param bundleId - Bundle ID
+   * @param setId - Set ID
+   * @returns Array of variant IDs or null if not cached
+   */
+  getBundleEligibility(
+    bundleId: string,
+    setId: string,
+  ): Promise<string[] | null>;
+
+  /**
+   * Invalidate all cache entries for a bundle
+   * @param bundleId - Bundle ID
+   */
+  invalidateBundle(bundleId: string): Promise<void>;
+}

@@ -1,6 +1,9 @@
 // Export all schema definitions
 
 export * from "./addresses";
+export * from "./bundle-set-items";
+export * from "./bundle-sets";
+export * from "./bundles";
 export * from "./cart-items";
 export * from "./carts";
 export * from "./categories";
@@ -21,7 +24,10 @@ export * from "./product-images";
 export * from "./product-tags";
 export * from "./product-variants";
 export * from "./products";
+export * from "./review-helpful-votes";
+export * from "./reviews";
 export * from "./shipments";
 export * from "./shipping-rules";
 export * from "./tags";
 export * from "./users";
+export * from "./variant-review-aggregate";

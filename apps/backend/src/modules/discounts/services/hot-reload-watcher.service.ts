@@ -16,26 +16,33 @@ import { RulesetVersionManager } from "./ruleset-version-manager.service";
 @Injectable()
 export class HotReloadWatcher implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(HotReloadWatcher.name);
-  private readonly subscriber: Redis;
+  private subscriber!: Redis;
 
   // In-memory cache
   private currentBundle: RulesetBundle | null = null;
   private currentVersion = 0;
   private isInitialized = false;
 
+  private readonly redisStoreService: RedisStoreService;
+
   constructor(
-    readonly redisStoreService: RedisStoreService,
+    redisStoreService: RedisStoreService,
     private readonly versionManager: RulesetVersionManager,
     private readonly bundleService: RulesetBundleService,
   ) {
-    // Create separate subscriber client (required for pub/sub)
-    this.subscriber = redisStoreService.getClient().duplicate();
+    this.redisStoreService = redisStoreService;
   }
 
   /**
    * Initialize watcher on module startup
    */
   async onModuleInit(): Promise<void> {
+    // Create separate subscriber client (required for pub/sub)
+    // Disable ready check to avoid conflicts with subscriber mode
+    this.subscriber = this.redisStoreService.getClient().duplicate({
+      enableReadyCheck: false,
+      enableOfflineQueue: false,
+    });
     try {
       // Load initial bundle
       await this.refreshBundle();

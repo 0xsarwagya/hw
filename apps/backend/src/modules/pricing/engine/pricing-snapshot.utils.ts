@@ -1,5 +1,6 @@
 import { PRICING_ENGINE_VERSION } from "./pricing-engine.constants";
 import {
+  BundlePricingBreakdown,
   PriceList,
   PricingEngineResult,
   PricingSnapshot,
@@ -14,6 +15,7 @@ export function createPricingSnapshot(
   engineResult: PricingEngineResult,
   appliedPriceLists: PriceList[],
   rulesetVersion: number,
+  bundleBreakdowns?: BundlePricingBreakdown[],
 ): PricingSnapshot {
   return {
     ...engineResult,
@@ -21,5 +23,6 @@ export function createPricingSnapshot(
     rulesetVersion,
     computedAt: new Date().toISOString(),
     ruleHash: computePriceListHash(appliedPriceLists),
+    bundleBreakdowns,
   };
 }

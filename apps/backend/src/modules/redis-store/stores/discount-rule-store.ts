@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
 import { DiscountResponseDto } from "../../discounts/dto/discount-response.dto";
 import { KEY_PATTERNS } from "../constants/key-patterns";
@@ -6,12 +6,17 @@ import { IDiscountRuleStore } from "../interfaces/redis-store.interface";
 import { RedisStoreService } from "../redis-store.service";
 
 @Injectable()
-export class DiscountRuleStore implements IDiscountRuleStore {
+export class DiscountRuleStore implements IDiscountRuleStore, OnModuleInit {
   private readonly logger = new Logger(DiscountRuleStore.name);
-  private readonly client: Redis;
+  private client!: Redis;
+  private readonly redisStoreService: RedisStoreService;
 
   constructor(redisStoreService: RedisStoreService) {
-    this.client = redisStoreService.getClient();
+    this.redisStoreService = redisStoreService;
+  }
+
+  async onModuleInit() {
+    this.client = this.redisStoreService.getClient();
   }
 
   /**

@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ScheduleModule } from "@nestjs/schedule";
 import { RedisStoreService } from "./redis-store.service";
 import { InventoryRecoveryService } from "./services/inventory-recovery.service";
+import { BundleCacheStore } from "./stores/bundle-cache-store";
 import { CartStore } from "./stores/cart-store";
 import { CheckoutStore } from "./stores/checkout-store";
 import { DiscountRuleStore } from "./stores/discount-rule-store";
@@ -22,6 +23,7 @@ import { ProductMappingStore } from "./stores/product-mapping-store";
     DiscountRuleStore,
     EligibilityStore,
     ProductMappingStore,
+    BundleCacheStore,
   ],
   exports: [
     RedisStoreService,
@@ -32,6 +34,7 @@ import { ProductMappingStore } from "./stores/product-mapping-store";
     DiscountRuleStore,
     EligibilityStore,
     ProductMappingStore,
+    BundleCacheStore,
   ],
 })
 export class RedisStoreModule {}

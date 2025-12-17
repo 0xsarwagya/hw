@@ -35,6 +35,9 @@ describe("CartStore", () => {
     }).compile();
 
     store = module.get<CartStore>(CartStore);
+    
+    // Manually call onModuleInit to initialize the Redis client
+    await store.onModuleInit();
   });
 
   afterEach(() => {

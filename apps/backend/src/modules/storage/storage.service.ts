@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import {
   StorageProvider,

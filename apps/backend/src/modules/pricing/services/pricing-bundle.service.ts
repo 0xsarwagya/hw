@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
 import { RedisStoreService } from "../../redis-store/redis-store.service";
 import { PriceList } from "../engine/pricing-engine.types";
@@ -44,18 +44,23 @@ export interface PricingBundle {
 }
 
 @Injectable()
-export class PricingBundleService {
+export class PricingBundleService implements OnModuleInit {
   private readonly logger = new Logger(PricingBundleService.name);
-  private readonly client: Redis;
+  private client!: Redis;
+  private readonly redisStoreService: RedisStoreService;
   private readonly bundleKeyPrefix = "pricing-ruleset-bundle:";
   private readonly metadataKeyPrefix = "pricing-ruleset-metadata:";
 
   constructor(
-    readonly redisStoreService: RedisStoreService,
+    redisStoreService: RedisStoreService,
     private readonly versionManager: PricingVersionManager,
     readonly customerGroupService: CustomerGroupService,
   ) {
-    this.client = redisStoreService.getClient();
+    this.redisStoreService = redisStoreService;
+  }
+
+  async onModuleInit() {
+    this.client = this.redisStoreService.getClient();
   }
 
   /**

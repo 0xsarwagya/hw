@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -50,6 +52,7 @@ export class DiscountsService {
     private readonly invalidationService: DiscountInvalidationService,
     private readonly ruleChangeTracker: RuleChangeTracker,
     private readonly hotReloadWatcher: HotReloadWatcher,
+    @Inject(forwardRef(() => RulesetRebuilder))
     private readonly rulesetRebuilder: RulesetRebuilder,
     private readonly profiler: DiscountProfiler,
   ) {}

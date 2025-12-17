@@ -33,6 +33,9 @@ describe("IdempotencyStore", () => {
     }).compile();
 
     store = module.get<IdempotencyStore>(IdempotencyStore);
+    
+    // Manually call onModuleInit to initialize the Redis client
+    await store.onModuleInit();
   });
 
   afterEach(() => {

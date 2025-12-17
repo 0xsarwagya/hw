@@ -74,6 +74,25 @@ export interface PricingEngineResult {
 }
 
 /**
+ * Bundle variant breakdown in pricing snapshot
+ */
+export interface BundleVariantPricingBreakdown {
+  variantId: string;
+  unitPrice: number;
+  quantity: number;
+}
+
+/**
+ * Bundle breakdown in pricing snapshot
+ */
+export interface BundlePricingBreakdown {
+  bundleId: string;
+  bundleLineId: string;
+  unitBundlePrice: number;
+  variantBreakdown: BundleVariantPricingBreakdown[];
+}
+
+/**
  * Pricing snapshot extends engine result with versioning and integrity metadata
  * This is the immutable snapshot stored at payment intent creation
  */
@@ -99,4 +118,10 @@ export interface PricingSnapshot extends PricingEngineResult {
    * Prevents price list changes during checkout
    */
   ruleHash: string;
+
+  /**
+   * Bundle breakdowns (if any bundles in cart)
+   * Contains pricing breakdown for each bundle line item
+   */
+  bundleBreakdowns?: BundlePricingBreakdown[];
 }

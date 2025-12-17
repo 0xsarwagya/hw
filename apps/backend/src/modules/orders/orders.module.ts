@@ -1,4 +1,5 @@
 import { forwardRef, Module } from "@nestjs/common";
+import { BundlesModule } from "../bundles/bundles.module";
 import { CartsModule } from "../carts/carts.module";
 import { DiscountsModule } from "../discounts/discounts.module";
 import { PaymentsModule } from "../payments/payments.module";
@@ -11,6 +12,7 @@ import { ReconciliationService } from "./reconciliation.service";
 @Module({
   imports: [
     CartsModule,
+    BundlesModule,
     DiscountsModule,
     PricingModule,
     RedisStoreModule,

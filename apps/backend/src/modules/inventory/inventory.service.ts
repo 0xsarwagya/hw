@@ -1,15 +1,20 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
 import { RedisStoreService } from "../redis-store/redis-store.service";
 import { InventoryMetricsDto } from "./dto/inventory-metrics.dto";
 
 @Injectable()
-export class InventoryService {
+export class InventoryService implements OnModuleInit {
   private readonly logger = new Logger(InventoryService.name);
-  private readonly client: Redis;
+  private client!: Redis;
+  private readonly redisStoreService: RedisStoreService;
 
   constructor(redisStoreService: RedisStoreService) {
-    this.client = redisStoreService.getClient();
+    this.redisStoreService = redisStoreService;
+  }
+
+  async onModuleInit() {
+    this.client = this.redisStoreService.getClient();
   }
 
   async getMetrics(): Promise<InventoryMetricsDto> {

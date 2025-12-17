@@ -60,20 +60,18 @@ describe("DiscountsController", () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [DiscountsController],
       providers: [
-        {
-          provide: DiscountsService,
-          useValue: mockDiscountsService,
-        },
-        {
-          provide: AdminDriftReportService,
-          useValue: mockAdminDriftReportService,
-        },
-        {
-          provide: DiscountProfiler,
-          useValue: mockDiscountProfiler,
-        },
+        DiscountsService,
+        AdminDriftReportService,
+        DiscountProfiler,
       ],
-    }).compile();
+    })
+      .overrideProvider(DiscountsService)
+      .useValue(mockDiscountsService)
+      .overrideProvider(AdminDriftReportService)
+      .useValue(mockAdminDriftReportService)
+      .overrideProvider(DiscountProfiler)
+      .useValue(mockDiscountProfiler)
+      .compile();
 
     controller = module.get<DiscountsController>(DiscountsController);
     service = module.get<DiscountsService>(DiscountsService);

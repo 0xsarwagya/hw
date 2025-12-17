@@ -11,48 +11,64 @@ import { KEY_PATTERNS, TTL } from "../constants/key-patterns";
 import { IInventoryStore } from "../interfaces/redis-store.interface";
 import { RedisStoreService } from "../redis-store.service";
 
+/**
+ * Helper function to load Lua script with multiple path fallbacks
+ */
+function loadLuaScript(scriptName: string, currentDir: string): string {
+  const scriptPaths = [
+    // Compiled path (dist)
+    join(currentDir, "../scripts", scriptName),
+    // Source path from dist
+    join(currentDir, "../../../src/modules/redis-store/scripts", scriptName),
+    // Source path from process.cwd() (repo root)
+    join(
+      process.cwd(),
+      "apps/backend/src/modules/redis-store/scripts",
+      scriptName,
+    ),
+    // Absolute path fallback
+    join(process.cwd(), "src/modules/redis-store/scripts", scriptName),
+  ];
+
+  for (const scriptPath of scriptPaths) {
+    try {
+      return readFileSync(scriptPath, "utf-8");
+    } catch {}
+  }
+
+  throw new Error(
+    `Failed to load Lua script '${scriptName}' from any of the following paths: ${scriptPaths.join(", ")}`,
+  );
+}
+
 @Injectable()
 export class InventoryStore implements IInventoryStore, OnModuleInit {
   private readonly logger = new Logger(InventoryStore.name);
-  private readonly client: Redis;
+  private client!: Redis;
+  private readonly redisStoreService: RedisStoreService;
   private reserveInventoryScriptSha: string | null = null;
 
   constructor(redisStoreService: RedisStoreService) {
-    this.client = redisStoreService.getClient();
+    this.redisStoreService = redisStoreService;
   }
 
   async onModuleInit() {
+    // Initialize Redis client
+    this.client = this.redisStoreService.getClient();
+
     // Load Lua script
     try {
-      // Handle both development and production paths
-      const scriptPath = join(__dirname, "../scripts/reserve-inventory.lua");
-      const script = readFileSync(scriptPath, "utf-8");
+      const script = loadLuaScript("reserve-inventory.lua", __dirname);
       this.reserveInventoryScriptSha = (await this.client.script(
         "LOAD",
         script,
       )) as string;
       this.logger.log("Reservation Lua script loaded successfully");
     } catch (error) {
-      // Try alternative path for production builds
-      try {
-        const altScriptPath = join(
-          process.cwd(),
-          "apps/backend/src/modules/redis-store/scripts/reserve-inventory.lua",
-        );
-        const script = readFileSync(altScriptPath, "utf-8");
-        this.reserveInventoryScriptSha = (await this.client.script(
-          "LOAD",
-          script,
-        )) as string;
-        this.logger.log(
-          "Reservation Lua script loaded successfully (alt path)",
-        );
-      } catch (_altError) {
-        this.logger.error(
-          `Failed to load reservation Lua script: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
-        throw error;
-      }
+      this.logger.error(
+        `Failed to load reservation Lua script: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
     }
   }
 

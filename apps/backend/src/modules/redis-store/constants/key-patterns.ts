@@ -191,6 +191,28 @@ export const KEY_PATTERNS = {
    */
   PRICING_RULESET_METADATA: (version: number) =>
     `pricing-ruleset-metadata:${version}`,
+
+  /**
+   * Bundle definition (full bundle with sets and items)
+   * Format: bundle:{bundleId}:definition
+   * TTL: 24 hours
+   */
+  BUNDLE_DEFINITION: (bundleId: string) => `bundle:${bundleId}:definition`,
+
+  /**
+   * Bundle sets metadata
+   * Format: bundle:{bundleId}:sets
+   * TTL: 24 hours
+   */
+  BUNDLE_SETS: (bundleId: string) => `bundle:${bundleId}:sets`,
+
+  /**
+   * Bundle eligibility (variant IDs allowed in a set)
+   * Format: bundle:{bundleId}:eligibility:{setId}
+   * TTL: 24 hours
+   */
+  BUNDLE_ELIGIBILITY: (bundleId: string, setId: string) =>
+    `bundle:${bundleId}:eligibility:${setId}`,
 } as const;
 
 /**
@@ -251,4 +273,19 @@ export const TTL = {
    * Product mapping expiration: 24 hours
    */
   PRODUCT_MAPPING: 24 * 60 * 60, // 24 hours in seconds
+
+  /**
+   * Bundle definition expiration: 24 hours
+   */
+  BUNDLE_DEFINITION: 24 * 60 * 60, // 24 hours in seconds
+
+  /**
+   * Bundle sets expiration: 24 hours
+   */
+  BUNDLE_SETS: 24 * 60 * 60, // 24 hours in seconds
+
+  /**
+   * Bundle eligibility expiration: 24 hours
+   */
+  BUNDLE_ELIGIBILITY: 24 * 60 * 60, // 24 hours in seconds
 } as const;

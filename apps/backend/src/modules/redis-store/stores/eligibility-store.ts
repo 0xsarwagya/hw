@@ -1,16 +1,21 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
 import { KEY_PATTERNS, TTL } from "../constants/key-patterns";
 import { IEligibilityStore } from "../interfaces/redis-store.interface";
 import { RedisStoreService } from "../redis-store.service";
 
 @Injectable()
-export class EligibilityStore implements IEligibilityStore {
+export class EligibilityStore implements IEligibilityStore, OnModuleInit {
   private readonly logger = new Logger(EligibilityStore.name);
-  private readonly client: Redis;
+  private client!: Redis;
+  private readonly redisStoreService: RedisStoreService;
 
   constructor(redisStoreService: RedisStoreService) {
-    this.client = redisStoreService.getClient();
+    this.redisStoreService = redisStoreService;
+  }
+
+  async onModuleInit() {
+    this.client = this.redisStoreService.getClient();
   }
 
   /**
