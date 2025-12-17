@@ -21,7 +21,19 @@ import {
   users,
 } from "@vcecom/db";
 import { CartsService } from "../carts/carts.service";
+import { DiscountAuditService } from "../discounts/services/discount-audit.service";
+import { DiscountSnapshotValidator } from "../discounts/services/discount-snapshot-validator.service";
+import { DriftDetectorService } from "../discounts/services/drift-detector.service";
 import { DiscountsService } from "../discounts/discounts.service";
+import { HotReloadWatcher } from "../discounts/services/hot-reload-watcher.service";
+import { RulesetBundleService } from "../discounts/services/ruleset-bundle.service";
+import { DiscountProfiler } from "../discounts/services/discount-profiler.service";
+import { PricingHotReloadWatcher } from "../pricing/services/pricing-hot-reload-watcher.service";
+import { PriceListService } from "../pricing/services/price-list.service";
+import { CustomerGroupService } from "../pricing/services/customer-group.service";
+import { PricingSnapshotValidator } from "../pricing/services/pricing-snapshot-validator.service";
+import { PricingAuditService } from "../pricing/services/pricing-audit.service";
+import { PricingDriftDetectorService } from "../pricing/services/pricing-drift-detector.service";
 import { PaymentsService } from "../payments/payments.service";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
 import {
@@ -266,6 +278,99 @@ describe("OrdersService", () => {
             createPaymentIntent: jest.fn(),
           },
         },
+        {
+          provide: DiscountSnapshotValidator,
+          useValue: {
+            validateSnapshot: jest.fn(),
+          },
+        },
+        {
+          provide: DiscountAuditService,
+          useValue: {
+            logEvent: jest.fn(),
+            logEngineRun: jest.fn(),
+            logSnapshotCreated: jest.fn(),
+            logSnapshotUsed: jest.fn(),
+            logDrift: jest.fn(),
+          },
+        },
+        {
+          provide: DriftDetectorService,
+          useValue: {
+            detectPaymentIntentDrift: jest.fn(),
+            detectWebhookDrift: jest.fn(),
+            detectOrderCreationDrift: jest.fn(),
+          },
+        },
+        {
+          provide: HotReloadWatcher,
+          useValue: {
+            getCurrentVersion: jest.fn().mockReturnValue(1),
+            getCurrentBundle: jest.fn(),
+          },
+        },
+        {
+          provide: RulesetBundleService,
+          useValue: {
+            getBundle: jest.fn(),
+            getCurrentBundle: jest.fn(),
+          },
+        },
+        {
+          provide: DiscountProfiler,
+          useValue: {
+            recordEngineRun: jest.fn(),
+            recordRedisLatency: jest.fn(),
+            recordCacheHit: jest.fn(),
+            recordCacheMiss: jest.fn(),
+            recordHotReload: jest.fn(),
+            updateRulesetInfo: jest.fn(),
+            getMetrics: jest.fn(),
+          },
+        },
+        {
+          provide: PricingHotReloadWatcher,
+          useValue: {
+            getCurrentVersion: jest.fn().mockReturnValue(1),
+            getCurrentBundle: jest.fn(),
+          },
+        },
+        {
+          provide: PriceListService,
+          useValue: {
+            findOne: jest.fn(),
+            findActive: jest.fn().mockResolvedValue([]),
+          },
+        },
+        {
+          provide: CustomerGroupService,
+          useValue: {
+            findOne: jest.fn(),
+          },
+        },
+        {
+          provide: PricingSnapshotValidator,
+          useValue: {
+            validateSnapshot: jest.fn(),
+            validate: jest.fn(),
+          },
+        },
+        {
+          provide: PricingAuditService,
+          useValue: {
+            logEngineRun: jest.fn(),
+            logSnapshotCreated: jest.fn(),
+            logSnapshotUsed: jest.fn(),
+            logEvent: jest.fn(),
+          },
+        },
+        {
+          provide: PricingDriftDetectorService,
+          useValue: {
+            detectPaymentIntentDrift: jest.fn(),
+            detectOrderCreationDrift: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -343,6 +448,44 @@ describe("OrdersService", () => {
         from: jest.fn().mockReturnValue(mockCartItemsFromResult),
       };
 
+      // Mock variant-to-product mapping query (for pricing engine)
+      const mockVariantProductChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue([
+            {
+              variantId: mockVariantId,
+              productId: mockProductId,
+            },
+          ]),
+        }),
+      };
+
+      // Mock product details query (for pricing engine)
+      const mockProductDetailsChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue([
+            {
+              productId: mockProductId,
+              categoryId: null,
+            },
+          ]),
+        }),
+      };
+
+      // Mock customer group query (for pricing engine)
+      const mockCustomerGroupChain = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([
+              {
+                id: mockCustomerId,
+                customerGroupId: null,
+              },
+            ]),
+          }),
+        }),
+      };
+
       // Mock generateOrderNumber: select().from().where().orderBy().limit()
       const mockOrdersChain = {
         from: jest.fn().mockReturnValue({
@@ -402,6 +545,9 @@ describe("OrdersService", () => {
         .mockReturnValueOnce(mockShippingAddressChain)
         .mockReturnValueOnce(mockBillingAddressChain)
         .mockReturnValueOnce(mockCartItemsChain)
+        .mockReturnValueOnce(mockVariantProductChain) // For variant-to-product mapping
+        .mockReturnValueOnce(mockProductDetailsChain) // For product details
+        .mockReturnValueOnce(mockCustomerGroupChain) // For customer group lookup
         .mockReturnValueOnce(mockOrdersChain);
 
       (db.insert as jest.Mock)

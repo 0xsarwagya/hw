@@ -2,6 +2,8 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { DiscountsController, PublicDiscountsController } from "./discounts.controller";
 import { DiscountsService } from "./discounts.service";
 import { CreateDiscountDto, DiscountType, DiscountValueType } from "./dto/create-discount.dto";
+import { AdminDriftReportService } from "./services/admin-drift-report.service";
+import { DiscountProfiler } from "./services/discount-profiler.service";
 
 // Mock database to avoid DATABASE_URL requirement
 jest.mock("@vcecom/db", () => ({
@@ -40,6 +42,20 @@ describe("DiscountsController", () => {
     validateDiscount: jest.fn(),
   };
 
+  const mockAdminDriftReportService = {
+    getDriftReport: jest.fn(),
+  };
+
+  const mockDiscountProfiler = {
+    getMetrics: jest.fn(),
+    recordEngineRun: jest.fn(),
+    recordRedisLatency: jest.fn(),
+    recordCacheHit: jest.fn(),
+    recordCacheMiss: jest.fn(),
+    recordHotReload: jest.fn(),
+    updateRulesetInfo: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [DiscountsController],
@@ -47,6 +63,14 @@ describe("DiscountsController", () => {
         {
           provide: DiscountsService,
           useValue: mockDiscountsService,
+        },
+        {
+          provide: AdminDriftReportService,
+          useValue: mockAdminDriftReportService,
+        },
+        {
+          provide: DiscountProfiler,
+          useValue: mockDiscountProfiler,
         },
       ],
     }).compile();
@@ -65,9 +89,10 @@ describe("DiscountsController", () => {
       const createDto: CreateDiscountDto = {
         code: "SAVE20",
         name: "20% Off",
-        type: DiscountType.STANDARD,
+        type: DiscountType.PERCENTAGE,
         valueType: DiscountValueType.PERCENTAGE,
         value: 20,
+        startDate: "2025-01-01T00:00:00.000Z",
       };
 
       const mockResponse = {

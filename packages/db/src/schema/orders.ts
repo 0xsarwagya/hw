@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
   index,
+  jsonb,
   pgEnum,
   pgTable,
   real,
@@ -47,6 +48,18 @@ export const orders = pgTable(
     billingAddressId: uuid("billing_address_id")
       .notNull()
       .references(() => addresses.id, { onDelete: "restrict" }),
+    /**
+     * Discount snapshot stored at payment intent creation
+     * Contains full pricing breakdown, engine version, and rule hash
+     * Used for refunds and historical accuracy
+     */
+    discountSnapshot: jsonb("discount_snapshot"),
+    /**
+     * Pricing snapshot stored at payment intent creation
+     * Contains variant prices, price list overrides, engine version, and rule hash
+     * Used for refunds and historical accuracy
+     */
+    pricingSnapshot: jsonb("pricing_snapshot"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
