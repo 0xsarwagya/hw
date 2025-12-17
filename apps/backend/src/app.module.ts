@@ -1,5 +1,10 @@
 import { Module } from "@nestjs/common";
 import { AppController } from "./app.controller";
+import { HealthLoggerController } from "./common/health/health-logger.controller";
+import { HealthTracingController } from "./common/health/health-tracing.controller";
+import { ContextModule } from "./common/logging/context.module";
+import { LoggerModule } from "./common/logging/logger.module";
+import { OtelTracingModule } from "./common/tracing/otel-tracing.module";
 import { AddressAutocompleteModule } from "./modules/address-autocomplete/address-autocomplete.module";
 import { AdminModule } from "./modules/admin/admin.module";
 import { AuthModule } from "./modules/auth/auth.module";
@@ -20,6 +25,12 @@ import { StorageModule } from "./modules/storage/storage.module";
 
 @Module({
   imports: [
+    // Register logging and tracing modules first
+    LoggerModule,
+    ContextModule,
+    OtelTracingModule,
+    // Register StorageModule first so it's available to other modules
+    StorageModule.forRootAsync(),
     AuthModule,
     CategoriesModule,
     ProductsModule,
@@ -32,12 +43,11 @@ import { StorageModule } from "./modules/storage/storage.module";
     AddressAutocompleteModule,
     DiscountsModule,
     PricingModule,
-    StorageModule,
     RedisStoreModule,
     InventoryModule,
     BundlesModule,
     ReviewsModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthLoggerController, HealthTracingController],
 })
 export class AppModule {}

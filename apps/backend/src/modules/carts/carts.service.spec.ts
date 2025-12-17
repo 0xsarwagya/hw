@@ -8,6 +8,7 @@ import {
   productVariants,
   products,
 } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
 import { DiscountsService } from "../discounts/discounts.service";
 import { CartsService } from "./carts.service";
 
@@ -54,6 +55,18 @@ describe.skip("CartsService", () => {
         {
           provide: DiscountsService,
           useValue: mockDiscountsService,
+        },
+        {
+          provide: PinoLogger,
+          useValue: {
+            info: jest.fn(),
+            error: jest.fn(),
+            warn: jest.fn(),
+            debug: jest.fn(),
+            logger: {
+              child: jest.fn().mockReturnThis(),
+            },
+          },
         },
       ],
     }).compile();

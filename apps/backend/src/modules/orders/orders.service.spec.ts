@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
+import { PinoLogger } from "nestjs-pino";
 import {
   addresses,
   cartItems,
@@ -274,6 +275,18 @@ describe("OrdersService", () => {
         PricingDriftDetectorService,
         BundleEligibilityService,
         BundlePricingService,
+        {
+          provide: PinoLogger,
+          useValue: {
+            info: jest.fn(),
+            error: jest.fn(),
+            warn: jest.fn(),
+            debug: jest.fn(),
+            logger: {
+              child: jest.fn().mockReturnThis(),
+            },
+          },
+        },
       ],
     })
       .overrideProvider(CartsService)

@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { db, eq, cartItems, productVariants, products } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
 import { BundleCartItemMetadata } from "../dto/bundle-cart-item.dto";
 import { CartsService } from "../carts.service";
 import { BundleEligibilityService } from "../../bundles/services/bundle-eligibility.service";
@@ -145,6 +146,18 @@ describe("CartsService - Bundle Integration", () => {
           provide: HotReloadWatcher,
           useValue: {
             getCurrentVersion: jest.fn().mockReturnValue(1),
+          },
+        },
+        {
+          provide: PinoLogger,
+          useValue: {
+            info: jest.fn(),
+            error: jest.fn(),
+            warn: jest.fn(),
+            debug: jest.fn(),
+            logger: {
+              child: jest.fn().mockReturnThis(),
+            },
           },
         },
       ],
