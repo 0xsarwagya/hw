@@ -400,6 +400,51 @@ export interface ICheckoutStore extends IRedisStore {
   getPaymentIntentByPaymentId(
     paymentIntentId: string,
   ): Promise<import("../dto/payment-intent.dto").PaymentIntent | null>;
+
+  /**
+   * Store checkout metadata for order creation
+   * Metadata includes userId, addresses, shipping cost
+   * @param sessionId - Checkout session ID
+   * @param metadata - Checkout metadata to store
+   */
+  storeCheckoutMetadata(
+    sessionId: string,
+    metadata: import("../dto/checkout-metadata.dto").CheckoutMetadata,
+  ): Promise<void>;
+
+  /**
+   * Get checkout metadata for order creation
+   * @param sessionId - Checkout session ID
+   * @returns Checkout metadata or null if not found
+   */
+  getCheckoutMetadata(
+    sessionId: string,
+  ): Promise<import("../dto/checkout-metadata.dto").CheckoutMetadata | null>;
+
+  /**
+   * Atomically create or get order ID for a payment intent
+   * Ensures exactly one order per payment intent (payment-scoped idempotency)
+   * @param provider - Payment provider (e.g., "razorpay")
+   * @param paymentIntentId - Payment intent ID from provider
+   * @param orderId - Order ID to store if not exists
+   * @returns Existing order ID if found, or the provided orderId if created
+   */
+  createOrderFromPayment(
+    provider: string,
+    paymentIntentId: string,
+    orderId: string,
+  ): Promise<string>;
+
+  /**
+   * Get order ID by payment intent ID (reverse lookup)
+   * @param provider - Payment provider (e.g., "razorpay")
+   * @param paymentIntentId - Payment intent ID from provider
+   * @returns Order ID or null if not found
+   */
+  getOrderByPaymentIntent(
+    provider: string,
+    paymentIntentId: string,
+  ): Promise<string | null>;
 }
 
 /**

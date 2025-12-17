@@ -17,16 +17,20 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
+import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { RolesGuard } from "../../common/guards/roles.guard";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { OrderResponseDto } from "./dto/order-response.dto";
 import { OrderTimelineDto } from "./dto/order-timeline.dto";
 import { OrderTrackingDto } from "./dto/order-tracking.dto";
+import { PaymentIntentResponseDto } from "./dto/payment-intent-response.dto";
 import {
   OrderStatus,
   UpdateOrderStatusDto,
 } from "./dto/update-order-status.dto";
 import { OrdersService } from "./orders.service";
+import { ReconciliationService } from "./reconciliation.service";
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -41,18 +45,21 @@ interface AuthenticatedRequest extends Request {
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth("JWT-auth")
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly reconciliationService: ReconciliationService,
+  ) {}
 
   @Post()
   @ApiOperation({
-    summary: "Create order from cart",
+    summary: "Create payment intent for checkout",
     description:
-      "Creates a new order from the customer's cart. Validates addresses, checks inventory, calculates totals, and clears the cart.",
+      "Creates a payment intent for checkout. Orders are created only after payment confirmation via webhook. Returns payment intent and checkout session ID for redirecting to payment gateway.",
   })
   @ApiResponse({
     status: 201,
-    description: "Order created successfully",
-    type: OrderResponseDto,
+    description: "Payment intent created successfully",
+    type: PaymentIntentResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -66,10 +73,15 @@ export class OrdersController {
     status: 404,
     description: "Addresses not found or do not belong to customer",
   })
+  @ApiResponse({
+    status: 409,
+    description:
+      "Conflict (cart already being checked out, invalid state, etc.)",
+  })
   async create(
     @Request() req: AuthenticatedRequest,
     @Body() createOrderDto: CreateOrderDto,
-  ) {
+  ): Promise<PaymentIntentResponseDto> {
     return this.ordersService.create(req.user.userId, createOrderDto);
   }
 
@@ -230,5 +242,49 @@ export class OrdersController {
     @Param("id") id: string,
   ) {
     return this.ordersService.getTimeline(req.user.userId, id);
+  }
+
+  @Post("reconcile/:paymentIntentId")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin")
+  @ApiOperation({
+    summary: "Reconcile payment intent (admin only)",
+    description:
+      "Manually reprocess a payment intent to create an order. Safe to call multiple times - idempotent. Use this for recovery after failures.",
+  })
+  @ApiParam({
+    name: "paymentIntentId",
+    description: "Payment intent ID from provider (e.g., Razorpay order ID)",
+    example: "order_abc123",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Order created or found",
+    type: OrderResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request (payment not confirmed, invalid state, etc.)",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden (admin role required)",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Payment intent or checkout session not found",
+  })
+  async reconcile(
+    @Param("paymentIntentId") paymentIntentId: string,
+    @Query("provider") provider?: string,
+  ): Promise<OrderResponseDto | null> {
+    return this.reconciliationService.reprocessPaymentIntent(
+      paymentIntentId,
+      provider || "razorpay",
+    );
   }
 }

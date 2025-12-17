@@ -1,7 +1,8 @@
-import { createHash } from "node:crypto";
 import {
   BadRequestException,
   ConflictException,
+  forwardRef,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -29,9 +30,9 @@ import { CartsService } from "../carts/carts.service";
 import { DiscountsService } from "../discounts/discounts.service";
 import { PaymentsService } from "../payments/payments.service";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
-import { KEY_PATTERNS } from "../redis-store/constants/key-patterns";
+import { CheckoutMetadata } from "../redis-store/dto/checkout-metadata.dto";
+import { PaymentIntent } from "../redis-store/dto/payment-intent.dto";
 import { CheckoutStore } from "../redis-store/stores/checkout-store";
-import { IdempotencyStore } from "../redis-store/stores/idempotency-store";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { OrderResponseDto } from "./dto/order-response.dto";
@@ -41,6 +42,7 @@ import {
   TimelineEventType,
 } from "./dto/order-timeline.dto";
 import { OrderTrackingDto } from "./dto/order-tracking.dto";
+import { PaymentIntentResponseDto } from "./dto/payment-intent-response.dto";
 import {
   OrderStatus,
   UpdateOrderStatusDto,
@@ -54,8 +56,8 @@ export class OrdersService {
     private readonly cartsService: CartsService,
     private readonly discountsService: DiscountsService,
     private readonly inventoryStore: InventoryStore,
-    private readonly idempotencyStore: IdempotencyStore,
     private readonly checkoutStore: CheckoutStore,
+    @Inject(forwardRef(() => PaymentsService))
     private readonly paymentsService: PaymentsService,
   ) {}
 
@@ -162,55 +164,15 @@ export class OrdersService {
   }
 
   /**
-   * Create order from cart
+   * Create payment intent for checkout
+   * Orders are now created only after payment confirmation via webhook
    */
-  async create(userId: string, createOrderDto: CreateOrderDto) {
-    // Generate or use provided idempotency key
-    let idempotencyKey = createOrderDto.idempotencyKey;
-    if (!idempotencyKey) {
-      // Generate key from userId + cartId + timestamp (rounded to minute)
-      const cart = await this.cartsService.getCart(userId, null);
-      const cartId = cart?.id || "unknown";
-      const timestamp = Math.floor(Date.now() / 60000); // Round to minute
-      const hashInput = `${userId}:${cartId}:${timestamp}`;
-      idempotencyKey = createHash("sha256").update(hashInput).digest("hex");
-    }
-
-    // Check idempotency
-    const operation = "order:create";
-    const existingResult =
-      await this.idempotencyStore.getIdempotencyResult<OrderResponseDto>(
-        operation,
-        idempotencyKey,
-      );
-
-    if (existingResult) {
-      // Return stored result for duplicate request
-      return existingResult;
-    }
-
-    // Check if idempotency key was already set (race condition check)
-    const wasSet = await this.idempotencyStore.checkAndSet(
-      operation,
-      idempotencyKey,
-      { pending: true }, // Temporary value
-    );
-
-    if (!wasSet) {
-      // Another request is processing, wait a bit and return stored result
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      const result =
-        await this.idempotencyStore.getIdempotencyResult<OrderResponseDto>(
-          operation,
-          idempotencyKey,
-        );
-      if (result && !("pending" in result)) {
-        return result;
-      }
-      // If still pending or no result, proceed (edge case)
-    }
-
-    let orderResponse: OrderResponseDto;
+  async create(
+    userId: string,
+    createOrderDto: CreateOrderDto,
+  ): Promise<PaymentIntentResponseDto> {
+    // Note: Idempotency is now handled at payment intent level (createOrGetPaymentIntent)
+    // No need for request-level idempotency here since payment intent creation is idempotent
     let lockAcquired = false;
     let cartId: string | null = null;
     let checkoutSessionId: string | null = null;
@@ -415,247 +377,95 @@ export class OrdersService {
       const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
       const total = subtotalAfterDiscount + totalGstAmount + shippingCost;
 
-      // Create payment intent BEFORE order creation (idempotent)
-      // This ensures payment is initiated before order is created
-      let paymentIntentId: string | null = null;
-      if (checkoutSessionId) {
-        try {
-          // Assert checkout state is LOCKED before creating payment intent
-          await this.checkoutStore.assertState(
-            checkoutSessionId,
-            CheckoutState.LOCKED,
-          );
-
-          // Create payment intent idempotently
-          // Amount is in rupees, convert to paise for Razorpay
-          const amountInPaise = Math.round(total * 100);
-          const paymentIntent = await this.paymentsService.createPaymentIntent(
-            checkoutSessionId,
-            amountInPaise,
-            "INR",
-            undefined, // receipt will be generated from checkoutSessionId
-            {
-              order_number: `pending-${Date.now()}`, // Temporary, will be updated after order creation
-            },
-          );
-          if (!paymentIntent || !paymentIntent.paymentIntentId) {
-            throw new ConflictException(
-              "Payment intent creation returned invalid result",
-            );
-          }
-          paymentIntentId = paymentIntent.paymentIntentId;
-          this.logger.debug(
-            `Payment intent created: checkoutSessionId=${checkoutSessionId}, paymentIntentId=${paymentIntentId}`,
-          );
-        } catch (error) {
-          // Payment intent creation failure - MUST BLOCK order creation
-          // This is a critical failure - we cannot create order without payment intent
-          this.logger.error(
-            `Failed to create payment intent for checkoutSessionId=${checkoutSessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
-          );
-          throw new ConflictException(
-            "Failed to create payment intent - cannot proceed with order creation",
-          );
-        }
-      }
-
-      // Generate order number
-      const orderNumber = await this.generateOrderNumber();
-
-      // CRITICAL: Validate checkout state before order creation
-      // State machine READ/validation failures MUST BLOCK - we cannot proceed
-      // with unknown or invalid states as this could lead to duplicate orders
-      if (checkoutSessionId) {
-        try {
-          // Assert we're in a valid state to create an order
-          // After payment intent creation, state should be PAYMENT_PENDING
-          // We also allow PAYMENT_CONFIRMED (if webhook already processed)
-          await this.checkoutStore.assertStateIn(checkoutSessionId, [
-            CheckoutState.PAYMENT_PENDING,
-            CheckoutState.PAYMENT_CONFIRMED,
-          ]);
-        } catch (error) {
-          // State validation failure - MUST BLOCK order creation
-          // This is a read/validation failure, not a write failure
-          this.logger.error(
-            `Cannot create order: invalid checkout state for session ${checkoutSessionId}`,
-            error,
-          );
-          throw new ConflictException(
-            "Invalid checkout state - cannot proceed with order creation",
-          );
-        }
-      }
-
-      // Create order (inventory commit happens here - critical boundary)
-      // Note: This is guarded by:
-      // 1. Checkout lock (prevents concurrent checkouts)
-      // 2. Idempotency (prevents duplicate orders)
-      // 3. State validation above (ensures valid state)
-      // 4. Payment intent creation (ensures payment is initiated)
-      const [order] = await db
-        .insert(orders)
-        .values({
-          customerId,
-          orderNumber,
-          status: "pending",
-          subtotal,
-          gstAmount: totalGstAmount,
-          discountCode,
-          discountAmount,
-          shippingCost,
-          total,
-          shippingAddressId: createOrderDto.shippingAddressId,
-          billingAddressId: createOrderDto.billingAddressId,
-          razorpayOrderId: paymentIntentId || null, // Store payment intent ID (Razorpay order ID)
-        })
-        .returning();
-
-      // Transition to ORDER_CREATED and set orderId
-      // State machine WRITE failures can be soft-failed because:
-      // 1. Order is already created (idempotent)
-      // 2. Checkout lock is held (prevents duplicates)
-      // 3. State was validated above (we know we're in valid state)
-      if (checkoutSessionId) {
-        try {
-          await this.checkoutStore.setOrder(checkoutSessionId, order.id);
-          // Determine current state for transition
-          const session =
-            await this.checkoutStore.getSession(checkoutSessionId);
-          const currentState = session?.state || CheckoutState.LOCKED;
-          await this.checkoutStore.transitionState(
-            checkoutSessionId,
-            currentState,
-            CheckoutState.ORDER_CREATED,
-          );
-        } catch (error) {
-          // Write failure - log but continue ONLY because:
-          // - Order creation is idempotent
-          // - Checkout lock prevents concurrent execution
-          // - State was validated before order creation
-          this.logger.error(
-            `State transition to ORDER_CREATED failed for session ${checkoutSessionId}, but order ${order.id} was created successfully`,
-            error,
-          );
-          // Continue - order is already created and guarded by idempotency + lock
-        }
-      }
-
-      // Record discount usage if discount was applied
-      if (discountCode && discountAmount > 0) {
-        try {
-          const discount = await this.discountsService.findByCode(discountCode);
-          await this.discountsService.recordUsage(
-            discount.id,
-            order.id,
-            userId,
-          );
-        } catch (error) {
-          // Log error but don't fail order creation
-          console.error("Failed to record discount usage:", error);
-        }
-      }
-
-      // Create order items
-      const orderItemsToInsert = cartItemsWithVariants.map((item) => {
-        const itemSubtotal = item.price * item.quantity;
-        const gstBreakdown = calculateGstBreakdown(
-          itemSubtotal,
-          item.productGstRate,
-          sellerState,
-          buyerState,
-        );
-
-        return {
-          orderId: order.id,
-          productVariantId: item.productVariantId,
-          quantity: item.quantity,
-          price: item.price,
-          gstRate: item.productGstRate,
-          gstAmount: gstBreakdown.totalGst,
-        };
-      });
-
-      const insertedOrderItems = await db
-        .insert(orderItems)
-        .values(orderItemsToInsert)
-        .returning();
-
-      // Release all cart reservations (individual reservation keys)
-      // This must happen before committing to avoid double-counting
-      await this.inventoryStore.releaseCartReservations(cart.id);
-
-      // Commit reservations (convert reserved → consumed)
-      // Note: releaseCartReservations already decremented aggregated reserved count
-      // So we just need to decrement available inventory
-      for (const item of cartItemsWithVariants) {
-        await this.inventoryStore.incrementInventory(
-          item.productVariantId,
-          -item.quantity,
+      // Store checkout metadata for order creation (will be used in webhook handler)
+      if (!checkoutSessionId) {
+        throw new ConflictException(
+          "Checkout session is required for payment intent creation",
         );
       }
 
-      // Clear cart
-      await this.cartsService.clearCart(userId, null);
-
-      // Calculate overall GST breakdown
-      const isIntraState = sellerState === buyerState;
-      const gstBreakdown = {
-        cgst: totalCgst,
-        sgst: totalSgst,
-        igst: totalIgst,
-        totalGst: totalGstAmount,
-        isIntraState,
+      const checkoutMetadata: CheckoutMetadata = {
+        userId,
+        shippingAddressId: createOrderDto.shippingAddressId,
+        billingAddressId: createOrderDto.billingAddressId,
+        shippingCost: createOrderDto.shippingCost || 0,
+        createdAt: new Date().toISOString(),
       };
 
-      // Build order response
-      orderResponse = {
-        ...order,
-        gstBreakdown,
-        items: insertedOrderItems,
-      } as OrderResponseDto;
-
-      // Store result in idempotency store (update the placeholder)
       try {
-        const idempotencyRedisKey = KEY_PATTERNS.IDEMPOTENCY(
-          operation,
-          idempotencyKey,
+        await this.checkoutStore.storeCheckoutMetadata(
+          checkoutSessionId,
+          checkoutMetadata,
         );
-        await this.idempotencyStore.set(idempotencyRedisKey, orderResponse);
+        this.logger.debug(
+          `Stored checkout metadata for sessionId=${checkoutSessionId}`,
+        );
       } catch (error) {
-        // Log but don't fail order creation if idempotency store fails
-        console.error("Failed to store idempotency result:", error);
+        this.logger.error(
+          `Failed to store checkout metadata for sessionId=${checkoutSessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+        throw new ConflictException(
+          "Failed to store checkout metadata - cannot proceed with payment intent creation",
+        );
       }
 
-      // Transition to COMPLETED state (order finalized)
-      // Write failure is acceptable here - order is already complete
-      if (checkoutSessionId) {
-        try {
-          await this.checkoutStore.transitionState(
-            checkoutSessionId,
-            CheckoutState.ORDER_CREATED,
-            CheckoutState.COMPLETED,
-          );
-        } catch (error) {
-          // Write failure - log but continue (order is already complete)
-          this.logger.error(
-            `State transition to COMPLETED failed for session ${checkoutSessionId}, but order ${orderResponse.id} is complete`,
-            error,
+      // Create payment intent (idempotent - will return existing if already created)
+      // This ensures payment is initiated before order creation
+      let paymentIntent: PaymentIntent;
+      try {
+        // Assert checkout state is LOCKED before creating payment intent
+        await this.checkoutStore.assertState(
+          checkoutSessionId,
+          CheckoutState.LOCKED,
+        );
+
+        // Create payment intent idempotently
+        // Amount is in rupees, convert to paise for Razorpay
+        const amountInPaise = Math.round(total * 100);
+        paymentIntent = await this.paymentsService.createPaymentIntent(
+          checkoutSessionId,
+          amountInPaise,
+          "INR",
+          undefined, // receipt will be generated from checkoutSessionId
+          {
+            order_number: `pending-${Date.now()}`, // Temporary, will be updated after order creation
+          },
+        );
+        if (!paymentIntent || !paymentIntent.paymentIntentId) {
+          throw new ConflictException(
+            "Payment intent creation returned invalid result",
           );
         }
+        this.logger.debug(
+          `Payment intent created: checkoutSessionId=${checkoutSessionId}, paymentIntentId=${paymentIntent.paymentIntentId}`,
+        );
+      } catch (error) {
+        // Payment intent creation failure - MUST BLOCK
+        // This is a critical failure - we cannot proceed without payment intent
+        this.logger.error(
+          `Failed to create payment intent for checkoutSessionId=${checkoutSessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+        throw new ConflictException(
+          "Failed to create payment intent - cannot proceed with checkout",
+        );
       }
 
-      // Release checkout lock on successful order creation
+      // Release checkout lock - order creation will happen in webhook handler
+      // Lock will be re-acquired in webhook handler before order creation
       if (lockAcquired && cartId) {
         try {
           await this.checkoutStore.releaseCheckoutLock(cartId);
         } catch (error) {
-          // Log but don't fail order creation if lock release fails
-          console.error("Failed to release checkout lock:", error);
+          this.logger.error("Failed to release checkout lock:", error);
         }
       }
 
-      return orderResponse;
+      // Return payment intent + session ID
+      return {
+        paymentIntent,
+        checkoutSessionId,
+        message: "Payment intent created. Redirect user to payment gateway.",
+      };
     } catch (error) {
       // Transition session to FAILED state on error
       if (checkoutSessionId) {
@@ -677,20 +487,448 @@ export class OrdersService {
         }
       }
 
-      try {
-        await this.idempotencyStore.deleteIdempotency(
-          operation,
-          idempotencyKey,
-        );
-      } catch (deleteError) {
-        // Log but don't fail
-        console.error(
-          "Failed to delete idempotency key on error:",
-          deleteError,
-        );
-      }
       throw error;
     }
+  }
+
+  /**
+   * Finalize order from payment confirmation (webhook-driven)
+   * Creates order only after payment is confirmed
+   * Uses payment-scoped idempotency to prevent duplicate orders
+   */
+  async finalizeOrderFromPayment(
+    checkoutSessionId: string,
+    paymentIntentId: string,
+    provider: string = "razorpay",
+  ): Promise<OrderResponseDto> {
+    // Check payment-scoped idempotency first
+    const existingOrderId = await this.checkoutStore.getOrderByPaymentIntent(
+      provider,
+      paymentIntentId,
+    );
+
+    if (existingOrderId) {
+      // Order already exists for this payment intent - return existing order
+      this.logger.debug(
+        `Order already exists for paymentIntentId=${paymentIntentId}, orderId=${existingOrderId}`,
+      );
+      // Fetch and return existing order
+      const [order] = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, existingOrderId))
+        .limit(1);
+
+      if (!order) {
+        throw new NotFoundException(
+          `Order ${existingOrderId} not found for payment intent ${paymentIntentId}`,
+        );
+      }
+
+      // Get order items
+      const orderItemsResult = await db
+        .select()
+        .from(orderItems)
+        .where(eq(orderItems.orderId, order.id));
+
+      // Calculate GST breakdown (reconstruct from order data)
+      const sellerState = this.getSellerState();
+      const [shippingAddress] = await db
+        .select()
+        .from(addresses)
+        .where(eq(addresses.id, order.shippingAddressId))
+        .limit(1);
+      const buyerState = shippingAddress?.state || sellerState;
+      const isIntraState = sellerState === buyerState;
+
+      // Reconstruct GST breakdown from order items
+      let totalCgst = 0;
+      let totalSgst = 0;
+      let totalIgst = 0;
+      for (const item of orderItemsResult) {
+        const itemSubtotal = item.price * item.quantity;
+        const gstBreakdown = calculateGstBreakdown(
+          itemSubtotal,
+          item.gstRate,
+          sellerState,
+          buyerState,
+        );
+        totalCgst += gstBreakdown.cgst;
+        totalSgst += gstBreakdown.sgst;
+        totalIgst += gstBreakdown.igst;
+      }
+
+      const gstBreakdown = {
+        cgst: totalCgst,
+        sgst: totalSgst,
+        igst: totalIgst,
+        totalGst: order.gstAmount,
+        isIntraState,
+      };
+
+      return {
+        ...order,
+        gstBreakdown,
+        items: orderItemsResult,
+      } as OrderResponseDto;
+    }
+
+    // Get checkout session and metadata
+    const session = await this.checkoutStore.getSession(checkoutSessionId);
+    if (!session) {
+      throw new NotFoundException(
+        `Checkout session ${checkoutSessionId} not found`,
+      );
+    }
+
+    // Validate state - must be PAYMENT_CONFIRMED
+    if (session.state !== CheckoutState.PAYMENT_CONFIRMED) {
+      throw new ConflictException(
+        `Cannot create order: checkout session is in state ${session.state}, expected PAYMENT_CONFIRMED`,
+      );
+    }
+
+    // Get checkout metadata
+    const metadata =
+      await this.checkoutStore.getCheckoutMetadata(checkoutSessionId);
+    if (!metadata) {
+      throw new NotFoundException(
+        `Checkout metadata not found for session ${checkoutSessionId}`,
+      );
+    }
+
+    // Get customer ID from userId
+    const customerId = await this.getCustomerId(metadata.userId);
+
+    // Get cart data
+    const cart = await this.cartsService.getCart(metadata.userId, null);
+    if (!cart || !cart.items || cart.items.length === 0) {
+      throw new BadRequestException("Cart is empty or not found");
+    }
+
+    // Get cart items with product variant details
+    const cartItemIds = cart.items.map((item) => item.id);
+    const cartItemsWithVariantsResult = await db
+      .select({
+        cartItemId: cartItems.id,
+        productVariantId: cartItems.productVariantId,
+        quantity: cartItems.quantity,
+        price: cartItems.price,
+        productGstRate: products.gstRate,
+      })
+      .from(cartItems)
+      .innerJoin(
+        productVariants,
+        eq(cartItems.productVariantId, productVariants.id),
+      )
+      .innerJoin(products, eq(productVariants.productId, products.id))
+      .where(inArray(cartItems.id, cartItemIds));
+
+    const cartItemsWithVariants = Array.isArray(cartItemsWithVariantsResult)
+      ? cartItemsWithVariantsResult
+      : [];
+
+    if (cartItemsWithVariants.length === 0) {
+      throw new BadRequestException("Cart items not found or invalid");
+    }
+
+    // Get shipping address for GST calculation
+    const [shippingAddress] = await db
+      .select()
+      .from(addresses)
+      .where(eq(addresses.id, metadata.shippingAddressId))
+      .limit(1);
+
+    if (!shippingAddress) {
+      throw new NotFoundException("Shipping address not found");
+    }
+
+    // Calculate totals
+    const sellerState = this.getSellerState();
+    const buyerState = shippingAddress.state;
+
+    let subtotal = 0;
+    let totalCgst = 0;
+    let totalSgst = 0;
+    let totalIgst = 0;
+
+    for (const item of cartItemsWithVariants) {
+      const itemSubtotal = item.price * item.quantity;
+      subtotal += itemSubtotal;
+
+      const gstBreakdown = calculateGstBreakdown(
+        itemSubtotal,
+        item.productGstRate,
+        sellerState,
+        buyerState,
+      );
+      totalCgst += gstBreakdown.cgst;
+      totalSgst += gstBreakdown.sgst;
+      totalIgst += gstBreakdown.igst;
+    }
+
+    const totalGstAmount = totalCgst + totalSgst + totalIgst;
+    const shippingCost = metadata.shippingCost;
+
+    // Get discount code from cart
+    const discountCode =
+      "discountCode" in cart ? (cart.discountCode as string | null) : null;
+    let discountAmount = 0;
+
+    // Calculate discount if discount code exists
+    if (discountCode) {
+      try {
+        const variantIds = cartItemsWithVariants.map(
+          (item) => item.productVariantId,
+        );
+        const variantProductMap = await db
+          .select({
+            variantId: productVariants.id,
+            productId: productVariants.productId,
+          })
+          .from(productVariants)
+          .where(inArray(productVariants.id, variantIds));
+
+        const productIds = Array.from(
+          new Set(variantProductMap.map((v) => v.productId)),
+        );
+
+        const productDetails = await db
+          .select({
+            productId: products.id,
+            categoryId: products.categoryId,
+          })
+          .from(products)
+          .where(inArray(products.id, productIds));
+
+        const variantToProduct = new Map(
+          variantProductMap.map((v) => [v.variantId, v.productId]),
+        );
+
+        const productMap = new Map(productDetails.map((p) => [p.productId, p]));
+
+        const cartItemsForDiscount = cartItemsWithVariants.map((item) => {
+          const productId = variantToProduct.get(item.productVariantId);
+          const product = productId ? productMap.get(productId) : null;
+          return {
+            productId: productId || "",
+            categoryId: product?.categoryId || null,
+            collectionIds: [],
+            tagIds: [],
+            price: item.price,
+            quantity: item.quantity,
+          };
+        });
+
+        const validation = await this.discountsService.validateDiscount(
+          discountCode,
+          metadata.userId,
+          subtotal,
+        );
+
+        if (validation.isValid && validation.discount) {
+          const discountResult = calculateDiscount(
+            validation.discount,
+            cartItemsForDiscount,
+          );
+          discountAmount = discountResult.discountAmount;
+        }
+      } catch (_error) {
+        discountAmount = 0;
+      }
+    }
+
+      const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
+      const total = subtotalAfterDiscount + totalGstAmount + shippingCost;
+
+      // Generate order number
+      const orderNumber = await this.generateOrderNumber();
+
+    // Create order atomically using payment-scoped idempotency
+    let orderId: string;
+    try {
+      // Create order in database
+      const [order] = await db
+        .insert(orders)
+        .values({
+          customerId,
+          orderNumber,
+          status: "pending",
+          subtotal,
+          gstAmount: totalGstAmount,
+          discountCode,
+          discountAmount,
+          shippingCost,
+          total,
+          shippingAddressId: metadata.shippingAddressId,
+          billingAddressId: metadata.billingAddressId,
+          razorpayOrderId: paymentIntentId,
+        })
+        .returning();
+
+      orderId = order.id;
+
+      // Atomically create payment-scoped idempotency mapping
+      // This ensures exactly one order per payment intent
+      const mappedOrderId = await this.checkoutStore.createOrderFromPayment(
+        provider,
+        paymentIntentId,
+        orderId,
+      );
+
+      // If mapping returned different order ID, another process created it concurrently
+      if (mappedOrderId !== orderId) {
+        this.logger.warn(
+          `Concurrent order creation detected: created ${orderId} but mapping returned ${mappedOrderId}. Using existing order.`,
+        );
+        // Delete the duplicate order we just created
+        await db.delete(orders).where(eq(orders.id, orderId));
+        // Return existing order
+        return this.finalizeOrderFromPayment(
+          checkoutSessionId,
+          paymentIntentId,
+          provider,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to create order for paymentIntentId=${paymentIntentId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
+    }
+
+    // Transition to ORDER_CREATED state
+    try {
+      await this.checkoutStore.setOrder(checkoutSessionId, orderId);
+      await this.checkoutStore.transitionState(
+        checkoutSessionId,
+        CheckoutState.PAYMENT_CONFIRMED,
+        CheckoutState.ORDER_CREATED,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to transition to ORDER_CREATED for session ${checkoutSessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      // Continue - order is created, state transition failure is non-critical
+    }
+
+      // Record discount usage if discount was applied
+      if (discountCode && discountAmount > 0) {
+        try {
+          const discount = await this.discountsService.findByCode(discountCode);
+          await this.discountsService.recordUsage(
+            discount.id,
+          orderId,
+          metadata.userId,
+          );
+        } catch (error) {
+        this.logger.error("Failed to record discount usage:", error);
+        }
+      }
+
+      // Create order items
+      const orderItemsToInsert = cartItemsWithVariants.map((item) => {
+        const itemSubtotal = item.price * item.quantity;
+        const gstBreakdown = calculateGstBreakdown(
+          itemSubtotal,
+          item.productGstRate,
+          sellerState,
+          buyerState,
+        );
+
+        return {
+        orderId,
+          productVariantId: item.productVariantId,
+          quantity: item.quantity,
+          price: item.price,
+          gstRate: item.productGstRate,
+          gstAmount: gstBreakdown.totalGst,
+        };
+      });
+
+      const insertedOrderItems = await db
+        .insert(orderItems)
+        .values(orderItemsToInsert)
+        .returning();
+
+    // Commit inventory (convert reserved → consumed)
+    // This happens AFTER payment confirmation
+    try {
+      // Release all cart reservations (individual reservation keys)
+      await this.inventoryStore.releaseCartReservations(cart.id);
+
+      // Commit reservations (decrement available inventory)
+      for (const item of cartItemsWithVariants) {
+        await this.inventoryStore.incrementInventory(
+          item.productVariantId,
+          -item.quantity,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to commit inventory for order ${orderId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      // Continue - inventory commit failure should be handled separately
+      // Order is already created, inventory can be reconciled later
+      }
+
+      // Clear cart
+    try {
+      await this.cartsService.clearCart(metadata.userId, null);
+    } catch (error) {
+      this.logger.error("Failed to clear cart:", error);
+    }
+
+      // Calculate overall GST breakdown
+      const isIntraState = sellerState === buyerState;
+      const gstBreakdown = {
+        cgst: totalCgst,
+        sgst: totalSgst,
+        igst: totalIgst,
+        totalGst: totalGstAmount,
+        isIntraState,
+      };
+
+      // Build order response
+    const orderResponse: OrderResponseDto = {
+      id: orderId,
+      customerId,
+      orderNumber,
+      status: "pending",
+      subtotal,
+      gstAmount: totalGstAmount,
+        gstBreakdown,
+      shippingCost,
+      total,
+      razorpayOrderId: paymentIntentId,
+      shippingProvider: null,
+      shippingAddressId: metadata.shippingAddressId,
+      billingAddressId: metadata.billingAddressId,
+      discountCode,
+      discountAmount,
+        items: insertedOrderItems,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      } as OrderResponseDto;
+
+    // Transition to COMPLETED state
+    try {
+      await this.checkoutStore.transitionState(
+        checkoutSessionId,
+        CheckoutState.ORDER_CREATED,
+        CheckoutState.COMPLETED,
+      );
+      } catch (error) {
+      this.logger.error(
+        `Failed to transition to COMPLETED for session ${checkoutSessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      }
+
+    this.logger.log(
+      `Order finalized: orderId=${orderId}, paymentIntentId=${paymentIntentId}, checkoutSessionId=${checkoutSessionId}`,
+        );
+
+    return orderResponse;
   }
 
   /**

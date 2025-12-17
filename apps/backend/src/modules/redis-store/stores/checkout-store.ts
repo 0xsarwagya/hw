@@ -14,6 +14,7 @@ import {
   validateTransition,
 } from "../constants/checkout-states";
 import { KEY_PATTERNS, TTL } from "../constants/key-patterns";
+import { CheckoutMetadata } from "../dto/checkout-metadata.dto";
 import { CheckoutSession } from "../dto/checkout-session.dto";
 import { PaymentIntent, PaymentIntentStatus } from "../dto/payment-intent.dto";
 import { ICheckoutStore } from "../interfaces/redis-store.interface";
@@ -25,6 +26,7 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
   private readonly client: Redis;
   private transitionStateScriptSha: string | null = null;
   private createPaymentIntentScriptSha: string | null = null;
+  private createOrderFromPaymentScriptSha: string | null = null;
 
   constructor(redisStoreService: RedisStoreService) {
     this.client = redisStoreService.getClient();
@@ -93,6 +95,43 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
       } catch (_altError) {
         this.logger.error(
           `Failed to load payment intent creation Lua script: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+        throw error;
+      }
+    }
+
+    // Load Lua script for atomic order creation from payment
+    try {
+      const scriptPath = join(
+        __dirname,
+        "../scripts/create-order-from-payment.lua",
+      );
+      const script = readFileSync(scriptPath, "utf-8");
+      this.createOrderFromPaymentScriptSha = (await this.client.script(
+        "LOAD",
+        script,
+      )) as string;
+      this.logger.log(
+        "Order creation from payment Lua script loaded successfully",
+      );
+    } catch (error) {
+      // Try alternative path for production builds
+      try {
+        const altScriptPath = join(
+          process.cwd(),
+          "apps/backend/src/modules/redis-store/scripts/create-order-from-payment.lua",
+        );
+        const script = readFileSync(altScriptPath, "utf-8");
+        this.createOrderFromPaymentScriptSha = (await this.client.script(
+          "LOAD",
+          script,
+        )) as string;
+        this.logger.log(
+          "Order creation from payment Lua script loaded successfully (alt path)",
+        );
+      } catch (_altError) {
+        this.logger.error(
+          `Failed to load order creation from payment Lua script: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
         throw error;
       }
@@ -546,6 +585,131 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
   }
 
   /**
+   * Store checkout metadata for order creation
+   * Metadata is stored separately from checkout session to preserve order creation data
+   */
+  private getCheckoutMetadataKey(sessionId: string): string {
+    return KEY_PATTERNS.CHECKOUT_METADATA(sessionId);
+  }
+
+  async storeCheckoutMetadata(
+    sessionId: string,
+    metadata: CheckoutMetadata,
+  ): Promise<void> {
+    const key = this.getCheckoutMetadataKey(sessionId);
+    try {
+      await this.set(key, metadata, TTL.CHECKOUT_METADATA);
+      this.logger.debug(`Stored checkout metadata for sessionId=${sessionId}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to store checkout metadata for sessionId=${sessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
+    }
+  }
+
+  async getCheckoutMetadata(
+    sessionId: string,
+  ): Promise<CheckoutMetadata | null> {
+    const key = this.getCheckoutMetadataKey(sessionId);
+    try {
+      return await this.get<CheckoutMetadata>(key);
+    } catch (error) {
+      this.logger.error(
+        `Failed to get checkout metadata for sessionId=${sessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get order ID by payment intent (payment-scoped idempotency)
+   * Returns the order ID if an order was already created for this payment intent
+   */
+  private getOrderByPaymentKey(
+    provider: string,
+    paymentIntentId: string,
+  ): string {
+    return KEY_PATTERNS.ORDER_BY_PAYMENT(provider, paymentIntentId);
+  }
+
+  /**
+   * Atomically create or get order ID for a payment intent
+   * Uses Lua script to ensure atomicity and prevent duplicate orders
+   * @param provider - Payment provider (e.g., "razorpay")
+   * @param paymentIntentId - Payment intent ID from provider
+   * @param orderId - Order ID to store if not exists
+   * @returns Existing order ID if found, or the provided orderId if created
+   */
+  async createOrderFromPayment(
+    provider: string,
+    paymentIntentId: string,
+    orderId: string,
+  ): Promise<string> {
+    if (!this.createOrderFromPaymentScriptSha) {
+      throw new Error(
+        "Order creation from payment Lua script not loaded. Check Redis connection and script file.",
+      );
+    }
+
+    const orderKey = this.getOrderByPaymentKey(provider, paymentIntentId);
+
+    try {
+      const result = (await this.client.evalsha(
+        this.createOrderFromPaymentScriptSha,
+        1, // Number of keys
+        orderKey,
+        orderId,
+        TTL.ORDER_BY_PAYMENT.toString(),
+      )) as [string, string, string];
+
+      const [status, action, existingOrderId] = result;
+
+      if (status === "ok" && action === "EXISTS") {
+        // Order already exists for this payment intent
+        this.logger.debug(
+          `Order already exists for paymentIntentId=${paymentIntentId}, orderId=${existingOrderId}`,
+        );
+        return existingOrderId;
+      } else if (status === "ok" && action === "CREATED") {
+        // Successfully created mapping
+        this.logger.debug(
+          `Created order mapping for paymentIntentId=${paymentIntentId}, orderId=${orderId}`,
+        );
+        return orderId;
+      } else {
+        throw new Error(`Failed to create order from payment: ${action}`);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to create order from payment for paymentIntentId=${paymentIntentId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get order ID by payment intent ID (reverse lookup)
+   * @param provider - Payment provider (e.g., "razorpay")
+   * @param paymentIntentId - Payment intent ID from provider
+   * @returns Order ID or null if not found
+   */
+  async getOrderByPaymentIntent(
+    provider: string,
+    paymentIntentId: string,
+  ): Promise<string | null> {
+    const orderKey = this.getOrderByPaymentKey(provider, paymentIntentId);
+    try {
+      return await this.get<string>(orderKey);
+    } catch (error) {
+      this.logger.error(
+        `Failed to get order by paymentIntentId=${paymentIntentId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
    * Create a new checkout session
    * Creates session in CREATED state
    */
@@ -603,6 +767,16 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
     if (!this.transitionStateScriptSha) {
       throw new Error(
         "State transition Lua script not loaded. Check Redis connection and script file.",
+      );
+    }
+
+    // Strict validation: ORDER_CREATED can only occur from PAYMENT_CONFIRMED
+    if (
+      to === CheckoutState.ORDER_CREATED &&
+      from !== CheckoutState.PAYMENT_CONFIRMED
+    ) {
+      throw new BadRequestException(
+        `Invalid state transition: Cannot transition to ORDER_CREATED from ${from}. ORDER_CREATED can only occur after PAYMENT_CONFIRMED.`,
       );
     }
 
@@ -936,7 +1110,7 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
   async extendSession(sessionId: string): Promise<void> {
     const key = this.getSessionKey(sessionId);
     try {
-      await this.client.expire(key, TTL.CHECKOUT_SESSION);
+        await this.client.expire(key, TTL.CHECKOUT_SESSION);
     } catch (error) {
       this.logger.error(
         `Failed to extend checkout session ${sessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,

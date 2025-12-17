@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, NotFoundException, forwardRef } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { db, eq, orders, payments } from "@vcecom/db";
 import Razorpay from "razorpay";
@@ -8,6 +8,7 @@ import {
   PaymentIntentStatus,
 } from "../redis-store/dto/payment-intent.dto";
 import { CheckoutStore } from "../redis-store/stores/checkout-store";
+import { OrdersService } from "../orders/orders.service";
 import { PaymentsService } from "./payments.service";
 import { RazorpayConfigService } from "./razorpay-config.service";
 import { CreateRazorpayOrderDto } from "./dto/create-razorpay-order.dto";
@@ -53,6 +54,7 @@ describe("PaymentsService", () => {
   let service: PaymentsService;
   let razorpayConfigService: RazorpayConfigService;
   let mockCheckoutStore: jest.Mocked<CheckoutStore>;
+  let mockOrdersService: jest.Mocked<OrdersService>;
   let mockRazorpayInstance: any;
 
   beforeEach(async () => {
@@ -89,6 +91,16 @@ describe("PaymentsService", () => {
             getPaymentIntentByPaymentId: jest.fn(),
             get: jest.fn(),
             getSession: jest.fn(),
+            acquireCheckoutLock: jest.fn(),
+            releaseCheckoutLock: jest.fn(),
+            getOrderByPaymentIntent: jest.fn(),
+          },
+        },
+        {
+          provide: OrdersService,
+          useValue: {
+            finalizeOrderFromPayment: jest.fn(),
+            findOne: jest.fn(), // Added for reconciliation service
           },
         },
       ],
@@ -98,6 +110,7 @@ describe("PaymentsService", () => {
     razorpayConfigService =
       module.get<RazorpayConfigService>(RazorpayConfigService);
     mockCheckoutStore = module.get<CheckoutStore>(CheckoutStore);
+    mockOrdersService = module.get<OrdersService>(OrdersService);
 
     // Mock initialize method
     jest
@@ -121,10 +134,14 @@ describe("PaymentsService", () => {
       process.env.RAZORPAY_KEY_ID = "rzp_test_1234567890";
       process.env.RAZORPAY_KEY_SECRET = "secret_1234567890";
 
-      const newService = new PaymentsService(
-        razorpayConfigService,
-        mockCheckoutStore,
-      );
+    const mockOrdersService = {
+      finalizeOrderFromPayment: jest.fn(),
+    };
+    const newService = new PaymentsService(
+      razorpayConfigService,
+      mockCheckoutStore,
+      mockOrdersService as any,
+    );
       newService.onModuleInit();
 
       expect(razorpayConfigService.initialize).toHaveBeenCalledWith({
@@ -138,10 +155,14 @@ describe("PaymentsService", () => {
       delete process.env.RAZORPAY_KEY_ID;
       process.env.RAZORPAY_KEY_SECRET = "secret_1234567890";
 
-      const newService = new PaymentsService(
-        razorpayConfigService,
-        mockCheckoutStore,
-      );
+    const mockOrdersService = {
+      finalizeOrderFromPayment: jest.fn(),
+    };
+    const newService = new PaymentsService(
+      razorpayConfigService,
+      mockCheckoutStore,
+      mockOrdersService as any,
+    );
       newService.onModuleInit();
 
       expect(razorpayConfigService.initialize).not.toHaveBeenCalled();
@@ -152,10 +173,14 @@ describe("PaymentsService", () => {
       process.env.RAZORPAY_KEY_ID = "rzp_test_1234567890";
       delete process.env.RAZORPAY_KEY_SECRET;
 
-      const newService = new PaymentsService(
-        razorpayConfigService,
-        mockCheckoutStore,
-      );
+    const mockOrdersService = {
+      finalizeOrderFromPayment: jest.fn(),
+    };
+    const newService = new PaymentsService(
+      razorpayConfigService,
+      mockCheckoutStore,
+      mockOrdersService as any,
+    );
       newService.onModuleInit();
 
       expect(razorpayConfigService.initialize).not.toHaveBeenCalled();
@@ -171,10 +196,14 @@ describe("PaymentsService", () => {
     });
 
     it("should throw error when Razorpay is not initialized", () => {
-      const newService = new PaymentsService(
-        razorpayConfigService,
-        mockCheckoutStore,
-      );
+    const mockOrdersService = {
+      finalizeOrderFromPayment: jest.fn(),
+    };
+    const newService = new PaymentsService(
+      razorpayConfigService,
+      mockCheckoutStore,
+      mockOrdersService as any,
+    );
       expect(() => newService.getRazorpayInstance()).toThrow(
         "Razorpay is not initialized. Please configure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables.",
       );
@@ -183,10 +212,14 @@ describe("PaymentsService", () => {
 
   describe("isInitialized", () => {
     it("should return false when not initialized", () => {
-      const newService = new PaymentsService(
-        razorpayConfigService,
-        mockCheckoutStore,
-      );
+    const mockOrdersService = {
+      finalizeOrderFromPayment: jest.fn(),
+    };
+    const newService = new PaymentsService(
+      razorpayConfigService,
+      mockCheckoutStore,
+      mockOrdersService as any,
+    );
       expect(newService.isInitialized()).toBe(false);
     });
 
@@ -197,10 +230,14 @@ describe("PaymentsService", () => {
 
   describe("initialize", () => {
     it("should initialize Razorpay with provided credentials", () => {
-      const newService = new PaymentsService(
-        razorpayConfigService,
-        mockCheckoutStore,
-      );
+    const mockOrdersService = {
+      finalizeOrderFromPayment: jest.fn(),
+    };
+    const newService = new PaymentsService(
+      razorpayConfigService,
+      mockCheckoutStore,
+      mockOrdersService as any,
+    );
       newService.initialize("rzp_test_1234567890", "secret_1234567890");
 
       expect(razorpayConfigService.initialize).toHaveBeenCalledWith({
@@ -814,23 +851,23 @@ describe("PaymentsService", () => {
       const selectOrderMock = {
         from: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockResolvedValue([mockOrder]),
+            limit: jest.fn().mockResolvedValue([mockOrder]),
       };
 
       const selectPaymentMock = {
         from: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockResolvedValue([mockPayment]),
+            limit: jest.fn().mockResolvedValue([mockPayment]),
       };
 
       const updatePaymentMock = {
         set: jest.fn().mockReturnThis(),
-        where: jest.fn().mockResolvedValue(undefined),
+          where: jest.fn().mockResolvedValue(undefined),
       };
 
       const updateOrderMock = {
         set: jest.fn().mockReturnThis(),
-        where: jest.fn().mockResolvedValue(undefined),
+          where: jest.fn().mockResolvedValue(undefined),
       };
 
       // Mock getRazorpayOrderDetails
@@ -1268,9 +1305,10 @@ describe("PaymentsService", () => {
         status: "pending",
       };
 
-      // Mock getRazorpayOrderDetails to return the order
+      // Mock getRazorpayOrderDetails to return the order (no checkout_session_id in notes)
       jest.spyOn(service, "getRazorpayOrderDetails").mockResolvedValue(mockRazorpayOrder);
-      // Reverse lookup
+      // Reverse lookup - getPaymentIntentByPaymentId must return truthy for code to proceed
+      mockCheckoutStore.getPaymentIntentByPaymentId.mockResolvedValue(mockPaymentIntent);
       mockCheckoutStore.get.mockResolvedValue(checkoutSessionId);
       mockCheckoutStore.getPaymentIntent.mockResolvedValue(mockPaymentIntent);
       mockCheckoutStore.updatePaymentIntentStatus.mockResolvedValue(
@@ -1422,6 +1460,286 @@ describe("PaymentsService", () => {
       expect(mockCheckoutStore.updatePaymentIntentStatus).toHaveBeenCalled();
       // Should not transition if already confirmed
       expect(mockCheckoutStore.transitionState).not.toHaveBeenCalled();
+    });
+
+    describe("Webhook-driven order creation", () => {
+      const checkoutSessionId = "cs-123";
+      const paymentIntentId = "order_123456";
+      const cartId = "cart-123";
+      const orderId = "order-123";
+
+      const mockSession = {
+        sessionId: checkoutSessionId,
+        cartId,
+        state: CheckoutState.PAYMENT_CONFIRMED,
+        paymentIntentId,
+        orderId: null,
+        updatedAt: new Date().toISOString(),
+      };
+
+      const mockPaymentEntity = {
+        id: "pay_test_123",
+        order_id: paymentIntentId,
+        amount: 10000,
+        method: "card",
+      };
+
+      const createWebhookEvent = (
+        eventName: string,
+      ): RazorpayWebhookEventDto => ({
+        entity: "event",
+        account_id: "acc_test_123",
+        event: eventName,
+        contains: ["payment"],
+        payload: {
+          payment: {
+            entity: mockPaymentEntity,
+          },
+          order: {
+            entity: {
+              id: paymentIntentId,
+              notes: {
+                checkout_session_id: checkoutSessionId,
+              },
+            },
+          },
+        },
+        created_at: 1678886500,
+      });
+
+      const generateSignature = (payload: any, secret: string) => {
+        const crypto = require("crypto");
+        const hmac = crypto.createHmac("sha256", secret);
+        hmac.update(JSON.stringify(payload));
+        return hmac.digest("hex");
+      };
+
+      beforeEach(() => {
+        process.env.RAZORPAY_WEBHOOK_SECRET = "test_webhook_secret";
+        // Mock Razorpay order fetch (used by getRazorpayOrderDetails)
+        mockRazorpayInstance.orders.fetch.mockResolvedValue({
+          id: paymentIntentId,
+          notes: {
+            checkout_session_id: checkoutSessionId,
+          },
+        });
+        // Mock getPaymentIntentByPaymentId for reverse lookup
+        mockCheckoutStore.getPaymentIntentByPaymentId.mockResolvedValue({
+          checkoutSessionId,
+          paymentIntentId,
+          status: PaymentIntentStatus.CONFIRMED,
+          paymentProvider: "razorpay",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        mockCheckoutStore.get.mockResolvedValue(checkoutSessionId);
+        mockCheckoutStore.getSession.mockResolvedValue(mockSession);
+        mockCheckoutStore.getPaymentIntent.mockResolvedValue({
+          checkoutSessionId,
+          paymentIntentId,
+          status: PaymentIntentStatus.CREATED,
+          paymentProvider: "razorpay",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        mockCheckoutStore.updatePaymentIntentStatus.mockResolvedValue(
+          undefined,
+        );
+        mockCheckoutStore.transitionState.mockResolvedValue(undefined);
+        mockCheckoutStore.acquireCheckoutLock.mockResolvedValue(true);
+        mockCheckoutStore.releaseCheckoutLock.mockResolvedValue(undefined);
+        mockCheckoutStore.getOrderByPaymentIntent.mockResolvedValue(null);
+        mockOrdersService.finalizeOrderFromPayment.mockResolvedValue({
+          id: orderId,
+          customerId: "customer-123",
+          orderNumber: "ORD-2025-000001",
+          status: "pending",
+          subtotal: 1000,
+          gstAmount: 180,
+          shippingCost: 50,
+          total: 1230,
+          razorpayOrderId: paymentIntentId,
+          shippingAddressId: "addr-123",
+          billingAddressId: "addr-456",
+          discountCode: null,
+          discountAmount: 0,
+          items: [],
+          gstBreakdown: {
+            cgst: 90,
+            sgst: 90,
+            igst: 0,
+            totalGst: 180,
+            isIntraState: true,
+          },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as any);
+
+        // Mock DB operations
+        (db.select as jest.Mock).mockReturnValue({
+          from: jest.fn().mockReturnValue({
+            where: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue([]),
+            }),
+          }),
+        });
+        (db.insert as jest.Mock).mockReturnValue({
+          values: jest.fn().mockResolvedValue(undefined),
+        });
+        (db.update as jest.Mock).mockReturnValue({
+          set: jest.fn().mockReturnValue({
+            where: jest.fn().mockResolvedValue(undefined),
+          }),
+        });
+      });
+
+      it("should create order when payment is captured (duplicate webhook - idempotent)", async () => {
+        const webhookEvent = createWebhookEvent("payment.captured");
+        const signature = generateSignature(webhookEvent, "test_webhook_secret");
+
+        // First call - creates order
+        await service.handleWebhook(webhookEvent, signature);
+
+        expect(mockCheckoutStore.acquireCheckoutLock).toHaveBeenCalledWith(
+          cartId,
+        );
+        expect(mockOrdersService.finalizeOrderFromPayment).toHaveBeenCalledWith(
+          checkoutSessionId,
+          paymentIntentId,
+          "razorpay",
+        );
+        expect(mockCheckoutStore.releaseCheckoutLock).toHaveBeenCalledWith(
+          cartId,
+        );
+
+        // Reset mocks but keep session state as COMPLETED
+        jest.clearAllMocks();
+        mockCheckoutStore.getSession.mockResolvedValue({
+          ...mockSession,
+          state: CheckoutState.COMPLETED,
+        });
+        mockCheckoutStore.getOrderByPaymentIntent.mockResolvedValue(orderId);
+
+        // Second call - should return existing order (idempotent)
+        await service.handleWebhook(webhookEvent, signature);
+
+        // Should check for existing order when session is COMPLETED
+        expect(mockCheckoutStore.getOrderByPaymentIntent).toHaveBeenCalledWith(
+          "razorpay",
+          paymentIntentId,
+        );
+        // Should not create order again
+        expect(mockOrdersService.finalizeOrderFromPayment).not.toHaveBeenCalled();
+      });
+
+      it("should handle concurrent webhook workers (lock already held)", async () => {
+        const webhookEvent = createWebhookEvent("payment.captured");
+        const signature = generateSignature(webhookEvent, "test_webhook_secret");
+
+        // Simulate lock already held
+        mockCheckoutStore.acquireCheckoutLock.mockResolvedValue(false);
+        mockCheckoutStore.getOrderByPaymentIntent.mockResolvedValue(orderId);
+
+        await service.handleWebhook(webhookEvent, signature);
+
+        // Should check for existing order when lock fails
+        expect(mockCheckoutStore.getOrderByPaymentIntent).toHaveBeenCalledWith(
+          "razorpay",
+          paymentIntentId,
+        );
+        // Should not create order if already exists
+        expect(mockOrdersService.finalizeOrderFromPayment).not.toHaveBeenCalled();
+      });
+
+      it("should handle late webhook events (checkout already COMPLETED)", async () => {
+        const webhookEvent = createWebhookEvent("payment.captured");
+        const signature = generateSignature(webhookEvent, "test_webhook_secret");
+
+        // Mock session in COMPLETED state
+        mockCheckoutStore.getSession.mockResolvedValue({
+          ...mockSession,
+          state: CheckoutState.COMPLETED,
+        });
+        mockCheckoutStore.getOrderByPaymentIntent.mockResolvedValue(orderId);
+
+        await service.handleWebhook(webhookEvent, signature);
+
+        // Should check for existing order
+        expect(mockCheckoutStore.getOrderByPaymentIntent).toHaveBeenCalled();
+        // Should not create order or acquire lock
+        expect(mockCheckoutStore.acquireCheckoutLock).not.toHaveBeenCalled();
+        expect(mockOrdersService.finalizeOrderFromPayment).not.toHaveBeenCalled();
+      });
+
+      it("should ignore webhook if checkout is FAILED", async () => {
+        const webhookEvent = createWebhookEvent("payment.captured");
+        const signature = generateSignature(webhookEvent, "test_webhook_secret");
+
+        mockCheckoutStore.getSession.mockResolvedValue({
+          ...mockSession,
+          state: CheckoutState.FAILED,
+        });
+
+        await service.handleWebhook(webhookEvent, signature);
+
+        // Should not process failed checkout
+        expect(mockCheckoutStore.acquireCheckoutLock).not.toHaveBeenCalled();
+        expect(mockOrdersService.finalizeOrderFromPayment).not.toHaveBeenCalled();
+      });
+
+      it("should handle Redis failures gracefully", async () => {
+        const webhookEvent = createWebhookEvent("payment.captured");
+        const signature = generateSignature(webhookEvent, "test_webhook_secret");
+
+        // Simulate Redis failure during lock acquisition
+        mockCheckoutStore.acquireCheckoutLock.mockRejectedValue(
+          new Error("Redis connection failed"),
+        );
+
+        await expect(
+          service.handleWebhook(webhookEvent, signature),
+        ).rejects.toThrow("Redis connection failed");
+      });
+
+      it("should handle order creation failure and release lock", async () => {
+        const webhookEvent = createWebhookEvent("payment.captured");
+        const signature = generateSignature(webhookEvent, "test_webhook_secret");
+
+        mockOrdersService.finalizeOrderFromPayment.mockRejectedValue(
+          new Error("Order creation failed"),
+        );
+
+        await expect(
+          service.handleWebhook(webhookEvent, signature),
+        ).rejects.toThrow("Order creation failed");
+
+        // Lock should be released even on failure
+        expect(mockCheckoutStore.releaseCheckoutLock).toHaveBeenCalledWith(
+          cartId,
+        );
+      });
+
+      it("should handle invalid state transition (ORDER_CREATED without PAYMENT_CONFIRMED)", async () => {
+        const webhookEvent = createWebhookEvent("payment.captured");
+        const signature = generateSignature(webhookEvent, "test_webhook_secret");
+
+        // Mock session in wrong state
+        mockCheckoutStore.getSession.mockResolvedValue({
+          ...mockSession,
+          state: CheckoutState.PAYMENT_PENDING,
+        });
+
+        // Should still try to create order (state will be validated in finalizeOrderFromPayment)
+        mockOrdersService.finalizeOrderFromPayment.mockRejectedValue(
+          new ConflictException(
+            "Cannot create order: checkout session is in state PAYMENT_PENDING, expected PAYMENT_CONFIRMED",
+          ),
+        );
+
+        await expect(
+          service.handleWebhook(webhookEvent, signature),
+        ).rejects.toThrow(ConflictException);
+      });
     });
   });
 });

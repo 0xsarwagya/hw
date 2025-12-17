@@ -2763,7 +2763,7 @@ describe("OrdersService", () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it.skip("should show 'none' when no valid transitions exist", async () => {
+    it("should show 'none' when no valid transitions exist", async () => {
       const cancelledOrder = { ...mockOrder, status: "cancelled" as const };
 
       const mockCustomerChain = {
@@ -3230,7 +3230,7 @@ describe("OrdersService", () => {
       expect(paymentFailedEvent).toBeDefined();
     });
 
-    it.skip("should handle label_generated shipment status", async () => {
+    it("should handle label_generated shipment status", async () => {
       const labelGeneratedShipment = {
         ...mockShipment,
         status: "label_generated" as const,
@@ -3282,7 +3282,7 @@ describe("OrdersService", () => {
       expect(labelGeneratedEvent).toBeDefined();
     });
 
-    it.skip("should handle picked_up shipment status", async () => {
+    it("should handle picked_up shipment status", async () => {
       const pickedUpShipment = {
         ...mockShipment,
         status: "picked_up" as const,
@@ -3334,7 +3334,7 @@ describe("OrdersService", () => {
       expect(pickedUpEvent).toBeDefined();
     });
 
-    it.skip("should handle out_for_delivery shipment status", async () => {
+    it("should handle out_for_delivery shipment status", async () => {
       const outForDeliveryShipment = {
         ...mockShipment,
         status: "out_for_delivery" as const,
@@ -3386,7 +3386,7 @@ describe("OrdersService", () => {
       expect(outForDeliveryEvent).toBeDefined();
     });
 
-    it.skip("should handle different shipment statuses", async () => {
+    it("should handle different shipment statuses", async () => {
       const deliveredShipment = {
         ...mockShipment,
         status: "delivered" as const,
@@ -3438,7 +3438,7 @@ describe("OrdersService", () => {
       expect(shipmentDeliveredEvent).toBeDefined();
     });
 
-    it.skip("should handle failed shipment status", async () => {
+    it("should handle failed shipment status", async () => {
       const failedShipment = {
         ...mockShipment,
         status: "failed" as const,
@@ -3490,7 +3490,7 @@ describe("OrdersService", () => {
       expect(failedEvent).toBeDefined();
     });
 
-    it.skip("should handle returned shipment status", async () => {
+    it("should handle returned shipment status", async () => {
       const returnedShipment = {
         ...mockShipment,
         status: "returned" as const,
@@ -3542,7 +3542,7 @@ describe("OrdersService", () => {
       expect(returnedEvent).toBeDefined();
     });
 
-    it.skip("should handle shipments without tracking numbers (label_generated)", async () => {
+    it("should handle shipments without tracking numbers (label_generated)", async () => {
       const shipmentWithoutTracking = {
         ...mockShipment,
         trackingNumber: null,
@@ -3596,7 +3596,7 @@ describe("OrdersService", () => {
       expect(labelGeneratedEvent?.description).not.toContain("tracking number");
     });
 
-    it.skip("should handle shipments without tracking numbers (picked_up)", async () => {
+    it("should handle shipments without tracking numbers (picked_up)", async () => {
       const shipmentWithoutTracking = {
         ...mockShipment,
         trackingNumber: null,
@@ -3650,7 +3650,7 @@ describe("OrdersService", () => {
       expect(pickedUpEvent?.description).not.toContain("Tracking:");
     });
 
-    it.skip("should handle shipments without tracking numbers (in_transit)", async () => {
+    it("should handle shipments without tracking numbers (in_transit)", async () => {
       const shipmentWithoutTracking = {
         ...mockShipment,
         trackingNumber: null,
@@ -3704,7 +3704,7 @@ describe("OrdersService", () => {
       expect(inTransitEvent?.description).not.toContain("Tracking:");
     });
 
-    it.skip("should handle shipments without tracking numbers (out_for_delivery)", async () => {
+    it("should handle shipments without tracking numbers (out_for_delivery)", async () => {
       const shipmentWithoutTracking = {
         ...mockShipment,
         trackingNumber: null,
@@ -3758,7 +3758,7 @@ describe("OrdersService", () => {
       expect(outForDeliveryEvent?.description).not.toContain("Tracking:");
     });
 
-    it.skip("should handle shipments without tracking numbers (delivered)", async () => {
+    it("should handle shipments without tracking numbers (delivered)", async () => {
       const shipmentWithoutTracking = {
         ...mockShipment,
         trackingNumber: null,
@@ -3812,7 +3812,7 @@ describe("OrdersService", () => {
       expect(deliveredEvent?.description).not.toContain("Tracking:");
     });
 
-    it.skip("should handle shipments without tracking numbers (failed)", async () => {
+    it("should handle shipments without tracking numbers (failed)", async () => {
       const shipmentWithoutTracking = {
         ...mockShipment,
         trackingNumber: null,
@@ -3866,7 +3866,7 @@ describe("OrdersService", () => {
       expect(failedEvent?.description).not.toContain("Tracking:");
     });
 
-    it.skip("should handle shipments without tracking numbers (returned)", async () => {
+    it("should handle shipments without tracking numbers (returned)", async () => {
       const shipmentWithoutTracking = {
         ...mockShipment,
         trackingNumber: null,
@@ -3920,7 +3920,7 @@ describe("OrdersService", () => {
       expect(returnedEvent?.description).not.toContain("Tracking:");
     });
 
-    it.skip("should handle payment status processing", async () => {
+    it("should handle payment status processing", async () => {
       const processingPayment = {
         ...mockPayment,
         status: "processing" as const,
@@ -3982,7 +3982,7 @@ describe("OrdersService", () => {
       expect(paymentFailedEvent).toBeUndefined();
     });
 
-    it.skip("should sort events by timestamp (newest first)", async () => {
+    it("should sort events by timestamp (newest first)", async () => {
       const mockCustomerChain = {
         from: jest.fn().mockReturnValue({
           where: jest.fn().mockReturnValue({
@@ -4105,7 +4105,7 @@ describe("OrdersService", () => {
       expect(statusChangedEvent?.newValue).toBe("shipped");
     });
 
-    it.skip("should not include status changed event when status is pending", async () => {
+    it("should not include status changed event when status is pending", async () => {
       const pendingOrder = {
         ...mockOrder,
         status: "pending" as const,
