@@ -9,6 +9,7 @@ import {
   desc,
   discountCategories,
   discountCollections,
+  discountExclusions,
   discountGetCategories,
   discountGetCollections,
   discountGetProducts,
@@ -16,6 +17,7 @@ import {
   discountProducts,
   discounts,
   discountTags,
+  discountTieredRules,
   discountUsages,
   eq,
 } from "@vcecom/db";
@@ -81,7 +83,12 @@ export class DiscountsService {
         value: createDiscountDto.value,
         minOrderAmount: createDiscountDto.minOrderAmount || null,
         maxDiscountAmount: createDiscountDto.maxDiscountAmount || null,
+        minQuantity: createDiscountDto.minQuantity || null,
+        customerGroupIds: createDiscountDto.customerGroupIds || null,
         scope: createDiscountDto.scope || "PRODUCT",
+        priority: createDiscountDto.priority || 1,
+        canStack: createDiscountDto.canStack ?? true,
+        mutuallyExclusive: createDiscountDto.mutuallyExclusive ?? false,
         startDate,
         endDate,
         isActive: createDiscountDto.isActive ?? true,
@@ -91,19 +98,45 @@ export class DiscountsService {
       })
       .returning();
 
-    // Create relationships for STANDARD type
-    if (createDiscountDto.type === DiscountType.STANDARD) {
+    // Create relationships for product-level discounts
+    if (
+      createDiscountDto.type === DiscountType.FIXED_AMOUNT ||
+      createDiscountDto.type === DiscountType.PERCENTAGE ||
+      createDiscountDto.type === DiscountType.TIERED
+    ) {
       await this.createStandardDiscountRelations(
         newDiscount.id,
         createDiscountDto,
       );
     }
 
-    // Create relationships for BUY_GET type
-    if (createDiscountDto.type === DiscountType.BUY_GET) {
+    // Create relationships for BUY_X_GET_Y type
+    if (createDiscountDto.type === DiscountType.BUY_X_GET_Y) {
       await this.createBuyGetDiscountRelations(
         newDiscount.id,
         createDiscountDto,
+      );
+    }
+
+    // Create tiered rules for TIERED type
+    if (
+      createDiscountDto.type === DiscountType.TIERED &&
+      createDiscountDto.tieredRules
+    ) {
+      await this.createTieredRules(
+        newDiscount.id,
+        createDiscountDto.tieredRules,
+      );
+    }
+
+    // Create exclusions
+    if (
+      createDiscountDto.excludedDiscountIds &&
+      createDiscountDto.excludedDiscountIds.length > 0
+    ) {
+      await this.createDiscountExclusions(
+        newDiscount.id,
+        createDiscountDto.excludedDiscountIds,
       );
     }
 
@@ -280,12 +313,16 @@ export class DiscountsService {
       await this.deleteDiscountRelations(id, updated.type);
 
       // Create new relationships
-      if (updated.type === DiscountType.STANDARD) {
+      if (
+        updated.type === DiscountType.FIXED_AMOUNT ||
+        updated.type === DiscountType.PERCENTAGE ||
+        updated.type === DiscountType.TIERED
+      ) {
         await this.createStandardDiscountRelations(
           id,
           updateDiscountDto as CreateDiscountDto,
         );
-      } else if (updated.type === DiscountType.BUY_GET) {
+      } else if (updated.type === DiscountType.BUY_X_GET_Y) {
         await this.createBuyGetDiscountRelations(
           id,
           updateDiscountDto as CreateDiscountDto,
@@ -596,8 +633,8 @@ export class DiscountsService {
       .delete(discountTags)
       .where(eq(discountTags.discountId, discountId));
 
-    // Delete BUY_GET relationships
-    if (type === DiscountType.BUY_GET) {
+    // Delete BUY_X_GET_Y relationships
+    if (type === DiscountType.BUY_X_GET_Y) {
       await db
         .delete(discountGetProducts)
         .where(eq(discountGetProducts.discountId, discountId));
@@ -674,6 +711,23 @@ export class DiscountsService {
       .from(discountGetTags)
       .where(eq(discountGetTags.discountId, discountId));
 
+    // Get tiered rules
+    const tieredRulesList = await db
+      .select({
+        minQuantity: discountTieredRules.minQuantity,
+        value: discountTieredRules.value,
+        valueType: discountTieredRules.valueType,
+      })
+      .from(discountTieredRules)
+      .where(eq(discountTieredRules.discountId, discountId))
+      .orderBy(discountTieredRules.minQuantity);
+
+    // Get exclusions
+    const exclusionsList = await db
+      .select({ excludedDiscountId: discountExclusions.excludedDiscountId })
+      .from(discountExclusions)
+      .where(eq(discountExclusions.discountId, discountId));
+
     return {
       id: discount.id,
       code: discount.code,
@@ -690,52 +744,99 @@ export class DiscountsService {
         ? Number(discount.maxDiscountAmount)
         : null,
       scope: discount.scope as DiscountScope,
+      priority: discount.priority,
+      canStack: discount.canStack,
+      mutuallyExclusive: discount.mutuallyExclusive,
+      minQuantity: discount.minQuantity ? Number(discount.minQuantity) : null,
+      customerGroupIds: discount.customerGroupIds,
       startDate: discount.startDate,
       endDate: discount.endDate,
       isActive: discount.isActive,
       usageLimit: discount.usageLimit,
       usageCount: discount.usageCount,
       perUserLimit: discount.perUserLimit,
-      // For BUY_GET type, productIds/categoryIds etc. are the "buy" items
-      // For STANDARD type, they are the items the discount applies to
+      // For BUY_X_GET_Y type, productIds/categoryIds etc. are the "buy" items
+      // For other types, they are the items the discount applies to
       productIds:
-        discount.type === DiscountType.BUY_GET
+        discount.type === DiscountType.BUY_X_GET_Y
           ? []
           : discountProductsList.map((p) => p.productId),
       categoryIds:
-        discount.type === DiscountType.BUY_GET
+        discount.type === DiscountType.BUY_X_GET_Y
           ? []
           : discountCategoriesList.map((c) => c.categoryId),
       collectionIds:
-        discount.type === DiscountType.BUY_GET
+        discount.type === DiscountType.BUY_X_GET_Y
           ? []
           : discountCollectionsList.map((c) => c.collectionId),
       tagIds:
-        discount.type === DiscountType.BUY_GET
+        discount.type === DiscountType.BUY_X_GET_Y
           ? []
           : discountTagsList.map((t) => t.tagId),
       buyProductIds:
-        discount.type === DiscountType.BUY_GET
+        discount.type === DiscountType.BUY_X_GET_Y
           ? discountProductsList.map((p) => p.productId)
           : [],
       buyCategoryIds:
-        discount.type === DiscountType.BUY_GET
+        discount.type === DiscountType.BUY_X_GET_Y
           ? discountCategoriesList.map((c) => c.categoryId)
           : [],
       buyCollectionIds:
-        discount.type === DiscountType.BUY_GET
+        discount.type === DiscountType.BUY_X_GET_Y
           ? discountCollectionsList.map((c) => c.collectionId)
           : [],
       buyTagIds:
-        discount.type === DiscountType.BUY_GET
+        discount.type === DiscountType.BUY_X_GET_Y
           ? discountTagsList.map((t) => t.tagId)
           : [],
       getProductIds: getProductsList.map((p) => p.productId),
       getCategoryIds: getCategoriesList.map((c) => c.categoryId),
       getCollectionIds: getCollectionsList.map((c) => c.collectionId),
       getTagIds: getTagsList.map((t) => t.tagId),
+      tieredRules: tieredRulesList.map((rule) => ({
+        minQuantity: Number(rule.minQuantity),
+        value: Number(rule.value),
+        valueType: rule.valueType as DiscountValueType,
+      })),
+      excludedDiscountIds: exclusionsList.map((e) => e.excludedDiscountId),
       createdAt: discount.createdAt,
       updatedAt: discount.updatedAt,
     };
+  }
+
+  /**
+   * Create tiered rules for a discount
+   */
+  private async createTieredRules(
+    discountId: string,
+    tieredRules: Array<{
+      minQuantity: number;
+      value: number;
+      valueType: string;
+    }>,
+  ): Promise<void> {
+    const rules = tieredRules.map((rule) => ({
+      discountId,
+      minQuantity: rule.minQuantity,
+      value: rule.value,
+      valueType: rule.valueType as DiscountValueType,
+    }));
+
+    await db.insert(discountTieredRules).values(rules);
+  }
+
+  /**
+   * Create discount exclusions
+   */
+  private async createDiscountExclusions(
+    discountId: string,
+    excludedDiscountIds: string[],
+  ): Promise<void> {
+    const exclusions = excludedDiscountIds.map((excludedId) => ({
+      discountId,
+      excludedDiscountId: excludedId,
+    }));
+
+    await db.insert(discountExclusions).values(exclusions);
   }
 }

@@ -36,7 +36,7 @@ export class DiscountResponseDto {
   @ApiProperty({
     description: "Discount type",
     enum: DiscountType,
-    example: DiscountType.STANDARD,
+    example: DiscountType.PERCENTAGE,
   })
   type: DiscountType;
 

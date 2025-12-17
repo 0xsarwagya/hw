@@ -19,13 +19,18 @@ describe("Discount Utils", () => {
     code: "SAVE20",
     name: "20% Off",
     description: "Get 20% off",
-    type: DiscountType.STANDARD,
+    type: DiscountType.PERCENTAGE,
     applicationType: "MANUAL",
     valueType: DiscountValueType.PERCENTAGE,
     value: 20,
     minOrderAmount: null,
     maxDiscountAmount: null,
     scope: DiscountScope.PRODUCT,
+    priority: 1,
+    canStack: true,
+    mutuallyExclusive: false,
+    minQuantity: null,
+    customerGroupIds: null,
     startDate: new Date("2025-01-01"),
     endDate: new Date("2025-12-31"),
     isActive: true,
@@ -44,6 +49,8 @@ describe("Discount Utils", () => {
     getCategoryIds: [],
     getCollectionIds: [],
     getTagIds: [],
+    tieredRules: [],
+    excludedDiscountIds: [],
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -348,7 +355,7 @@ describe("Discount Utils", () => {
     it("should call calculateBuyGetDiscount for BUY_GET type", () => {
       const buyGetDiscount: DiscountResponseDto = {
         ...mockStandardDiscount,
-        type: DiscountType.BUY_GET,
+        type: DiscountType.BUY_X_GET_Y,
         buyProductIds: ["product-1"],
         getProductIds: ["product-2"],
       };
