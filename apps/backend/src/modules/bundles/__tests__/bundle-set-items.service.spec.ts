@@ -49,37 +49,48 @@ describe("BundleSetItemsService", () => {
       const mockSet = { id: "set-1", bundleId: "bundle-1" };
       const mockVariant = { id: "variant-1" };
 
-      const mockSelect = jest
-        .fn()
-        .mockReturnValueOnce({
-          from: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([mockBundle]),
+      let callCount = 0;
+      (db.select as jest.Mock).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          // Bundle check
+          return {
+            from: jest.fn().mockReturnValue({
+              where: jest.fn().mockReturnValue({
+                limit: jest.fn().mockResolvedValue([mockBundle]),
+              }),
             }),
-          }),
-        })
-        .mockReturnValueOnce({
-          from: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([mockSet]),
+          };
+        }
+        if (callCount === 2) {
+          // Set check
+          return {
+            from: jest.fn().mockReturnValue({
+              where: jest.fn().mockReturnValue({
+                limit: jest.fn().mockResolvedValue([mockSet]),
+              }),
             }),
-          }),
-        })
-        .mockReturnValueOnce({
-          from: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([mockVariant]),
+          };
+        }
+        if (callCount === 3) {
+          // Variant check
+          return {
+            from: jest.fn().mockReturnValue({
+              where: jest.fn().mockReturnValue({
+                limit: jest.fn().mockResolvedValue([mockVariant]),
+              }),
             }),
-          }),
-        })
-        .mockReturnValueOnce({
+          };
+        }
+        // Duplicate check (should be empty)
+        return {
           from: jest.fn().mockReturnValue({
             where: jest.fn().mockReturnValue({
               limit: jest.fn().mockResolvedValue([]),
             }),
           }),
-        });
-      (db.select as jest.Mock).mockReturnValue(mockSelect());
+        };
+      });
 
       const mockInsert = jest.fn().mockReturnValue({
         returning: jest.fn().mockResolvedValue([
@@ -113,30 +124,48 @@ describe("BundleSetItemsService", () => {
       const mockBundle = { id: "bundle-1" };
       const mockSet = { id: "set-1", bundleId: "bundle-1" };
 
-      const mockSelect = jest
-        .fn()
-        .mockReturnValueOnce({
-          from: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([mockBundle]),
+      let callCount = 0;
+      (db.select as jest.Mock).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          // Bundle check
+          return {
+            from: jest.fn().mockReturnValue({
+              where: jest.fn().mockReturnValue({
+                limit: jest.fn().mockResolvedValue([mockBundle]),
+              }),
             }),
-          }),
-        })
-        .mockReturnValueOnce({
-          from: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([mockSet]),
+          };
+        }
+        if (callCount === 2) {
+          // Set check
+          return {
+            from: jest.fn().mockReturnValue({
+              where: jest.fn().mockReturnValue({
+                limit: jest.fn().mockResolvedValue([mockSet]),
+              }),
             }),
-          }),
-        })
-        .mockReturnValueOnce({
+          };
+        }
+        if (callCount === 3) {
+          // Variant check (not found)
+          return {
+            from: jest.fn().mockReturnValue({
+              where: jest.fn().mockReturnValue({
+                limit: jest.fn().mockResolvedValue([]),
+              }),
+            }),
+          };
+        }
+        // Should not reach here
+        return {
           from: jest.fn().mockReturnValue({
             where: jest.fn().mockReturnValue({
               limit: jest.fn().mockResolvedValue([]),
             }),
           }),
-        });
-      (db.select as jest.Mock).mockReturnValue(mockSelect());
+        };
+      });
 
       await expect(
         service.addItem("bundle-1", "set-1", { variantId: "invalid-variant" }),
@@ -239,35 +268,46 @@ describe("BundleSetItemsService", () => {
       const mockSet = { id: "set-1", bundleId: "bundle-1" };
       const mockItem = { id: "item-1", setId: "set-1" };
 
-      const mockSelect = jest
-        .fn()
-        .mockReturnValueOnce({
-          from: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([mockBundle]),
+      let callCount = 0;
+      (db.select as jest.Mock).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          // Bundle check
+          return {
+            from: jest.fn().mockReturnValue({
+              where: jest.fn().mockReturnValue({
+                limit: jest.fn().mockResolvedValue([mockBundle]),
+              }),
             }),
-          }),
-        })
-        .mockReturnValueOnce({
-          from: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([mockSet]),
+          };
+        }
+        if (callCount === 2) {
+          // Set check
+          return {
+            from: jest.fn().mockReturnValue({
+              where: jest.fn().mockReturnValue({
+                limit: jest.fn().mockResolvedValue([mockSet]),
+              }),
             }),
-          }),
-        })
-        .mockReturnValueOnce({
-          from: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([mockItem]),
+          };
+        }
+        if (callCount === 3) {
+          // Item check
+          return {
+            from: jest.fn().mockReturnValue({
+              where: jest.fn().mockReturnValue({
+                limit: jest.fn().mockResolvedValue([mockItem]),
+              }),
             }),
-          }),
-        })
-        .mockReturnValueOnce({
+          };
+        }
+        // Remaining items check (only 1 item - the one being removed)
+        return {
           from: jest.fn().mockReturnValue({
             where: jest.fn().mockResolvedValue([mockItem]),
           }),
-        });
-      (db.select as jest.Mock).mockReturnValue(mockSelect());
+        };
+      });
 
       await expect(
         service.removeItem("bundle-1", "set-1", "item-1"),

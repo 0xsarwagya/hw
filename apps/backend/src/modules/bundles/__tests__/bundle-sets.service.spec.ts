@@ -16,6 +16,9 @@ jest.mock("@vcecom/db", () => ({
   and: jest.fn(),
   bundles: {},
   bundleSets: {},
+  bundleSetItems: {
+    setId: "setId",
+  },
 }));
 
 describe("BundleSetsService", () => {
@@ -201,23 +204,28 @@ describe("BundleSetsService", () => {
 
     it("should throw NotFoundException if set not found", async () => {
       const mockBundle = { id: "bundle-1" };
-      const mockSelect = jest
-        .fn()
-        .mockReturnValueOnce({
-          from: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([mockBundle]),
+      let callCount = 0;
+      (db.select as jest.Mock).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          // Bundle check
+          return {
+            from: jest.fn().mockReturnValue({
+              where: jest.fn().mockReturnValue({
+                limit: jest.fn().mockResolvedValue([mockBundle]),
+              }),
             }),
-          }),
-        })
-        .mockReturnValueOnce({
+          };
+        }
+        // Set check (not found)
+        return {
           from: jest.fn().mockReturnValue({
             where: jest.fn().mockReturnValue({
               limit: jest.fn().mockResolvedValue([]),
             }),
           }),
-        });
-      (db.select as jest.Mock).mockReturnValue(mockSelect());
+        };
+      });
 
       await expect(
         service.update("bundle-1", "invalid-set", { title: "Updated" }),
@@ -261,12 +269,11 @@ describe("BundleSetsService", () => {
 
   describe("validateSetHasItems", () => {
     it("should throw BadRequestException if set has no items", async () => {
-      const mockSelect = jest.fn().mockReturnValue({
+      (db.select as jest.Mock).mockReturnValue({
         from: jest.fn().mockReturnValue({
           where: jest.fn().mockResolvedValue([]),
         }),
       });
-      (db.select as jest.Mock).mockReturnValue(mockSelect());
 
       await expect(
         service.validateSetHasItems("set-1"),

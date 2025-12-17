@@ -165,6 +165,8 @@ describe("BundleEligibilityService", () => {
         new NotFoundException("Bundle not found"),
       );
 
+      // The service should catch the error and return error result
+      // We need to await the promise to let it handle the rejection
       const result = await service.validateUserSelection("invalid-id", {});
 
       expect(result.isValid).toBe(false);

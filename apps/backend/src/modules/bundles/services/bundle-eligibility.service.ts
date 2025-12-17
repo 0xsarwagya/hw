@@ -1,4 +1,5 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { BundleResponseDto } from "../dto/bundle-response.dto";
 import { BundleDefinitionService } from "./bundle-definition.service";
 
 export interface UserBundleSelection {
@@ -34,7 +35,18 @@ export class BundleEligibilityService {
     const errors: string[] = [];
 
     // Get bundle with all sets and items
-    const bundle = await this.bundleDefinitionService.findOne(bundleId);
+    let bundle: BundleResponseDto | null = null;
+    try {
+      bundle = await this.bundleDefinitionService.findOne(bundleId);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return {
+          isValid: false,
+          errors: [`Bundle with ID ${bundleId} not found`],
+        };
+      }
+      throw error;
+    }
 
     if (!bundle) {
       return {
