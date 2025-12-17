@@ -169,7 +169,10 @@ export class ReviewsService {
     const totalPages = Math.ceil(total / limit);
 
     // Build order by clause
-    let orderByClause: typeof reviews.createdAt | ReturnType<typeof desc>;
+    let orderByClause:
+      | typeof reviews.createdAt
+      | typeof reviews.rating
+      | ReturnType<typeof desc>;
     switch (query.sort) {
       case ReviewSortOrder.OLDEST:
         orderByClause = reviews.createdAt;
