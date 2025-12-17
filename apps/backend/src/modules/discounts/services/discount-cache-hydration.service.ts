@@ -1,4 +1,10 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { DiscountRuleStore } from "../../redis-store/stores/discount-rule-store";
 import { EligibilityStore } from "../../redis-store/stores/eligibility-store";
 import { ProductMappingStore } from "../../redis-store/stores/product-mapping-store";
@@ -10,8 +16,6 @@ import { RulesetVersionManager } from "./ruleset-version-manager.service";
 
 @Injectable()
 export class DiscountCacheHydrationService implements OnModuleInit {
-  private readonly logger = new Logger(DiscountCacheHydrationService.name);
-
   constructor(
     private readonly discountsService: DiscountsService,
     private readonly discountRuleStore: DiscountRuleStore,
@@ -21,24 +25,33 @@ export class DiscountCacheHydrationService implements OnModuleInit {
     private readonly productMappingBuilder: ProductMappingBuilder,
     private readonly rulesetRebuilder: RulesetRebuilder,
     private readonly versionManager: RulesetVersionManager,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
   ) {}
 
   /**
    * Bootstrap Redis caches on app startup
    */
   async onModuleInit() {
-    this.logger.log("Starting discount cache hydration...");
+    this.logger.info(
+      createLogContext(this.contextService, "onModuleInit", {}),
+      "Starting discount cache hydration",
+    );
     try {
       await this.hydrate();
-      this.logger.log("Discount cache hydration completed successfully");
+      this.logger.info(
+        createLogContext(this.contextService, "onModuleInit", {}),
+        "Discount cache hydration completed successfully",
+      );
     } catch (error) {
       // Don't block startup if hydration fails
       this.logger.error(
-        `Failed to hydrate discount caches on startup: ${error instanceof Error ? error.message : "Unknown error"}`,
-        error instanceof Error ? error.stack : undefined,
+        createErrorContext(this.contextService, "onModuleInit", error),
+        "Failed to hydrate discount caches on startup",
       );
       this.logger.warn(
-        "Continuing startup without discount cache hydration. System will fallback to DB queries.",
+        createLogContext(this.contextService, "onModuleInit", {}),
+        "Continuing startup without discount cache hydration, system will fallback to DB queries",
       );
     }
   }
@@ -47,15 +60,22 @@ export class DiscountCacheHydrationService implements OnModuleInit {
    * Hydrate all discount caches
    */
   async hydrate(): Promise<void> {
-    this.logger.log("Hydrating discount caches...");
+    this.logger.info(
+      createLogContext(this.contextService, "hydrate", {}),
+      "Hydrating discount caches",
+    );
 
     // STEP 1: Initialize version if not exists
     try {
       const currentVersion = await this.versionManager.getCurrentVersion();
-      this.logger.log(`Current ruleset version: ${currentVersion}`);
+      this.logger.info(
+        createLogContext(this.contextService, "hydrate", { currentVersion }),
+        "Current ruleset version",
+      );
     } catch (_error) {
       // Version will be initialized by versionManager if not exists
       this.logger.debug(
+        createLogContext(this.contextService, "hydrate", {}),
         "Version not initialized yet, will be created on first bundle",
       );
     }
@@ -63,19 +83,29 @@ export class DiscountCacheHydrationService implements OnModuleInit {
     // STEP 2: Rebuild bundle from DB (this creates versioned bundle with eligibility + mappings)
     try {
       const newVersion = await this.rulesetRebuilder.rebuildFromDb();
-      this.logger.log(
-        `Successfully hydrated discount caches with bundle v${newVersion}`,
+      this.logger.info(
+        createLogContext(this.contextService, "hydrate", {
+          version: newVersion,
+        }),
+        "Successfully hydrated discount caches with bundle",
       );
     } catch (error) {
       this.logger.error(
-        `Failed to rebuild bundle during hydration: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "hydrate", error),
+        "Failed to rebuild bundle during hydration",
       );
       // Fallback to old method for backward compatibility
-      this.logger.warn("Falling back to legacy cache hydration method");
+      this.logger.warn(
+        createLogContext(this.contextService, "hydrate", {}),
+        "Falling back to legacy cache hydration method",
+      );
       await this.hydrateLegacy();
     }
 
-    this.logger.log("Discount cache hydration completed");
+    this.logger.info(
+      createLogContext(this.contextService, "hydrate", {}),
+      "Discount cache hydration completed",
+    );
   }
 
   /**
@@ -84,24 +114,41 @@ export class DiscountCacheHydrationService implements OnModuleInit {
   private async hydrateLegacy(): Promise<void> {
     // Load all active discounts from DB
     const allDiscounts = await this.loadActiveDiscountsFromDb();
-    this.logger.log(`Loaded ${allDiscounts.length} active discounts from DB`);
+    this.logger.info(
+      createLogContext(this.contextService, "hydrateLegacy", {
+        discountCount: allDiscounts.length,
+      }),
+      "Loaded active discounts from DB",
+    );
 
     if (allDiscounts.length === 0) {
-      this.logger.log("No active discounts found, skipping cache hydration");
+      this.logger.info(
+        createLogContext(this.contextService, "hydrateLegacy", {}),
+        "No active discounts found, skipping cache hydration",
+      );
       return;
     }
 
     // Store discount rules in Redis (legacy key)
     await this.discountRuleStore.storeRules(allDiscounts);
-    this.logger.log("Stored discount rules in Redis (legacy)");
+    this.logger.info(
+      createLogContext(this.contextService, "hydrateLegacy", {}),
+      "Stored discount rules in Redis (legacy)",
+    );
 
     // Build and store eligibility sets
     await this.hydrateEligibilitySets(allDiscounts);
-    this.logger.log("Hydrated eligibility sets");
+    this.logger.info(
+      createLogContext(this.contextService, "hydrateLegacy", {}),
+      "Hydrated eligibility sets",
+    );
 
     // Build and store product mappings
     await this.hydrateProductMappings(allDiscounts);
-    this.logger.log("Hydrated product mappings");
+    this.logger.info(
+      createLogContext(this.contextService, "hydrateLegacy", {}),
+      "Hydrated product mappings",
+    );
   }
 
   /**
@@ -138,7 +185,13 @@ export class DiscountCacheHydrationService implements OnModuleInit {
         await this.eligibilityStore.storeEligibility(discountId, variantIds);
       } catch (error) {
         this.logger.error(
-          `Failed to store eligibility for discount ${discountId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+          createErrorContext(
+            this.contextService,
+            "hydrateEligibilitySets",
+            error,
+            { discountId },
+          ),
+          "Failed to store eligibility for discount",
         );
         // Continue with other discounts
       }
@@ -176,7 +229,13 @@ export class DiscountCacheHydrationService implements OnModuleInit {
         await this.productMappingStore.storeProductMapping(productId, mapping);
       } catch (error) {
         this.logger.error(
-          `Failed to store product mapping for product ${productId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+          createErrorContext(
+            this.contextService,
+            "hydrateProductMappings",
+            error,
+            { productId },
+          ),
+          "Failed to store product mapping for product",
         );
         // Continue with other products
       }

@@ -2,6 +2,7 @@ import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { db, eq, cartItems, productVariants, products } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
 import { BundleCartItemMetadata } from "../dto/bundle-cart-item.dto";
 import { CartsService } from "../carts.service";
 import { BundleEligibilityService } from "../../bundles/services/bundle-eligibility.service";
@@ -158,6 +159,18 @@ describe("CartsService - Bundle Integration", () => {
             logger: {
               child: jest.fn().mockReturnThis(),
             },
+          },
+        },
+        {
+          provide: ContextService,
+          useValue: {
+            run: jest.fn((context, fn) => fn()),
+            get: jest.fn(),
+            getValue: jest.fn(),
+            setValue: jest.fn(),
+            getRequestId: jest.fn(),
+            getTraceId: jest.fn(),
+            getSpanId: jest.fn(),
           },
         },
       ],

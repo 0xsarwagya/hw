@@ -2,6 +2,7 @@ import { BadRequestException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { readFileSync } from "node:fs";
 import Redis from "ioredis";
+import { getCommonTestProviders } from "../../../common/testing/test-helpers";
 import { CheckoutState } from "../constants/checkout-states";
 import { KEY_PATTERNS, TTL } from "../constants/key-patterns";
 import { CheckoutSession } from "../dto/checkout-session.dto";
@@ -41,6 +42,7 @@ describe("CheckoutStore", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CheckoutStore,
+        ...getCommonTestProviders(),
         {
           provide: RedisStoreService,
           useValue: redisStoreService,

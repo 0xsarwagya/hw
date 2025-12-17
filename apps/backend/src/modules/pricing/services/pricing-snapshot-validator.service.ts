@@ -1,9 +1,10 @@
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
 import { PricingSnapshot } from "../engine/pricing-engine.types";
 
 @Injectable()
 export class PricingSnapshotValidator {
-  private readonly logger = new Logger(PricingSnapshotValidator.name);
+  constructor(private readonly logger: PinoLogger) {}
 
   /**
    * Validate pricing snapshot integrity

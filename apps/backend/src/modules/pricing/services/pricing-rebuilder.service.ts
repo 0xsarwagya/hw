@@ -1,5 +1,11 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { db, productVariants } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { PriceList } from "../engine/pricing-engine.types";
 import { PriceListService } from "./price-list.service";
 import { PricingBundleService } from "./pricing-bundle.service";
@@ -7,13 +13,14 @@ import { PricingVersionManager } from "./pricing-version-manager.service";
 
 @Injectable()
 export class PricingRebuilder {
-  private readonly logger = new Logger(PricingRebuilder.name);
   private isRebuilding = false;
 
   constructor(
     private readonly priceListService: PriceListService,
     private readonly bundleService: PricingBundleService,
     private readonly versionManager: PricingVersionManager,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
   ) {}
 
   /**
@@ -34,19 +41,30 @@ export class PricingRebuilder {
     priceLists?: PriceList[],
   ): Promise<number> {
     if (this.isRebuilding) {
-      this.logger.debug("Rebuild already in progress, skipping new request.");
+      this.logger.debug(
+        createLogContext(this.contextService, "rebuildAndActivate", {}),
+        "Rebuild already in progress, skipping new request",
+      );
       return this.versionManager.getCurrentVersion();
     }
 
     this.isRebuilding = true;
     try {
-      this.logger.log("Starting pricing ruleset rebuild and activation...");
+      this.logger.info(
+        createLogContext(this.contextService, "rebuildAndActivate", {}),
+        "Starting pricing ruleset rebuild and activation",
+      );
 
       const allVariants = variants || (await this.loadVariantsFromDb());
       const allPriceLists = priceLists || (await this.loadPriceListsFromDb());
 
       if (allVariants.length === 0) {
-        this.logger.warn("No variants found for rebuild.");
+        this.logger.warn(
+          createLogContext(this.contextService, "rebuildAndActivate", {
+            variantCount: 0,
+          }),
+          "No variants found for rebuild",
+        );
         return this.versionManager.getCurrentVersion();
       }
 
@@ -59,8 +77,11 @@ export class PricingRebuilder {
       // STEP 2: Atomically activate the new bundle by incrementing the global version
       await this.bundleService.activateBundle(newBundleMetadata.version);
 
-      this.logger.log(
-        `Successfully rebuilt and activated pricing bundle v${newBundleMetadata.version}`,
+      this.logger.info(
+        createLogContext(this.contextService, "rebuildAndActivate", {
+          version: newBundleMetadata.version,
+        }),
+        "Successfully rebuilt and activated pricing bundle",
       );
 
       // Trigger cleanup of old bundles (non-blocking)
@@ -69,7 +90,8 @@ export class PricingRebuilder {
       return newBundleMetadata.version;
     } catch (error) {
       this.logger.error(
-        `Failed to rebuild and activate pricing bundle: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "rebuildAndActivate", error),
+        "Failed to rebuild and activate pricing bundle",
       );
       return this.versionManager.getCurrentVersion();
     } finally {

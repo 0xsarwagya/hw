@@ -1,13 +1,15 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { and, db, eq, reviews, variantReviewAggregate } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
 import { ReviewAggregateDto } from "../dto/review-aggregate.dto";
 import { ReviewCacheService } from "./review-cache.service";
 
 @Injectable()
 export class ReviewAggregationService {
-  private readonly logger = new Logger(ReviewAggregationService.name);
-
-  constructor(private readonly cacheService: ReviewCacheService) {}
+  constructor(
+    private readonly cacheService: ReviewCacheService,
+    private readonly logger: PinoLogger,
+  ) {}
 
   /**
    * Recompute aggregate for a variant
@@ -130,7 +132,7 @@ export class ReviewAggregationService {
       updatedAt: new Date(),
     });
 
-    this.logger.log(
+    this.logger.info(
       `Aggregate recomputed for variant ${variantId}: ${averageRating.toFixed(2)} avg, ${reviewCount} reviews`,
     );
   }

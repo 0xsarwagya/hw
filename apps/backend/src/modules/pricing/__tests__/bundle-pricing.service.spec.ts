@@ -1,6 +1,7 @@
 import { NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { db, eq, inArray, productVariants, products } from "@vcecom/db";
+import { getCommonTestProviders } from "../../../common/testing/test-helpers";
 import { BundlePricingService } from "../services/bundle-pricing.service";
 import { BundleEligibilityService } from "../../bundles/services/bundle-eligibility.service";
 import { PriceListService } from "../services/price-list.service";
@@ -54,6 +55,7 @@ describe("BundlePricingService", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BundlePricingService,
+        ...getCommonTestProviders(),
         {
           provide: BundleEligibilityService,
           useValue: mockBundleEligibilityService,

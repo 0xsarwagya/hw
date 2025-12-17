@@ -1,10 +1,11 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleDestroy,
-  OnModuleInit,
-} from "@nestjs/common";
+import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { RedisStoreService } from "../../redis-store/redis-store.service";
 import { RulesetBundle, RulesetBundleService } from "./ruleset-bundle.service";
 import { RulesetVersionManager } from "./ruleset-version-manager.service";
@@ -15,7 +16,6 @@ import { RulesetVersionManager } from "./ruleset-version-manager.service";
  */
 @Injectable()
 export class HotReloadWatcher implements OnModuleInit, OnModuleDestroy {
-  private readonly logger = new Logger(HotReloadWatcher.name);
   private subscriber!: Redis;
 
   // In-memory cache
@@ -29,6 +29,8 @@ export class HotReloadWatcher implements OnModuleInit, OnModuleDestroy {
     redisStoreService: RedisStoreService,
     private readonly versionManager: RulesetVersionManager,
     private readonly bundleService: RulesetBundleService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
   ) {
     this.redisStoreService = redisStoreService;
   }
@@ -51,12 +53,16 @@ export class HotReloadWatcher implements OnModuleInit, OnModuleDestroy {
       await this.subscribeToVersionChanges();
 
       this.isInitialized = true;
-      this.logger.log(
-        `Hot reload watcher initialized (version ${this.currentVersion})`,
+      this.logger.info(
+        createLogContext(this.contextService, "onModuleInit", {
+          version: this.currentVersion,
+        }),
+        "Hot reload watcher initialized",
       );
     } catch (error) {
       this.logger.error(
-        `Failed to initialize hot reload watcher: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "onModuleInit", error),
+        "Failed to initialize hot reload watcher",
       );
       // Don't throw - allow fallback to Redis reads
     }
@@ -71,10 +77,14 @@ export class HotReloadWatcher implements OnModuleInit, OnModuleDestroy {
         this.versionManager.getVersionChannel(),
       );
       await this.subscriber.quit();
-      this.logger.log("Hot reload watcher destroyed");
+      this.logger.info(
+        createLogContext(this.contextService, "onModuleDestroy", {}),
+        "Hot reload watcher destroyed",
+      );
     } catch (error) {
       this.logger.error(
-        `Error destroying hot reload watcher: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "onModuleDestroy", error),
+        "Error destroying hot reload watcher",
       );
     }
   }
@@ -106,17 +116,24 @@ export class HotReloadWatcher implements OnModuleInit, OnModuleDestroy {
 
       if (!bundle) {
         this.logger.warn(
-          `Bundle not found for version ${version}, attempting to load current bundle`,
+          createLogContext(this.contextService, "refreshBundle", { version }),
+          "Bundle not found for version, attempting to load current bundle",
         );
         const currentBundle = await this.bundleService.getCurrentBundle();
         if (currentBundle) {
           this.currentBundle = currentBundle;
           this.currentVersion = currentBundle.version;
-          this.logger.log(
-            `Loaded bundle v${this.currentVersion} into memory cache`,
+          this.logger.info(
+            createLogContext(this.contextService, "refreshBundle", {
+              version: this.currentVersion,
+            }),
+            "Loaded bundle into memory cache",
           );
         } else {
-          this.logger.warn("No bundle available, cache will be empty");
+          this.logger.warn(
+            createLogContext(this.contextService, "refreshBundle", {}),
+            "No bundle available, cache will be empty",
+          );
         }
         return;
       }
@@ -126,14 +143,21 @@ export class HotReloadWatcher implements OnModuleInit, OnModuleDestroy {
         this.currentBundle = bundle;
         this.currentVersion = version;
         this.logger.debug(
-          `Refreshed bundle v${this.currentVersion} in memory cache`,
+          createLogContext(this.contextService, "refreshBundle", {
+            version: this.currentVersion,
+          }),
+          "Refreshed bundle in memory cache",
         );
       } else {
-        this.logger.error(`Invalid bundle v${version}, not caching`);
+        this.logger.error(
+          createLogContext(this.contextService, "refreshBundle", { version }),
+          "Invalid bundle, not caching",
+        );
       }
     } catch (error) {
       this.logger.error(
-        `Failed to refresh bundle: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "refreshBundle", error),
+        "Failed to refresh bundle",
       );
       // Don't throw - allow fallback to Redis reads
     }
@@ -152,22 +176,35 @@ export class HotReloadWatcher implements OnModuleInit, OnModuleDestroy {
             version: number;
             timestamp: string;
           };
-          this.logger.log(
-            `Received version change notification: v${data.version}`,
+          this.logger.info(
+            createLogContext(this.contextService, "subscribeToVersionChanges", {
+              version: data.version,
+            }),
+            "Received version change notification",
           );
 
           // Refresh bundle from Redis
           await this.refreshBundle();
         } catch (error) {
           this.logger.error(
-            `Failed to process version change notification: ${error instanceof Error ? error.message : "Unknown error"}`,
+            createErrorContext(
+              this.contextService,
+              "subscribeToVersionChanges",
+              error,
+            ),
+            "Failed to process version change notification",
           );
         }
       }
     });
 
     await this.subscriber.subscribe(channel);
-    this.logger.debug(`Subscribed to version change channel: ${channel}`);
+    this.logger.debug(
+      createLogContext(this.contextService, "subscribeToVersionChanges", {
+        channel,
+      }),
+      "Subscribed to version change channel",
+    );
   }
 
   /**
@@ -180,14 +217,22 @@ export class HotReloadWatcher implements OnModuleInit, OnModuleDestroy {
 
     if (bundle.version !== bundle.metadata.version) {
       this.logger.error(
-        `Bundle version mismatch: ${bundle.version} vs ${bundle.metadata.version}`,
+        createLogContext(this.contextService, "validateBundle", {
+          bundleVersion: bundle.version,
+          metadataVersion: bundle.metadata.version,
+        }),
+        "Bundle version mismatch",
       );
       return false;
     }
 
     if (bundle.rules.length !== bundle.metadata.rulesCount) {
       this.logger.error(
-        `Bundle rules count mismatch: ${bundle.rules.length} vs ${bundle.metadata.rulesCount}`,
+        createLogContext(this.contextService, "validateBundle", {
+          rulesLength: bundle.rules.length,
+          metadataRulesCount: bundle.metadata.rulesCount,
+        }),
+        "Bundle rules count mismatch",
       );
       return false;
     }

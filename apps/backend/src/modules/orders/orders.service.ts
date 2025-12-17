@@ -26,6 +26,11 @@ import {
   shipments,
 } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../common/logging/logging.helper";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { CartsService } from "../carts/carts.service";
 import { BundleCartItemMetadata } from "../carts/dto/bundle-cart-item.dto";
@@ -80,6 +85,7 @@ import {
 export class OrdersService {
   constructor(
     private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
     private readonly cartsService: CartsService,
     private readonly discountsService: DiscountsService,
     private readonly inventoryStore: InventoryStore,
@@ -114,7 +120,10 @@ export class OrdersService {
       return customer?.customerGroupId || null;
     } catch (error) {
       this.logger.error(
-        `Failed to get customer group: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "getCustomerGroupId", error, {
+          customerId,
+        }),
+        "Failed to get customer group",
       );
       return null;
     }
@@ -181,7 +190,13 @@ export class OrdersService {
       }));
     } catch (error) {
       this.logger.error(
-        `Failed to get price lists for customer group: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(
+          this.contextService,
+          "getPriceListsForCustomer",
+          error,
+          { customerGroupId },
+        ),
+        "Failed to get price lists for customer group",
       );
       return [];
     }
@@ -329,8 +344,13 @@ export class OrdersService {
       } catch (error) {
         // Write failure - log but continue (order creation can proceed without session)
         this.logger.warn(
-          `Failed to create checkout session for cart ${cart.id}, proceeding without state machine`,
-          error,
+          createErrorContext(
+            this.contextService,
+            "createCheckoutSession",
+            error,
+            { cartId: cart.id },
+          ),
+          "Failed to create checkout session, proceeding without state machine",
         );
         // checkoutSessionId remains null - order creation will skip state validation
       }
@@ -361,8 +381,13 @@ export class OrdersService {
         } catch (error) {
           // Write failure - log but continue (lock is held, preventing duplicates)
           this.logger.error(
-            `State transition to LOCKED failed for session ${checkoutSessionId}, but lock is acquired`,
-            error,
+            createErrorContext(
+              this.contextService,
+              "transitionToLocked",
+              error,
+              { checkoutSessionId },
+            ),
+            "State transition to LOCKED failed, but lock is acquired",
           );
         }
       }
@@ -706,7 +731,15 @@ export class OrdersService {
           );
         } catch (error) {
           // Log but don't throw - audit logging failure shouldn't break checkout
-          this.logger.warn("Failed to log pricing engine run:", error);
+          this.logger.warn(
+            createErrorContext(
+              this.contextService,
+              "logPricingEngineRun",
+              error,
+              { checkoutSessionId },
+            ),
+            "Failed to log pricing engine run",
+          );
         }
 
         // Log snapshot creation
@@ -717,11 +750,25 @@ export class OrdersService {
           );
         } catch (error) {
           // Log but don't throw - audit logging failure shouldn't break checkout
-          this.logger.warn("Failed to log pricing snapshot creation:", error);
+          this.logger.warn(
+            createErrorContext(
+              this.contextService,
+              "logPricingSnapshotCreation",
+              error,
+              { checkoutSessionId },
+            ),
+            "Failed to log pricing snapshot creation",
+          );
         }
       } catch (error) {
         // Pricing engine failed, continue with base prices
-        this.logger.error("Pricing engine error:", error);
+        this.logger.error(
+          createErrorContext(this.contextService, "runPricingEngine", error, {
+            checkoutSessionId,
+            cartId,
+          }),
+          "Pricing engine error",
+        );
         pricingSnapshot = null;
       }
 
@@ -929,12 +976,26 @@ export class OrdersService {
             );
           } catch (error) {
             // Log but don't throw - audit logging failure shouldn't break checkout
-            this.logger.warn("Failed to log discount engine run:", error);
+            this.logger.warn(
+              createErrorContext(
+                this.contextService,
+                "logDiscountEngineRun",
+                error,
+                { checkoutSessionId, cartId },
+              ),
+              "Failed to log discount engine run",
+            );
           }
         }
       } catch (error) {
         // Discount engine failed, continue without discount
-        this.logger.error("Discount engine error:", error);
+        this.logger.error(
+          createErrorContext(this.contextService, "runDiscountEngine", error, {
+            checkoutSessionId,
+            cartId,
+          }),
+          "Discount engine error",
+        );
         discountAmount = 0;
         discountSnapshot = null;
       }
@@ -969,11 +1030,20 @@ export class OrdersService {
           checkoutMetadata,
         );
         this.logger.debug(
-          `Stored checkout metadata for sessionId=${checkoutSessionId}`,
+          createLogContext(this.contextService, "storeCheckoutMetadata", {
+            checkoutSessionId,
+          }),
+          "Stored checkout metadata",
         );
       } catch (error) {
         this.logger.error(
-          `Failed to store checkout metadata for sessionId=${checkoutSessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+          createErrorContext(
+            this.contextService,
+            "storeCheckoutMetadata",
+            error,
+            { checkoutSessionId },
+          ),
+          "Failed to store checkout metadata",
         );
         throw new ConflictException(
           "Failed to store checkout metadata - cannot proceed with payment intent creation",
@@ -1008,7 +1078,13 @@ export class OrdersService {
           );
         }
         this.logger.debug(
-          `Payment intent created: checkoutSessionId=${checkoutSessionId}, paymentIntentId=${paymentIntent.paymentIntentId}`,
+          createLogContext(this.contextService, "createPaymentIntent", {
+            checkoutSessionId,
+            paymentIntentId: paymentIntent.paymentIntentId,
+            amount: amountInPaise,
+            currency: "INR",
+          }),
+          "Payment intent created",
         );
 
         // Detect drift during payment intent creation (discounts)
@@ -1029,8 +1105,13 @@ export class OrdersService {
           } catch (error) {
             // Log but don't throw - audit logging failure shouldn't break checkout
             this.logger.warn(
-              "Failed to log discount snapshot creation:",
-              error,
+              createErrorContext(
+                this.contextService,
+                "logDiscountSnapshotCreation",
+                error,
+                { checkoutSessionId },
+              ),
+              "Failed to log discount snapshot creation",
             );
           }
         }
@@ -1046,7 +1127,19 @@ export class OrdersService {
             );
           } catch (error) {
             // Drift detected - block checkout
-            this.logger.error("Pricing drift detected:", error);
+            this.logger.error(
+              createErrorContext(
+                this.contextService,
+                "detectPricingDrift",
+                error,
+                {
+                  checkoutSessionId,
+                  effectiveSubtotal,
+                  total: amountInPaise / 100,
+                },
+              ),
+              "Pricing drift detected",
+            );
             throw error;
           }
         }
@@ -1054,7 +1147,13 @@ export class OrdersService {
         // Payment intent creation failure - MUST BLOCK
         // This is a critical failure - we cannot proceed without payment intent
         this.logger.error(
-          `Failed to create payment intent for checkoutSessionId=${checkoutSessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+          createErrorContext(
+            this.contextService,
+            "createPaymentIntent",
+            error,
+            { checkoutSessionId, cartId, total },
+          ),
+          "Failed to create payment intent",
         );
         throw new ConflictException(
           "Failed to create payment intent - cannot proceed with checkout",
@@ -1067,7 +1166,15 @@ export class OrdersService {
         try {
           await this.checkoutStore.releaseCheckoutLock(cartId);
         } catch (error) {
-          this.logger.error("Failed to release checkout lock:", error);
+          this.logger.error(
+            createErrorContext(
+              this.contextService,
+              "releaseCheckoutLock",
+              error,
+              { cartId },
+            ),
+            "Failed to release checkout lock",
+          );
         }
       }
 
@@ -1085,7 +1192,12 @@ export class OrdersService {
         } catch (failError) {
           // Log but don't fail - failure handling should be best-effort
           this.logger.error(
-            { checkoutSessionId, error: failError },
+            createErrorContext(
+              this.contextService,
+              "failCheckoutSession",
+              failError,
+              { checkoutSessionId },
+            ),
             "Failed to fail checkout session",
           );
         }
@@ -1098,7 +1210,12 @@ export class OrdersService {
         } catch (lockError) {
           // Log but don't fail
           this.logger.error(
-            { cartId, error: lockError },
+            createErrorContext(
+              this.contextService,
+              "releaseCheckoutLockOnError",
+              lockError,
+              { cartId },
+            ),
             "Failed to release checkout lock on error",
           );
         }
@@ -1127,7 +1244,13 @@ export class OrdersService {
     if (existingOrderId) {
       // Order already exists for this payment intent - return existing order
       this.logger.debug(
-        `Order already exists for paymentIntentId=${paymentIntentId}, orderId=${existingOrderId}`,
+        createLogContext(this.contextService, "finalizeOrderFromPayment", {
+          paymentIntentId,
+          orderId: existingOrderId,
+          checkoutSessionId,
+          provider,
+        }),
+        "Order already exists for payment intent",
       );
       // Fetch and return existing order
       const [order] = await db
@@ -1340,7 +1463,11 @@ export class OrdersService {
         );
         if (!bundle) {
           this.logger.warn(
-            `Bundle v${metadata.discountSnapshot.rulesetVersion} not found for snapshot, but continuing with order creation`,
+            createLogContext(this.contextService, "validateDiscountSnapshot", {
+              checkoutSessionId,
+              rulesetVersion: metadata.discountSnapshot.rulesetVersion,
+            }),
+            "Bundle not found for snapshot, but continuing with order creation",
           );
         }
       }
@@ -1374,7 +1501,10 @@ export class OrdersService {
     } else {
       // Fallback: if snapshot not available, log warning but continue
       this.logger.warn(
-        `Discount snapshot not found in checkout metadata for session ${checkoutSessionId}, using 0 discount`,
+        createLogContext(this.contextService, "finalizeOrderFromPayment", {
+          checkoutSessionId,
+        }),
+        "Discount snapshot not found in checkout metadata, using 0 discount",
       );
     }
 
@@ -1387,7 +1517,13 @@ export class OrdersService {
         finalSubtotal = metadata.pricingSnapshot.totalEffectivePrice;
       } catch (_error) {
         this.logger.error(
-          `Pricing snapshot validation failed: ${_error instanceof Error ? _error.message : "Unknown error"}`,
+          createErrorContext(
+            this.contextService,
+            "validatePricingSnapshot",
+            _error,
+            { checkoutSessionId },
+          ),
+          "Pricing snapshot validation failed",
         );
         // Continue with base subtotal if snapshot invalid
       }
@@ -1434,7 +1570,15 @@ export class OrdersService {
           );
         } catch (error) {
           // Log but don't throw - audit logging failure shouldn't break order creation
-          this.logger.warn("Failed to log discount snapshot usage:", error);
+          this.logger.warn(
+            createErrorContext(
+              this.contextService,
+              "logDiscountSnapshotUsage",
+              error,
+              { checkoutSessionId, orderId },
+            ),
+            "Failed to log discount snapshot usage",
+          );
         }
       }
 
@@ -1448,7 +1592,15 @@ export class OrdersService {
           );
         } catch (error) {
           // Log but don't throw - audit logging failure shouldn't break order creation
-          this.logger.warn("Failed to log pricing snapshot usage:", error);
+          this.logger.warn(
+            createErrorContext(
+              this.contextService,
+              "logPricingSnapshotUsage",
+              error,
+              { checkoutSessionId, orderId },
+            ),
+            "Failed to log pricing snapshot usage",
+          );
         }
 
         // Detect drift during order creation
@@ -1469,13 +1621,28 @@ export class OrdersService {
             driftResult.severity === PricingDriftSeverity.CRITICAL
           ) {
             this.logger.error(
-              `Critical pricing drift detected: ${JSON.stringify(driftResult.details)}`,
+              createLogContext(this.contextService, "detectPricingDrift", {
+                checkoutSessionId,
+                orderId,
+                hasDrift: driftResult.hasDrift,
+                severity: driftResult.severity,
+                driftDetails: driftResult.details,
+              }),
+              "Critical pricing drift detected",
             );
             // Don't throw - order is already created, drift is logged
           }
         } catch (error) {
           // Log but don't throw - drift detection failure shouldn't break order creation
-          this.logger.warn("Failed to detect pricing drift:", error);
+          this.logger.warn(
+            createErrorContext(
+              this.contextService,
+              "detectPricingDrift",
+              error,
+              { checkoutSessionId, orderId },
+            ),
+            "Failed to detect pricing drift",
+          );
         }
       }
 
@@ -1490,7 +1657,14 @@ export class OrdersService {
       // If mapping returned different order ID, another process created it concurrently
       if (mappedOrderId !== orderId) {
         this.logger.warn(
-          `Concurrent order creation detected: created ${orderId} but mapping returned ${mappedOrderId}. Using existing order.`,
+          createLogContext(this.contextService, "finalizeOrderFromPayment", {
+            orderId,
+            mappedOrderId,
+            paymentIntentId,
+            checkoutSessionId,
+            provider,
+          }),
+          "Concurrent order creation detected, using existing order",
         );
         // Delete the duplicate order we just created
         await db.delete(orders).where(eq(orders.id, orderId));
@@ -1503,7 +1677,13 @@ export class OrdersService {
       }
     } catch (error) {
       this.logger.error(
-        `Failed to create order for paymentIntentId=${paymentIntentId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(
+          this.contextService,
+          "finalizeOrderFromPayment",
+          error,
+          { paymentIntentId, checkoutSessionId, provider },
+        ),
+        "Failed to create order",
       );
       throw error;
     }
@@ -1518,7 +1698,13 @@ export class OrdersService {
       );
     } catch (error) {
       this.logger.error(
-        `Failed to transition to ORDER_CREATED for session ${checkoutSessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(
+          this.contextService,
+          "transitionToOrderCreated",
+          error,
+          { checkoutSessionId, orderId },
+        ),
+        "Failed to transition to ORDER_CREATED",
       );
       // Continue - order is created, state transition failure is non-critical
     }
@@ -1533,7 +1719,15 @@ export class OrdersService {
           metadata.userId,
         );
       } catch (error) {
-        this.logger.error("Failed to record discount usage:", error);
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "recordDiscountUsage",
+            error,
+            { orderId, discountCode, customerId: metadata.userId },
+          ),
+          "Failed to record discount usage",
+        );
       }
     }
 
@@ -1754,7 +1948,10 @@ export class OrdersService {
       }
     } catch (error) {
       this.logger.error(
-        `Failed to commit inventory for order ${orderId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "commitInventory", error, {
+          orderId,
+        }),
+        "Failed to commit inventory for order",
       );
       // Continue - inventory commit failure should be handled separately
       // Order is already created, inventory can be reconciled later
@@ -1764,7 +1961,13 @@ export class OrdersService {
     try {
       await this.cartsService.clearCart(metadata.userId, null);
     } catch (error) {
-      this.logger.error("Failed to clear cart:", error);
+      this.logger.error(
+        createErrorContext(this.contextService, "clearCart", error, {
+          userId: metadata.userId,
+          orderId,
+        }),
+        "Failed to clear cart",
+      );
     }
 
     // Calculate overall GST breakdown
@@ -1808,16 +2011,23 @@ export class OrdersService {
       );
     } catch (error) {
       this.logger.error(
-        `Failed to transition to COMPLETED for session ${checkoutSessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(
+          this.contextService,
+          "transitionToCompleted",
+          error,
+          { checkoutSessionId, orderId },
+        ),
+        "Failed to transition to COMPLETED",
       );
     }
 
     this.logger.info(
-      {
+      createLogContext(this.contextService, "finalizeOrderFromPayment", {
         orderId,
         paymentIntentId,
         checkoutSessionId,
-      },
+        provider,
+      }),
       "Order finalized",
     );
 

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import {
   db,
   inArray,
@@ -8,12 +8,13 @@ import {
   productTags,
   productVariants,
 } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
 import { DiscountScope } from "../dto/create-discount.dto";
 import { DiscountResponseDto } from "../dto/discount-response.dto";
 
 @Injectable()
 export class DiscountEligibilityBuilder {
-  private readonly logger = new Logger(DiscountEligibilityBuilder.name);
+  constructor(private readonly logger: PinoLogger) {}
 
   /**
    * Build eligibility set for a discount (returns variant IDs)

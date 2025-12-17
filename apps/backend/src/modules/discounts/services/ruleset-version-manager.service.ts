@@ -1,5 +1,11 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { RedisStoreService } from "../../redis-store/redis-store.service";
 
 /**
@@ -8,13 +14,16 @@ import { RedisStoreService } from "../../redis-store/redis-store.service";
  */
 @Injectable()
 export class RulesetVersionManager implements OnModuleInit {
-  private readonly logger = new Logger(RulesetVersionManager.name);
   private client!: Redis;
   private readonly redisStoreService: RedisStoreService;
   private readonly versionKey = "discount-ruleset-version";
   private readonly versionChannel = "discount-ruleset-version";
 
-  constructor(redisStoreService: RedisStoreService) {
+  constructor(
+    redisStoreService: RedisStoreService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {
     this.redisStoreService = redisStoreService;
   }
 
@@ -46,7 +55,8 @@ export class RulesetVersionManager implements OnModuleInit {
       return parseInt(versionStr, 10);
     } catch (error) {
       this.logger.error(
-        `Failed to get ruleset version: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "getCurrentVersion", error),
+        "Failed to get ruleset version",
       );
       throw error;
     }
@@ -60,7 +70,12 @@ export class RulesetVersionManager implements OnModuleInit {
     this.ensureClientInitialized();
     try {
       const newVersion = await this.client.incr(this.versionKey);
-      this.logger.log(`Ruleset version incremented to ${newVersion}`);
+      this.logger.info(
+        createLogContext(this.contextService, "incrementVersion", {
+          version: newVersion,
+        }),
+        "Ruleset version incremented",
+      );
 
       // Publish version change notification
       await this.client.publish(
@@ -74,7 +89,8 @@ export class RulesetVersionManager implements OnModuleInit {
       return newVersion;
     } catch (error) {
       this.logger.error(
-        `Failed to increment ruleset version: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "incrementVersion", error),
+        "Failed to increment ruleset version",
       );
       throw error;
     }
@@ -87,7 +103,10 @@ export class RulesetVersionManager implements OnModuleInit {
     this.ensureClientInitialized();
     try {
       await this.client.set(this.versionKey, version.toString());
-      this.logger.log(`Ruleset version set to ${version}`);
+      this.logger.info(
+        createLogContext(this.contextService, "setVersion", { version }),
+        "Ruleset version set",
+      );
 
       // Publish version change notification
       await this.client.publish(
@@ -96,7 +115,10 @@ export class RulesetVersionManager implements OnModuleInit {
       );
     } catch (error) {
       this.logger.error(
-        `Failed to set ruleset version: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "setVersion", error, {
+          version,
+        }),
+        "Failed to set ruleset version",
       );
       throw error;
     }

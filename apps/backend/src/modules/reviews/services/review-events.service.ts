@@ -1,5 +1,6 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
+import { PinoLogger } from "nestjs-pino";
 import { RedisStoreService } from "../../redis-store/redis-store.service";
 
 /**
@@ -26,12 +27,14 @@ export interface ReviewEventPayload {
 
 @Injectable()
 export class ReviewEventsService implements OnModuleInit {
-  private readonly logger = new Logger(ReviewEventsService.name);
   private client!: Redis;
   private readonly redisStoreService: RedisStoreService;
   private readonly eventChannel = "review:events";
 
-  constructor(redisStoreService: RedisStoreService) {
+  constructor(
+    redisStoreService: RedisStoreService,
+    private readonly logger: PinoLogger,
+  ) {
     this.redisStoreService = redisStoreService;
   }
 

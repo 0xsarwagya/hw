@@ -1,5 +1,11 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { RedisStoreService } from "../../redis-store/redis-store.service";
 import { ReviewAggregateDto } from "../dto/review-aggregate.dto";
 import { ReviewQueryDto } from "../dto/review-query.dto";
@@ -21,11 +27,14 @@ const CACHE_TTL = 0; // No expiration
 
 @Injectable()
 export class ReviewCacheService implements OnModuleInit {
-  private readonly logger = new Logger(ReviewCacheService.name);
   private client!: Redis;
   private readonly redisStoreService: RedisStoreService;
 
-  constructor(redisStoreService: RedisStoreService) {
+  constructor(
+    redisStoreService: RedisStoreService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {
     this.redisStoreService = redisStoreService;
   }
 
@@ -72,7 +81,10 @@ export class ReviewCacheService implements OnModuleInit {
       return JSON.parse(cached);
     } catch (error) {
       this.logger.warn(
-        `Failed to get reviews from cache: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "getReviews", error, {
+          variantId,
+        }),
+        "Failed to get reviews from cache",
       );
       return null;
     }
@@ -165,10 +177,18 @@ export class ReviewCacheService implements OnModuleInit {
         await this.client.del(...keys);
       }
 
-      this.logger.debug(`Invalidated cache for variant ${variantId}`);
+      this.logger.debug(
+        createLogContext(this.contextService, "invalidateVariant", {
+          variantId,
+        }),
+        "Invalidated cache for variant",
+      );
     } catch (error) {
       this.logger.warn(
-        `Failed to invalidate cache for variant ${variantId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "invalidateVariant", error, {
+          variantId,
+        }),
+        "Failed to invalidate cache for variant",
       );
     }
   }

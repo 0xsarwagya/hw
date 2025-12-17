@@ -1,5 +1,11 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { RedisStoreService } from "../../redis-store/redis-store.service";
 import { PriceList } from "../engine/pricing-engine.types";
 import { computePriceListHash } from "../engine/pricing-hash.utils";
@@ -45,7 +51,6 @@ export interface PricingBundle {
 
 @Injectable()
 export class PricingBundleService implements OnModuleInit {
-  private readonly logger = new Logger(PricingBundleService.name);
   private client!: Redis;
   private readonly redisStoreService: RedisStoreService;
   private readonly bundleKeyPrefix = "pricing-ruleset-bundle:";
@@ -55,6 +60,8 @@ export class PricingBundleService implements OnModuleInit {
     redisStoreService: RedisStoreService,
     private readonly versionManager: PricingVersionManager,
     readonly customerGroupService: CustomerGroupService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
   ) {
     this.redisStoreService = redisStoreService;
   }
@@ -143,8 +150,15 @@ export class PricingBundleService implements OnModuleInit {
       await this.client.set(metadataKey, JSON.stringify(bundle.metadata));
 
       const buildTime = Date.now() - startTime;
-      this.logger.log(
-        `Built pricing bundle v${newVersion} in ${buildTime}ms (${variants.length} variants, ${priceLists.length} price lists, ${bundleSizeKB.toFixed(2)}KB)`,
+      this.logger.info(
+        createLogContext(this.contextService, "buildBundle", {
+          version: newVersion,
+          buildTimeMs: buildTime,
+          variantCount: variants.length,
+          priceListCount: priceLists.length,
+          bundleSizeKB: parseFloat(bundleSizeKB.toFixed(2)),
+        }),
+        "Built pricing bundle",
       );
 
       return bundle.metadata;
@@ -177,10 +191,16 @@ export class PricingBundleService implements OnModuleInit {
         );
       }
 
-      this.logger.log(`Activated pricing bundle v${version}`);
+      this.logger.info(
+        createLogContext(this.contextService, "activateBundle", { version }),
+        "Activated pricing bundle",
+      );
     } catch (error) {
       this.logger.error(
-        `Failed to activate bundle v${version}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "activateBundle", error, {
+          version,
+        }),
+        "Failed to activate bundle",
       );
       throw error;
     }
@@ -262,13 +282,22 @@ export class PricingBundleService implements OnModuleInit {
    */
   validateBundle(bundle: PricingBundle): boolean {
     if (!bundle || !bundle.variants || !bundle.priceLists || !bundle.metadata) {
-      this.logger.error("Bundle missing required fields");
+      this.logger.error(
+        createLogContext(this.contextService, "validateBundle", {
+          hasBundle: !!bundle,
+        }),
+        "Bundle missing required fields",
+      );
       return false;
     }
 
     if (bundle.version !== bundle.metadata.version) {
       this.logger.error(
-        `Bundle version mismatch: ${bundle.version} vs ${bundle.metadata.version}`,
+        createLogContext(this.contextService, "validateBundle", {
+          bundleVersion: bundle.version,
+          metadataVersion: bundle.metadata.version,
+        }),
+        "Bundle version mismatch",
       );
       return false;
     }
@@ -332,11 +361,17 @@ export class PricingBundleService implements OnModuleInit {
       }
 
       if (deleted > 0) {
-        this.logger.log(`Cleaned up ${deleted} old pricing bundle(s)`);
+        this.logger.info(
+          createLogContext(this.contextService, "cleanupOldBundles", {
+            deleted,
+          }),
+          "Cleaned up old pricing bundles",
+        );
       }
     } catch (error) {
       this.logger.error(
-        `Failed to cleanup old bundles: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "cleanupOldBundles", error),
+        "Failed to cleanup old bundles",
       );
     }
   }

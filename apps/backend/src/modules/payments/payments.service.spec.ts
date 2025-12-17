@@ -1,7 +1,10 @@
 import { BadRequestException, ConflictException, NotFoundException, forwardRef } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
+import { PinoLogger } from "nestjs-pino";
 import { db, eq, orders, payments } from "@vcecom/db";
 import Razorpay from "razorpay";
+import { ContextService } from "../../common/logging/context.service";
+import { getCommonTestProviders } from "../../common/testing/test-helpers";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
 import {
   PaymentIntent,
@@ -77,6 +80,7 @@ describe("PaymentsService", () => {
       providers: [
         PaymentsService,
         RazorpayConfigService,
+        ...getCommonTestProviders(),
         {
           provide: CheckoutStore,
           useValue: {

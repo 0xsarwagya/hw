@@ -2,7 +2,6 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
-  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import {
@@ -18,6 +17,9 @@ import {
   reviews,
   sql,
 } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import { createLogContext } from "../../../common/logging/logging.helper";
 import { CreateReviewDto } from "../dto/create-review.dto";
 import { ReviewQueryDto, ReviewSortOrder } from "../dto/review-query.dto";
 import { ReviewResponseDto } from "../dto/review-response.dto";
@@ -34,13 +36,13 @@ const REVIEW_EDIT_DAYS_LIMIT = 30; // Days after creation when editing is allowe
 
 @Injectable()
 export class ReviewsService {
-  private readonly logger = new Logger(ReviewsService.name);
-
   constructor(
     private readonly aggregationService: ReviewAggregationService,
     private readonly cacheService: ReviewCacheService,
     private readonly moderationService: ReviewModerationService,
     private readonly eventsService: ReviewEventsService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
   ) {}
 
   /**
@@ -99,7 +101,7 @@ export class ReviewsService {
       })
       .returning();
 
-    this.logger.log(
+    this.logger.info(
       `Review created: ${newReview.id} for variant ${createReviewDto.variantId}`,
     );
 
@@ -327,7 +329,14 @@ export class ReviewsService {
     // Invalidate cache
     await this.cacheService.invalidateVariant(updatedReview.variantId);
 
-    this.logger.log(`Review updated: ${reviewId}`);
+    this.logger.info(
+      createLogContext(this.contextService, "update", {
+        reviewId,
+        variantId: updatedReview.variantId,
+        customerId,
+      }),
+      "Review updated",
+    );
 
     return this.enrichReview(updatedReview, customerId);
   }
@@ -362,7 +371,14 @@ export class ReviewsService {
     // Invalidate cache
     await this.cacheService.invalidateVariant(review.variantId);
 
-    this.logger.log(`Review deleted: ${reviewId}`);
+    this.logger.info(
+      createLogContext(this.contextService, "remove", {
+        reviewId,
+        variantId: review.variantId,
+        customerId,
+      }),
+      "Review deleted",
+    );
   }
 
   /**
@@ -417,7 +433,15 @@ export class ReviewsService {
       metadata: { voterId: customerId },
     });
 
-    this.logger.log(`Review ${reviewId} marked helpful by ${customerId}`);
+    this.logger.info(
+      createLogContext(this.contextService, "markHelpful", {
+        reviewId,
+        variantId: review.variantId,
+        customerId,
+        voterId: customerId,
+      }),
+      "Review marked helpful",
+    );
 
     return { helpful: true };
   }
@@ -462,7 +486,15 @@ export class ReviewsService {
       metadata: { voterId: customerId },
     });
 
-    this.logger.log(`Helpful vote removed for review ${reviewId}`);
+    this.logger.info(
+      createLogContext(this.contextService, "removeHelpful", {
+        reviewId,
+        variantId: review.variantId,
+        customerId,
+        voterId: customerId,
+      }),
+      "Helpful vote removed for review",
+    );
 
     return { helpful: false };
   }

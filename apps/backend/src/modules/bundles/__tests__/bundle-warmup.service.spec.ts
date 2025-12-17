@@ -1,4 +1,5 @@
 import { Test, TestingModule } from "@nestjs/testing";
+import { getCommonTestProviders } from "../../../common/testing/test-helpers";
 import { BundleWarmupService } from "../services/bundle-warmup.service";
 import { BundleDefinitionService } from "../services/bundle-definition.service";
 import { BundleCacheStore } from "../../redis-store/stores/bundle-cache-store";
@@ -23,6 +24,7 @@ describe("BundleWarmupService", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BundleWarmupService,
+        ...getCommonTestProviders(),
         {
           provide: BundleDefinitionService,
           useValue: mockBundleDefinitionService,

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import {
   and,
   db,
@@ -10,6 +10,7 @@ import {
   shippingZoneRates,
   stateShippingRules,
 } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
 import {
   checkPincodeServiceability,
   getShippingRateByZone,
@@ -34,7 +35,7 @@ export interface ShippingRateRequest {
 
 @Injectable()
 export class ShippingRulesService {
-  private readonly logger = new Logger(ShippingRulesService.name);
+  constructor(private readonly logger: PinoLogger) {}
 
   /**
    * Check if a PIN code is serviceable and get shipping details

@@ -9,6 +9,7 @@ import {
   products,
 } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../common/logging/context.service";
 import { DiscountsService } from "../discounts/discounts.service";
 import { CartsService } from "./carts.service";
 
@@ -66,6 +67,18 @@ describe.skip("CartsService", () => {
             logger: {
               child: jest.fn().mockReturnThis(),
             },
+          },
+        },
+        {
+          provide: ContextService,
+          useValue: {
+            run: jest.fn((context, fn) => fn()),
+            get: jest.fn(),
+            getValue: jest.fn(),
+            setValue: jest.fn(),
+            getRequestId: jest.fn(),
+            getTraceId: jest.fn(),
+            getSpanId: jest.fn(),
           },
         },
       ],

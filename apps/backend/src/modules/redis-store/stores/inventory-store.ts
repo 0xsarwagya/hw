@@ -1,12 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  OnModuleInit,
-} from "@nestjs/common";
+import { BadRequestException, Injectable, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { KEY_PATTERNS, TTL } from "../constants/key-patterns";
 import { IInventoryStore } from "../interfaces/redis-store.interface";
 import { RedisStoreService } from "../redis-store.service";
@@ -43,12 +44,15 @@ function loadLuaScript(scriptName: string, currentDir: string): string {
 
 @Injectable()
 export class InventoryStore implements IInventoryStore, OnModuleInit {
-  private readonly logger = new Logger(InventoryStore.name);
   private client!: Redis;
   private readonly redisStoreService: RedisStoreService;
   private reserveInventoryScriptSha: string | null = null;
 
-  constructor(redisStoreService: RedisStoreService) {
+  constructor(
+    redisStoreService: RedisStoreService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {
     this.redisStoreService = redisStoreService;
   }
 
@@ -63,7 +67,12 @@ export class InventoryStore implements IInventoryStore, OnModuleInit {
         "LOAD",
         script,
       )) as string;
-      this.logger.log("Reservation Lua script loaded successfully");
+      this.logger.info(
+        createLogContext(this.contextService, "onModuleInit", {
+          scriptName: "reserve-inventory.lua",
+        }),
+        "Reservation Lua script loaded successfully",
+      );
     } catch (error) {
       this.logger.error(
         `Failed to load reservation Lua script: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -728,8 +737,15 @@ export class InventoryStore implements IInventoryStore, OnModuleInit {
         }
       }
 
-      this.logger.log(
-        `Reservation reconciliation complete: ${released} expired reservations released, ${inconsistencies} inconsistencies fixed, ${orphaned} orphaned reservations found, ${negativeCorrections} negative/impossible states corrected, ${processedVariants.size} variants processed`,
+      this.logger.info(
+        createLogContext(this.contextService, "reconcileReservations", {
+          released,
+          inconsistencies,
+          orphaned,
+          negativeCorrections,
+          variantsProcessed: processedVariants.size,
+        }),
+        "Reservation reconciliation complete",
       );
 
       return {
@@ -741,7 +757,8 @@ export class InventoryStore implements IInventoryStore, OnModuleInit {
       };
     } catch (error) {
       this.logger.error(
-        `Failed to reconcile reservations: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "reconcileReservations", error),
+        "Failed to reconcile reservations",
       );
       throw error;
     }

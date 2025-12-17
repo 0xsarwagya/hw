@@ -1,5 +1,8 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import { createLogContext } from "../../../common/logging/logging.helper";
 import { DiscountResponseDto } from "../../discounts/dto/discount-response.dto";
 import { KEY_PATTERNS } from "../constants/key-patterns";
 import { IDiscountRuleStore } from "../interfaces/redis-store.interface";
@@ -7,11 +10,14 @@ import { RedisStoreService } from "../redis-store.service";
 
 @Injectable()
 export class DiscountRuleStore implements IDiscountRuleStore, OnModuleInit {
-  private readonly logger = new Logger(DiscountRuleStore.name);
   private client!: Redis;
   private readonly redisStoreService: RedisStoreService;
 
-  constructor(redisStoreService: RedisStoreService) {
+  constructor(
+    redisStoreService: RedisStoreService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {
     this.redisStoreService = redisStoreService;
   }
 
@@ -101,7 +107,12 @@ export class DiscountRuleStore implements IDiscountRuleStore, OnModuleInit {
     const key = KEY_PATTERNS.DISCOUNT_RULES();
     try {
       await this.set(key, rules);
-      this.logger.debug(`Stored ${rules.length} discount rules in Redis`);
+      this.logger.debug(
+        createLogContext(this.contextService, "storeRules", {
+          rulesCount: rules.length,
+        }),
+        "Stored discount rules in Redis",
+      );
     } catch (error) {
       this.logger.error(
         `Failed to store discount rules: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -138,7 +149,10 @@ export class DiscountRuleStore implements IDiscountRuleStore, OnModuleInit {
     const key = KEY_PATTERNS.DISCOUNT_RULES();
     try {
       await this.delete(key);
-      this.logger.debug("Invalidated discount rules cache");
+      this.logger.debug(
+        createLogContext(this.contextService, "invalidateRules", {}),
+        "Invalidated discount rules cache",
+      );
     } catch (error) {
       this.logger.error(
         `Failed to invalidate discount rules cache: ${error instanceof Error ? error.message : "Unknown error"}`,

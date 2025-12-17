@@ -1,5 +1,8 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import { createLogContext } from "../../../common/logging/logging.helper";
 import { BundleResponseDto } from "../../bundles/dto/bundle-response.dto";
 import { BundleSetResponseDto } from "../../bundles/dto/bundle-set-response.dto";
 import { KEY_PATTERNS, TTL } from "../constants/key-patterns";
@@ -8,11 +11,14 @@ import { RedisStoreService } from "../redis-store.service";
 
 @Injectable()
 export class BundleCacheStore implements IBundleCacheStore, OnModuleInit {
-  private readonly logger = new Logger(BundleCacheStore.name);
   private client!: Redis;
   private readonly redisStoreService: RedisStoreService;
 
-  constructor(redisStoreService: RedisStoreService) {
+  constructor(
+    redisStoreService: RedisStoreService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {
     this.redisStoreService = redisStoreService;
   }
 
@@ -105,7 +111,12 @@ export class BundleCacheStore implements IBundleCacheStore, OnModuleInit {
     const key = KEY_PATTERNS.BUNDLE_DEFINITION(bundleId);
     try {
       await this.set(key, bundle, TTL.BUNDLE_DEFINITION);
-      this.logger.debug(`Stored bundle definition for bundle ${bundleId}`);
+      this.logger.debug(
+        createLogContext(this.contextService, "storeBundleDefinition", {
+          bundleId,
+        }),
+        "Stored bundle definition",
+      );
     } catch (error) {
       this.logger.error(
         `Failed to store bundle definition for bundle ${bundleId}: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -234,7 +245,12 @@ export class BundleCacheStore implements IBundleCacheStore, OnModuleInit {
       // Delete definition and sets keys
       if (keys.length > 0) {
         await this.client.del(...keys);
-        this.logger.debug(`Invalidated cache for bundle ${bundleId}`);
+        this.logger.debug(
+          createLogContext(this.contextService, "invalidateBundle", {
+            bundleId,
+          }),
+          "Invalidated cache for bundle",
+        );
       }
 
       // For eligibility keys, we'd need to know the setIds

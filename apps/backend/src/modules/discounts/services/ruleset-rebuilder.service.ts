@@ -1,4 +1,10 @@
-import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common";
+import { forwardRef, Inject, Injectable } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { DiscountsService } from "../discounts.service";
 import { DiscountResponseDto } from "../dto/discount-response.dto";
 import { DiscountProfiler } from "./discount-profiler.service";
@@ -10,13 +16,13 @@ import { RulesetBundleService } from "./ruleset-bundle.service";
  */
 @Injectable()
 export class RulesetRebuilder {
-  private readonly logger = new Logger(RulesetRebuilder.name);
-
   constructor(
     @Inject(forwardRef(() => DiscountsService))
     private readonly discountsService: DiscountsService,
     private readonly bundleService: RulesetBundleService,
     private readonly profiler: DiscountProfiler,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
   ) {}
 
   /**
@@ -33,7 +39,10 @@ export class RulesetRebuilder {
     try {
       // STEP 1: Build new bundle (does NOT increment version yet)
       this.logger.debug(
-        `Building new bundle from ${discounts.length} discounts`,
+        createLogContext(this.contextService, "rebuildAndActivate", {
+          discountCount: discounts.length,
+        }),
+        "Building new bundle",
       );
       const metadata = await this.bundleService.buildBundle(discounts);
 
@@ -50,14 +59,21 @@ export class RulesetRebuilder {
       this.profiler.recordHotReload(metadata.version);
 
       const rebuildTime = Date.now() - startTime;
-      this.logger.log(
-        `Successfully rebuilt and activated bundle v${metadata.version} in ${rebuildTime}ms`,
+      this.logger.info(
+        createLogContext(this.contextService, "rebuildAndActivate", {
+          version: metadata.version,
+          rebuildTimeMs: rebuildTime,
+        }),
+        "Successfully rebuilt and activated bundle",
       );
 
       return metadata.version;
     } catch (error) {
       this.logger.error(
-        `Failed to rebuild and activate bundle: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "rebuildAndActivate", error, {
+          discountCount: discounts.length,
+        }),
+        "Failed to rebuild and activate bundle",
       );
       // If bundle build failed, version was NOT incremented (old version stays active)
       // If activation failed, bundle exists but inactive (can retry activation)
@@ -92,11 +108,17 @@ export class RulesetRebuilder {
       });
 
       this.logger.debug(
-        `Loaded ${activeDiscounts.length} active discounts from DB`,
+        createLogContext(this.contextService, "rebuildFromDb", {
+          activeDiscountCount: activeDiscounts.length,
+        }),
+        "Loaded active discounts from DB",
       );
 
       if (activeDiscounts.length === 0) {
-        this.logger.warn("No active discounts found, skipping rebuild");
+        this.logger.warn(
+          createLogContext(this.contextService, "rebuildFromDb", {}),
+          "No active discounts found, skipping rebuild",
+        );
         // Still create an empty bundle to maintain version consistency
         return this.rebuildAndActivate([]);
       }
@@ -104,7 +126,8 @@ export class RulesetRebuilder {
       return this.rebuildAndActivate(activeDiscounts);
     } catch (error) {
       this.logger.error(
-        `Failed to rebuild bundle from DB: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "rebuildFromDb", error),
+        "Failed to rebuild bundle from DB",
       );
       throw error;
     }

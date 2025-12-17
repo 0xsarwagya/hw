@@ -1,5 +1,11 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { DiscountRuleStore } from "../../redis-store/stores/discount-rule-store";
 import { EligibilityStore } from "../../redis-store/stores/eligibility-store";
 import { ProductMappingStore } from "../../redis-store/stores/product-mapping-store";
@@ -10,8 +16,6 @@ import { RulesetRebuilder } from "./ruleset-rebuilder.service";
 
 @Injectable()
 export class DiscountWarmupWorker {
-  private readonly logger = new Logger(DiscountWarmupWorker.name);
-
   constructor(
     private readonly discountsService: DiscountsService,
     private readonly discountRuleStore: DiscountRuleStore,
@@ -20,6 +24,8 @@ export class DiscountWarmupWorker {
     private readonly productMappingStore: ProductMappingStore,
     private readonly productMappingBuilder: ProductMappingBuilder,
     private readonly rulesetRebuilder: RulesetRebuilder,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
   ) {}
 
   /**
@@ -27,15 +33,21 @@ export class DiscountWarmupWorker {
    */
   @Cron("*/10 * * * *")
   async handleWarmup() {
-    this.logger.debug("Starting discount cache warmup...");
+    this.logger.debug(
+      createLogContext(this.contextService, "handleWarmup", {}),
+      "Starting discount cache warmup",
+    );
     try {
       await this.warmup();
-      this.logger.debug("Discount cache warmup completed successfully");
+      this.logger.debug(
+        createLogContext(this.contextService, "handleWarmup", {}),
+        "Discount cache warmup completed successfully",
+      );
     } catch (error) {
       // Don't throw - log and continue
       this.logger.error(
-        `Failed to run discount cache warmup: ${error instanceof Error ? error.message : "Unknown error"}`,
-        error instanceof Error ? error.stack : undefined,
+        createErrorContext(this.contextService, "handleWarmup", error),
+        "Failed to run discount cache warmup",
       );
     }
   }
@@ -47,13 +59,22 @@ export class DiscountWarmupWorker {
     try {
       // Use ruleset rebuilder for atomic hot reload
       const newVersion = await this.rulesetRebuilder.rebuildFromDb();
-      this.logger.debug(`Refreshed discount ruleset to version ${newVersion}`);
+      this.logger.debug(
+        createLogContext(this.contextService, "warmup", {
+          version: newVersion,
+        }),
+        "Refreshed discount ruleset",
+      );
     } catch (error) {
       this.logger.error(
-        `Failed to rebuild ruleset during warmup: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "warmup", error),
+        "Failed to rebuild ruleset during warmup",
       );
       // Fallback to legacy warmup method
-      this.logger.warn("Falling back to legacy warmup method");
+      this.logger.warn(
+        createLogContext(this.contextService, "warmup", {}),
+        "Falling back to legacy warmup method",
+      );
       await this.warmupLegacy();
     }
   }
@@ -65,15 +86,26 @@ export class DiscountWarmupWorker {
     // STEP 1: Recompute active discount rules
     const allDiscounts = await this.loadActiveDiscountsFromDb();
     await this.discountRuleStore.storeRules(allDiscounts);
-    this.logger.debug(`Refreshed ${allDiscounts.length} discount rules`);
+    this.logger.debug(
+      createLogContext(this.contextService, "warmupLegacy", {
+        discountCount: allDiscounts.length,
+      }),
+      "Refreshed discount rules",
+    );
 
     // STEP 2: Rehydrate eligibility sets
     await this.refreshEligibilitySets(allDiscounts);
-    this.logger.debug("Refreshed eligibility sets");
+    this.logger.debug(
+      createLogContext(this.contextService, "warmupLegacy", {}),
+      "Refreshed eligibility sets",
+    );
 
     // STEP 3: Refresh product mappings
     await this.refreshProductMappings(allDiscounts);
-    this.logger.debug("Refreshed product mappings");
+    this.logger.debug(
+      createLogContext(this.contextService, "warmupLegacy", {}),
+      "Refreshed product mappings",
+    );
 
     // STEP 4: Detect stale or invalid rules (optional - log warnings)
     await this.detectStaleRules(allDiscounts);
@@ -112,7 +144,13 @@ export class DiscountWarmupWorker {
         await this.eligibilityStore.storeEligibility(discountId, variantIds);
       } catch (error) {
         this.logger.error(
-          `Failed to refresh eligibility for discount ${discountId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+          createErrorContext(
+            this.contextService,
+            "refreshEligibilitySets",
+            error,
+            { discountId },
+          ),
+          "Failed to refresh eligibility for discount",
         );
         // Continue with other discounts
       }
@@ -147,7 +185,13 @@ export class DiscountWarmupWorker {
         await this.productMappingStore.storeProductMapping(productId, mapping);
       } catch (error) {
         this.logger.error(
-          `Failed to refresh product mapping for product ${productId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+          createErrorContext(
+            this.contextService,
+            "refreshProductMappings",
+            error,
+            { productId },
+          ),
+          "Failed to refresh product mapping for product",
         );
         // Continue with other products
       }
@@ -170,7 +214,11 @@ export class DiscountWarmupWorker {
       const missing = discounts.filter((d) => !cachedIds.has(d.id));
       if (missing.length > 0) {
         this.logger.warn(
-          `Found ${missing.length} active discounts not in cache: ${missing.map((d) => d.code).join(", ")}`,
+          createLogContext(this.contextService, "detectStaleRules", {
+            missingCount: missing.length,
+            missingCodes: missing.map((d) => d.code),
+          }),
+          "Found active discounts not in cache",
         );
       }
 
@@ -178,7 +226,11 @@ export class DiscountWarmupWorker {
       const stale = cachedRules.filter((r) => !activeIds.has(r.id));
       if (stale.length > 0) {
         this.logger.warn(
-          `Found ${stale.length} stale discounts in cache: ${stale.map((r) => r.code).join(", ")}`,
+          createLogContext(this.contextService, "detectStaleRules", {
+            staleCount: stale.length,
+            staleCodes: stale.map((r) => r.code),
+          }),
+          "Found stale discounts in cache",
         );
       }
     }

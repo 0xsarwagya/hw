@@ -1,16 +1,19 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
+import { PinoLogger } from "nestjs-pino";
 import { KEY_PATTERNS, TTL } from "../constants/key-patterns";
 import { IIdempotencyStore } from "../interfaces/redis-store.interface";
 import { RedisStoreService } from "../redis-store.service";
 
 @Injectable()
 export class IdempotencyStore implements IIdempotencyStore, OnModuleInit {
-  private readonly logger = new Logger(IdempotencyStore.name);
   private client!: Redis;
   private readonly redisStoreService: RedisStoreService;
 
-  constructor(redisStoreService: RedisStoreService) {
+  constructor(
+    redisStoreService: RedisStoreService,
+    private readonly logger: PinoLogger,
+  ) {
     this.redisStoreService = redisStoreService;
   }
 

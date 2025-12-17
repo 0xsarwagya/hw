@@ -1,4 +1,5 @@
 import { Test, TestingModule } from "@nestjs/testing";
+import { getCommonTestProviders } from "../../common/testing/test-helpers";
 import { StorageService } from "./storage.service";
 import { MinioProvider } from "./providers/minio.provider";
 import { SupabaseProvider } from "./providers/supabase.provider";
@@ -53,7 +54,13 @@ describe("StorageService", () => {
     (AwsS3Provider as jest.Mock).mockImplementation(() => mockAwsS3Provider);
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [StorageService, MinioProvider, SupabaseProvider, AwsS3Provider],
+      providers: [
+        StorageService,
+        MinioProvider,
+        SupabaseProvider,
+        AwsS3Provider,
+        ...getCommonTestProviders(),
+      ],
     }).compile();
 
     service = module.get<StorageService>(StorageService);

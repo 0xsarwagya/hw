@@ -1,5 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import Redis from "ioredis";
+import { getCommonTestProviders } from "../../../common/testing/test-helpers";
 import { RedisStoreService } from "../redis-store.service";
 import { InventoryStore } from "./inventory-store";
 import { KEY_PATTERNS } from "../constants/key-patterns";
@@ -35,6 +36,7 @@ describe("InventoryStore", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         InventoryStore,
+        ...getCommonTestProviders(),
         {
           provide: RedisStoreService,
           useValue: redisStoreService,

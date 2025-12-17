@@ -1,4 +1,10 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { BundleCacheStore } from "../../redis-store/stores/bundle-cache-store";
 import { BundleDefinitionService } from "./bundle-definition.service";
 
@@ -7,11 +13,11 @@ import { BundleDefinitionService } from "./bundle-definition.service";
  */
 @Injectable()
 export class BundleWarmupService {
-  private readonly logger = new Logger(BundleWarmupService.name);
-
   constructor(
     private readonly bundleDefinitionService: BundleDefinitionService,
     private readonly bundleCacheStore: BundleCacheStore,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
   ) {}
 
   /**
@@ -19,7 +25,10 @@ export class BundleWarmupService {
    */
   async warmupBundle(bundleId: string): Promise<void> {
     try {
-      this.logger.log(`Warming up bundle cache for bundle ${bundleId}`);
+      this.logger.info(
+        createLogContext(this.contextService, "warmupBundle", { bundleId }),
+        "Warming up bundle cache",
+      );
 
       // Get bundle definition with all sets and items
       const bundle = await this.bundleDefinitionService.findOne(bundleId);
@@ -40,12 +49,19 @@ export class BundleWarmupService {
         );
       }
 
-      this.logger.log(
-        `Successfully warmed up cache for bundle ${bundleId} with ${bundle.sets.length} sets`,
+      this.logger.info(
+        createLogContext(this.contextService, "warmupBundle", {
+          bundleId,
+          setsCount: bundle.sets.length,
+        }),
+        "Successfully warmed up cache for bundle",
       );
     } catch (error) {
       this.logger.error(
-        `Failed to warm up bundle cache for ${bundleId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "warmupBundle", error, {
+          bundleId,
+        }),
+        "Failed to warm up bundle cache",
       );
       throw error;
     }
@@ -56,14 +72,20 @@ export class BundleWarmupService {
    */
   async warmupAllBundles(): Promise<void> {
     try {
-      this.logger.log("Warming up cache for all active bundles");
+      this.logger.info(
+        createLogContext(this.contextService, "warmupAllBundles", {}),
+        "Warming up cache for all active bundles",
+      );
 
       // Get all active bundles
       const bundles = await this.bundleDefinitionService.findAll();
       const activeBundles = bundles.data.filter((b) => b.isActive);
 
-      this.logger.log(
-        `Found ${activeBundles.length} active bundles to warm up`,
+      this.logger.info(
+        createLogContext(this.contextService, "warmupAllBundles", {
+          activeBundleCount: activeBundles.length,
+        }),
+        "Found active bundles to warm up",
       );
 
       // Warm up each bundle
@@ -72,13 +94,16 @@ export class BundleWarmupService {
           await this.warmupBundle(bundle.id);
         } catch (error) {
           this.logger.warn(
-            `Failed to warm up bundle ${bundle.id}, continuing with others: ${error instanceof Error ? error.message : "Unknown error"}`,
+            createErrorContext(this.contextService, "warmupAllBundles", error, {
+              bundleId: bundle.id,
+            }),
+            "Failed to warm up bundle, continuing with others",
           );
           // Continue with other bundles even if one fails
         }
       }
 
-      this.logger.log(
+      this.logger.info(
         `Completed warming up cache for ${activeBundles.length} bundles`,
       );
     } catch (error) {

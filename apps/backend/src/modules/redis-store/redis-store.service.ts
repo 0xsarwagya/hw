@@ -1,15 +1,20 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleDestroy,
-  OnModuleInit,
-} from "@nestjs/common";
+import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import Redis, { RedisOptions } from "ioredis";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../common/logging/logging.helper";
 
 @Injectable()
 export class RedisStoreService implements OnModuleInit, OnModuleDestroy {
-  private readonly logger = new Logger(RedisStoreService.name);
   private client: Redis | null = null;
+
+  constructor(
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {}
 
   /**
    * Get Redis client instance
@@ -32,7 +37,11 @@ export class RedisStoreService implements OnModuleInit, OnModuleDestroy {
         retryStrategy: (times) => {
           const delay = Math.min(times * 50, 2000);
           this.logger.warn(
-            `Redis connection retry attempt ${times}, waiting ${delay}ms`,
+            createLogContext(this.contextService, "redisRetry", {
+              attempt: times,
+              delayMs: delay,
+            }),
+            "Redis connection retry attempt",
           );
           return delay;
         },
@@ -44,32 +53,54 @@ export class RedisStoreService implements OnModuleInit, OnModuleDestroy {
       this.client = new Redis(redisUrl, options);
 
       this.client.on("connect", () => {
-        this.logger.log("Redis client connecting...");
+        this.logger.info(
+          createLogContext(this.contextService, "redisConnect", {}),
+          "Redis client connecting",
+        );
       });
 
       this.client.on("ready", () => {
-        this.logger.log("Redis client ready");
+        this.logger.info(
+          createLogContext(this.contextService, "redisReady", {}),
+          "Redis client ready",
+        );
       });
 
       this.client.on("error", (error) => {
-        this.logger.error(`Redis client error: ${error.message}`, error.stack);
+        this.logger.error(
+          createErrorContext(this.contextService, "redisError", error),
+          "Redis client error",
+        );
       });
 
       this.client.on("close", () => {
-        this.logger.warn("Redis client connection closed");
+        this.logger.warn(
+          createLogContext(this.contextService, "redisClose", {}),
+          "Redis client connection closed",
+        );
       });
 
       this.client.on("reconnecting", () => {
-        this.logger.log("Redis client reconnecting...");
+        this.logger.info(
+          createLogContext(this.contextService, "redisReconnecting", {}),
+          "Redis client reconnecting",
+        );
       });
 
       // Wait for connection to be ready
       await this.client.ping();
-      this.logger.log(`Redis client connected to ${redisUrl}`);
+      this.logger.info(
+        createLogContext(this.contextService, "redisConnected", {
+          redisUrl: process.env.REDIS_URL || "default",
+        }),
+        "Redis client connected",
+      );
     } catch (error) {
       this.logger.error(
-        `Failed to initialize Redis client: ${error instanceof Error ? error.message : "Unknown error"}`,
-        error instanceof Error ? error.stack : undefined,
+        createErrorContext(this.contextService, "redisInit", error, {
+          redisUrl: process.env.REDIS_URL || "default",
+        }),
+        "Failed to initialize Redis client",
       );
       throw error;
     }
@@ -80,10 +111,16 @@ export class RedisStoreService implements OnModuleInit, OnModuleDestroy {
    */
   async onModuleDestroy() {
     if (this.client) {
-      this.logger.log("Disconnecting Redis client...");
+      this.logger.info(
+        createLogContext(this.contextService, "redisDisconnect", {}),
+        "Disconnecting Redis client",
+      );
       await this.client.quit();
       this.client = null;
-      this.logger.log("Redis client disconnected");
+      this.logger.info(
+        createLogContext(this.contextService, "redisDisconnected", {}),
+        "Redis client disconnected",
+      );
     }
   }
 }

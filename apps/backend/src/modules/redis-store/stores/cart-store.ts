@@ -1,21 +1,19 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  OnModuleInit,
-} from "@nestjs/common";
+import { BadRequestException, Injectable, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
+import { PinoLogger } from "nestjs-pino";
 import { KEY_PATTERNS, TTL } from "../constants/key-patterns";
 import { ICartStore } from "../interfaces/redis-store.interface";
 import { RedisStoreService } from "../redis-store.service";
 
 @Injectable()
 export class CartStore implements ICartStore, OnModuleInit {
-  private readonly logger = new Logger(CartStore.name);
   private client!: Redis;
   private readonly redisStoreService: RedisStoreService;
 
-  constructor(redisStoreService: RedisStoreService) {
+  constructor(
+    redisStoreService: RedisStoreService,
+    private readonly logger: PinoLogger,
+  ) {
     this.redisStoreService = redisStoreService;
   }
 

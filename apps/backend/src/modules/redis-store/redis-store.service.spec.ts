@@ -1,5 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import Redis from "ioredis";
+import { getCommonTestProviders } from "../../common/testing/test-helpers";
 import { RedisStoreService } from "./redis-store.service";
 
 // Mock ioredis
@@ -21,7 +22,7 @@ describe("RedisStoreService", () => {
     (Redis as unknown as jest.Mock).mockImplementation(() => mockRedisClient);
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [RedisStoreService],
+      providers: [RedisStoreService, ...getCommonTestProviders()],
     }).compile();
 
     service = module.get<RedisStoreService>(RedisStoreService);

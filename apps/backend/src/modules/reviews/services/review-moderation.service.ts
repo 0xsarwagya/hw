@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import {
   and,
   customers,
@@ -9,6 +9,9 @@ import {
   reviews,
   sql,
 } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import { createLogContext } from "../../../common/logging/logging.helper";
 import { ReviewResponseDto } from "../dto/review-response.dto";
 import { ReviewAggregationService } from "./review-aggregation.service";
 import { ReviewCacheService } from "./review-cache.service";
@@ -21,12 +24,12 @@ const AUTO_APPROVE_THRESHOLD = 3;
 
 @Injectable()
 export class ReviewModerationService {
-  private readonly logger = new Logger(ReviewModerationService.name);
-
   constructor(
     private readonly aggregationService: ReviewAggregationService,
     private readonly cacheService: ReviewCacheService,
     private readonly eventsService: ReviewEventsService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
   ) {}
 
   /**
@@ -119,7 +122,14 @@ export class ReviewModerationService {
       timestamp: updatedReview.updatedAt.toISOString(),
     });
 
-    this.logger.log(`Review ${reviewId} approved`);
+    this.logger.info(
+      createLogContext(this.contextService, "approveReview", {
+        reviewId,
+        variantId: updatedReview.variantId,
+        customerId: updatedReview.customerId,
+      }),
+      "Review approved",
+    );
 
     return this.enrichReview(updatedReview);
   }
@@ -167,7 +177,14 @@ export class ReviewModerationService {
       timestamp: updatedReview.updatedAt.toISOString(),
     });
 
-    this.logger.log(`Review ${reviewId} rejected`);
+    this.logger.info(
+      createLogContext(this.contextService, "rejectReview", {
+        reviewId,
+        variantId: updatedReview.variantId,
+        customerId: updatedReview.customerId,
+      }),
+      "Review rejected",
+    );
 
     return this.enrichReview(updatedReview);
   }
@@ -195,7 +212,14 @@ export class ReviewModerationService {
       await this.cacheService.invalidateVariant(review.variantId);
     }
 
-    this.logger.log(`Review ${reviewId} hard deleted by admin`);
+    this.logger.info(
+      createLogContext(this.contextService, "deleteReview", {
+        reviewId,
+        variantId: review.variantId,
+        customerId: review.customerId,
+      }),
+      "Review hard deleted by admin",
+    );
   }
 
   /**
@@ -233,7 +257,7 @@ export class ReviewModerationService {
 
     if (shouldAutoApprove) {
       await this.approveReview(reviewId);
-      this.logger.log(
+      this.logger.info(
         `Review ${reviewId} auto-approved (customer has ${AUTO_APPROVE_THRESHOLD}+ approved reviews)`,
       );
       return true;
