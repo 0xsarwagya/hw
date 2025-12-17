@@ -18,6 +18,7 @@ import {
   productTags,
   productVariants,
 } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import {
   BundleEligibilityService,
@@ -46,6 +47,7 @@ export class CartsService {
     private readonly hotReloadWatcher: HotReloadWatcher,
     private readonly bundleEligibilityService: BundleEligibilityService,
     private readonly bundlePricingService: BundlePricingService,
+    private readonly logger: PinoLogger,
   ) {}
   private readonly CART_EXPIRY_DAYS = 30; // Cart expires after 30 days
 
@@ -574,13 +576,16 @@ export class CartsService {
           );
         } catch (error) {
           // Log but don't throw - audit logging failure shouldn't break cart recalculation
-          console.warn("Failed to log discount engine run:", error);
+          this.logger.warn(
+            { cartId, error },
+            "Failed to log discount engine run",
+          );
         }
       }
     } catch (error) {
       // Discount engine failed, continue without discount
       // Log error but don't break cart recalculation
-      console.error("Discount engine error:", error);
+      this.logger.error({ cartId, error }, "Discount engine error");
       discountAmount = 0;
     }
 

@@ -1,5 +1,6 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
+import { PinoLogger } from "nestjs-pino";
 import {
   db,
   eq,
@@ -235,6 +236,18 @@ describe("OrdersService - Bundle Integration", () => {
           provide: DiscountProfiler,
           useValue: {
             recordEngineRun: jest.fn(),
+          },
+        },
+        {
+          provide: PinoLogger,
+          useValue: {
+            info: jest.fn(),
+            error: jest.fn(),
+            warn: jest.fn(),
+            debug: jest.fn(),
+            logger: {
+              child: jest.fn().mockReturnThis(),
+            },
           },
         },
       ],

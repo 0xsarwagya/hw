@@ -7,6 +7,11 @@ import { config } from "dotenv";
 const rootEnvPath = resolve(__dirname, "../../.env");
 config({ path: rootEnvPath });
 
+// Initialize OpenTelemetry BEFORE any other imports
+import { initializeTracing } from "./common/tracing/tracing.config";
+
+const tracingSdk = initializeTracing();
+
 // Now import everything else after .env is loaded
 import { ExecutionContext } from "@nestjs/common";
 import { NestFactory, Reflector } from "@nestjs/core";
@@ -15,13 +20,42 @@ import cookieParser from "cookie-parser";
 import { AppModule } from "./app.module";
 
 import { IS_PUBLIC_KEY } from "./common/decorators/public.decorator";
+import { GlobalExceptionFilter } from "./common/filters/global-exception.filter";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
 import { BuildInfoInterceptor } from "./common/interceptors/build-info.interceptor";
+import { ContextService } from "./common/logging/context.service";
+import { createPinoConfig } from "./common/logging/pino.config";
+
+// Setup unhandled rejection and exception handlers
+// These will use Pino logger once the app is bootstrapped
+// For now, we use console as fallback since logger isn't available yet
+process.on(
+  "unhandledRejection",
+  (reason: unknown, promise: Promise<unknown>) => {
+    // Log will be handled by GlobalExceptionFilter if it's an HTTP request
+    // For non-HTTP rejections, log to stderr (will be captured by Pino in production)
+    console.error("[Unhandled Rejection]", { promise, reason });
+  },
+);
+
+process.on("uncaughtException", (error: Error) => {
+  // Log will be handled by GlobalExceptionFilter if it's an HTTP request
+  // For non-HTTP exceptions, log to stderr (will be captured by Pino in production)
+  console.error("[Uncaught Exception]", {
+    error: error.message,
+    stack: error.stack,
+  });
+  process.exit(1);
+});
 
 async function bootstrap() {
+  // Create a root logger instance for startup logging
+  const rootLogger = createPinoConfig();
+
   const app = await NestFactory.create(AppModule, {
     rawBody: true, // Enable raw body for webhook signature verification
+    logger: false, // Disable NestJS default logger, use only Pino
   });
   const reflector = app.get(Reflector);
 
@@ -85,6 +119,10 @@ async function bootstrap() {
   // Apply interceptors globally
   app.useGlobalInterceptors(new BuildInfoInterceptor());
 
+  // Apply global exception filter
+  const contextService = app.get(ContextService);
+  app.useGlobalFilters(new GlobalExceptionFilter(contextService));
+
   // Swagger/OpenAPI configuration
   const config = new DocumentBuilder()
     .setTitle("VCEcom API")
@@ -122,6 +160,16 @@ async function bootstrap() {
     },
   });
 
-  await app.listen(process.env.PORT ?? 3001);
+  const port = process.env.PORT ?? 3001;
+  await app.listen(port);
+  rootLogger.info({ port }, "Server started successfully");
+
+  // Graceful shutdown
+  process.on("SIGTERM", async () => {
+    if (tracingSdk) {
+      await tracingSdk.shutdown();
+    }
+    await app.close();
+  });
 }
 bootstrap();

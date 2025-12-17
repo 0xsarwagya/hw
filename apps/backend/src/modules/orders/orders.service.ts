@@ -4,7 +4,6 @@ import {
   forwardRef,
   Inject,
   Injectable,
-  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import {
@@ -26,6 +25,7 @@ import {
   productVariants,
   shipments,
 } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { CartsService } from "../carts/carts.service";
 import { BundleCartItemMetadata } from "../carts/dto/bundle-cart-item.dto";
@@ -78,9 +78,8 @@ import {
 
 @Injectable()
 export class OrdersService {
-  private readonly logger = new Logger(OrdersService.name);
-
   constructor(
+    private readonly logger: PinoLogger,
     private readonly cartsService: CartsService,
     private readonly discountsService: DiscountsService,
     private readonly inventoryStore: InventoryStore,
@@ -1085,7 +1084,10 @@ export class OrdersService {
           await this.checkoutStore.failSession(checkoutSessionId);
         } catch (failError) {
           // Log but don't fail - failure handling should be best-effort
-          console.error("Failed to fail checkout session:", failError);
+          this.logger.error(
+            { checkoutSessionId, error: failError },
+            "Failed to fail checkout session",
+          );
         }
       }
 
@@ -1095,7 +1097,10 @@ export class OrdersService {
           await this.checkoutStore.releaseCheckoutLock(cartId);
         } catch (lockError) {
           // Log but don't fail
-          console.error("Failed to release checkout lock on error:", lockError);
+          this.logger.error(
+            { cartId, error: lockError },
+            "Failed to release checkout lock on error",
+          );
         }
       }
 
@@ -1807,8 +1812,13 @@ export class OrdersService {
       );
     }
 
-    this.logger.log(
-      `Order finalized: orderId=${orderId}, paymentIntentId=${paymentIntentId}, checkoutSessionId=${checkoutSessionId}`,
+    this.logger.info(
+      {
+        orderId,
+        paymentIntentId,
+        checkoutSessionId,
+      },
+      "Order finalized",
     );
 
     return orderResponse;

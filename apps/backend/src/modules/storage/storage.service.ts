@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit, Optional } from "@nestjs/common";
 import {
   StorageProvider,
   StorageProviderType,
@@ -14,9 +14,9 @@ export class StorageService implements OnModuleInit {
   private provider: StorageProvider;
 
   constructor(
-    private readonly minioProvider: MinioProvider,
-    private readonly supabaseProvider: SupabaseProvider,
-    private readonly awsS3Provider: AwsS3Provider,
+    @Optional() private readonly minioProvider?: MinioProvider,
+    @Optional() private readonly supabaseProvider?: SupabaseProvider,
+    @Optional() private readonly awsS3Provider?: AwsS3Provider,
   ) {}
 
   onModuleInit() {
@@ -30,14 +30,29 @@ export class StorageService implements OnModuleInit {
 
     switch (providerType) {
       case "minio":
+        if (!this.minioProvider) {
+          throw new Error(
+            "MINIO provider not registered. Please ensure STORAGE_PROVIDER=minio or provide MINIO credentials.",
+          );
+        }
         this.provider = this.minioProvider;
         this.logger.log("Using MINIO storage provider");
         break;
       case "supabase":
+        if (!this.supabaseProvider) {
+          throw new Error(
+            "Supabase provider not registered. Please ensure STORAGE_PROVIDER=supabase or provide Supabase credentials.",
+          );
+        }
         this.provider = this.supabaseProvider;
         this.logger.log("Using Supabase storage provider");
         break;
       case "aws":
+        if (!this.awsS3Provider) {
+          throw new Error(
+            "AWS S3 provider not registered. Please ensure STORAGE_PROVIDER=aws or provide AWS credentials.",
+          );
+        }
         this.provider = this.awsS3Provider;
         this.logger.log("Using AWS S3 storage provider");
         break;
@@ -45,6 +60,11 @@ export class StorageService implements OnModuleInit {
         this.logger.warn(
           `Unknown storage provider: ${providerType}, falling back to MINIO`,
         );
+        if (!this.minioProvider) {
+          throw new Error(
+            "MINIO provider not registered and no valid provider found.",
+          );
+        }
         this.provider = this.minioProvider;
     }
   }
