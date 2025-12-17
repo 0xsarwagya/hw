@@ -5,8 +5,13 @@ import {
   HttpException,
   HttpStatus,
 } from "@nestjs/common";
-import { Request, Response } from "express";
 import { ContextService } from "../logging/context.service";
+import {
+  ErrorResponse,
+  ExtendedRequest,
+  ExtendedResponse,
+  HttpExceptionResponse,
+} from "../logging/types";
 
 /**
  * Global exception filter that captures all exceptions
@@ -18,20 +23,22 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    const response = ctx.getResponse<ExtendedResponse>();
+    const request = ctx.getRequest<ExtendedRequest>();
 
     // Get logger from request (attached by nestjs-pino or context middleware)
-    const logger = (request as any).logger ||
-      (request as any).log || {
-        error: console.error.bind(console),
-        warn: console.warn.bind(console),
-        info: console.info.bind(console),
-      };
+    const logger = request.logger || {
+      error: console.error.bind(console),
+      warn: console.warn.bind(console),
+      info: console.info.bind(console),
+      debug: console.debug.bind(console),
+    };
 
     // Get request context
     const requestContext =
-      this.contextService.get() || (response as any).requestContext || {};
+      this.contextService.get() ||
+      response.requestContext ||
+      ({} as Partial<import("../logging/context.service").RequestContext>);
     const requestId = requestContext.requestId || "unknown";
 
     // Determine status code and message
@@ -87,19 +94,21 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     // Return sanitized response (no stack traces to clients)
-    const errorResponse: any = {
+    const errorResponse: ErrorResponse = {
       statusCode: status,
       timestamp: new Date().toISOString(),
-      path: request.url,
+      path: request.url || "",
       requestId,
     };
 
     if (typeof message === "string") {
       errorResponse.message = message;
     } else if (typeof message === "object") {
-      errorResponse.message = (message as any).message || "An error occurred";
-      if ((message as any).error) {
-        errorResponse.error = (message as any).error;
+      const httpMessage = message as HttpExceptionResponse;
+      errorResponse.message =
+        (httpMessage.message as string) || "An error occurred";
+      if (httpMessage.error) {
+        errorResponse.error = httpMessage.error;
       }
     }
 

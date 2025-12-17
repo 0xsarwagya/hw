@@ -43,7 +43,7 @@ describe("ContextMiddleware", () => {
       url: "/test",
       method: "GET",
       socket: { remoteAddress: "127.0.0.1" },
-    } as unknown as Request;
+      } as unknown as ExtendedRequest;
     const res = {} as Response;
     const next = jest.fn() as NextFunction;
 
@@ -61,7 +61,7 @@ describe("ContextMiddleware", () => {
       url: "/test",
       method: "GET",
       socket: { remoteAddress: "127.0.0.1" },
-    } as unknown as Request;
+      } as unknown as ExtendedRequest;
     const res = {} as Response;
     const next = jest.fn() as NextFunction;
 
@@ -77,7 +77,7 @@ describe("ContextMiddleware", () => {
       url: "/test",
       method: "GET",
       socket: { remoteAddress: "127.0.0.1" },
-    } as unknown as Request;
+      } as unknown as ExtendedRequest;
     const res = {} as Response;
     const next = jest.fn() as NextFunction;
 
@@ -93,7 +93,7 @@ describe("ContextMiddleware", () => {
       url: "/test",
       method: "GET",
       socket: { remoteAddress: "192.168.1.1" },
-    } as unknown as Request;
+      } as unknown as ExtendedRequest;
     const res = {} as Response;
     const next = jest.fn() as NextFunction;
 
@@ -109,7 +109,7 @@ describe("ContextMiddleware", () => {
       url: "/test",
       method: "GET",
       socket: { remoteAddress: "127.0.0.1" },
-    } as unknown as Request;
+      } as unknown as ExtendedRequest;
     const res = {} as Response;
     const next = jest.fn() as NextFunction;
 

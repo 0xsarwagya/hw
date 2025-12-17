@@ -1,0 +1,10 @@
+
+> @vestcodes/vcecom@0.0.0 format-and-lint /Users/sarwagya/Desktop/personal/vestcodes/ecommerce
+> biome check . "--fix" "--max-diagnostics" "100"
+
+Skipped 5 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+Checked 372 files in 112ms. No fixes applied.
+Found 46 warnings.
+Found 2 infos.

@@ -1,9 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { Injectable, NestMiddleware } from "@nestjs/common";
 import { trace } from "@opentelemetry/api";
-import { randomUUID } from "crypto";
-import { NextFunction, Request, Response } from "express";
+import { NextFunction } from "express";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService, RequestContext } from "./context.service";
+import { ExtendedRequest, ExtendedResponse } from "./types";
 
 /**
  * Middleware to create request-scoped context
@@ -16,7 +17,7 @@ export class ContextMiddleware implements NestMiddleware {
     private readonly logger: PinoLogger,
   ) {}
 
-  use(req: Request, res: Response, next: NextFunction): void {
+  use(req: ExtendedRequest, res: ExtendedResponse, next: NextFunction): void {
     // Extract or generate requestId
     const requestId = (req.headers["x-request-id"] as string) || randomUUID();
 
@@ -56,7 +57,7 @@ export class ContextMiddleware implements NestMiddleware {
       });
 
       // Attach logger to request for use in controllers/services
-      (req as any).logger = childLogger;
+      req.logger = childLogger;
 
       // Log request start (skip favicon and other static assets)
       if (
@@ -74,7 +75,7 @@ export class ContextMiddleware implements NestMiddleware {
       }
 
       // Store context in response for access in exception filters
-      (res as any).requestContext = requestContext;
+      res.requestContext = requestContext;
 
       next();
     });

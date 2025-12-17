@@ -35,8 +35,8 @@ function detectStorageProvider(): StorageProviderType {
   return "minio";
 }
 
-// biome-ignore lint/complexity/noStaticOnlyClass: Dynamic module pattern requires static method
 @Module({})
+// biome-ignore lint/complexity/noStaticOnlyClass: Dynamic module pattern requires static method
 export class StorageModule {
   /**
    * Dynamic module that conditionally registers only the selected storage provider

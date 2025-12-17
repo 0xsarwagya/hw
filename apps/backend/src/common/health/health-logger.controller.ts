@@ -37,7 +37,7 @@ export class HealthLoggerController {
           contextServiceStatus = "ERROR";
         }
       });
-    } catch (error) {
+    } catch (_error) {
       contextServiceStatus = "ERROR";
     }
 

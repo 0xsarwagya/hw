@@ -1,5 +1,6 @@
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
 import { RequestContext } from "./context.service";
+import { ExtendedRequest, ExtendedResponse } from "./types";
 
 /**
  * Decorator to inject request context into controller methods
@@ -11,11 +12,11 @@ import { RequestContext } from "./context.service";
  */
 export const Context = createParamDecorator(
   (data: keyof RequestContext | undefined, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-    const response = ctx.switchToHttp().getResponse();
+    const _request = ctx.switchToHttp().getRequest<ExtendedRequest>();
+    const response = ctx.switchToHttp().getResponse<ExtendedResponse>();
 
     // Get context from response (set by ContextMiddleware)
-    const context = (response as any).requestContext || {};
+    const context = response.requestContext || {};
 
     if (data) {
       return context[data];
@@ -29,13 +30,13 @@ export const Context = createParamDecorator(
  * Usage: @RequestId() requestId: string
  */
 export const RequestId = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-    const response = ctx.switchToHttp().getResponse();
+  (_data: unknown, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest<ExtendedRequest>();
+    const response = ctx.switchToHttp().getResponse<ExtendedResponse>();
 
     return (
-      (response as any).requestContext?.requestId ||
-      request.headers["x-request-id"] ||
+      response.requestContext?.requestId ||
+      (request.headers["x-request-id"] as string) ||
       "unknown"
     );
   },
@@ -46,15 +47,10 @@ export const RequestId = createParamDecorator(
  * Usage: @UserId() userId: string
  */
 export const UserId = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-    const response = ctx.switchToHttp().getResponse();
-
-    return (
-      (response as any).requestContext?.userId ||
-      (request as any).user?.id ||
-      undefined
-    );
+  (_data: unknown, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest<ExtendedRequest>();
+    // Note: userId is not part of RequestContext, get it from request.user
+    return request.user?.id || undefined;
   },
 );
 
@@ -63,14 +59,14 @@ export const UserId = createParamDecorator(
  * Usage: @CustomerId() customerId: string
  */
 export const CustomerId = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-    const response = ctx.switchToHttp().getResponse();
+  (_data: unknown, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest<ExtendedRequest>();
+    const response = ctx.switchToHttp().getResponse<ExtendedResponse>();
 
     return (
-      (response as any).requestContext?.customerId ||
-      (request as any).user?.customerId ||
-      (request as any).user?.id ||
+      response.requestContext?.customerId ||
+      request.user?.customerId ||
+      request.user?.id ||
       undefined
     );
   },

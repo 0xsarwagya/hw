@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { Request } from "express";
 import { RequestContext } from "./context.service";
+import { ExtendedRequest } from "./types";
 
 /**
  * Service for extracting comprehensive context from HTTP requests
@@ -11,8 +11,18 @@ export class ContextExtractorService {
   /**
    * Extract full context from request
    */
-  extractFromRequest(req: Request): Partial<RequestContext> {
-    const context: Partial<RequestContext> = {};
+  extractFromRequest(
+    req: ExtendedRequest,
+  ): Partial<
+    RequestContext & { userId?: string; userRole?: string; userEmail?: string }
+  > {
+    const context: Partial<
+      RequestContext & {
+        userId?: string;
+        userRole?: string;
+        userEmail?: string;
+      }
+    > = {};
 
     // Extract request metadata
     context.requestId = this.extractRequestId(req);
@@ -24,9 +34,9 @@ export class ContextExtractorService {
     if (userInfo) {
       context.customerId = userInfo.customerId;
       // Store user ID separately if needed
-      (context as any).userId = userInfo.userId;
-      (context as any).userRole = userInfo.role;
-      (context as any).userEmail = userInfo.email;
+      context.userId = userInfo.userId;
+      context.userRole = userInfo.role;
+      context.userEmail = userInfo.email;
     }
 
     // Extract business context from params, query, body
@@ -49,7 +59,7 @@ export class ContextExtractorService {
   /**
    * Extract request ID from headers or generate one
    */
-  extractRequestId(req: Request): string {
+  extractRequestId(req: ExtendedRequest): string {
     return (
       (req.headers["x-request-id"] as string) ||
       (req.headers["x-request-id"] as string) ||
@@ -60,7 +70,7 @@ export class ContextExtractorService {
   /**
    * Extract correlation ID from headers
    */
-  extractCorrelationId(req: Request): string | undefined {
+  extractCorrelationId(req: ExtendedRequest): string | undefined {
     return (
       (req.headers["x-correlation-id"] as string) ||
       (req.headers["x-correlation-id"] as string) ||
@@ -71,7 +81,7 @@ export class ContextExtractorService {
   /**
    * Extract client IP address
    */
-  extractIpAddress(req: Request): string {
+  extractIpAddress(req: ExtendedRequest): string {
     // Check X-Forwarded-For header (first IP in chain)
     const forwardedFor = req.headers["x-forwarded-for"] as string;
     if (forwardedFor) {
@@ -91,13 +101,13 @@ export class ContextExtractorService {
   /**
    * Extract user information from request (set by JWT guard)
    */
-  extractUserInfo(req: Request): {
+  extractUserInfo(req: ExtendedRequest): {
     userId?: string;
     customerId?: string;
     email?: string;
     role?: string;
   } | null {
-    const user = (req as any).user;
+    const user = req.user;
     if (!user) {
       return null;
     }
@@ -113,12 +123,12 @@ export class ContextExtractorService {
   /**
    * Extract cart ID from request params, query, or body
    */
-  extractCartId(req: Request): string | undefined {
+  extractCartId(req: ExtendedRequest): string | undefined {
     return (
-      (req.params as any).cartId ||
-      (req.query as any).cartId ||
-      (req.body as any)?.cartId ||
-      (req.body as any)?.cart_id ||
+      (req.params as Record<string, string>).cartId ||
+      (req.query as Record<string, string>).cartId ||
+      ((req.body as Record<string, unknown>)?.cartId as string) ||
+      ((req.body as Record<string, unknown>)?.cart_id as string) ||
       undefined
     );
   }
@@ -126,9 +136,9 @@ export class ContextExtractorService {
   /**
    * Extract order ID from request params, query, or body
    */
-  extractOrderId(req: Request): string | undefined {
+  extractOrderId(req: ExtendedRequest): string | undefined {
     // Check params.id if it looks like an order ID
-    const paramId = (req.params as any).id;
+    const paramId = (req.params as Record<string, string>).id;
     if (
       paramId &&
       (paramId.startsWith("order_") || paramId.match(/^[a-f0-9-]{36}$/i))
@@ -137,10 +147,10 @@ export class ContextExtractorService {
     }
 
     return (
-      (req.params as any).orderId ||
-      (req.query as any).orderId ||
-      (req.body as any)?.orderId ||
-      (req.body as any)?.order_id ||
+      (req.params as Record<string, string>).orderId ||
+      (req.query as Record<string, string>).orderId ||
+      ((req.body as Record<string, unknown>)?.orderId as string) ||
+      ((req.body as Record<string, unknown>)?.order_id as string) ||
       undefined
     );
   }
@@ -148,13 +158,13 @@ export class ContextExtractorService {
   /**
    * Extract checkout ID from request params, query, or body
    */
-  extractCheckoutId(req: Request): string | undefined {
+  extractCheckoutId(req: ExtendedRequest): string | undefined {
     return (
-      (req.params as any).checkoutId ||
-      (req.query as any).checkoutId ||
-      (req.body as any)?.checkoutId ||
-      (req.body as any)?.checkout_id ||
-      (req.body as any)?.checkoutSessionId ||
+      (req.params as Record<string, string>).checkoutId ||
+      (req.query as Record<string, string>).checkoutId ||
+      ((req.body as Record<string, unknown>)?.checkoutId as string) ||
+      ((req.body as Record<string, unknown>)?.checkout_id as string) ||
+      ((req.body as Record<string, unknown>)?.checkoutSessionId as string) ||
       undefined
     );
   }
@@ -162,16 +172,16 @@ export class ContextExtractorService {
   /**
    * Extract customer ID from request params or query
    */
-  extractCustomerIdFromParams(req: Request): string | undefined {
+  extractCustomerIdFromParams(req: ExtendedRequest): string | undefined {
     // Check params.id if it looks like a customer ID
-    const paramId = (req.params as any).id;
-    if (paramId && paramId.startsWith("customer_")) {
+    const paramId = (req.params as Record<string, string>).id;
+    if (paramId?.startsWith("customer_")) {
       return paramId;
     }
 
     return (
-      (req.params as any).customerId ||
-      (req.query as any).customerId ||
+      (req.params as Record<string, string>).customerId ||
+      (req.query as Record<string, string>).customerId ||
       undefined
     );
   }
@@ -202,14 +212,14 @@ export class ContextExtractorService {
    * Generate a new request ID
    */
   private generateRequestId(): string {
-    const { randomUUID } = require("crypto");
+    const { randomUUID } = require("node:crypto");
     return randomUUID();
   }
 
   /**
    * Extract additional request metadata
    */
-  extractRequestMetadata(req: Request): Record<string, unknown> {
+  extractRequestMetadata(req: ExtendedRequest): Record<string, unknown> {
     return {
       method: req.method,
       url: req.url,

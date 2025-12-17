@@ -42,6 +42,7 @@ export function initializeTracing(): NodeSDK | null {
   const sdk = new NodeSDK({
     resource: createResource(),
     traceExporter: zipkinExporter,
+    // biome-ignore lint/suspicious/noExplicitAny: OpenTelemetry version mismatch requires type assertion
     spanProcessor: spanProcessor as any,
     sampler,
     instrumentations: [

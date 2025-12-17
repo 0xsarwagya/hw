@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { ContextExtractorService } from "./context-extractor.service";
-import { Request } from "express";
+import { ExtendedRequest } from "./types";
 
 describe("ContextExtractorService", () => {
   let service: ContextExtractorService;
@@ -25,7 +25,7 @@ describe("ContextExtractorService", () => {
         query: {},
         body: {},
         socket: { remoteAddress: "127.0.0.1" },
-      } as unknown as Request;
+      } as unknown as ExtendedRequest;
 
       const context = service.extractFromRequest(req);
       expect(context.requestId).toBe("test-request-id");
@@ -38,7 +38,7 @@ describe("ContextExtractorService", () => {
         query: {},
         body: {},
         socket: { remoteAddress: "127.0.0.1" },
-      } as unknown as Request;
+      } as unknown as ExtendedRequest;
 
       const context = service.extractFromRequest(req);
       expect(context.requestId).toBeDefined();
@@ -52,7 +52,7 @@ describe("ContextExtractorService", () => {
         query: {},
         body: {},
         socket: { remoteAddress: "127.0.0.1" },
-      } as unknown as Request;
+      } as unknown as ExtendedRequest;
 
       const context = service.extractFromRequest(req);
       expect(context.correlationId).toBe("correlation-123");
@@ -65,7 +65,7 @@ describe("ContextExtractorService", () => {
         query: {},
         body: {},
         socket: { remoteAddress: "192.168.1.1" },
-      } as unknown as Request;
+      } as unknown as ExtendedRequest;
 
       const context = service.extractFromRequest(req);
       expect(context.ip).toBe("192.168.1.1");
@@ -78,7 +78,7 @@ describe("ContextExtractorService", () => {
         query: {},
         body: {},
         socket: { remoteAddress: "127.0.0.1" },
-      } as unknown as Request;
+      } as unknown as ExtendedRequest;
 
       const context = service.extractFromRequest(req);
       expect(context.ip).toBe("203.0.113.1");
@@ -96,7 +96,7 @@ describe("ContextExtractorService", () => {
           email: "test@example.com",
           role: "customer",
         },
-      } as unknown as Request;
+      } as unknown as ExtendedRequest;
 
       const context = service.extractFromRequest(req);
       expect((context as any).userId).toBe("user-123");
@@ -111,7 +111,7 @@ describe("ContextExtractorService", () => {
         query: {},
         body: {},
         socket: { remoteAddress: "127.0.0.1" },
-      } as unknown as Request;
+      } as unknown as ExtendedRequest;
 
       const context = service.extractFromRequest(req);
       expect(context.cartId).toBe("cart-123");
@@ -124,7 +124,7 @@ describe("ContextExtractorService", () => {
         query: { cartId: "cart-456" },
         body: {},
         socket: { remoteAddress: "127.0.0.1" },
-      } as unknown as Request;
+      } as unknown as ExtendedRequest;
 
       const context = service.extractFromRequest(req);
       expect(context.cartId).toBe("cart-456");
@@ -137,7 +137,7 @@ describe("ContextExtractorService", () => {
         query: {},
         body: { cartId: "cart-789" },
         socket: { remoteAddress: "127.0.0.1" },
-      } as unknown as Request;
+      } as unknown as ExtendedRequest;
 
       const context = service.extractFromRequest(req);
       expect(context.cartId).toBe("cart-789");
@@ -150,7 +150,7 @@ describe("ContextExtractorService", () => {
         query: {},
         body: {},
         socket: { remoteAddress: "127.0.0.1" },
-      } as unknown as Request;
+      } as unknown as ExtendedRequest;
 
       const context = service.extractFromRequest(req);
       expect(context.orderId).toBe("order-123");
@@ -163,7 +163,7 @@ describe("ContextExtractorService", () => {
         query: {},
         body: { checkoutSessionId: "checkout-123" },
         socket: { remoteAddress: "127.0.0.1" },
-      } as unknown as Request;
+      } as unknown as ExtendedRequest;
 
       const context = service.extractFromRequest(req);
       expect(context.checkoutId).toBe("checkout-123");
@@ -180,7 +180,7 @@ describe("ContextExtractorService", () => {
           id: "user-123",
           customerId: "customer-456",
         },
-      } as unknown as Request;
+      } as unknown as ExtendedRequest;
 
       const context = service.extractFromRequest(req);
       expect(context.customerId).toBe("customer-456");
@@ -200,7 +200,7 @@ describe("ContextExtractorService", () => {
           "content-type": "application/json",
           "content-length": "100",
         },
-      } as unknown as Request;
+      } as unknown as ExtendedRequest;
 
       const metadata = service.extractRequestMetadata(req);
       expect(metadata.method).toBe("POST");

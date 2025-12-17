@@ -1,5 +1,5 @@
-import { Injectable } from "@nestjs/common";
 import { AsyncLocalStorage } from "node:async_hooks";
+import { Injectable } from "@nestjs/common";
 
 export interface RequestContext {
   requestId: string;
@@ -54,6 +54,8 @@ export class ContextService {
   ): void {
     const current = this.get();
     if (current) {
+      // Type-safe assignment - we know the key exists on RequestContext
+      // biome-ignore lint/suspicious/noExplicitAny: Type-safe assignment to RequestContext
       (current as any)[key] = value;
     }
   }

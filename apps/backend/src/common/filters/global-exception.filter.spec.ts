@@ -1,36 +1,40 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { HttpException, HttpStatus } from "@nestjs/common";
 import { ArgumentsHost } from "@nestjs/common";
-import { Request, Response } from "express";
+import { Response } from "express";
 import { GlobalExceptionFilter } from "./global-exception.filter";
 import { ContextService } from "../logging/context.service";
-import { PinoLogger } from "nestjs-pino";
+import { ExtendedRequest, ExtendedResponse } from "../logging/types";
 
 describe("GlobalExceptionFilter", () => {
   let filter: GlobalExceptionFilter;
   let contextService: ContextService;
-  let mockLogger: jest.Mocked<PinoLogger>;
-  let mockResponse: jest.Mocked<Response>;
+  let mockLogger: {
+    error: jest.Mock;
+    warn: jest.Mock;
+    debug: jest.Mock;
+    info: jest.Mock;
+  };
+  let mockResponse: jest.Mocked<ExtendedResponse>;
 
   beforeEach(async () => {
     mockLogger = {
       error: jest.fn(),
       warn: jest.fn(),
-    } as any;
+      debug: jest.fn(),
+      info: jest.fn(),
+    };
 
     mockResponse = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
+      requestContext: undefined,
     } as any;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GlobalExceptionFilter,
         ContextService,
-        {
-          provide: PinoLogger,
-          useValue: mockLogger,
-        },
       ],
     }).compile();
 
@@ -43,13 +47,14 @@ describe("GlobalExceptionFilter", () => {
   });
 
   describe("catch", () => {
-    let mockRequest: Partial<Request>;
+    let mockRequest: Partial<ExtendedRequest>;
     let mockHost: ArgumentsHost;
 
     beforeEach(() => {
       mockRequest = {
         method: "GET",
         url: "/test",
+        logger: mockLogger as any, // Attach logger to request
       };
 
       mockHost = {
