@@ -197,8 +197,7 @@ export const KEY_PATTERNS = {
    * Format: bundle:{bundleId}:definition
    * TTL: 24 hours
    */
-  BUNDLE_DEFINITION: (bundleId: string) =>
-    `bundle:${bundleId}:definition`,
+  BUNDLE_DEFINITION: (bundleId: string) => `bundle:${bundleId}:definition`,
 
   /**
    * Bundle sets metadata
