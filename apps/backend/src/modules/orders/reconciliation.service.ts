@@ -1,9 +1,9 @@
 import {
   BadRequestException,
   Injectable,
-  Logger,
   NotFoundException,
 } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
 import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import { OrderResponseDto } from "./dto/order-response.dto";
@@ -11,11 +11,10 @@ import { OrdersService } from "./orders.service";
 
 @Injectable()
 export class ReconciliationService {
-  private readonly logger = new Logger(ReconciliationService.name);
-
   constructor(
     private readonly checkoutStore: CheckoutStore,
     private readonly ordersService: OrdersService,
+    private readonly logger: PinoLogger,
   ) {}
 
   /**
@@ -29,7 +28,7 @@ export class ReconciliationService {
     paymentIntentId: string,
     provider: string = "razorpay",
   ): Promise<OrderResponseDto | null> {
-    this.logger.log(
+    this.logger.info(
       `Reprocessing payment intent: paymentIntentId=${paymentIntentId}, provider=${provider}`,
     );
 
@@ -40,7 +39,7 @@ export class ReconciliationService {
     );
 
     if (existingOrderId) {
-      this.logger.log(
+      this.logger.info(
         `Order already exists for paymentIntentId=${paymentIntentId}, orderId=${existingOrderId}`,
       );
       // Fetch and return existing order directly from database
@@ -161,7 +160,7 @@ export class ReconciliationService {
         provider,
       );
 
-      this.logger.log(
+      this.logger.info(
         `Successfully reprocessed payment intent: paymentIntentId=${paymentIntentId}, orderId=${order.id}`,
       );
 

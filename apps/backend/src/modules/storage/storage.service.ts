@@ -1,5 +1,8 @@
 import "dotenv/config";
-import { Injectable, Logger, OnModuleInit, Optional } from "@nestjs/common";
+import { Injectable, OnModuleInit, Optional } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../common/logging/context.service";
+import { createLogContext } from "../../common/logging/logging.helper";
 import {
   StorageProvider,
   StorageProviderType,
@@ -10,10 +13,11 @@ import { SupabaseProvider } from "./providers/supabase.provider";
 
 @Injectable()
 export class StorageService implements OnModuleInit {
-  private readonly logger = new Logger(StorageService.name);
   private provider: StorageProvider;
 
   constructor(
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
     @Optional() private readonly minioProvider?: MinioProvider,
     @Optional() private readonly supabaseProvider?: SupabaseProvider,
     @Optional() private readonly awsS3Provider?: AwsS3Provider,
@@ -36,7 +40,12 @@ export class StorageService implements OnModuleInit {
           );
         }
         this.provider = this.minioProvider;
-        this.logger.log("Using MINIO storage provider");
+        this.logger.info(
+          createLogContext(this.contextService, "onModuleInit", {
+            provider: "minio",
+          }),
+          "Using MINIO storage provider",
+        );
         break;
       case "supabase":
         if (!this.supabaseProvider) {
@@ -45,7 +54,12 @@ export class StorageService implements OnModuleInit {
           );
         }
         this.provider = this.supabaseProvider;
-        this.logger.log("Using Supabase storage provider");
+        this.logger.info(
+          createLogContext(this.contextService, "onModuleInit", {
+            provider: "supabase",
+          }),
+          "Using Supabase storage provider",
+        );
         break;
       case "aws":
         if (!this.awsS3Provider) {
@@ -54,11 +68,19 @@ export class StorageService implements OnModuleInit {
           );
         }
         this.provider = this.awsS3Provider;
-        this.logger.log("Using AWS S3 storage provider");
+        this.logger.info(
+          createLogContext(this.contextService, "onModuleInit", {
+            provider: "aws",
+          }),
+          "Using AWS S3 storage provider",
+        );
         break;
       default:
         this.logger.warn(
-          `Unknown storage provider: ${providerType}, falling back to MINIO`,
+          createLogContext(this.contextService, "onModuleInit", {
+            provider: providerType,
+          }),
+          "Unknown storage provider, falling back to MINIO",
         );
         if (!this.minioProvider) {
           throw new Error(

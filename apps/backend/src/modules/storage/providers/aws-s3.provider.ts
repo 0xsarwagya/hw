@@ -6,17 +6,17 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
 import { StorageProvider } from "../interfaces/storage-provider.interface";
 
 @Injectable()
 export class AwsS3Provider implements StorageProvider {
-  private readonly logger = new Logger(AwsS3Provider.name);
   private client: S3Client;
   private bucket: string;
   private region: string;
 
-  constructor() {
+  constructor(private readonly logger: PinoLogger) {
     const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
     const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
     this.region =

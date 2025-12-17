@@ -1,11 +1,12 @@
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
 import { DiscountResponseDto } from "../dto/discount-response.dto";
 import { DiscountSnapshot } from "../engine/discount-engine.types";
 import { computeRuleHash } from "../engine/discount-hash.utils";
 
 @Injectable()
 export class DiscountSnapshotValidator {
-  private readonly logger = new Logger(DiscountSnapshotValidator.name);
+  constructor(private readonly logger: PinoLogger) {}
 
   /**
    * Validate snapshot integrity

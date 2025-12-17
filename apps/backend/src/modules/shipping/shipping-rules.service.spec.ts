@@ -1,3 +1,5 @@
+import { Test, TestingModule } from "@nestjs/testing";
+import { getCommonTestProviders } from "../../common/testing/test-helpers";
 import { ShippingRulesService } from "./shipping-rules.service";
 
 // Mock the database package
@@ -31,8 +33,12 @@ jest.mock("@vcecom/db", () => {
 describe("ShippingRulesService", () => {
   let service: ShippingRulesService;
 
-  beforeEach(() => {
-    service = new ShippingRulesService();
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [ShippingRulesService, ...getCommonTestProviders()],
+    }).compile();
+
+    service = module.get<ShippingRulesService>(ShippingRulesService);
     // Reset all mocks
     jest.clearAllMocks();
   });

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import {
   db,
   eq,
@@ -7,6 +7,7 @@ import {
   productTags,
   productVariants,
 } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
 import {
   ProductMapping,
   VariantMapping,
@@ -14,7 +15,7 @@ import {
 
 @Injectable()
 export class ProductMappingBuilder {
-  private readonly logger = new Logger(ProductMappingBuilder.name);
+  constructor(private readonly logger: PinoLogger) {}
 
   /**
    * Build product mapping (collections, tags, variants)

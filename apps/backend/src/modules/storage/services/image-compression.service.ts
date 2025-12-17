@@ -1,4 +1,5 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
 import sharp from "sharp";
 import {
   CompressionOptionsDto,
@@ -7,7 +8,7 @@ import {
 
 @Injectable()
 export class ImageCompressionService {
-  private readonly logger = new Logger(ImageCompressionService.name);
+  constructor(private readonly logger: PinoLogger) {}
 
   /**
    * Check if a buffer contains an image
@@ -124,7 +125,7 @@ export class ImageCompressionService {
       const compressionRatio =
         ((originalSize - compressedSize) / originalSize) * 100;
 
-      this.logger.log(
+      this.logger.info(
         `Image compressed: ${originalSize} bytes -> ${compressedSize} bytes (${compressionRatio.toFixed(1)}% reduction)`,
       );
 

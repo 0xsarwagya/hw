@@ -1,5 +1,11 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { RedisStoreService } from "../../redis-store/redis-store.service";
 import { EligibilityStore } from "../../redis-store/stores/eligibility-store";
 import {
@@ -40,7 +46,6 @@ export interface RulesetBundle {
  */
 @Injectable()
 export class RulesetBundleService implements OnModuleInit {
-  private readonly logger = new Logger(RulesetBundleService.name);
   private client!: Redis;
   private readonly redisStoreService: RedisStoreService;
   private readonly bundleKeyPrefix = "discount-ruleset-bundle:";
@@ -52,7 +57,9 @@ export class RulesetBundleService implements OnModuleInit {
     private readonly eligibilityBuilder: DiscountEligibilityBuilder,
     private readonly eligibilityStore: EligibilityStore,
     private readonly productMappingBuilder: ProductMappingBuilder,
+    private readonly logger: PinoLogger,
     private readonly productMappingStore: ProductMappingStore,
+    private readonly contextService: ContextService,
   ) {
     this.redisStoreService = redisStoreService;
   }
@@ -72,12 +79,22 @@ export class RulesetBundleService implements OnModuleInit {
 
     try {
       // STEP 1: Build eligibility sets
-      this.logger.debug("Building eligibility sets...");
+      this.logger.debug(
+        createLogContext(this.contextService, "buildBundle", {
+          discountCount: discounts.length,
+        }),
+        "Building eligibility sets",
+      );
       const eligibilityMap =
         await this.eligibilityBuilder.buildEligibilityForDiscounts(discounts);
 
       // STEP 2: Build product mappings
-      this.logger.debug("Building product mappings...");
+      this.logger.debug(
+        createLogContext(this.contextService, "buildBundle", {
+          discountCount: discounts.length,
+        }),
+        "Building product mappings",
+      );
       const productIds = new Set<string>();
       for (const discount of discounts) {
         if (discount.productIds?.length) {
@@ -132,7 +149,10 @@ export class RulesetBundleService implements OnModuleInit {
           await this.eligibilityStore.storeEligibility(discountId, variantIds);
         } catch (error) {
           this.logger.warn(
-            `Failed to store eligibility for discount ${discountId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+            createErrorContext(this.contextService, "buildBundle", error, {
+              discountId,
+            }),
+            "Failed to store eligibility for discount",
           );
         }
       }
@@ -146,20 +166,32 @@ export class RulesetBundleService implements OnModuleInit {
           );
         } catch (error) {
           this.logger.warn(
-            `Failed to store product mapping for product ${productId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+            createErrorContext(this.contextService, "buildBundle", error, {
+              productId,
+            }),
+            "Failed to store product mapping for product",
           );
         }
       }
 
       const buildTime = Date.now() - startTime;
-      this.logger.log(
-        `Built ruleset bundle v${newVersion} in ${buildTime}ms (${discounts.length} rules, ${bundleSizeKB.toFixed(2)}KB)`,
+      this.logger.info(
+        createLogContext(this.contextService, "buildBundle", {
+          version: newVersion,
+          buildTimeMs: buildTime,
+          rulesCount: discounts.length,
+          bundleSizeKB: parseFloat(bundleSizeKB.toFixed(2)),
+        }),
+        "Built ruleset bundle",
       );
 
       return bundle.metadata;
     } catch (error) {
       this.logger.error(
-        `Failed to build ruleset bundle: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "buildBundle", error, {
+          discountCount: discounts.length,
+        }),
+        "Failed to build ruleset bundle",
       );
       throw error;
     }
@@ -187,10 +219,16 @@ export class RulesetBundleService implements OnModuleInit {
         );
       }
 
-      this.logger.log(`Activated ruleset bundle v${version}`);
+      this.logger.info(
+        createLogContext(this.contextService, "activateBundle", { version }),
+        "Activated ruleset bundle",
+      );
     } catch (error) {
       this.logger.error(
-        `Failed to activate bundle v${version}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "activateBundle", error, {
+          version,
+        }),
+        "Failed to activate bundle",
       );
       throw error;
     }
@@ -209,7 +247,10 @@ export class RulesetBundleService implements OnModuleInit {
       return JSON.parse(bundleStr) as RulesetBundle;
     } catch (error) {
       this.logger.error(
-        `Failed to get bundle v${version}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "getBundle", error, {
+          version,
+        }),
+        "Failed to get bundle",
       );
       return null;
     }
@@ -224,7 +265,8 @@ export class RulesetBundleService implements OnModuleInit {
       return this.getBundle(version);
     } catch (error) {
       this.logger.error(
-        `Failed to get current bundle: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "getCurrentBundle", error),
+        "Failed to get current bundle",
       );
       return null;
     }
@@ -245,7 +287,10 @@ export class RulesetBundleService implements OnModuleInit {
       return JSON.parse(metadataStr) as RulesetBundleMetadata;
     } catch (error) {
       this.logger.error(
-        `Failed to get bundle metadata v${version}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "getBundleMetadata", error, {
+          version,
+        }),
+        "Failed to get bundle metadata",
       );
       return null;
     }
@@ -257,14 +302,23 @@ export class RulesetBundleService implements OnModuleInit {
    */
   validateBundle(bundle: RulesetBundle): boolean {
     if (!bundle || !bundle.rules || !bundle.metadata) {
-      this.logger.error("Bundle missing required fields");
+      this.logger.error(
+        createLogContext(this.contextService, "validateBundle", {
+          hasBundle: !!bundle,
+        }),
+        "Bundle missing required fields",
+      );
       return false;
     }
 
     // Check version consistency
     if (bundle.version !== bundle.metadata.version) {
       this.logger.error(
-        `Bundle version mismatch: ${bundle.version} vs ${bundle.metadata.version}`,
+        createLogContext(this.contextService, "validateBundle", {
+          bundleVersion: bundle.version,
+          metadataVersion: bundle.metadata.version,
+        }),
+        "Bundle version mismatch",
       );
       return false;
     }
@@ -297,7 +351,13 @@ export class RulesetBundleService implements OnModuleInit {
 
     // Validate metadata fields
     if (!bundle.metadata.createdAt || !bundle.metadata.ruleHash) {
-      this.logger.error("Bundle metadata missing required fields");
+      this.logger.error(
+        createLogContext(this.contextService, "validateBundle", {
+          hasCreatedAt: !!bundle.metadata.createdAt,
+          hasRuleHash: !!bundle.metadata.ruleHash,
+        }),
+        "Bundle metadata missing required fields",
+      );
       return false;
     }
 
@@ -330,12 +390,18 @@ export class RulesetBundleService implements OnModuleInit {
           const bundleKey = `${this.bundleKeyPrefix}${version}`;
           const metadataKey = `${this.metadataKeyPrefix}${version}`;
           await this.client.del(bundleKey, metadataKey);
-          this.logger.debug(`Cleaned up old bundle v${version}`);
+          this.logger.debug(
+            createLogContext(this.contextService, "cleanupOldBundles", {
+              version,
+            }),
+            "Cleaned up old bundle",
+          );
         }
       }
     } catch (error) {
       this.logger.error(
-        `Failed to cleanup old bundles: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "cleanupOldBundles", error),
+        "Failed to cleanup old bundles",
       );
       // Don't throw - cleanup failures shouldn't break the system
     }

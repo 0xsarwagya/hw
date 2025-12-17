@@ -1,15 +1,23 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import * as Minio from "minio";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { StorageProvider } from "../interfaces/storage-provider.interface";
 
 @Injectable()
 export class MinioProvider implements StorageProvider {
-  private readonly logger = new Logger(MinioProvider.name);
   private client: Minio.Client;
   private bucket: string;
   private publicUrl: string;
 
-  constructor() {
+  constructor(
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {
     const endpoint = process.env.MINIO_ENDPOINT || "localhost:9000";
     const accessKey = process.env.MINIO_ACCESS_KEY || "minioadmin";
     const secretKey = process.env.MINIO_SECRET_KEY || "minioadmin";
@@ -29,7 +37,12 @@ export class MinioProvider implements StorageProvider {
     // Only ensure bucket exists if not in test environment
     if (process.env.NODE_ENV !== "test") {
       this.ensureBucketExists().catch((error) => {
-        this.logger.error(`Failed to ensure bucket exists: ${error.message}`);
+        this.logger.error(
+          createErrorContext(this.contextService, "ensureBucketExists", error, {
+            bucket: this.bucket,
+          }),
+          "Failed to ensure bucket exists",
+        );
       });
     }
   }
@@ -38,7 +51,12 @@ export class MinioProvider implements StorageProvider {
     const exists = await this.client.bucketExists(this.bucket);
     if (!exists) {
       await this.client.makeBucket(this.bucket, "us-east-1");
-      this.logger.log(`Created bucket: ${this.bucket}`);
+      this.logger.info(
+        createLogContext(this.contextService, "ensureBucketExists", {
+          bucket: this.bucket,
+        }),
+        "Created bucket",
+      );
     }
   }
 

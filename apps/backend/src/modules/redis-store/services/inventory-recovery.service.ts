@@ -1,5 +1,11 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { RedisStoreService } from "../redis-store.service";
 import { InventoryStore } from "../stores/inventory-store";
 
@@ -16,24 +22,35 @@ import { InventoryStore } from "../stores/inventory-store";
  */
 @Injectable()
 export class InventoryRecoveryService implements OnModuleInit {
-  private readonly logger = new Logger(InventoryRecoveryService.name);
-
   constructor(
     private readonly inventoryStore: InventoryStore,
     private readonly redisStoreService: RedisStoreService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
   ) {}
 
   async onModuleInit() {
-    this.logger.log("Starting inventory recovery service...");
+    this.logger.info(
+      createLogContext(this.contextService, "onModuleInit", {}),
+      "Starting inventory recovery service",
+    );
     try {
       const result = await this.inventoryStore.reconcileReservations();
       await this.emitMetrics(result);
-      this.logger.log(
-        `Inventory recovery complete: ${result.released} expired reservations released, ${result.inconsistencies} inconsistencies fixed, ${result.orphaned} orphaned reservations found, ${result.negativeCorrections} negative/impossible states corrected`,
+      this.logger.info(
+        createLogContext(this.contextService, "inventoryRecovery", {
+          released: result.released,
+          inconsistencies: result.inconsistencies,
+          orphaned: result.orphaned,
+          negativeCorrections: result.negativeCorrections,
+          variantsProcessed: result.variantsProcessed,
+        }),
+        "Inventory recovery complete",
       );
     } catch (error) {
       this.logger.error(
-        `Failed to run inventory recovery: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "inventoryRecovery", error),
+        "Failed to run inventory recovery",
       );
       // Don't throw - allow service to start even if recovery fails
     }
@@ -45,19 +62,29 @@ export class InventoryRecoveryService implements OnModuleInit {
    */
   @Cron("*/7 * * * *")
   async handleReconciliation() {
-    this.logger.debug("Starting periodic inventory reconciliation...");
+    this.logger.debug(
+      createLogContext(this.contextService, "handleReconciliation", {}),
+      "Starting periodic inventory reconciliation",
+    );
     try {
       const result = await this.inventoryStore.reconcileReservations();
       await this.emitMetrics(result);
-      this.logger.log(
-        `Periodic reconciliation complete: ${result.released} expired reservations released, ${result.inconsistencies} inconsistencies fixed, ${result.orphaned} orphaned reservations found, ${result.negativeCorrections} negative/impossible states corrected, ${result.variantsProcessed} variants processed`,
+      this.logger.info(
+        createLogContext(this.contextService, "handleReconciliation", {
+          released: result.released,
+          inconsistencies: result.inconsistencies,
+          orphaned: result.orphaned,
+          negativeCorrections: result.negativeCorrections,
+          variantsProcessed: result.variantsProcessed,
+        }),
+        "Periodic reconciliation complete",
       );
     } catch (error) {
       // Fail closed - log error but don't throw
       // This ensures the worker continues running even if reconciliation fails
       this.logger.error(
-        `Failed to run periodic reconciliation: ${error instanceof Error ? error.message : "Unknown error"}`,
-        error instanceof Error ? error.stack : undefined,
+        createErrorContext(this.contextService, "handleReconciliation", error),
+        "Failed to run periodic reconciliation",
       );
     }
   }

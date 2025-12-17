@@ -19,6 +19,8 @@ import {
   productVariants,
 } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../common/logging/context.service";
+import { createErrorContext } from "../../common/logging/logging.helper";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import {
   BundleEligibilityService,
@@ -48,6 +50,7 @@ export class CartsService {
     private readonly bundleEligibilityService: BundleEligibilityService,
     private readonly bundlePricingService: BundlePricingService,
     private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
   ) {}
   private readonly CART_EXPIRY_DAYS = 30; // Cart expires after 30 days
 
@@ -577,7 +580,12 @@ export class CartsService {
         } catch (error) {
           // Log but don't throw - audit logging failure shouldn't break cart recalculation
           this.logger.warn(
-            { cartId, error },
+            createErrorContext(
+              this.contextService,
+              "logDiscountEngineRun",
+              error,
+              { cartId },
+            ),
             "Failed to log discount engine run",
           );
         }
@@ -585,7 +593,12 @@ export class CartsService {
     } catch (error) {
       // Discount engine failed, continue without discount
       // Log error but don't break cart recalculation
-      this.logger.error({ cartId, error }, "Discount engine error");
+      this.logger.error(
+        createErrorContext(this.contextService, "runDiscountEngine", error, {
+          cartId,
+        }),
+        "Discount engine error",
+      );
       discountAmount = 0;
     }
 

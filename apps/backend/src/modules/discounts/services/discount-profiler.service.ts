@@ -1,4 +1,7 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import { createLogContext } from "../../../common/logging/logging.helper";
 
 /**
  * Profiler metrics interface
@@ -20,7 +23,10 @@ export interface ProfilerMetrics {
  */
 @Injectable()
 export class DiscountProfiler {
-  private readonly logger = new Logger(DiscountProfiler.name);
+  constructor(
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {}
 
   // Metrics storage
   private engineRuns: number[] = []; // Runtime in ms
@@ -76,7 +82,10 @@ export class DiscountProfiler {
   recordHotReload(version: number): void {
     this.lastHotReloadAt = new Date();
     this.currentRulesetVersion = version;
-    this.logger.log(`Hot reload recorded: version ${version}`);
+    this.logger.info(
+      createLogContext(this.contextService, "recordHotReload", { version }),
+      "Hot reload recorded",
+    );
   }
 
   /**

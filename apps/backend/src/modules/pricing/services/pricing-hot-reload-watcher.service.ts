@@ -1,10 +1,11 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleDestroy,
-  OnModuleInit,
-} from "@nestjs/common";
+import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { RedisStoreService } from "../../redis-store/redis-store.service";
 import { PricingBundle, PricingBundleService } from "./pricing-bundle.service";
 import { PricingVersionManager } from "./pricing-version-manager.service";
@@ -15,7 +16,6 @@ import { PricingVersionManager } from "./pricing-version-manager.service";
  */
 @Injectable()
 export class PricingHotReloadWatcher implements OnModuleInit, OnModuleDestroy {
-  private readonly logger = new Logger(PricingHotReloadWatcher.name);
   private subscriber!: Redis;
   private readonly redisStoreService: RedisStoreService;
 
@@ -27,6 +27,8 @@ export class PricingHotReloadWatcher implements OnModuleInit, OnModuleDestroy {
     redisStoreService: RedisStoreService,
     private readonly versionManager: PricingVersionManager,
     private readonly bundleService: PricingBundleService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
   ) {
     this.redisStoreService = redisStoreService;
   }
@@ -44,8 +46,11 @@ export class PricingHotReloadWatcher implements OnModuleInit, OnModuleDestroy {
     try {
       await this.refreshBundle(); // Initial load
       await this.subscribeToVersionChanges();
-      this.logger.log(
-        `Pricing hot reload watcher initialized (v${this.currentVersion})`,
+      this.logger.info(
+        createLogContext(this.contextService, "onModuleInit", {
+          version: this.currentVersion,
+        }),
+        "Pricing hot reload watcher initialized",
       );
     } catch (error) {
       this.logger.error(
@@ -63,10 +68,14 @@ export class PricingHotReloadWatcher implements OnModuleInit, OnModuleDestroy {
         this.versionManager.getVersionChannel(),
       );
       await this.subscriber.quit();
-      this.logger.log("Pricing hot reload watcher stopped");
+      this.logger.info(
+        createLogContext(this.contextService, "onModuleDestroy", {}),
+        "Pricing hot reload watcher stopped",
+      );
     } catch (error) {
       this.logger.error(
-        `Error stopping pricing hot reload watcher: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "onModuleDestroy", error),
+        "Error stopping pricing hot reload watcher",
       );
     }
   }
@@ -97,18 +106,24 @@ export class PricingHotReloadWatcher implements OnModuleInit, OnModuleDestroy {
       if (bundle && this.bundleService.validateBundle(bundle)) {
         this.currentBundle = bundle;
         this.currentVersion = version;
-        this.logger.log(
-          `In-memory pricing bundle refreshed to v${version} in ${Date.now() - startTime}ms`,
+        this.logger.info(
+          createLogContext(this.contextService, "refreshBundle", {
+            version,
+            refreshTimeMs: Date.now() - startTime,
+          }),
+          "In-memory pricing bundle refreshed",
         );
       } else {
         this.logger.error(
-          `Failed to refresh in-memory bundle: Invalid or missing bundle for version ${version}`,
+          createLogContext(this.contextService, "refreshBundle", { version }),
+          "Failed to refresh in-memory bundle: Invalid or missing bundle",
         );
         // Keep old bundle if new one is invalid
       }
     } catch (error) {
       this.logger.error(
-        `Error refreshing in-memory pricing bundle: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "refreshBundle", error),
+        "Error refreshing in-memory pricing bundle",
       );
       // Keep old bundle if refresh fails
     }
@@ -123,11 +138,22 @@ export class PricingHotReloadWatcher implements OnModuleInit, OnModuleDestroy {
     this.subscriber.subscribe(channel, (err) => {
       if (err) {
         this.logger.error(
-          `Failed to subscribe to Redis channel ${channel}: ${err.message}`,
+          createErrorContext(
+            this.contextService,
+            "subscribeToVersionChanges",
+            err,
+            { channel },
+          ),
+          "Failed to subscribe to Redis channel",
         );
         return;
       }
-      this.logger.log(`Subscribed to Redis channel: ${channel}`);
+      this.logger.info(
+        createLogContext(this.contextService, "subscribeToVersionChanges", {
+          channel,
+        }),
+        "Subscribed to Redis channel",
+      );
     });
 
     this.subscriber.on("message", (channelName, message) => {
@@ -135,8 +161,13 @@ export class PricingHotReloadWatcher implements OnModuleInit, OnModuleDestroy {
         try {
           const { version: newVersion } = JSON.parse(message);
           if (newVersion > this.currentVersion) {
-            this.logger.log(
-              `Detected new pricing ruleset version ${newVersion}. Triggering hot reload...`,
+            this.logger.info(
+              createLogContext(
+                this.contextService,
+                "subscribeToVersionChanges",
+                { version: newVersion },
+              ),
+              "Detected new pricing ruleset version, triggering hot reload",
             );
             this.refreshBundle(); // Refresh in background
           }

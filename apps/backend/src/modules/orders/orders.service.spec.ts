@@ -5,6 +5,7 @@ import {
 } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../common/logging/context.service";
 import {
   addresses,
   cartItems,
@@ -285,6 +286,18 @@ describe("OrdersService", () => {
             logger: {
               child: jest.fn().mockReturnThis(),
             },
+          },
+        },
+        {
+          provide: ContextService,
+          useValue: {
+            run: jest.fn((context, fn) => fn()),
+            get: jest.fn(),
+            getValue: jest.fn(),
+            setValue: jest.fn(),
+            getRequestId: jest.fn(),
+            getTraceId: jest.fn(),
+            getSpanId: jest.fn(),
           },
         },
       ],

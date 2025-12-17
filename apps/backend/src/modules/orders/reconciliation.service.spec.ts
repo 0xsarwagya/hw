@@ -4,6 +4,7 @@ import {
 } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { db, eq, orders, orderItems } from "@vcecom/db";
+import { getCommonTestProviders } from "../../common/testing/test-helpers";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
 import {
   PaymentIntent,
@@ -37,6 +38,7 @@ describe("ReconciliationService", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ReconciliationService,
+        ...getCommonTestProviders(),
         {
           provide: CheckoutStore,
           useValue: {

@@ -1,4 +1,5 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
 import { validateGstin } from "../../common/utils/gstin.utils";
 
 export interface GstinVerificationResult {
@@ -20,7 +21,7 @@ export interface GstinVerificationResult {
 
 @Injectable()
 export class GstinVerificationService {
-  private readonly logger = new Logger(GstinVerificationService.name);
+  constructor(private readonly logger: PinoLogger) {}
 
   /**
    * Verify GSTIN using external API

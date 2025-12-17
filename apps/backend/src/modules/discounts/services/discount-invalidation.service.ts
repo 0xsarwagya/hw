@@ -1,4 +1,10 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { DiscountRuleStore } from "../../redis-store/stores/discount-rule-store";
 import { EligibilityStore } from "../../redis-store/stores/eligibility-store";
 import { ProductMappingStore } from "../../redis-store/stores/product-mapping-store";
@@ -6,13 +12,13 @@ import { RulesetRebuilder } from "./ruleset-rebuilder.service";
 
 @Injectable()
 export class DiscountInvalidationService {
-  private readonly logger = new Logger(DiscountInvalidationService.name);
-
   constructor(
     private readonly discountRuleStore: DiscountRuleStore,
     private readonly eligibilityStore: EligibilityStore,
     private readonly productMappingStore: ProductMappingStore,
     private readonly rulesetRebuilder: RulesetRebuilder,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
   ) {}
 
   /**
@@ -27,21 +33,39 @@ export class DiscountInvalidationService {
       // Trigger hot reload to rebuild bundle with updated discounts
       try {
         const newVersion = await this.rulesetRebuilder.rebuildFromDb();
-        this.logger.log(
-          `Hot reload triggered for discount ${discountId}, new version: ${newVersion}`,
+        this.logger.info(
+          createLogContext(this.contextService, "invalidateDiscount", {
+            discountId,
+            version: newVersion,
+          }),
+          "Hot reload triggered for discount",
         );
       } catch (rebuildError) {
         // Fallback to legacy invalidation if rebuild fails
         this.logger.warn(
-          `Hot reload failed for discount ${discountId}, falling back to legacy invalidation: ${rebuildError instanceof Error ? rebuildError.message : "Unknown error"}`,
+          createErrorContext(
+            this.contextService,
+            "invalidateDiscount",
+            rebuildError,
+            { discountId },
+          ),
+          "Hot reload failed for discount, falling back to legacy invalidation",
         );
         await this.discountRuleStore.invalidateRules();
       }
 
-      this.logger.debug(`Invalidated cache for discount ${discountId}`);
+      this.logger.debug(
+        createLogContext(this.contextService, "invalidateDiscount", {
+          discountId,
+        }),
+        "Invalidated cache for discount",
+      );
     } catch (error) {
       this.logger.error(
-        `Failed to invalidate discount ${discountId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "invalidateDiscount", error, {
+          discountId,
+        }),
+        "Failed to invalidate discount",
       );
       throw error;
     }
@@ -59,20 +83,38 @@ export class DiscountInvalidationService {
       // Trigger hot reload (product changes affect eligibility)
       try {
         const newVersion = await this.rulesetRebuilder.rebuildFromDb();
-        this.logger.log(
-          `Hot reload triggered for product ${productId}, new version: ${newVersion}`,
+        this.logger.info(
+          createLogContext(this.contextService, "invalidateProduct", {
+            productId,
+            version: newVersion,
+          }),
+          "Hot reload triggered for product",
         );
       } catch (rebuildError) {
         this.logger.warn(
-          `Hot reload failed for product ${productId}, falling back to legacy invalidation: ${rebuildError instanceof Error ? rebuildError.message : "Unknown error"}`,
+          createErrorContext(
+            this.contextService,
+            "invalidateProduct",
+            rebuildError,
+            { productId },
+          ),
+          "Hot reload failed for product, falling back to legacy invalidation",
         );
         await this.discountRuleStore.invalidateRules();
       }
 
-      this.logger.debug(`Invalidated cache for product ${productId}`);
+      this.logger.debug(
+        createLogContext(this.contextService, "invalidateProduct", {
+          productId,
+        }),
+        "Invalidated cache for product",
+      );
     } catch (error) {
       this.logger.error(
-        `Failed to invalidate product ${productId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "invalidateProduct", error, {
+          productId,
+        }),
+        "Failed to invalidate product",
       );
       throw error;
     }
@@ -90,20 +132,38 @@ export class DiscountInvalidationService {
       // Trigger hot reload (variant changes affect eligibility)
       try {
         const newVersion = await this.rulesetRebuilder.rebuildFromDb();
-        this.logger.log(
-          `Hot reload triggered for variant ${variantId}, new version: ${newVersion}`,
+        this.logger.info(
+          createLogContext(this.contextService, "invalidateVariant", {
+            variantId,
+            version: newVersion,
+          }),
+          "Hot reload triggered for variant",
         );
       } catch (rebuildError) {
         this.logger.warn(
-          `Hot reload failed for variant ${variantId}, falling back to legacy invalidation: ${rebuildError instanceof Error ? rebuildError.message : "Unknown error"}`,
+          createErrorContext(
+            this.contextService,
+            "invalidateVariant",
+            rebuildError,
+            { variantId },
+          ),
+          "Hot reload failed for variant, falling back to legacy invalidation",
         );
         await this.discountRuleStore.invalidateRules();
       }
 
-      this.logger.debug(`Invalidated cache for variant ${variantId}`);
+      this.logger.debug(
+        createLogContext(this.contextService, "invalidateVariant", {
+          variantId,
+        }),
+        "Invalidated cache for variant",
+      );
     } catch (error) {
       this.logger.error(
-        `Failed to invalidate variant ${variantId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "invalidateVariant", error, {
+          variantId,
+        }),
+        "Failed to invalidate variant",
       );
       throw error;
     }
@@ -118,20 +178,38 @@ export class DiscountInvalidationService {
       // Trigger hot reload (collection changes affect eligibility)
       try {
         const newVersion = await this.rulesetRebuilder.rebuildFromDb();
-        this.logger.log(
-          `Hot reload triggered for collection ${collectionId}, new version: ${newVersion}`,
+        this.logger.info(
+          createLogContext(this.contextService, "invalidateCollection", {
+            collectionId,
+            version: newVersion,
+          }),
+          "Hot reload triggered for collection",
         );
       } catch (rebuildError) {
         this.logger.warn(
-          `Hot reload failed for collection ${collectionId}, falling back to legacy invalidation: ${rebuildError instanceof Error ? rebuildError.message : "Unknown error"}`,
+          createErrorContext(
+            this.contextService,
+            "invalidateCollection",
+            rebuildError,
+            { collectionId },
+          ),
+          "Hot reload failed for collection, falling back to legacy invalidation",
         );
         await this.discountRuleStore.invalidateRules();
       }
 
-      this.logger.debug(`Invalidated cache for collection ${collectionId}`);
+      this.logger.debug(
+        createLogContext(this.contextService, "invalidateCollection", {
+          collectionId,
+        }),
+        "Invalidated cache for collection",
+      );
     } catch (error) {
       this.logger.error(
-        `Failed to invalidate collection ${collectionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "invalidateCollection", error, {
+          collectionId,
+        }),
+        "Failed to invalidate collection",
       );
       throw error;
     }
@@ -146,20 +224,36 @@ export class DiscountInvalidationService {
       // Trigger hot reload (tag changes affect eligibility)
       try {
         const newVersion = await this.rulesetRebuilder.rebuildFromDb();
-        this.logger.log(
-          `Hot reload triggered for tag ${tagId}, new version: ${newVersion}`,
+        this.logger.info(
+          createLogContext(this.contextService, "invalidateTag", {
+            tagId,
+            version: newVersion,
+          }),
+          "Hot reload triggered for tag",
         );
       } catch (rebuildError) {
         this.logger.warn(
-          `Hot reload failed for tag ${tagId}, falling back to legacy invalidation: ${rebuildError instanceof Error ? rebuildError.message : "Unknown error"}`,
+          createErrorContext(
+            this.contextService,
+            "invalidateTag",
+            rebuildError,
+            { tagId },
+          ),
+          "Hot reload failed for tag, falling back to legacy invalidation",
         );
         await this.discountRuleStore.invalidateRules();
       }
 
-      this.logger.debug(`Invalidated cache for tag ${tagId}`);
+      this.logger.debug(
+        createLogContext(this.contextService, "invalidateTag", { tagId }),
+        "Invalidated cache for tag",
+      );
     } catch (error) {
       this.logger.error(
-        `Failed to invalidate tag ${tagId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "invalidateTag", error, {
+          tagId,
+        }),
+        "Failed to invalidate tag",
       );
       throw error;
     }
@@ -174,18 +268,27 @@ export class DiscountInvalidationService {
       // Trigger hot reload
       try {
         const newVersion = await this.rulesetRebuilder.rebuildFromDb();
-        this.logger.log(
-          `Hot reload triggered for all discounts, new version: ${newVersion}`,
+        this.logger.info(
+          createLogContext(this.contextService, "invalidateAll", {
+            version: newVersion,
+          }),
+          "Hot reload triggered for all discounts",
         );
       } catch (rebuildError) {
         this.logger.warn(
-          `Hot reload failed, falling back to legacy invalidation: ${rebuildError instanceof Error ? rebuildError.message : "Unknown error"}`,
+          createErrorContext(
+            this.contextService,
+            "invalidateAll",
+            rebuildError,
+          ),
+          "Hot reload failed, falling back to legacy invalidation",
         );
         await this.discountRuleStore.invalidateRules();
       }
     } catch (error) {
       this.logger.error(
-        `Failed to invalidate all caches: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "invalidateAll", error),
+        "Failed to invalidate all caches",
       );
       throw error;
     }

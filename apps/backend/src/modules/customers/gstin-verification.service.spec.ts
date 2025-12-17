@@ -1,4 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../common/logging/context.service";
+import { getCommonTestProviders } from "../../common/testing/test-helpers";
 import { GstinVerificationService } from "./gstin-verification.service";
 
 describe("GstinVerificationService", () => {
@@ -6,7 +9,7 @@ describe("GstinVerificationService", () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [GstinVerificationService],
+      providers: [GstinVerificationService, ...getCommonTestProviders()],
     }).compile();
 
     service = module.get<GstinVerificationService>(GstinVerificationService);

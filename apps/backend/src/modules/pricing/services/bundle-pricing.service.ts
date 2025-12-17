@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import {
   customers,
   db,
@@ -7,6 +7,9 @@ import {
   products,
   productVariants,
 } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import { createErrorContext } from "../../../common/logging/logging.helper";
 import {
   BundleEligibilityService,
   UserBundleSelection,
@@ -28,12 +31,12 @@ export interface BundleVariantBreakdown {
 
 @Injectable()
 export class BundlePricingService {
-  private readonly logger = new Logger(BundlePricingService.name);
-
   constructor(
     private readonly bundleEligibilityService: BundleEligibilityService,
     private readonly priceListService: PriceListService,
     private readonly customerGroupService: CustomerGroupService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
   ) {}
 
   /**
@@ -210,7 +213,10 @@ export class BundlePricingService {
       return customer?.customerGroupId || null;
     } catch (error) {
       this.logger.error(
-        `Failed to get customer group: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "getCustomerGroupId", error, {
+          customerId,
+        }),
+        "Failed to get customer group",
       );
       return null;
     }
@@ -259,7 +265,13 @@ export class BundlePricingService {
       }));
     } catch (error) {
       this.logger.error(
-        `Failed to get price lists for customer: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(
+          this.contextService,
+          "getPriceListsForCustomer",
+          error,
+          { customerGroupId: customerGroupId || undefined },
+        ),
+        "Failed to get price lists for customer",
       );
       return [];
     }

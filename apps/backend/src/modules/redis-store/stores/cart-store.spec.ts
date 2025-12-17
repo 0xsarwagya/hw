@@ -1,6 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import Redis from "ioredis";
 import { BadRequestException } from "@nestjs/common";
+import { getCommonTestProviders } from "../../../common/testing/test-helpers";
 import { RedisStoreService } from "../redis-store.service";
 import { CartStore } from "./cart-store";
 import { KEY_PATTERNS, TTL } from "../constants/key-patterns";
@@ -27,6 +28,7 @@ describe("CartStore", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CartStore,
+        ...getCommonTestProviders(),
         {
           provide: RedisStoreService,
           useValue: redisStoreService,

@@ -1,16 +1,25 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { RedisStoreService } from "../../redis-store/redis-store.service";
 
 @Injectable()
 export class PricingVersionManager implements OnModuleInit {
-  private readonly logger = new Logger(PricingVersionManager.name);
   private client!: Redis;
   private readonly redisStoreService: RedisStoreService;
   private readonly versionKey = "pricing-ruleset-version";
   private readonly versionChannel = "pricing-ruleset-version";
 
-  constructor(redisStoreService: RedisStoreService) {
+  constructor(
+    redisStoreService: RedisStoreService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {
     this.redisStoreService = redisStoreService;
   }
 
@@ -38,7 +47,8 @@ export class PricingVersionManager implements OnModuleInit {
       return parseInt(versionStr, 10);
     } catch (error) {
       this.logger.error(
-        `Failed to get pricing ruleset version: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "getCurrentVersion", error),
+        "Failed to get pricing ruleset version",
       );
       throw error;
     }
@@ -48,7 +58,12 @@ export class PricingVersionManager implements OnModuleInit {
     this.ensureClientInitialized();
     try {
       const newVersion = await this.client.incr(this.versionKey);
-      this.logger.log(`Pricing ruleset version incremented to ${newVersion}`);
+      this.logger.info(
+        createLogContext(this.contextService, "incrementVersion", {
+          version: newVersion,
+        }),
+        "Pricing ruleset version incremented",
+      );
       await this.client.publish(
         this.versionChannel,
         JSON.stringify({
@@ -59,7 +74,8 @@ export class PricingVersionManager implements OnModuleInit {
       return newVersion;
     } catch (error) {
       this.logger.error(
-        `Failed to increment pricing ruleset version: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "incrementVersion", error),
+        "Failed to increment pricing ruleset version",
       );
       throw error;
     }
@@ -69,7 +85,10 @@ export class PricingVersionManager implements OnModuleInit {
     this.ensureClientInitialized();
     try {
       await this.client.set(this.versionKey, version.toString());
-      this.logger.log(`Pricing ruleset version set to ${version}`);
+      this.logger.info(
+        createLogContext(this.contextService, "setVersion", { version }),
+        "Pricing ruleset version set",
+      );
       await this.client.publish(
         this.versionChannel,
         JSON.stringify({ version, timestamp: new Date().toISOString() }),

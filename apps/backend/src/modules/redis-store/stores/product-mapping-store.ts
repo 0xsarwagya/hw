@@ -1,5 +1,8 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import { createLogContext } from "../../../common/logging/logging.helper";
 import { KEY_PATTERNS, TTL } from "../constants/key-patterns";
 import { IProductMappingStore } from "../interfaces/redis-store.interface";
 import { RedisStoreService } from "../redis-store.service";
@@ -18,11 +21,14 @@ export interface VariantMapping {
 
 @Injectable()
 export class ProductMappingStore implements IProductMappingStore, OnModuleInit {
-  private readonly logger = new Logger(ProductMappingStore.name);
   private client!: Redis;
   private readonly redisStoreService: RedisStoreService;
 
-  constructor(redisStoreService: RedisStoreService) {
+  constructor(
+    redisStoreService: RedisStoreService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {
     this.redisStoreService = redisStoreService;
   }
 
@@ -115,7 +121,12 @@ export class ProductMappingStore implements IProductMappingStore, OnModuleInit {
     const key = KEY_PATTERNS.MAPPING_PRODUCT(productId);
     try {
       await this.set(key, mapping, TTL.PRODUCT_MAPPING);
-      this.logger.debug(`Stored product mapping for product ${productId}`);
+      this.logger.debug(
+        createLogContext(this.contextService, "storeProductMapping", {
+          productId,
+        }),
+        "Stored product mapping",
+      );
     } catch (error) {
       this.logger.error(
         `Failed to store product mapping for product ${productId}: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -134,7 +145,12 @@ export class ProductMappingStore implements IProductMappingStore, OnModuleInit {
     const key = KEY_PATTERNS.MAPPING_VARIANT(variantId);
     try {
       await this.set(key, mapping, TTL.PRODUCT_MAPPING);
-      this.logger.debug(`Stored variant mapping for variant ${variantId}`);
+      this.logger.debug(
+        createLogContext(this.contextService, "storeVariantMapping", {
+          variantId,
+        }),
+        "Stored variant mapping",
+      );
     } catch (error) {
       this.logger.error(
         `Failed to store variant mapping for variant ${variantId}: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -180,7 +196,12 @@ export class ProductMappingStore implements IProductMappingStore, OnModuleInit {
     const key = KEY_PATTERNS.MAPPING_PRODUCT(productId);
     try {
       await this.delete(key);
-      this.logger.debug(`Invalidated product mapping for product ${productId}`);
+      this.logger.debug(
+        createLogContext(this.contextService, "invalidateProductMapping", {
+          productId,
+        }),
+        "Invalidated product mapping",
+      );
     } catch (error) {
       this.logger.error(
         `Failed to invalidate product mapping for product ${productId}: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -196,7 +217,12 @@ export class ProductMappingStore implements IProductMappingStore, OnModuleInit {
     const key = KEY_PATTERNS.MAPPING_VARIANT(variantId);
     try {
       await this.delete(key);
-      this.logger.debug(`Invalidated variant mapping for variant ${variantId}`);
+      this.logger.debug(
+        createLogContext(this.contextService, "invalidateVariantMapping", {
+          variantId,
+        }),
+        "Invalidated variant mapping",
+      );
     } catch (error) {
       this.logger.error(
         `Failed to invalidate variant mapping for variant ${variantId}: ${error instanceof Error ? error.message : "Unknown error"}`,

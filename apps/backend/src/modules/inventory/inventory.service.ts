@@ -1,15 +1,21 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../common/logging/context.service";
+import { createErrorContext } from "../../common/logging/logging.helper";
 import { RedisStoreService } from "../redis-store/redis-store.service";
 import { InventoryMetricsDto } from "./dto/inventory-metrics.dto";
 
 @Injectable()
 export class InventoryService implements OnModuleInit {
-  private readonly logger = new Logger(InventoryService.name);
   private client!: Redis;
   private readonly redisStoreService: RedisStoreService;
 
-  constructor(redisStoreService: RedisStoreService) {
+  constructor(
+    redisStoreService: RedisStoreService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {
     this.redisStoreService = redisStoreService;
   }
 
@@ -117,7 +123,8 @@ export class InventoryService implements OnModuleInit {
       };
     } catch (error) {
       this.logger.error(
-        `Failed to get inventory metrics: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "getMetrics", error),
+        "Failed to get inventory metrics",
       );
       throw error;
     }

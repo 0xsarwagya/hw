@@ -4,12 +4,17 @@ import {
   forwardRef,
   Inject,
   Injectable,
-  Logger,
   NotFoundException,
   OnModuleInit,
 } from "@nestjs/common";
 import { db, eq, orders, payments } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
 import Razorpay from "razorpay";
+import { ContextService } from "../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../common/logging/logging.helper";
 import { OrdersService } from "../orders/orders.service";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
 import {
@@ -27,7 +32,6 @@ import { RazorpayConfigService } from "./razorpay-config.service";
 
 @Injectable()
 export class PaymentsService implements OnModuleInit {
-  private readonly logger = new Logger(PaymentsService.name);
   private razorpay: Razorpay | null = null;
 
   constructor(
@@ -35,6 +39,8 @@ export class PaymentsService implements OnModuleInit {
     private readonly checkoutStore: CheckoutStore,
     @Inject(forwardRef(() => OrdersService))
     private readonly ordersService: OrdersService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
   ) {}
 
   /**
@@ -162,7 +168,13 @@ export class PaymentsService implements OnModuleInit {
       // Log but don't fail - state transition failure shouldn't break payment intent creation
       // The payment intent is already created and stored
       this.logger.error(
-        `Failed to transition checkout state to PAYMENT_PENDING for session ${checkoutSessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(
+          this.contextService,
+          "transitionToPaymentPending",
+          error,
+          { checkoutSessionId, paymentIntentId: paymentIntent.paymentIntentId },
+        ),
+        "Failed to transition checkout state to PAYMENT_PENDING",
       );
     }
 
@@ -407,7 +419,13 @@ export class PaymentsService implements OnModuleInit {
   ): Promise<void> {
     const paymentEntity = webhookEvent.payload.payment?.entity;
     if (!paymentEntity) {
-      this.logger.warn("Payment entity not found in payment.captured webhook");
+      this.logger.warn(
+        createLogContext(this.contextService, "handlePaymentCaptured", {
+          event: webhookEvent.event,
+          accountId: webhookEvent.account_id,
+        }),
+        "Payment entity not found in payment.captured webhook",
+      );
       return;
     }
 
@@ -424,7 +442,13 @@ export class PaymentsService implements OnModuleInit {
         typeof sessionIdFromNotes === "string" ? sessionIdFromNotes : null;
     } catch (error) {
       this.logger.warn(
-        `Failed to fetch Razorpay order details for paymentIntentId=${paymentIntentId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(
+          this.contextService,
+          "getRazorpayOrderDetails",
+          error,
+          { paymentIntentId },
+        ),
+        "Failed to fetch Razorpay order details",
       );
     }
 
@@ -441,7 +465,13 @@ export class PaymentsService implements OnModuleInit {
         }
       } catch (error) {
         this.logger.warn(
-          `Failed to get checkoutSessionId via reverse lookup for paymentIntentId=${paymentIntentId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+          createErrorContext(
+            this.contextService,
+            "getCheckoutSessionIdReverseLookup",
+            error,
+            { paymentIntentId },
+          ),
+          "Failed to get checkoutSessionId via reverse lookup",
         );
       }
     }
@@ -455,7 +485,11 @@ export class PaymentsService implements OnModuleInit {
       if (existingOrderId) {
         // Order already exists - this is a duplicate webhook or legacy order
         this.logger.debug(
-          `Order already exists for paymentIntentId=${paymentIntentId}, orderId=${existingOrderId}. Processing payment record only.`,
+          createLogContext(this.contextService, "handlePaymentCaptured", {
+            paymentIntentId,
+            orderId: existingOrderId,
+          }),
+          "Order already exists, processing payment record only",
         );
         await this.createPaymentRecord(paymentEntity, existingOrderId);
         return;
@@ -464,7 +498,12 @@ export class PaymentsService implements OnModuleInit {
 
     if (!checkoutSessionId) {
       this.logger.error(
-        `Checkout session ID not found for payment.captured webhook (paymentIntentId: ${paymentIntentId}). Cannot create order.`,
+        createLogContext(this.contextService, "handlePaymentCaptured", {
+          paymentIntentId,
+          event: webhookEvent.event,
+          accountId: webhookEvent.account_id,
+        }),
+        "Checkout session ID not found for payment.captured webhook, cannot create order",
       );
       return;
     }
@@ -473,15 +512,24 @@ export class PaymentsService implements OnModuleInit {
     const session = await this.checkoutStore.getSession(checkoutSessionId);
     if (!session) {
       this.logger.error(
-        `Checkout session ${checkoutSessionId} not found for paymentIntentId=${paymentIntentId}`,
+        createLogContext(this.contextService, "handlePaymentCaptured", {
+          checkoutSessionId,
+          paymentIntentId,
+        }),
+        "Checkout session not found",
       );
       return;
     }
 
     // Late event handling: ignore if checkout is already COMPLETED
     if (session.state === CheckoutState.COMPLETED) {
-      this.logger.log(
-        `Ignoring late payment.captured webhook for completed checkout: checkoutSessionId=${checkoutSessionId}, paymentIntentId=${paymentIntentId}`,
+      this.logger.info(
+        createLogContext(this.contextService, "handlePaymentCaptured", {
+          checkoutSessionId,
+          paymentIntentId,
+          state: session.state,
+        }),
+        "Ignoring late payment.captured webhook for completed checkout",
       );
       // Still create payment record if order exists
       const existingOrderId = await this.checkoutStore.getOrderByPaymentIntent(
@@ -496,8 +544,13 @@ export class PaymentsService implements OnModuleInit {
 
     // Ignore if checkout is FAILED
     if (session.state === CheckoutState.FAILED) {
-      this.logger.log(
-        `Ignoring payment.captured webhook for failed checkout: checkoutSessionId=${checkoutSessionId}, paymentIntentId=${paymentIntentId}`,
+      this.logger.info(
+        createLogContext(this.contextService, "handlePaymentCaptured", {
+          checkoutSessionId,
+          paymentIntentId,
+          state: session.state,
+        }),
+        "Ignoring payment.captured webhook for failed checkout",
       );
       return;
     }
@@ -519,14 +572,26 @@ export class PaymentsService implements OnModuleInit {
           );
         } catch (error) {
           this.logger.error(
-            `Failed to transition checkout session to PAYMENT_CONFIRMED: ${error instanceof Error ? error.message : "Unknown error"}`,
+            createErrorContext(
+              this.contextService,
+              "transitionToPaymentConfirmed",
+              error,
+              { checkoutSessionId, paymentIntentId },
+            ),
+            "Failed to transition checkout session to PAYMENT_CONFIRMED",
           );
           // Continue - will retry state transition in finalizeOrderFromPayment
         }
       }
     } catch (error) {
       this.logger.error(
-        `Failed to update payment intent status: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(
+          this.contextService,
+          "updatePaymentIntentStatus",
+          error,
+          { checkoutSessionId, paymentIntentId },
+        ),
+        "Failed to update payment intent status",
       );
       // Continue - payment is confirmed, we can still create order
     }
@@ -544,7 +609,12 @@ export class PaymentsService implements OnModuleInit {
       );
       if (existingOrderId) {
         this.logger.debug(
-          `Order already being created by another worker for paymentIntentId=${paymentIntentId}, orderId=${existingOrderId}`,
+          createLogContext(this.contextService, "handlePaymentCaptured", {
+            paymentIntentId,
+            orderId: existingOrderId,
+            checkoutSessionId,
+          }),
+          "Order already being created by another worker",
         );
         await this.createPaymentRecord(paymentEntity, existingOrderId);
         return;
@@ -560,7 +630,12 @@ export class PaymentsService implements OnModuleInit {
         return;
       }
       this.logger.warn(
-        `Checkout lock held but order not found for paymentIntentId=${paymentIntentId}. Another worker may be processing.`,
+        createLogContext(this.contextService, "handlePaymentCaptured", {
+          paymentIntentId,
+          checkoutSessionId,
+          cartId: session.cartId,
+        }),
+        "Checkout lock held but order not found, another worker may be processing",
       );
       return;
     }
@@ -576,12 +651,23 @@ export class PaymentsService implements OnModuleInit {
       // Create payment record
       await this.createPaymentRecord(paymentEntity, order.id);
 
-      this.logger.log(
-        `Order created from payment confirmation: orderId=${order.id}, paymentIntentId=${paymentIntentId}, checkoutSessionId=${checkoutSessionId}`,
+      this.logger.info(
+        createLogContext(this.contextService, "handlePaymentCaptured", {
+          orderId: order.id,
+          paymentIntentId,
+          checkoutSessionId,
+        }),
+        "Order created from payment confirmation",
       );
     } catch (error) {
       this.logger.error(
-        `Failed to finalize order from payment: paymentIntentId=${paymentIntentId}, checkoutSessionId=${checkoutSessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(
+          this.contextService,
+          "finalizeOrderFromPayment",
+          error,
+          { paymentIntentId, checkoutSessionId, cartId: session.cartId },
+        ),
+        "Failed to finalize order from payment",
       );
       throw error;
     } finally {
@@ -590,7 +676,13 @@ export class PaymentsService implements OnModuleInit {
         await this.checkoutStore.releaseCheckoutLock(session.cartId);
       } catch (error) {
         this.logger.error(
-          `Failed to release checkout lock: ${error instanceof Error ? error.message : "Unknown error"}`,
+          createErrorContext(
+            this.contextService,
+            "releaseCheckoutLock",
+            error,
+            { cartId: session.cartId, checkoutSessionId },
+          ),
+          "Failed to release checkout lock",
         );
       }
     }
@@ -715,13 +807,25 @@ export class PaymentsService implements OnModuleInit {
             }
           } catch (error) {
             this.logger.error(
-              `Failed to fail checkout session: ${error instanceof Error ? error.message : "Unknown error"}`,
+              createErrorContext(
+                this.contextService,
+                "failCheckoutSession",
+                error,
+                { checkoutSessionId, paymentIntentId },
+              ),
+              "Failed to fail checkout session",
             );
           }
         }
       } catch (error) {
         this.logger.error(
-          `Failed to update payment intent status: ${error instanceof Error ? error.message : "Unknown error"}`,
+          createErrorContext(
+            this.contextService,
+            "updatePaymentIntentStatus",
+            error,
+            { checkoutSessionId, paymentIntentId },
+          ),
+          "Failed to update payment intent status",
         );
       }
     }
@@ -750,7 +854,11 @@ export class PaymentsService implements OnModuleInit {
     } catch (error) {
       // Log but don't fail webhook processing if state transition fails
       this.logger.error(
-        `Failed to transition checkout session to FAILED: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "transitionToFailed", error, {
+          orderId: order.id,
+          paymentIntentId,
+        }),
+        "Failed to transition checkout session to FAILED",
       );
     }
 

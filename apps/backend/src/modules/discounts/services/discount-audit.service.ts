@@ -1,10 +1,13 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import {
   db,
   discountAuditEventTypeEnum,
   discountAuditLogs,
   discountAuditSeverityEnum,
 } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import { createErrorContext } from "../../../common/logging/logging.helper";
 import {
   AuditEventType,
   DiscountAuditLogEntry,
@@ -20,7 +23,10 @@ import { computeRuleHash } from "../engine/discount-hash.utils";
 
 @Injectable()
 export class DiscountAuditService {
-  private readonly logger = new Logger(DiscountAuditService.name);
+  constructor(
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {}
 
   /**
    * Log discount audit event (async, non-blocking)
@@ -51,7 +57,10 @@ export class DiscountAuditService {
     } catch (error) {
       // Log error but don't throw - audit logging should never break core operations
       this.logger.error(
-        `Failed to log discount audit event: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "logEvent", error, {
+          event: entry.event,
+        }),
+        "Failed to log discount audit event",
       );
     }
   }

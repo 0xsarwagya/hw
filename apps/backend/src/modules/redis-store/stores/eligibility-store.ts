@@ -1,16 +1,22 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import { createLogContext } from "../../../common/logging/logging.helper";
 import { KEY_PATTERNS, TTL } from "../constants/key-patterns";
 import { IEligibilityStore } from "../interfaces/redis-store.interface";
 import { RedisStoreService } from "../redis-store.service";
 
 @Injectable()
 export class EligibilityStore implements IEligibilityStore, OnModuleInit {
-  private readonly logger = new Logger(EligibilityStore.name);
   private client!: Redis;
   private readonly redisStoreService: RedisStoreService;
 
-  constructor(redisStoreService: RedisStoreService) {
+  constructor(
+    redisStoreService: RedisStoreService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {
     this.redisStoreService = redisStoreService;
   }
 
@@ -178,7 +184,12 @@ export class EligibilityStore implements IEligibilityStore, OnModuleInit {
     const key = KEY_PATTERNS.DISCOUNT_ELIGIBILITY(discountId);
     try {
       await this.delete(key);
-      this.logger.debug(`Invalidated eligibility for discount ${discountId}`);
+      this.logger.debug(
+        createLogContext(this.contextService, "invalidateEligibility", {
+          discountId,
+        }),
+        "Invalidated eligibility for discount",
+      );
     } catch (error) {
       this.logger.error(
         `Failed to invalidate eligibility for discount ${discountId}: ${error instanceof Error ? error.message : "Unknown error"}`,

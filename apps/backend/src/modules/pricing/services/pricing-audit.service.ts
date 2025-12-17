@@ -1,10 +1,13 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import {
   db,
   pricingAuditEventTypeEnum,
   pricingAuditLogs,
   pricingAuditSeverityEnum,
 } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import { createErrorContext } from "../../../common/logging/logging.helper";
 import {
   PricingAuditEventType,
   PricingAuditLogEntry,
@@ -18,7 +21,10 @@ import {
 
 @Injectable()
 export class PricingAuditService {
-  private readonly logger = new Logger(PricingAuditService.name);
+  constructor(
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {}
 
   /**
    * Log pricing audit event (async, non-blocking)
@@ -49,7 +55,10 @@ export class PricingAuditService {
     } catch (error) {
       // Log error but don't throw - audit logging should never break core operations
       this.logger.error(
-        `Failed to log pricing audit event: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "logEvent", error, {
+          event: entry.event,
+        }),
+        "Failed to log pricing audit event",
       );
     }
   }

@@ -1,13 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  OnModuleInit,
-} from "@nestjs/common";
+import { BadRequestException, Injectable, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import {
   CheckoutState,
   TRANSITION_RULES,
@@ -52,14 +53,17 @@ function loadLuaScript(scriptName: string, currentDir: string): string {
 
 @Injectable()
 export class CheckoutStore implements ICheckoutStore, OnModuleInit {
-  private readonly logger = new Logger(CheckoutStore.name);
   private client!: Redis;
   private readonly redisStoreService: RedisStoreService;
   private transitionStateScriptSha: string | null = null;
   private createPaymentIntentScriptSha: string | null = null;
   private createOrderFromPaymentScriptSha: string | null = null;
 
-  constructor(redisStoreService: RedisStoreService) {
+  constructor(
+    redisStoreService: RedisStoreService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {
     this.redisStoreService = redisStoreService;
   }
 
@@ -74,10 +78,18 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
         "LOAD",
         script,
       )) as string;
-      this.logger.log("State transition Lua script loaded successfully");
+      this.logger.info(
+        createLogContext(this.contextService, "onModuleInit", {
+          scriptName: "transition-state.lua",
+        }),
+        "State transition Lua script loaded successfully",
+      );
     } catch (error) {
       this.logger.error(
-        `Failed to load state transition Lua script: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "loadLuaScript", error, {
+          scriptName: "transition-state.lua",
+        }),
+        "Failed to load state transition Lua script",
       );
       throw error;
     }
@@ -89,10 +101,18 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
         "LOAD",
         script,
       )) as string;
-      this.logger.log("Payment intent creation Lua script loaded successfully");
+      this.logger.info(
+        createLogContext(this.contextService, "onModuleInit", {
+          scriptName: "create-payment-intent.lua",
+        }),
+        "Payment intent creation Lua script loaded successfully",
+      );
     } catch (error) {
       this.logger.error(
-        `Failed to load payment intent creation Lua script: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "loadLuaScript", error, {
+          scriptName: "create-payment-intent.lua",
+        }),
+        "Failed to load payment intent creation Lua script",
       );
       throw error;
     }
@@ -104,7 +124,7 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
         "LOAD",
         script,
       )) as string;
-      this.logger.log(
+      this.logger.info(
         "Order creation from payment Lua script loaded successfully",
       );
     } catch (error) {
@@ -208,14 +228,27 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
     try {
       const result = await this.client.set(key, lockValue, "PX", ttl, "NX");
       if (result === "OK") {
-        this.logger.debug(`Checkout lock acquired for cartId=${cartId}`);
+        this.logger.debug(
+          createLogContext(this.contextService, "acquireCheckoutLock", {
+            cartId,
+          }),
+          "Checkout lock acquired",
+        );
         return true;
       }
-      this.logger.debug(`Checkout lock already exists for cartId=${cartId}`);
+      this.logger.debug(
+        createLogContext(this.contextService, "acquireCheckoutLock", {
+          cartId,
+        }),
+        "Checkout lock already exists",
+      );
       return false;
     } catch (error) {
       this.logger.error(
-        `Failed to acquire checkout lock for cartId=${cartId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "acquireCheckoutLock", error, {
+          cartId,
+        }),
+        "Failed to acquire checkout lock",
       );
       throw error;
     }
@@ -228,10 +261,18 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
     const key = KEY_PATTERNS.CHECKOUT_LOCK(cartId);
     try {
       await this.delete(key);
-      this.logger.debug(`Checkout lock released for cartId=${cartId}`);
+      this.logger.debug(
+        createLogContext(this.contextService, "releaseCheckoutLock", {
+          cartId,
+        }),
+        "Checkout lock released",
+      );
     } catch (error) {
       this.logger.error(
-        `Failed to release checkout lock for cartId=${cartId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(this.contextService, "releaseCheckoutLock", error, {
+          cartId,
+        }),
+        "Failed to release checkout lock",
       );
       throw error;
     }
@@ -555,7 +596,13 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
       return await this.getPaymentIntent(checkoutSessionId);
     } catch (error) {
       this.logger.error(
-        `Failed to get payment intent by paymentIntentId=${paymentIntentId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(
+          this.contextService,
+          "getPaymentIntentByPaymentId",
+          error,
+          { paymentIntentId },
+        ),
+        "Failed to get payment intent by paymentIntentId",
       );
       throw error;
     }
@@ -576,10 +623,21 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
     const key = this.getCheckoutMetadataKey(sessionId);
     try {
       await this.set(key, metadata, TTL.CHECKOUT_METADATA);
-      this.logger.debug(`Stored checkout metadata for sessionId=${sessionId}`);
+      this.logger.debug(
+        createLogContext(this.contextService, "storeCheckoutMetadata", {
+          sessionId,
+        }),
+        "Stored checkout metadata",
+      );
     } catch (error) {
       this.logger.error(
-        `Failed to store checkout metadata for sessionId=${sessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        createErrorContext(
+          this.contextService,
+          "storeCheckoutMetadata",
+          error,
+          { sessionId },
+        ),
+        "Failed to store checkout metadata",
       );
       throw error;
     }

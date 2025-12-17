@@ -1,4 +1,5 @@
 import { Test, TestingModule } from "@nestjs/testing";
+import { getCommonTestProviders } from "../../../common/testing/test-helpers";
 import { ImageCompressionService } from "./image-compression.service";
 import sharp from "sharp";
 
@@ -21,7 +22,7 @@ describe("ImageCompressionService", () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ImageCompressionService],
+      providers: [ImageCompressionService, ...getCommonTestProviders()],
     }).compile();
 
     service = module.get<ImageCompressionService>(ImageCompressionService);
