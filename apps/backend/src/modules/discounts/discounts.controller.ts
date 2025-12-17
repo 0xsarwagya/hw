@@ -22,11 +22,17 @@ import { Public } from "../../common/decorators/public.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
+import { DriftSeverity } from "./audit/discount-audit.types";
 import { DiscountsService } from "./discounts.service";
 import { CreateDiscountDto } from "./dto/create-discount.dto";
 import { DiscountResponseDto } from "./dto/discount-response.dto";
 import { UpdateDiscountDto } from "./dto/update-discount.dto";
 import { ValidateDiscountDto } from "./dto/validate-discount.dto";
+import {
+  AdminDriftReportService,
+  DriftReportQuery,
+} from "./services/admin-drift-report.service";
+import { DiscountProfiler } from "./services/discount-profiler.service";
 
 @ApiTags("admin/discounts")
 @Controller("admin/discounts")
@@ -34,7 +40,11 @@ import { ValidateDiscountDto } from "./dto/validate-discount.dto";
 @ApiBearerAuth("JWT-auth")
 @Roles("admin")
 export class DiscountsController {
-  constructor(private readonly discountsService: DiscountsService) {}
+  constructor(
+    private readonly discountsService: DiscountsService,
+    private readonly adminDriftReportService: AdminDriftReportService,
+    private readonly discountProfiler: DiscountProfiler,
+  ) {}
 
   @Post()
   @ApiOperation({
@@ -197,6 +207,58 @@ export class DiscountsController {
   })
   async remove(@Param("id") id: string): Promise<{ message: string }> {
     return this.discountsService.remove(id);
+  }
+
+  @Get("drift-report")
+  @ApiOperation({
+    summary: "Get discount drift report (admin)",
+    description: "Retrieve drift detection events with filtering options",
+  })
+  @ApiQuery({ name: "cartId", required: false, type: String })
+  @ApiQuery({ name: "checkoutId", required: false, type: String })
+  @ApiQuery({ name: "orderId", required: false, type: String })
+  @ApiQuery({ name: "paymentIntentId", required: false, type: String })
+  @ApiQuery({ name: "dateFrom", required: false, type: Date })
+  @ApiQuery({ name: "dateTo", required: false, type: Date })
+  @ApiQuery({ name: "severity", required: false, enum: DriftSeverity })
+  @ApiQuery({ name: "page", required: false, type: Number })
+  @ApiQuery({ name: "limit", required: false, type: Number })
+  @ApiResponse({
+    status: 200,
+    description: "Drift report retrieved successfully",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  async getDriftReport(@Query() query: DriftReportQuery) {
+    return this.adminDriftReportService.getDriftReport(query);
+  }
+
+  @Get("profile")
+  @ApiOperation({
+    summary: "Get discount profiler metrics (admin)",
+    description:
+      "Retrieve performance metrics for discount engine and hot reload system",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Profiler metrics retrieved successfully",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  async getProfile() {
+    return this.discountProfiler.getMetrics();
   }
 }
 

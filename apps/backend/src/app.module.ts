@@ -11,6 +11,7 @@ import { InventoryModule } from "./modules/inventory/inventory.module";
 import { InvoicesModule } from "./modules/invoices/invoices.module";
 import { OrdersModule } from "./modules/orders/orders.module";
 import { PaymentsModule } from "./modules/payments/payments.module";
+import { PricingModule } from "./modules/pricing/pricing.module";
 import { ProductsModule } from "./modules/products/products.module";
 import { RedisStoreModule } from "./modules/redis-store/redis-store.module";
 import { ShippingModule } from "./modules/shipping/shipping.module";
@@ -29,6 +30,7 @@ import { StorageModule } from "./modules/storage/storage.module";
     InvoicesModule,
     AddressAutocompleteModule,
     DiscountsModule,
+    PricingModule,
     StorageModule,
     RedisStoreModule,
     InventoryModule,

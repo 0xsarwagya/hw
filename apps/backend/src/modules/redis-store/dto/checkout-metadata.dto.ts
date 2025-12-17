@@ -1,3 +1,6 @@
+import { DiscountSnapshot } from "../../discounts/engine/discount-engine.types";
+import { PricingSnapshot } from "../../pricing/engine/pricing-engine.types";
+
 /**
  * Checkout metadata stored in Redis
  * Contains order creation data that needs to be preserved until payment confirmation
@@ -22,6 +25,20 @@ export interface CheckoutMetadata {
    * Shipping cost in INR
    */
   shippingCost: number;
+
+  /**
+   * Discount snapshot from discount engine
+   * Immutable snapshot frozen at payment intent creation
+   * Includes engine version, timestamp, and rule hash for integrity
+   */
+  discountSnapshot: DiscountSnapshot | null;
+
+  /**
+   * Pricing snapshot from pricing engine
+   * Immutable snapshot frozen at payment intent creation
+   * Includes engine version, timestamp, and rule hash for integrity
+   */
+  pricingSnapshot: PricingSnapshot | null;
 
   /**
    * Timestamp when metadata was created
