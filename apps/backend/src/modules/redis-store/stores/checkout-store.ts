@@ -1110,7 +1110,7 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
   async extendSession(sessionId: string): Promise<void> {
     const key = this.getSessionKey(sessionId);
     try {
-        await this.client.expire(key, TTL.CHECKOUT_SESSION);
+      await this.client.expire(key, TTL.CHECKOUT_SESSION);
     } catch (error) {
       this.logger.error(
         `Failed to extend checkout session ${sessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,

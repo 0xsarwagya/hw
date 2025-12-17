@@ -738,11 +738,11 @@ export class OrdersService {
       }
     }
 
-      const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
-      const total = subtotalAfterDiscount + totalGstAmount + shippingCost;
+    const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
+    const total = subtotalAfterDiscount + totalGstAmount + shippingCost;
 
-      // Generate order number
-      const orderNumber = await this.generateOrderNumber();
+    // Generate order number
+    const orderNumber = await this.generateOrderNumber();
 
     // Create order atomically using payment-scoped idempotency
     let orderId: string;
@@ -812,44 +812,44 @@ export class OrdersService {
       // Continue - order is created, state transition failure is non-critical
     }
 
-      // Record discount usage if discount was applied
-      if (discountCode && discountAmount > 0) {
-        try {
-          const discount = await this.discountsService.findByCode(discountCode);
-          await this.discountsService.recordUsage(
-            discount.id,
+    // Record discount usage if discount was applied
+    if (discountCode && discountAmount > 0) {
+      try {
+        const discount = await this.discountsService.findByCode(discountCode);
+        await this.discountsService.recordUsage(
+          discount.id,
           orderId,
           metadata.userId,
-          );
-        } catch (error) {
-        this.logger.error("Failed to record discount usage:", error);
-        }
-      }
-
-      // Create order items
-      const orderItemsToInsert = cartItemsWithVariants.map((item) => {
-        const itemSubtotal = item.price * item.quantity;
-        const gstBreakdown = calculateGstBreakdown(
-          itemSubtotal,
-          item.productGstRate,
-          sellerState,
-          buyerState,
         );
+      } catch (error) {
+        this.logger.error("Failed to record discount usage:", error);
+      }
+    }
 
-        return {
+    // Create order items
+    const orderItemsToInsert = cartItemsWithVariants.map((item) => {
+      const itemSubtotal = item.price * item.quantity;
+      const gstBreakdown = calculateGstBreakdown(
+        itemSubtotal,
+        item.productGstRate,
+        sellerState,
+        buyerState,
+      );
+
+      return {
         orderId,
-          productVariantId: item.productVariantId,
-          quantity: item.quantity,
-          price: item.price,
-          gstRate: item.productGstRate,
-          gstAmount: gstBreakdown.totalGst,
-        };
-      });
+        productVariantId: item.productVariantId,
+        quantity: item.quantity,
+        price: item.price,
+        gstRate: item.productGstRate,
+        gstAmount: gstBreakdown.totalGst,
+      };
+    });
 
-      const insertedOrderItems = await db
-        .insert(orderItems)
-        .values(orderItemsToInsert)
-        .returning();
+    const insertedOrderItems = await db
+      .insert(orderItems)
+      .values(orderItemsToInsert)
+      .returning();
 
     // Commit inventory (convert reserved → consumed)
     // This happens AFTER payment confirmation
@@ -870,26 +870,26 @@ export class OrdersService {
       );
       // Continue - inventory commit failure should be handled separately
       // Order is already created, inventory can be reconciled later
-      }
+    }
 
-      // Clear cart
+    // Clear cart
     try {
       await this.cartsService.clearCart(metadata.userId, null);
     } catch (error) {
       this.logger.error("Failed to clear cart:", error);
     }
 
-      // Calculate overall GST breakdown
-      const isIntraState = sellerState === buyerState;
-      const gstBreakdown = {
-        cgst: totalCgst,
-        sgst: totalSgst,
-        igst: totalIgst,
-        totalGst: totalGstAmount,
-        isIntraState,
-      };
+    // Calculate overall GST breakdown
+    const isIntraState = sellerState === buyerState;
+    const gstBreakdown = {
+      cgst: totalCgst,
+      sgst: totalSgst,
+      igst: totalIgst,
+      totalGst: totalGstAmount,
+      isIntraState,
+    };
 
-      // Build order response
+    // Build order response
     const orderResponse: OrderResponseDto = {
       id: orderId,
       customerId,
@@ -897,7 +897,7 @@ export class OrdersService {
       status: "pending",
       subtotal,
       gstAmount: totalGstAmount,
-        gstBreakdown,
+      gstBreakdown,
       shippingCost,
       total,
       razorpayOrderId: paymentIntentId,
@@ -906,10 +906,10 @@ export class OrdersService {
       billingAddressId: metadata.billingAddressId,
       discountCode,
       discountAmount,
-        items: insertedOrderItems,
+      items: insertedOrderItems,
       createdAt: new Date(),
       updatedAt: new Date(),
-      } as OrderResponseDto;
+    } as OrderResponseDto;
 
     // Transition to COMPLETED state
     try {
@@ -918,15 +918,15 @@ export class OrdersService {
         CheckoutState.ORDER_CREATED,
         CheckoutState.COMPLETED,
       );
-      } catch (error) {
+    } catch (error) {
       this.logger.error(
         `Failed to transition to COMPLETED for session ${checkoutSessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
-      }
+    }
 
     this.logger.log(
       `Order finalized: orderId=${orderId}, paymentIntentId=${paymentIntentId}, checkoutSessionId=${checkoutSessionId}`,
-        );
+    );
 
     return orderResponse;
   }
