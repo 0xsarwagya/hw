@@ -1,6 +1,8 @@
 import * as crypto from "node:crypto";
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -8,6 +10,7 @@ import {
 } from "@nestjs/common";
 import { db, eq, orders, payments } from "@vcecom/db";
 import Razorpay from "razorpay";
+import { OrdersService } from "../orders/orders.service";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
 import {
   PaymentIntent,
@@ -30,6 +33,8 @@ export class PaymentsService implements OnModuleInit {
   constructor(
     private readonly razorpayConfigService: RazorpayConfigService,
     private readonly checkoutStore: CheckoutStore,
+    @Inject(forwardRef(() => OrdersService))
+    private readonly ordersService: OrdersService,
   ) {}
 
   /**
@@ -395,12 +400,14 @@ export class PaymentsService implements OnModuleInit {
 
   /**
    * Handle payment captured event
+   * Creates order only after payment confirmation (webhook-driven)
    */
   private async handlePaymentCaptured(
     webhookEvent: RazorpayWebhookEventDto,
   ): Promise<void> {
     const paymentEntity = webhookEvent.payload.payment?.entity;
     if (!paymentEntity) {
+      this.logger.warn("Payment entity not found in payment.captured webhook");
       return;
     }
 
@@ -424,9 +431,14 @@ export class PaymentsService implements OnModuleInit {
     // Method 2: Fallback to reverse lookup if not in notes
     if (!checkoutSessionId) {
       try {
-        // Use reverse lookup to get checkoutSessionId from paymentIntentId
-        const reverseKey = `payment:intent:by-id:${paymentIntentId}`;
-        checkoutSessionId = await this.checkoutStore.get<string>(reverseKey);
+        const paymentIntent =
+          await this.checkoutStore.getPaymentIntentByPaymentId(paymentIntentId);
+        if (paymentIntent) {
+          // Extract checkoutSessionId from payment intent (we need to get it from the key)
+          // Since we don't store checkoutSessionId in PaymentIntent, use reverse lookup
+          const reverseKey = `payment:intent:by-id:${paymentIntentId}`;
+          checkoutSessionId = await this.checkoutStore.get<string>(reverseKey);
+        }
       } catch (error) {
         this.logger.warn(
           `Failed to get checkoutSessionId via reverse lookup for paymentIntentId=${paymentIntentId}: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -434,73 +446,168 @@ export class PaymentsService implements OnModuleInit {
       }
     }
 
-    // If we still don't have checkoutSessionId, try to find order and use legacy flow
+    // If we still don't have checkoutSessionId, check if order already exists (legacy flow)
     if (!checkoutSessionId) {
-      const [order] = await db
-        .select()
-        .from(orders)
-        .where(eq(orders.razorpayOrderId, paymentIntentId))
-        .limit(1);
-
-      if (order) {
-        // Use legacy flow with order lookup
-        const sessionData = await this.checkoutStore.getSessionByOrderId(
-          order.id,
+      const existingOrderId = await this.checkoutStore.getOrderByPaymentIntent(
+        "razorpay",
+        paymentIntentId,
+      );
+      if (existingOrderId) {
+        // Order already exists - this is a duplicate webhook or legacy order
+        this.logger.debug(
+          `Order already exists for paymentIntentId=${paymentIntentId}, orderId=${existingOrderId}. Processing payment record only.`,
         );
-        if (sessionData) {
-          checkoutSessionId = sessionData.sessionId;
-        }
+        await this.createPaymentRecord(paymentEntity, existingOrderId);
+        return;
       }
     }
 
-    // Update payment intent status if we found checkoutSessionId
-    if (checkoutSessionId) {
-      try {
-        const paymentIntent =
-          await this.checkoutStore.getPaymentIntent(checkoutSessionId);
-        if (paymentIntent) {
-          // Update payment intent status atomically (idempotent)
-          await this.checkoutStore.updatePaymentIntentStatus(
-            checkoutSessionId,
-            PaymentIntentStatus.CONFIRMED,
-          );
-
-          // Transition checkout session to PAYMENT_CONFIRMED
-          try {
-            const session =
-              await this.checkoutStore.getSession(checkoutSessionId);
-            if (session && session.state === CheckoutState.PAYMENT_PENDING) {
-              await this.checkoutStore.transitionState(
-                checkoutSessionId,
-                CheckoutState.PAYMENT_PENDING,
-                CheckoutState.PAYMENT_CONFIRMED,
-              );
-            }
-          } catch (error) {
-            this.logger.error(
-              `Failed to transition checkout session to PAYMENT_CONFIRMED: ${error instanceof Error ? error.message : "Unknown error"}`,
-            );
-          }
-        }
-      } catch (error) {
-        this.logger.error(
-          `Failed to update payment intent status: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
-      }
-    }
-
-    // Find order by Razorpay order ID (for payment record creation)
-    const [order] = await db
-      .select()
-      .from(orders)
-      .where(eq(orders.razorpayOrderId, paymentIntentId))
-      .limit(1);
-
-    if (!order) {
-      // Order not found, but payment intent was updated
+    if (!checkoutSessionId) {
+      this.logger.error(
+        `Checkout session ID not found for payment.captured webhook (paymentIntentId: ${paymentIntentId}). Cannot create order.`,
+      );
       return;
     }
 
+    // Get checkout session to check state (late event handling)
+    const session = await this.checkoutStore.getSession(checkoutSessionId);
+    if (!session) {
+      this.logger.error(
+        `Checkout session ${checkoutSessionId} not found for paymentIntentId=${paymentIntentId}`,
+      );
+      return;
+    }
+
+    // Late event handling: ignore if checkout is already COMPLETED
+    if (session.state === CheckoutState.COMPLETED) {
+      this.logger.log(
+        `Ignoring late payment.captured webhook for completed checkout: checkoutSessionId=${checkoutSessionId}, paymentIntentId=${paymentIntentId}`,
+      );
+      // Still create payment record if order exists
+      const existingOrderId = await this.checkoutStore.getOrderByPaymentIntent(
+        "razorpay",
+        paymentIntentId,
+      );
+      if (existingOrderId) {
+        await this.createPaymentRecord(paymentEntity, existingOrderId);
+      }
+      return;
+    }
+
+    // Ignore if checkout is FAILED
+    if (session.state === CheckoutState.FAILED) {
+      this.logger.log(
+        `Ignoring payment.captured webhook for failed checkout: checkoutSessionId=${checkoutSessionId}, paymentIntentId=${paymentIntentId}`,
+      );
+      return;
+    }
+
+    // Update payment intent status and transition to PAYMENT_CONFIRMED
+    try {
+      await this.checkoutStore.updatePaymentIntentStatus(
+        checkoutSessionId,
+        PaymentIntentStatus.CONFIRMED,
+      );
+
+      // Transition checkout session to PAYMENT_CONFIRMED
+      if (session.state === CheckoutState.PAYMENT_PENDING) {
+        try {
+          await this.checkoutStore.transitionState(
+            checkoutSessionId,
+            CheckoutState.PAYMENT_PENDING,
+            CheckoutState.PAYMENT_CONFIRMED,
+          );
+        } catch (error) {
+          this.logger.error(
+            `Failed to transition checkout session to PAYMENT_CONFIRMED: ${error instanceof Error ? error.message : "Unknown error"}`,
+          );
+          // Continue - will retry state transition in finalizeOrderFromPayment
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to update payment intent status: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      // Continue - payment is confirmed, we can still create order
+    }
+
+    // Acquire checkout lock before order creation (prevents concurrent webhook processing)
+    const lockAcquired = await this.checkoutStore.acquireCheckoutLock(
+      session.cartId,
+    );
+    if (!lockAcquired) {
+      // Lock already held - another webhook worker is processing
+      // Check if order was created by the other worker
+      const existingOrderId = await this.checkoutStore.getOrderByPaymentIntent(
+        "razorpay",
+        paymentIntentId,
+      );
+      if (existingOrderId) {
+        this.logger.debug(
+          `Order already being created by another worker for paymentIntentId=${paymentIntentId}, orderId=${existingOrderId}`,
+        );
+        await this.createPaymentRecord(paymentEntity, existingOrderId);
+        return;
+      }
+      // Lock held but no order - wait a bit and retry
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      const retryOrderId = await this.checkoutStore.getOrderByPaymentIntent(
+        "razorpay",
+        paymentIntentId,
+      );
+      if (retryOrderId) {
+        await this.createPaymentRecord(paymentEntity, retryOrderId);
+        return;
+      }
+      this.logger.warn(
+        `Checkout lock held but order not found for paymentIntentId=${paymentIntentId}. Another worker may be processing.`,
+      );
+      return;
+    }
+
+    try {
+      // Create order from payment confirmation (webhook-driven)
+      const order = await this.ordersService.finalizeOrderFromPayment(
+        checkoutSessionId,
+        paymentIntentId,
+        "razorpay",
+      );
+
+      // Create payment record
+      await this.createPaymentRecord(paymentEntity, order.id);
+
+      this.logger.log(
+        `Order created from payment confirmation: orderId=${order.id}, paymentIntentId=${paymentIntentId}, checkoutSessionId=${checkoutSessionId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to finalize order from payment: paymentIntentId=${paymentIntentId}, checkoutSessionId=${checkoutSessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
+    } finally {
+      // Release checkout lock
+      try {
+        await this.checkoutStore.releaseCheckoutLock(session.cartId);
+      } catch (error) {
+        this.logger.error(
+          `Failed to release checkout lock: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+      }
+    }
+  }
+
+  /**
+   * Create or update payment record (idempotent)
+   */
+  private async createPaymentRecord(
+    paymentEntity: {
+      id: string;
+      order_id: string;
+      amount: number;
+      method: string;
+    },
+    orderId: string,
+  ): Promise<void> {
     // Check if payment already exists (idempotent webhook processing)
     const [existingPayment] = await db
       .select()
@@ -520,7 +627,7 @@ export class PaymentsService implements OnModuleInit {
     } else {
       // Create new payment record
       await db.insert(payments).values({
-        orderId: order.id,
+        orderId,
         razorpayPaymentId: paymentEntity.id,
         razorpayOrderId: paymentEntity.order_id,
         amount: paymentEntity.amount / 100, // Convert from paise to rupees
@@ -530,14 +637,20 @@ export class PaymentsService implements OnModuleInit {
     }
 
     // Update order status to confirmed if payment is captured
-    if (order.status === "pending") {
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, orderId))
+      .limit(1);
+
+    if (order && order.status === "pending") {
       await db
         .update(orders)
         .set({
           status: "confirmed",
           updatedAt: new Date(),
         })
-        .where(eq(orders.id, order.id));
+        .where(eq(orders.id, orderId));
     }
   }
 

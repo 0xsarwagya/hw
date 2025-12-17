@@ -86,6 +86,21 @@ export const KEY_PATTERNS = {
    */
   PAYMENT_INTENT_BY_ID: (paymentIntentId: string) =>
     `payment:intent:by-id:${paymentIntentId}`,
+
+  /**
+   * Checkout metadata keys
+   * Format: checkout:metadata:{sessionId}
+   * TTL: Same as checkout session (1 hour)
+   */
+  CHECKOUT_METADATA: (sessionId: string) => `checkout:metadata:${sessionId}`,
+
+  /**
+   * Order by payment intent (payment-scoped idempotency)
+   * Format: order:payment:{provider}:{paymentIntentId}
+   * TTL: 24 hours (same as payment intent)
+   */
+  ORDER_BY_PAYMENT: (provider: string, paymentIntentId: string) =>
+    `order:payment:${provider}:${paymentIntentId}`,
 } as const;
 
 /**
@@ -124,4 +139,16 @@ export const TTL = {
    * Must not expire before checkout completion
    */
   PAYMENT_INTENT: 24 * 60 * 60, // 24 hours in seconds
+
+  /**
+   * Checkout metadata TTL: 1 hour
+   * Same as checkout session - metadata expires with session
+   */
+  CHECKOUT_METADATA: 60 * 60, // 1 hour in seconds
+
+  /**
+   * Order by payment TTL: 24 hours
+   * Same as payment intent - used for payment-scoped idempotency
+   */
+  ORDER_BY_PAYMENT: 24 * 60 * 60, // 24 hours in seconds
 } as const;

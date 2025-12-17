@@ -1,0 +1,17 @@
+  ● OrdersService › updateStatus › should throw BadRequestException when trying to transition from refunded
+  ● OrdersService › getTimeline › should handle failed payment status
+  ● OrdersService › getTimeline › should handle label_generated shipment status
+  ● OrdersService › getTimeline › should handle picked_up shipment status
+  ● OrdersService › getTimeline › should handle out_for_delivery shipment status
+  ● OrdersService › getTimeline › should handle different shipment statuses
+  ● OrdersService › getTimeline › should handle failed shipment status
+  ● OrdersService › getTimeline › should handle returned shipment status
+  ● OrdersService › getTimeline › should handle shipments without tracking numbers (label_generated)
+  ● OrdersService › getTimeline › should handle shipments without tracking numbers (picked_up)
+  ● OrdersService › getTimeline › should handle shipments without tracking numbers (in_transit)
+  ● OrdersService › getTimeline › should handle shipments without tracking numbers (out_for_delivery)
+  ● OrdersService › getTimeline › should handle shipments without tracking numbers (delivered)
+  ● OrdersService › getTimeline › should handle shipments without tracking numbers (failed)
+  ● OrdersService › getTimeline › should handle shipments without tracking numbers (returned)
+  ● OrdersService › getTimeline › should handle payment status processing
+  ● OrdersService › getTimeline › should not include status changed event when status is pending
