@@ -104,6 +104,11 @@ export class VariantsService {
         productId: createVariantDto.productId,
         sku,
         price: createVariantDto.price,
+        compareAtPrice: createVariantDto.compareAtPrice || null,
+        currency: createVariantDto.currency || "INR",
+        salePrice: createVariantDto.salePrice || null,
+        saleStartDate: createVariantDto.saleStartDate || null,
+        saleEndDate: createVariantDto.saleEndDate || null,
         inventory: createVariantDto.inventory ?? 0,
         size: createVariantDto.size || null,
         color: createVariantDto.color || null,
@@ -195,6 +200,16 @@ export class VariantsService {
     if (sku !== undefined) updateData.sku = sku;
     if (updateVariantDto.price !== undefined)
       updateData.price = updateVariantDto.price;
+    if (updateVariantDto.compareAtPrice !== undefined)
+      updateData.compareAtPrice = updateVariantDto.compareAtPrice || null;
+    if (updateVariantDto.currency !== undefined)
+      updateData.currency = updateVariantDto.currency;
+    if (updateVariantDto.salePrice !== undefined)
+      updateData.salePrice = updateVariantDto.salePrice || null;
+    if (updateVariantDto.saleStartDate !== undefined)
+      updateData.saleStartDate = updateVariantDto.saleStartDate || null;
+    if (updateVariantDto.saleEndDate !== undefined)
+      updateData.saleEndDate = updateVariantDto.saleEndDate || null;
     if (updateVariantDto.inventory !== undefined)
       updateData.inventory = updateVariantDto.inventory;
     if (updateVariantDto.size !== undefined)

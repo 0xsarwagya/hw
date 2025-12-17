@@ -448,6 +448,139 @@ export interface ICheckoutStore extends IRedisStore {
 }
 
 /**
+ * Discount rule store interface
+ */
+export interface IDiscountRuleStore extends IRedisStore {
+  /**
+   * Store all active discount rules
+   * @param rules - Array of discount rules (normalized)
+   */
+  storeRules(
+    rules: import("../../discounts/dto/discount-response.dto").DiscountResponseDto[],
+  ): Promise<void>;
+
+  /**
+   * Get all active discount rules from Redis
+   * @returns Array of discount rules or null if not cached
+   */
+  getRules(): Promise<
+    | import("../../discounts/dto/discount-response.dto").DiscountResponseDto[]
+    | null
+  >;
+
+  /**
+   * Invalidate discount rules cache
+   */
+  invalidateRules(): Promise<void>;
+}
+
+/**
+ * Eligibility store interface
+ */
+export interface IEligibilityStore extends IRedisStore {
+  /**
+   * Store eligibility set for a discount (variant IDs)
+   * @param discountId - Discount ID
+   * @param variantIds - Set of eligible variant IDs
+   */
+  storeEligibility(discountId: string, variantIds: string[]): Promise<void>;
+
+  /**
+   * Get eligibility set for a discount
+   * @param discountId - Discount ID
+   * @returns Set of eligible variant IDs or null if not cached
+   */
+  getEligibility(discountId: string): Promise<Set<string> | null>;
+
+  /**
+   * Check if a variant is eligible for a discount
+   * @param discountId - Discount ID
+   * @param variantId - Variant ID to check
+   * @returns True if eligible, false otherwise
+   */
+  isVariantEligible(discountId: string, variantId: string): Promise<boolean>;
+
+  /**
+   * Invalidate eligibility for a discount
+   * @param discountId - Discount ID
+   */
+  invalidateEligibility(discountId: string): Promise<void>;
+
+  /**
+   * Batch invalidate eligibility for multiple discounts
+   * @param discountIds - Array of discount IDs
+   */
+  invalidateEligibilityBatch(discountIds: string[]): Promise<void>;
+}
+
+/**
+ * Product mapping store interface
+ */
+export interface IProductMappingStore extends IRedisStore {
+  /**
+   * Store product mapping (collections, tags, variants)
+   * @param productId - Product ID
+   * @param mapping - Mapping data
+   */
+  storeProductMapping(
+    productId: string,
+    mapping: {
+      collections: string[];
+      tags: string[];
+      variants: string[];
+    },
+  ): Promise<void>;
+
+  /**
+   * Store variant mapping (product, collections, tags)
+   * @param variantId - Variant ID
+   * @param mapping - Mapping data
+   */
+  storeVariantMapping(
+    variantId: string,
+    mapping: {
+      productId: string;
+      collections: string[];
+      tags: string[];
+    },
+  ): Promise<void>;
+
+  /**
+   * Get product mapping
+   * @param productId - Product ID
+   * @returns Mapping or null if not cached
+   */
+  getProductMapping(productId: string): Promise<{
+    collections: string[];
+    tags: string[];
+    variants: string[];
+  } | null>;
+
+  /**
+   * Get variant mapping
+   * @param variantId - Variant ID
+   * @returns Mapping or null if not cached
+   */
+  getVariantMapping(variantId: string): Promise<{
+    productId: string;
+    collections: string[];
+    tags: string[];
+  } | null>;
+
+  /**
+   * Invalidate product mapping
+   * @param productId - Product ID
+   */
+  invalidateProductMapping(productId: string): Promise<void>;
+
+  /**
+   * Invalidate variant mapping
+   * @param variantId - Variant ID
+   */
+  invalidateVariantMapping(variantId: string): Promise<void>;
+}
+
+/**
  * Idempotency store interface
  */
 export interface IIdempotencyStore extends IRedisStore {

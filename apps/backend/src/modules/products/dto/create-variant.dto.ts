@@ -41,6 +41,54 @@ export class CreateVariantDto {
   price: number;
 
   @ApiProperty({
+    description: "Compare-at price (for showing discount percentage)",
+    example: 3999.99,
+    required: false,
+    minimum: 0,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: "Compare-at price must be a number" })
+  @Min(0, { message: "Compare-at price must be greater than or equal to 0" })
+  compareAtPrice?: number;
+
+  @ApiProperty({
+    description: "Currency code (default: INR)",
+    example: "INR",
+    required: false,
+    default: "INR",
+  })
+  @IsOptional()
+  @IsString({ message: "Currency must be a string" })
+  currency?: string;
+
+  @ApiProperty({
+    description: "Sale price (optional, overrides base price when active)",
+    example: 2499.99,
+    required: false,
+    minimum: 0,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: "Sale price must be a number" })
+  @Min(0, { message: "Sale price must be greater than or equal to 0" })
+  salePrice?: number;
+
+  @ApiProperty({
+    description: "Sale start date (ISO timestamp)",
+    example: "2025-01-01T00:00:00.000Z",
+    required: false,
+  })
+  @IsOptional()
+  saleStartDate?: Date;
+
+  @ApiProperty({
+    description: "Sale end date (ISO timestamp)",
+    example: "2025-12-31T23:59:59.999Z",
+    required: false,
+  })
+  @IsOptional()
+  saleEndDate?: Date;
+
+  @ApiProperty({
     description: "Inventory quantity",
     example: 100,
     default: 0,

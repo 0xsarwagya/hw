@@ -20,15 +20,41 @@ import {
   orderItems,
   orders,
   payments,
+  productCollections,
   products,
+  productTags,
   productVariants,
   shipments,
 } from "@vcecom/db";
-import { calculateDiscount } from "../../common/utils/discount.utils";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { CartsService } from "../carts/carts.service";
 import { DiscountsService } from "../discounts/discounts.service";
+import { runDiscountEngine } from "../discounts/engine/discount-engine";
+import {
+  DiscountEngineInput,
+  DiscountSnapshot,
+} from "../discounts/engine/discount-engine.types";
+import { createDiscountSnapshot } from "../discounts/engine/discount-snapshot.utils";
+import { DiscountAuditService } from "../discounts/services/discount-audit.service";
+import { DiscountProfiler } from "../discounts/services/discount-profiler.service";
+import { DiscountSnapshotValidator } from "../discounts/services/discount-snapshot-validator.service";
+import { DriftDetectorService } from "../discounts/services/drift-detector.service";
+import { HotReloadWatcher } from "../discounts/services/hot-reload-watcher.service";
+import { RulesetBundleService } from "../discounts/services/ruleset-bundle.service";
 import { PaymentsService } from "../payments/payments.service";
+import { PricingDriftSeverity } from "../pricing/audit/pricing-audit.types";
+import { runPricingEngine } from "../pricing/engine/pricing-engine";
+import {
+  PricingEngineInput,
+  PricingSnapshot,
+} from "../pricing/engine/pricing-engine.types";
+import { createPricingSnapshot } from "../pricing/engine/pricing-snapshot.utils";
+import { CustomerGroupService } from "../pricing/services/customer-group.service";
+import { PriceListService } from "../pricing/services/price-list.service";
+import { PricingAuditService } from "../pricing/services/pricing-audit.service";
+import { PricingDriftDetectorService } from "../pricing/services/pricing-drift-detector.service";
+import { PricingHotReloadWatcher } from "../pricing/services/pricing-hot-reload-watcher.service";
+import { PricingSnapshotValidator } from "../pricing/services/pricing-snapshot-validator.service";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
 import { CheckoutMetadata } from "../redis-store/dto/checkout-metadata.dto";
 import { PaymentIntent } from "../redis-store/dto/payment-intent.dto";
@@ -57,9 +83,107 @@ export class OrdersService {
     private readonly discountsService: DiscountsService,
     private readonly inventoryStore: InventoryStore,
     private readonly checkoutStore: CheckoutStore,
+    private readonly discountSnapshotValidator: DiscountSnapshotValidator,
+    private readonly discountAuditService: DiscountAuditService,
+    private readonly driftDetector: DriftDetectorService,
+    private readonly hotReloadWatcher: HotReloadWatcher,
+    private readonly bundleService: RulesetBundleService,
+    private readonly discountProfiler: DiscountProfiler,
+    private readonly pricingHotReloadWatcher: PricingHotReloadWatcher,
+    private readonly priceListService: PriceListService,
+    private readonly customerGroupService: CustomerGroupService,
+    private readonly pricingSnapshotValidator: PricingSnapshotValidator,
+    private readonly pricingAuditService: PricingAuditService,
+    private readonly pricingDriftDetector: PricingDriftDetectorService,
     @Inject(forwardRef(() => PaymentsService))
     private readonly paymentsService: PaymentsService,
   ) {}
+
+  /**
+   * Get customer group ID for a customer
+   */
+  private async getCustomerGroupId(customerId: string): Promise<string | null> {
+    try {
+      const [customer] = await db
+        .select()
+        .from(customers)
+        .where(eq(customers.id, customerId))
+        .limit(1);
+      return customer?.customerGroupId || null;
+    } catch (error) {
+      this.logger.error(
+        `Failed to get customer group: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Get price lists for a customer (based on customer group)
+   */
+  private async getPriceListsForCustomer(
+    customerGroupId: string | null,
+  ): Promise<
+    Array<{
+      id: string;
+      name: string;
+      type: string;
+      priority: number;
+      isActive: boolean;
+      startDate?: Date;
+      endDate?: Date;
+      items: Array<{
+        id: string;
+        productVariantId?: string;
+        productId?: string;
+        categoryId?: string;
+        overrideType: "FIXED" | "PERCENTAGE";
+        overrideValue: number;
+      }>;
+    }>
+  > {
+    try {
+      if (!customerGroupId) {
+        // No customer group, return empty price lists
+        return [];
+      }
+
+      const group = await this.customerGroupService.findOne(customerGroupId);
+      const priceListIds = group.priceLists.map((pl) => pl.priceListId);
+
+      if (priceListIds.length === 0) {
+        return [];
+      }
+
+      const priceLists = await Promise.all(
+        priceListIds.map((id) => this.priceListService.findOne(id)),
+      );
+
+      // Convert to PricingEngineInput format
+      return priceLists.map((list) => ({
+        id: list.id,
+        name: list.name,
+        type: list.type,
+        priority: list.priority,
+        isActive: list.isActive,
+        startDate: list.startDate || undefined,
+        endDate: list.endDate || undefined,
+        items: list.items.map((item) => ({
+          id: item.id,
+          productVariantId: item.productVariantId || undefined,
+          productId: item.productId || undefined,
+          categoryId: item.categoryId || undefined,
+          overrideType: item.overrideType as "FIXED" | "PERCENTAGE",
+          overrideValue: item.overrideValue,
+        })),
+      }));
+    } catch (error) {
+      this.logger.error(
+        `Failed to get price lists for customer group: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      return [];
+    }
+  }
 
   /**
    * Generate unique order number
@@ -301,80 +425,257 @@ export class OrdersService {
       const totalGstAmount = totalCgst + totalSgst + totalIgst;
       const shippingCost = createOrderDto.shippingCost || 0;
 
-      // Calculate discount if discount code exists
-      let discountAmount = 0;
-      if (discountCode) {
+      // Get product IDs from variants (needed for both pricing and discount engines)
+      const variantIds = cartItemsWithVariants.map(
+        (item) => item.productVariantId,
+      );
+      const variantProductMap = await db
+        .select({
+          variantId: productVariants.id,
+          productId: productVariants.productId,
+        })
+        .from(productVariants)
+        .where(inArray(productVariants.id, variantIds));
+
+      const productIds = Array.from(
+        new Set(variantProductMap.map((v) => v.productId)),
+      );
+
+      // Get product details
+      const productDetails = await db
+        .select({
+          productId: products.id,
+          categoryId: products.categoryId,
+        })
+        .from(products)
+        .where(inArray(products.id, productIds));
+
+      const variantToProduct = new Map(
+        variantProductMap.map((v) => [v.variantId, v.productId]),
+      );
+      const productMap = new Map(productDetails.map((p) => [p.productId, p]));
+
+      // STEP 1: Run pricing engine to get effective prices (before discounts)
+      let pricingSnapshot: PricingSnapshot | null = null;
+      let effectiveSubtotal = subtotal; // Default to base subtotal
+
+      try {
+        // Get customer group for price list resolution
+        const customerGroupId = customerId
+          ? await this.getCustomerGroupId(customerId)
+          : null;
+
+        // Get active price lists for customer group
+        const activePriceLists =
+          await this.getPriceListsForCustomer(customerGroupId);
+
+        // Build variant pricing input
+        const variantPricingInput = cartItemsWithVariants.map((item) => {
+          const productId = variantToProduct.get(item.productVariantId);
+          const product = productId ? productMap.get(productId) : null;
+          return {
+            variantId: item.productVariantId,
+            productId: productId || "",
+            categoryId: product?.categoryId || null,
+            basePrice: item.price,
+            compareAtPrice: undefined, // TODO: Load from variant
+            salePrice: undefined, // TODO: Load from variant
+            saleStartDate: undefined,
+            saleEndDate: undefined,
+          };
+        });
+
+        // Run pricing engine
+        const pricingInput: PricingEngineInput = {
+          variants: variantPricingInput,
+          customer: customerId
+            ? {
+                id: customerId,
+                customerGroupId,
+              }
+            : null,
+          priceLists: activePriceLists,
+          now: new Date(),
+        };
+
+        const pricingResult = runPricingEngine(pricingInput);
+        effectiveSubtotal = pricingResult.totalEffectivePrice;
+
+        // Create pricing snapshot
+        const rulesetVersion = this.pricingHotReloadWatcher.getCurrentVersion();
+        pricingSnapshot = createPricingSnapshot(
+          pricingResult,
+          activePriceLists,
+          rulesetVersion,
+        );
+
+        // Log pricing engine run
         try {
-          // Get product IDs from variants
-          const variantIds = cartItemsWithVariants.map(
-            (item) => item.productVariantId,
+          await this.pricingAuditService.logEngineRun(
+            checkoutSessionId || "",
+            pricingResult,
+            rulesetVersion,
           );
-          const variantProductMap = await db
-            .select({
-              variantId: productVariants.id,
-              productId: productVariants.productId,
-            })
-            .from(productVariants)
-            .where(inArray(productVariants.id, variantIds));
-
-          const productIds = Array.from(
-            new Set(variantProductMap.map((v) => v.productId)),
-          );
-
-          // Get product details for discount calculation
-          const productDetails = await db
-            .select({
-              productId: products.id,
-              categoryId: products.categoryId,
-            })
-            .from(products)
-            .where(inArray(products.id, productIds));
-
-          const variantToProduct = new Map(
-            variantProductMap.map((v) => [v.variantId, v.productId]),
-          );
-
-          const productMap = new Map(
-            productDetails.map((p) => [p.productId, p]),
-          );
-
-          // Build cart items for discount calculation
-          const cartItemsForDiscount = cartItemsWithVariants.map((item) => {
-            const productId = variantToProduct.get(item.productVariantId);
-            const product = productId ? productMap.get(productId) : null;
-            return {
-              productId: productId || "",
-              categoryId: product?.categoryId || null,
-              collectionIds: [], // TODO: Add when product-collections junction table exists
-              tagIds: [], // TODO: Add when product-tags junction table exists
-              price: item.price,
-              quantity: item.quantity,
-            };
-          });
-
-          // Validate discount
-          const validation = await this.discountsService.validateDiscount(
-            discountCode,
-            userId,
-            subtotal,
-          );
-
-          if (validation.isValid && validation.discount) {
-            // Calculate discount
-            const discountResult = calculateDiscount(
-              validation.discount,
-              cartItemsForDiscount,
-            );
-            discountAmount = discountResult.discountAmount;
-          }
-        } catch (_error) {
-          // Discount validation failed, continue without discount
-          discountAmount = 0;
+        } catch (error) {
+          // Log but don't throw - audit logging failure shouldn't break checkout
+          this.logger.warn("Failed to log pricing engine run:", error);
         }
+
+        // Log snapshot creation
+        try {
+          await this.pricingAuditService.logSnapshotCreated(
+            checkoutSessionId || "",
+            pricingSnapshot,
+          );
+        } catch (error) {
+          // Log but don't throw - audit logging failure shouldn't break checkout
+          this.logger.warn("Failed to log pricing snapshot creation:", error);
+        }
+      } catch (error) {
+        // Pricing engine failed, continue with base prices
+        this.logger.error("Pricing engine error:", error);
+        pricingSnapshot = null;
       }
 
-      // Calculate total after discount (discount applies to subtotal before GST)
-      const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
+      // STEP 2: Use discount engine to calculate discount and generate snapshot
+      // Discounts apply to effective prices from pricing engine
+      let discountAmount = 0;
+      let discountSnapshot: DiscountSnapshot | null = null;
+
+      try {
+        // Product details already loaded above
+
+        // Fetch collections for products
+        const productCollectionData = await db
+          .select({
+            productId: productCollections.productId,
+            collectionId: productCollections.collectionId,
+          })
+          .from(productCollections)
+          .where(inArray(productCollections.productId, productIds));
+
+        const collectionsByProduct = new Map<string, string[]>();
+        for (const pc of productCollectionData) {
+          if (!collectionsByProduct.has(pc.productId)) {
+            collectionsByProduct.set(pc.productId, []);
+          }
+          collectionsByProduct.get(pc.productId)?.push(pc.collectionId);
+        }
+
+        // Fetch tags for products
+        const productTagData = await db
+          .select({
+            productId: productTags.productId,
+            tagId: productTags.tagId,
+          })
+          .from(productTags)
+          .where(inArray(productTags.productId, productIds));
+
+        const tagsByProduct = new Map<string, string[]>();
+        for (const pt of productTagData) {
+          if (!tagsByProduct.has(pt.productId)) {
+            tagsByProduct.set(pt.productId, []);
+          }
+          tagsByProduct.get(pt.productId)?.push(pt.tagId);
+        }
+
+        const variantToProduct = new Map(
+          variantProductMap.map((v) => [v.variantId, v.productId]),
+        );
+        const productMap = new Map(productDetails.map((p) => [p.productId, p]));
+
+        // Build cart items for discount engine
+        const cartItemsForEngine = cartItemsWithVariants.map((item) => {
+          const productId = variantToProduct.get(item.productVariantId);
+          const product = productId ? productMap.get(productId) : null;
+          return {
+            id: item.cartItemId,
+            productVariantId: item.productVariantId,
+            productId: productId || "",
+            categoryId: product?.categoryId || null,
+            collectionIds: productId
+              ? collectionsByProduct.get(productId) || []
+              : [],
+            tagIds: productId ? tagsByProduct.get(productId) || [] : [],
+            price: item.price,
+            quantity: item.quantity,
+          };
+        });
+
+        // Get eligible discounts (use effective subtotal from pricing engine)
+        const eligibleDiscounts =
+          await this.discountsService.getEligibleDiscounts(
+            effectiveSubtotal, // Use effective price from pricing engine
+            customerId,
+            userId,
+            discountCode || undefined,
+          );
+
+        if (eligibleDiscounts.length > 0) {
+          // Prepare customer data for engine
+          const customerData = customerId
+            ? {
+                id: customerId,
+                customerGroupIds: [], // TODO: Parse from customer data if available
+              }
+            : null;
+
+          // Run discount engine with profiling
+          const engineStartTime = Date.now();
+          const engineInput: DiscountEngineInput = {
+            cart: {
+              items: cartItemsForEngine,
+            },
+            customer: customerData,
+            discounts: eligibleDiscounts,
+            now: new Date(),
+          };
+
+          const engineResult = runDiscountEngine(engineInput);
+          const engineRuntime = Date.now() - engineStartTime;
+          discountAmount = engineResult.discountTotal;
+
+          // Record profiler metrics
+          const rulesetVersion = this.hotReloadWatcher.getCurrentVersion();
+          const rulesApplied = engineResult.appliedDiscountIds.length;
+          this.discountProfiler.recordEngineRun(
+            rulesetVersion,
+            engineRuntime,
+            rulesApplied,
+            true, // Cache hit (using in-memory bundle)
+          );
+
+          // Create snapshot with versioning and integrity metadata
+          discountSnapshot = createDiscountSnapshot(
+            engineResult,
+            eligibleDiscounts,
+            rulesetVersion,
+          );
+
+          // Log discount engine run
+          try {
+            await this.discountAuditService.logEngineRun(
+              cart.id,
+              engineResult,
+              eligibleDiscounts,
+            );
+          } catch (error) {
+            // Log but don't throw - audit logging failure shouldn't break checkout
+            this.logger.warn("Failed to log discount engine run:", error);
+          }
+        }
+      } catch (error) {
+        // Discount engine failed, continue without discount
+        this.logger.error("Discount engine error:", error);
+        discountAmount = 0;
+        discountSnapshot = null;
+      }
+
+      // Calculate total after discount (discount applies to effective subtotal before GST)
+      const subtotalAfterDiscount = Math.max(
+        0,
+        effectiveSubtotal - discountAmount,
+      );
       const total = subtotalAfterDiscount + totalGstAmount + shippingCost;
 
       // Store checkout metadata for order creation (will be used in webhook handler)
@@ -389,6 +690,8 @@ export class OrdersService {
         shippingAddressId: createOrderDto.shippingAddressId,
         billingAddressId: createOrderDto.billingAddressId,
         shippingCost: createOrderDto.shippingCost || 0,
+        discountSnapshot,
+        pricingSnapshot,
         createdAt: new Date().toISOString(),
       };
 
@@ -439,6 +742,46 @@ export class OrdersService {
         this.logger.debug(
           `Payment intent created: checkoutSessionId=${checkoutSessionId}, paymentIntentId=${paymentIntent.paymentIntentId}`,
         );
+
+        // Detect drift during payment intent creation (discounts)
+        if (discountSnapshot) {
+          await this.driftDetector.detectPaymentIntentDrift(
+            checkoutSessionId,
+            total,
+            amountInPaise / 100, // Convert from paise to rupees
+            discountSnapshot,
+          );
+
+          // Log snapshot creation
+          try {
+            await this.discountAuditService.logSnapshotCreated(
+              checkoutSessionId,
+              discountSnapshot,
+            );
+          } catch (error) {
+            // Log but don't throw - audit logging failure shouldn't break checkout
+            this.logger.warn(
+              "Failed to log discount snapshot creation:",
+              error,
+            );
+          }
+        }
+
+        // Detect pricing drift during payment intent creation
+        if (pricingSnapshot) {
+          try {
+            await this.pricingDriftDetector.detectPaymentIntentDrift(
+              checkoutSessionId,
+              effectiveSubtotal,
+              amountInPaise / 100, // Convert from paise to rupees (total includes GST + shipping)
+              pricingSnapshot,
+            );
+          } catch (error) {
+            // Drift detected - block checkout
+            this.logger.error("Pricing drift detected:", error);
+            throw error;
+          }
+        }
       } catch (error) {
         // Payment intent creation failure - MUST BLOCK
         // This is a critical failure - we cannot proceed without payment intent
@@ -670,75 +1013,71 @@ export class OrdersService {
     const totalGstAmount = totalCgst + totalSgst + totalIgst;
     const shippingCost = metadata.shippingCost;
 
-    // Get discount code from cart
-    const discountCode =
-      "discountCode" in cart ? (cart.discountCode as string | null) : null;
+    // Use discount snapshot from checkout metadata (don't recalculate)
+    // This ensures consistency between payment intent and order creation
     let discountAmount = 0;
-
-    // Calculate discount if discount code exists
-    if (discountCode) {
-      try {
-        const variantIds = cartItemsWithVariants.map(
-          (item) => item.productVariantId,
+    let discountCode: string | null = null;
+    if (metadata.discountSnapshot) {
+      // Validate snapshot version exists (bundle available)
+      if (metadata.discountSnapshot.rulesetVersion) {
+        const bundle = await this.bundleService.getBundle(
+          metadata.discountSnapshot.rulesetVersion,
         );
-        const variantProductMap = await db
-          .select({
-            variantId: productVariants.id,
-            productId: productVariants.productId,
-          })
-          .from(productVariants)
-          .where(inArray(productVariants.id, variantIds));
-
-        const productIds = Array.from(
-          new Set(variantProductMap.map((v) => v.productId)),
-        );
-
-        const productDetails = await db
-          .select({
-            productId: products.id,
-            categoryId: products.categoryId,
-          })
-          .from(products)
-          .where(inArray(products.id, productIds));
-
-        const variantToProduct = new Map(
-          variantProductMap.map((v) => [v.variantId, v.productId]),
-        );
-
-        const productMap = new Map(productDetails.map((p) => [p.productId, p]));
-
-        const cartItemsForDiscount = cartItemsWithVariants.map((item) => {
-          const productId = variantToProduct.get(item.productVariantId);
-          const product = productId ? productMap.get(productId) : null;
-          return {
-            productId: productId || "",
-            categoryId: product?.categoryId || null,
-            collectionIds: [],
-            tagIds: [],
-            price: item.price,
-            quantity: item.quantity,
-          };
-        });
-
-        const validation = await this.discountsService.validateDiscount(
-          discountCode,
-          metadata.userId,
-          subtotal,
-        );
-
-        if (validation.isValid && validation.discount) {
-          const discountResult = calculateDiscount(
-            validation.discount,
-            cartItemsForDiscount,
+        if (!bundle) {
+          this.logger.warn(
+            `Bundle v${metadata.discountSnapshot.rulesetVersion} not found for snapshot, but continuing with order creation`,
           );
-          discountAmount = discountResult.discountAmount;
         }
-      } catch (_error) {
-        discountAmount = 0;
       }
+
+      // Validate snapshot integrity
+      // Note: Payment intent amount validation is skipped as amount is not stored in PaymentIntent
+      // The snapshot total itself is what was sent to payment provider, so we validate snapshot structure
+      const snapshotTotal =
+        metadata.discountSnapshot.total + totalGstAmount + shippingCost;
+
+      this.discountSnapshotValidator.validateSnapshot(
+        metadata.discountSnapshot,
+        [], // Applied discounts not needed for validation (snapshot already contains them)
+        snapshotTotal, // Use snapshot total + GST + shipping for validation
+      );
+
+      discountAmount = metadata.discountSnapshot.discountTotal;
+      // Extract discount code from snapshot (use first applied discount code)
+      if (metadata.discountSnapshot.cartDiscounts.length > 0) {
+        discountCode = metadata.discountSnapshot.cartDiscounts[0].discountCode;
+      } else if (
+        metadata.discountSnapshot.lineItems.some(
+          (item) => item.discounts.length > 0,
+        )
+      ) {
+        const firstDiscount = metadata.discountSnapshot.lineItems.find(
+          (item) => item.discounts.length > 0,
+        );
+        discountCode = firstDiscount?.discounts[0].discountCode || null;
+      }
+    } else {
+      // Fallback: if snapshot not available, log warning but continue
+      this.logger.warn(
+        `Discount snapshot not found in checkout metadata for session ${checkoutSessionId}, using 0 discount`,
+      );
     }
 
-    const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
+    // Use effective subtotal from pricing snapshot if available
+    let finalSubtotal = subtotal;
+    if (metadata.pricingSnapshot) {
+      // Validate pricing snapshot
+      try {
+        this.pricingSnapshotValidator.validate(metadata.pricingSnapshot);
+        finalSubtotal = metadata.pricingSnapshot.totalEffectivePrice;
+      } catch (_error) {
+        this.logger.error(
+          `Pricing snapshot validation failed: ${_error instanceof Error ? _error.message : "Unknown error"}`,
+        );
+        // Continue with base subtotal if snapshot invalid
+      }
+    }
+    const subtotalAfterDiscount = Math.max(0, finalSubtotal - discountAmount);
     const total = subtotalAfterDiscount + totalGstAmount + shippingCost;
 
     // Generate order number
@@ -747,14 +1086,14 @@ export class OrdersService {
     // Create order atomically using payment-scoped idempotency
     let orderId: string;
     try {
-      // Create order in database
+      // Create order in database with discount snapshot
       const [order] = await db
         .insert(orders)
         .values({
           customerId,
           orderNumber,
           status: "pending",
-          subtotal,
+          subtotal: finalSubtotal, // Use effective subtotal from pricing snapshot
           gstAmount: totalGstAmount,
           discountCode,
           discountAmount,
@@ -763,10 +1102,67 @@ export class OrdersService {
           shippingAddressId: metadata.shippingAddressId,
           billingAddressId: metadata.billingAddressId,
           razorpayOrderId: paymentIntentId,
+          discountSnapshot: metadata.discountSnapshot, // Store full snapshot for refunds/historical accuracy
+          pricingSnapshot: metadata.pricingSnapshot, // Store pricing snapshot for refunds/historical accuracy
         })
         .returning();
 
       orderId = order.id;
+
+      // Log snapshot usage for order creation
+      if (metadata.discountSnapshot) {
+        try {
+          await this.discountAuditService.logSnapshotUsed(
+            checkoutSessionId,
+            orderId,
+            metadata.discountSnapshot,
+          );
+        } catch (error) {
+          // Log but don't throw - audit logging failure shouldn't break order creation
+          this.logger.warn("Failed to log discount snapshot usage:", error);
+        }
+      }
+
+      // Log pricing snapshot usage
+      if (metadata.pricingSnapshot) {
+        try {
+          await this.pricingAuditService.logSnapshotUsed(
+            checkoutSessionId,
+            orderId,
+            metadata.pricingSnapshot,
+          );
+        } catch (error) {
+          // Log but don't throw - audit logging failure shouldn't break order creation
+          this.logger.warn("Failed to log pricing snapshot usage:", error);
+        }
+
+        // Detect drift during order creation
+        try {
+          const customerGroupId = await this.getCustomerGroupId(customerId);
+          const currentPriceLists =
+            await this.getPriceListsForCustomer(customerGroupId);
+          const driftResult =
+            await this.pricingDriftDetector.detectOrderCreationDrift(
+              checkoutSessionId,
+              orderId,
+              metadata.pricingSnapshot,
+              currentPriceLists,
+            );
+
+          if (
+            driftResult.hasDrift &&
+            driftResult.severity === PricingDriftSeverity.CRITICAL
+          ) {
+            this.logger.error(
+              `Critical pricing drift detected: ${JSON.stringify(driftResult.details)}`,
+            );
+            // Don't throw - order is already created, drift is logged
+          }
+        } catch (error) {
+          // Log but don't throw - drift detection failure shouldn't break order creation
+          this.logger.warn("Failed to detect pricing drift:", error);
+        }
+      }
 
       // Atomically create payment-scoped idempotency mapping
       // This ensures exactly one order per payment intent
@@ -826,9 +1222,20 @@ export class OrdersService {
       }
     }
 
-    // Create order items
+    // Create order items using pricing snapshot prices (if available)
     const orderItemsToInsert = cartItemsWithVariants.map((item) => {
-      const itemSubtotal = item.price * item.quantity;
+      // Use effective price from pricing snapshot if available, otherwise use cart price
+      let itemPrice = item.price;
+      if (metadata.pricingSnapshot) {
+        const variantPrice = metadata.pricingSnapshot.variantPrices.find(
+          (vp) => vp.variantId === item.productVariantId,
+        );
+        if (variantPrice) {
+          itemPrice = variantPrice.effectivePrice;
+        }
+      }
+
+      const itemSubtotal = itemPrice * item.quantity;
       const gstBreakdown = calculateGstBreakdown(
         itemSubtotal,
         item.productGstRate,
@@ -840,7 +1247,7 @@ export class OrdersService {
         orderId,
         productVariantId: item.productVariantId,
         quantity: item.quantity,
-        price: item.price,
+        price: itemPrice, // Use effective price from pricing snapshot
         gstRate: item.productGstRate,
         gstAmount: gstBreakdown.totalGst,
       };

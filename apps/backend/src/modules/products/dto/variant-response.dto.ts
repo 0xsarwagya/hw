@@ -26,6 +26,41 @@ export class VariantResponseDto {
   price: number;
 
   @ApiProperty({
+    description: "Compare-at price (for showing discount)",
+    example: 3999.99,
+    nullable: true,
+  })
+  compareAtPrice: number | null;
+
+  @ApiProperty({
+    description: "Currency code",
+    example: "INR",
+    default: "INR",
+  })
+  currency: string;
+
+  @ApiProperty({
+    description: "Sale price (if active)",
+    example: 2499.99,
+    nullable: true,
+  })
+  salePrice: number | null;
+
+  @ApiProperty({
+    description: "Sale start date",
+    example: "2025-01-01T00:00:00.000Z",
+    nullable: true,
+  })
+  saleStartDate: Date | null;
+
+  @ApiProperty({
+    description: "Sale end date",
+    example: "2025-12-31T23:59:59.999Z",
+    nullable: true,
+  })
+  saleEndDate: Date | null;
+
+  @ApiProperty({
     description: "Inventory quantity",
     example: 100,
   })

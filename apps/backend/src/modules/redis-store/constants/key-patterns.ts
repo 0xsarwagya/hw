@@ -101,6 +101,96 @@ export const KEY_PATTERNS = {
    */
   ORDER_BY_PAYMENT: (provider: string, paymentIntentId: string) =>
     `order:payment:${provider}:${paymentIntentId}`,
+
+  /**
+   * Discount rules (all active discounts)
+   * Format: discount:rules
+   * TTL: None (persistent, updated on discount CRUD)
+   */
+  DISCOUNT_RULES: () => "discount:rules",
+
+  /**
+   * Discount eligibility sets (variant IDs eligible for discount)
+   * Format: discount:eligibility:{discountId}
+   * TTL: 24 hours (auto-refreshed by warmup worker)
+   */
+  DISCOUNT_ELIGIBILITY: (discountId: string) =>
+    `discount:eligibility:${discountId}`,
+
+  /**
+   * Product mapping (collections, tags, variants for a product)
+   * Format: mapping:product:{productId}
+   * TTL: 24 hours
+   */
+  MAPPING_PRODUCT: (productId: string) => `mapping:product:${productId}`,
+
+  /**
+   * Variant mapping (product, collections, tags for a variant)
+   * Format: mapping:variant:{variantId}
+   * TTL: 24 hours
+   */
+  MAPPING_VARIANT: (variantId: string) => `mapping:variant:${variantId}`,
+
+  /**
+   * Collection mapping (products in collection)
+   * Format: mapping:collection:{collectionId}
+   * TTL: 24 hours
+   */
+  MAPPING_COLLECTION: (collectionId: string) =>
+    `mapping:collection:${collectionId}`,
+
+  /**
+   * Tag mapping (products with tag)
+   * Format: mapping:tag:{tagId}
+   * TTL: 24 hours
+   */
+  MAPPING_TAG: (tagId: string) => `mapping:tag:${tagId}`,
+
+  /**
+   * Discount ruleset version (atomic counter)
+   * Format: discount-ruleset-version
+   * TTL: None (persistent)
+   */
+  DISCOUNT_RULESET_VERSION: () => "discount-ruleset-version",
+
+  /**
+   * Discount ruleset bundle (versioned)
+   * Format: discount-ruleset-bundle:{version}
+   * TTL: None (persistent, cleaned up by cleanup job)
+   */
+  DISCOUNT_RULESET_BUNDLE: (version: number) =>
+    `discount-ruleset-bundle:${version}`,
+
+  /**
+   * Discount ruleset metadata (versioned)
+   * Format: discount-ruleset-metadata:{version}
+   * TTL: None (persistent, cleaned up by cleanup job)
+   */
+  DISCOUNT_RULESET_METADATA: (version: number) =>
+    `discount-ruleset-metadata:${version}`,
+
+  /**
+   * Pricing ruleset version (atomic counter)
+   * Format: pricing-ruleset-version
+   * TTL: None (persistent)
+   */
+  PRICING_RULESET_VERSION: () => "pricing-ruleset-version",
+
+  /**
+   * Pricing ruleset bundle (versioned)
+   * Format: pricing-ruleset-bundle:{version}
+   * TTL: None (persistent, cleaned up by cleanup job)
+   */
+  PRICING_RULESET_BUNDLE: (version: number) =>
+    `pricing-ruleset-bundle:${version}`,
+
+  /**
+   * Pricing ruleset metadata (versioned)
+   * Format: pricing-ruleset-metadata:{version}
+   * TTL: None (persistent, cleaned up by cleanup job)
+   */
+  PRICING_RULESET_METADATA: (version: number) =>
+    `pricing-ruleset-metadata:${version}`,
 } as const;
 
 /**
@@ -151,4 +241,14 @@ export const TTL = {
    * Same as payment intent - used for payment-scoped idempotency
    */
   ORDER_BY_PAYMENT: 24 * 60 * 60, // 24 hours in seconds
+
+  /**
+   * Discount eligibility expiration: 24 hours
+   */
+  DISCOUNT_ELIGIBILITY: 24 * 60 * 60, // 24 hours in seconds
+
+  /**
+   * Product mapping expiration: 24 hours
+   */
+  PRODUCT_MAPPING: 24 * 60 * 60, // 24 hours in seconds
 } as const;

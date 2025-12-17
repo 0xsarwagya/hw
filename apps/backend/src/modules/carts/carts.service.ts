@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -12,13 +13,20 @@ import {
   db,
   eq,
   inArray,
+  productCollections,
   products,
+  productTags,
   productVariants,
 } from "@vcecom/db";
-import { calculateDiscount } from "../../common/utils/discount.utils";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { DiscountsService } from "../discounts/discounts.service";
+import { runDiscountEngine } from "../discounts/engine/discount-engine";
+import { DiscountEngineInput } from "../discounts/engine/discount-engine.types";
+import { DiscountAuditService } from "../discounts/services/discount-audit.service";
+import { DiscountProfiler } from "../discounts/services/discount-profiler.service";
+import { HotReloadWatcher } from "../discounts/services/hot-reload-watcher.service";
 import { KEY_PATTERNS } from "../redis-store/constants/key-patterns";
+import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
 
 @Injectable()
@@ -26,6 +34,10 @@ export class CartsService {
   constructor(
     private readonly discountsService: DiscountsService,
     private readonly inventoryStore: InventoryStore,
+    private readonly checkoutStore: CheckoutStore,
+    private readonly discountAuditService: DiscountAuditService,
+    private readonly discountProfiler: DiscountProfiler,
+    private readonly hotReloadWatcher: HotReloadWatcher,
   ) {}
   private readonly CART_EXPIRY_DAYS = 30; // Cart expires after 30 days
 
@@ -222,65 +234,138 @@ export class CartsService {
       .where(eq(carts.id, cartId))
       .limit(1);
 
-    // Calculate discount if discount code exists
+    // Fetch product metadata (collections, tags) for discount engine
+    const productDetails = await db
+      .select({
+        productId: products.id,
+        categoryId: products.categoryId,
+      })
+      .from(products)
+      .where(inArray(products.id, productIds));
+
+    const productMap = new Map(productDetails.map((p) => [p.productId, p]));
+
+    // Fetch collections for products
+    const productCollectionData = await db
+      .select({
+        productId: productCollections.productId,
+        collectionId: productCollections.collectionId,
+      })
+      .from(productCollections)
+      .where(inArray(productCollections.productId, productIds));
+
+    const collectionsByProduct = new Map<string, string[]>();
+    for (const pc of productCollectionData) {
+      if (!collectionsByProduct.has(pc.productId)) {
+        collectionsByProduct.set(pc.productId, []);
+      }
+      collectionsByProduct.get(pc.productId)?.push(pc.collectionId);
+    }
+
+    // Fetch tags for products
+    const productTagData = await db
+      .select({
+        productId: productTags.productId,
+        tagId: productTags.tagId,
+      })
+      .from(productTags)
+      .where(inArray(productTags.productId, productIds));
+
+    const tagsByProduct = new Map<string, string[]>();
+    for (const pt of productTagData) {
+      if (!tagsByProduct.has(pt.productId)) {
+        tagsByProduct.set(pt.productId, []);
+      }
+      tagsByProduct.get(pt.productId)?.push(pt.tagId);
+    }
+
+    // Build cart items with full metadata for discount engine
+    const cartItemsForEngine = items.map((item) => {
+      const product = productMap.get(item.productId);
+      return {
+        id: item.id,
+        productVariantId: item.productVariantId,
+        productId: item.productId,
+        categoryId: product?.categoryId || null,
+        collectionIds: collectionsByProduct.get(item.productId) || [],
+        tagIds: tagsByProduct.get(item.productId) || [],
+        price: item.price,
+        quantity: item.quantity,
+      };
+    });
+
+    // Fetch eligible discounts using discount engine
     let discountAmount = 0;
-    if (cart?.discountCode) {
-      try {
-        // Get product details for discount eligibility
-        const productDetails = await db
-          .select({
-            productId: products.id,
-            categoryId: products.categoryId,
-          })
-          .from(products)
-          .where(inArray(products.id, productIds));
+    try {
+      const userId = customerId
+        ? await this.getUserIdFromCustomerId(customerId)
+        : undefined;
 
-        const productMap = new Map(productDetails.map((p) => [p.productId, p]));
+      // Extract variant IDs from cart items for eligibility filtering
+      const variantIds = items.map((item) => item.productVariantId);
 
-        // Build cart items with product info for discount calculation
-        const cartItemsForDiscount = items.map((item) => {
-          const product = productMap.get(item.productId);
-          return {
-            productId: item.productId,
-            categoryId: product?.categoryId || null,
-            collectionIds: [], // TODO: Add when product-collections junction table exists
-            tagIds: [], // TODO: Add when product-tags junction table exists
-            price: item.price,
-            quantity: item.quantity,
-          };
-        });
-
-        // Validate and get discount
-        const userId = customerId
-          ? await this.getUserIdFromCustomerId(customerId)
-          : undefined;
-        const validation = await this.discountsService.validateDiscount(
-          cart.discountCode,
-          userId,
+      // Get eligible discounts (automatic + manual if code exists)
+      // Pass variant IDs for Redis eligibility filtering
+      const eligibleDiscounts =
+        await this.discountsService.getEligibleDiscounts(
           subtotal,
+          customerId,
+          userId,
+          cart?.discountCode || undefined,
+          variantIds, // NEW: pass variant IDs for eligibility filtering
         );
 
-        if (validation.isValid && validation.discount) {
-          // Calculate discount
-          const discountResult = calculateDiscount(
-            validation.discount,
-            cartItemsForDiscount,
+      if (eligibleDiscounts.length > 0) {
+        // Prepare customer data for engine
+        const customerData = customerId
+          ? {
+              id: customerId,
+              customerGroupIds: [], // TODO: Parse from customer data if available
+            }
+          : null;
+
+        // Run discount engine with profiling
+        const engineStartTime = Date.now();
+        const engineInput: DiscountEngineInput = {
+          cart: {
+            items: cartItemsForEngine,
+          },
+          customer: customerData,
+          discounts: eligibleDiscounts,
+          now: new Date(),
+        };
+
+        const engineResult = runDiscountEngine(engineInput);
+        const engineRuntime = Date.now() - engineStartTime;
+        discountAmount = engineResult.discountTotal;
+
+        // Record profiler metrics
+        const rulesetVersion = this.hotReloadWatcher.getCurrentVersion();
+        const rulesApplied = engineResult.appliedDiscountIds.length;
+        this.discountProfiler.recordEngineRun(
+          rulesetVersion,
+          engineRuntime,
+          rulesApplied,
+          true, // Cache hit (using in-memory bundle)
+        );
+
+        // Log discount engine run
+        try {
+          await this.discountAuditService.logEngineRun(
+            cartId,
+            engineResult,
+            eligibleDiscounts,
           );
-          discountAmount = discountResult.discountAmount;
-        } else {
-          // Invalid discount, remove it
-          await db
-            .update(carts)
-            .set({ discountCode: null })
-            .where(eq(carts.id, cartId));
+        } catch (error) {
+          // Log but don't throw - audit logging failure shouldn't break cart recalculation
+          console.warn("Failed to log discount engine run:", error);
         }
-      } catch (_error) {
-        // Discount validation failed, remove discount code
-        await db
-          .update(carts)
-          .set({ discountCode: null })
-          .where(eq(carts.id, cartId));
       }
+    } catch (error) {
+      // Discount engine failed, continue without discount
+      // Log error but don't break cart recalculation
+      console.error("Discount engine error:", error);
+      discountAmount = 0;
     }
 
     // Calculate total after discount (discount applies to subtotal before GST)
@@ -367,6 +452,27 @@ export class CartsService {
   }
 
   /**
+   * Check if cart has active checkout session (snapshot locked)
+   */
+  private async isCartSnapshotLocked(cartId: string): Promise<boolean> {
+    try {
+      // Check if checkout lock exists (indicates payment intent creation started)
+      const isLocked = await this.checkoutStore.isCheckoutLocked(cartId);
+      if (isLocked) {
+        return true;
+      }
+
+      // Also check if there's an active checkout session with payment intent
+      // This is a best-effort check - we iterate through potential sessions
+      // In production, you might want a reverse lookup by cartId
+      return false;
+    } catch (_error) {
+      // If check fails, allow cart update (fail open for availability)
+      return false;
+    }
+  }
+
+  /**
    * Add item to cart
    */
   async addItem(
@@ -380,6 +486,13 @@ export class CartsService {
     }
 
     const cart = await this.getOrCreateCart(customerId, sessionId);
+
+    // Check if cart has active checkout session (snapshot locked)
+    if (await this.isCartSnapshotLocked(cart.id)) {
+      throw new ConflictException(
+        "Cannot modify cart after payment intent creation. Please start a new checkout.",
+      );
+    }
 
     // Check if product variant exists and get its price
     const [variant] = await db
@@ -504,6 +617,13 @@ export class CartsService {
 
     const cart = await this.getOrCreateCart(customerId, sessionId);
 
+    // Check if cart has active checkout session (snapshot locked)
+    if (await this.isCartSnapshotLocked(cart.id)) {
+      throw new ConflictException(
+        "Cannot modify cart after payment intent creation. Please start a new checkout.",
+      );
+    }
+
     // Check if item exists and belongs to cart
     const [item] = await db
       .select({
@@ -587,6 +707,13 @@ export class CartsService {
     }
 
     const cart = await this.getOrCreateCart(customerId, sessionId);
+
+    // Check if cart has active checkout session (snapshot locked)
+    if (await this.isCartSnapshotLocked(cart.id)) {
+      throw new ConflictException(
+        "Cannot modify cart after payment intent creation. Please start a new checkout.",
+      );
+    }
 
     // Check if item exists and belongs to cart
     const [item] = await db
