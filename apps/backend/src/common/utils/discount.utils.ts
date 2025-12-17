@@ -419,9 +419,16 @@ export function calculateDiscount(
   discountAmount: number;
   itemDiscounts: Array<{ productId: string; discountAmount: number }>;
 } {
-  if (discount.type === DiscountType.STANDARD) {
+  if (
+    discount.type === DiscountType.FIXED_AMOUNT ||
+    discount.type === DiscountType.PERCENTAGE ||
+    discount.type === DiscountType.TIERED ||
+    discount.type === DiscountType.CART_LEVEL
+  ) {
     return calculateStandardDiscount(discount, cartItems);
-  } else {
+  } else if (discount.type === DiscountType.BUY_X_GET_Y) {
     return calculateBuyGetDiscount(discount, cartItems);
+  } else {
+    throw new Error(`Unsupported discount type: ${discount.type}`);
   }
 }

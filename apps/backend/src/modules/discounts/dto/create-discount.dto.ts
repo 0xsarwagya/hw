@@ -68,7 +68,7 @@ export class CreateDiscountDto {
   @ApiProperty({
     description: "Discount type",
     enum: DiscountType,
-    example: DiscountType.STANDARD,
+    example: DiscountType.PERCENTAGE,
     required: true,
   })
   @IsEnum(DiscountType, {
