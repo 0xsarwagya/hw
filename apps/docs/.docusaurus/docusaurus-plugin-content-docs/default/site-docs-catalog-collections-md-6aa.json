@@ -1,11 +1,11 @@
 {
   "id": "catalog/collections",
-  "title": "collections",
-  "description": "",
+  "title": "Collections",
+  "description": "Collections provide a way to group products for marketing, navigation, and discount targeting. Unlike categories which are hierarchical, collections are flat groupings that can contain products from multiple categories.",
   "source": "@site/docs/catalog/collections.md",
   "sourceDirName": "catalog",
   "slug": "/catalog/collections",
-  "permalink": "/vcecom/docs/catalog/collections",
+  "permalink": "/docs/docs/catalog/collections",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/catalog/collections.md",
@@ -16,11 +16,11 @@
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
-    "title": "variants",
-    "permalink": "/vcecom/docs/catalog/variants"
+    "title": "Product Variants",
+    "permalink": "/docs/docs/catalog/variants"
   },
   "next": {
-    "title": "inventory",
-    "permalink": "/vcecom/docs/catalog/inventory"
+    "title": "Inventory Management",
+    "permalink": "/docs/docs/catalog/inventory"
   }
 }

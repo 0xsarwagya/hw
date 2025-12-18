@@ -20,7 +20,7 @@ export class InventoryService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    this.client = this.redisStoreService.getClient();
+    this.client = await this.redisStoreService.getClient();
   }
 
   async getMetrics(): Promise<InventoryMetricsDto> {

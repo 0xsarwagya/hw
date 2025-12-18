@@ -5,7 +5,7 @@
   "source": "@site/docs/discounts/overview.md",
   "sourceDirName": "discounts",
   "slug": "/discounts/overview",
-  "permalink": "/vcecom/docs/discounts/overview",
+  "permalink": "/docs/docs/discounts/overview",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/discounts/overview.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Pricing Drift Detection",
-    "permalink": "/vcecom/docs/pricing/drift-detection"
+    "permalink": "/docs/docs/pricing/drift-detection"
   },
   "next": {
-    "title": "definitions",
-    "permalink": "/vcecom/docs/discounts/definitions"
+    "title": "Discount Definitions",
+    "permalink": "/docs/docs/discounts/definitions"
   }
 }

@@ -5,22 +5,22 @@
   "source": "@site/docs/api-reference/store-api.md",
   "sourceDirName": "api-reference",
   "slug": "/api-reference/store-api",
-  "permalink": "/vcecom/docs/api-reference/store-api",
+  "permalink": "/docs/docs/api-reference/store-api",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/api-reference/store-api.md",
   "tags": [],
   "version": "current",
   "lastUpdatedBy": "Sarwagya Singh",
-  "lastUpdatedAt": 1766018217000,
+  "lastUpdatedAt": 1766020206000,
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Admin API Reference",
-    "permalink": "/vcecom/docs/api-reference/admin-api"
+    "permalink": "/docs/docs/api-reference/admin-api"
   },
   "next": {
     "title": "Database Schema Overview",
-    "permalink": "/vcecom/docs/database-schema/overview"
+    "permalink": "/docs/docs/database-schema/overview"
   }
 }

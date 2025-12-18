@@ -47,7 +47,7 @@ export class AdminLoginRateLimitGuard implements OnModuleInit {
     const key = `${this.rateLimitKeyPrefix}${ipAddress}`;
 
     try {
-      const client = this.redisStoreService.getClient();
+      const client = await this.redisStoreService.getClient();
       const execResult = await client
         .multi()
         .incr(key)

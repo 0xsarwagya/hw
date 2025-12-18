@@ -101,7 +101,7 @@ export class InventoryRecoveryService implements OnModuleInit {
     variantsProcessed: number;
   }): Promise<void> {
     try {
-      const redisClient = this.redisStoreService.getClient();
+      const redisClient = await this.redisStoreService.getClient();
 
       // Increment run counter
       await redisClient.incr("inventory_reconciliation_runs");

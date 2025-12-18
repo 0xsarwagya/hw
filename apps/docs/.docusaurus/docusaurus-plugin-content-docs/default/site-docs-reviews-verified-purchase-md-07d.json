@@ -5,7 +5,7 @@
   "source": "@site/docs/reviews/verified-purchase.md",
   "sourceDirName": "reviews",
   "slug": "/reviews/verified-purchase",
-  "permalink": "/vcecom/docs/reviews/verified-purchase",
+  "permalink": "/docs/docs/reviews/verified-purchase",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/reviews/verified-purchase.md",
@@ -16,11 +16,11 @@
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
-    "title": "Reviews System Overview",
-    "permalink": "/vcecom/docs/reviews/overview"
+    "title": "Reviews System",
+    "permalink": "/docs/docs/reviews/overview"
   },
   "next": {
     "title": "moderation",
-    "permalink": "/vcecom/docs/reviews/moderation"
+    "permalink": "/docs/docs/reviews/moderation"
   }
 }

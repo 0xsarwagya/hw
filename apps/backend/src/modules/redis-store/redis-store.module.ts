@@ -13,6 +13,7 @@ import { ProductMappingStore } from "./stores/product-mapping-store";
 
 @Module({
   imports: [ScheduleModule.forRoot()],
+  // LoggerModule and ContextModule are global, so no need to import them
   providers: [
     RedisStoreService,
     InventoryStore,

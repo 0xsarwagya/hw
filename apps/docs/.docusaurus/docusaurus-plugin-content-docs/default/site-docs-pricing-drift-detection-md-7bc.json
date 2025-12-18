@@ -5,7 +5,7 @@
   "source": "@site/docs/pricing/drift-detection.md",
   "sourceDirName": "pricing",
   "slug": "/pricing/drift-detection",
-  "permalink": "/vcecom/docs/pricing/drift-detection",
+  "permalink": "/docs/docs/pricing/drift-detection",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/pricing/drift-detection.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Pricing Snapshots",
-    "permalink": "/vcecom/docs/pricing/snapshots"
+    "permalink": "/docs/docs/pricing/snapshots"
   },
   "next": {
     "title": "Discount Engine Overview",
-    "permalink": "/vcecom/docs/discounts/overview"
+    "permalink": "/docs/docs/discounts/overview"
   }
 }

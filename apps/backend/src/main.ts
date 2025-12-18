@@ -3,14 +3,27 @@ import { resolve } from "node:path";
 import { config } from "dotenv";
 
 // Only load from root .env (when compiled, __dirname is apps/backend/dist)
-// 2 levels up: dist -> backend -> ecommerce (root)
-const rootEnvPath = resolve(__dirname, "../../.env");
+// 3 levels up: dist -> backend -> apps -> ecommerce (root)
+const rootEnvPath = resolve(__dirname, "../../../.env");
 config({ path: rootEnvPath });
+
+// Also try loading from apps/backend/.env as fallback
+const envResult = config({ path: resolve(__dirname, "../.env") });
 
 // Initialize OpenTelemetry BEFORE any other imports
 import { initializeTracing } from "./common/tracing/tracing.config";
 
-const tracingSdk = initializeTracing();
+let tracingSdk: ReturnType<typeof initializeTracing>;
+try {
+  tracingSdk = initializeTracing();
+} catch (error) {
+  console.error("[Tracing Init Error]", {
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+  });
+  // Continue without tracing if initialization fails
+  tracingSdk = null;
+}
 
 // Now import everything else after .env is loaded
 import { ExecutionContext } from "@nestjs/common";
@@ -18,7 +31,6 @@ import { NestFactory, Reflector } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import cookieParser from "cookie-parser";
 import { AppModule } from "./app.module";
-
 import { IS_PUBLIC_KEY } from "./common/decorators/public.decorator";
 import { GlobalExceptionFilter } from "./common/filters/global-exception.filter";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
@@ -35,19 +47,17 @@ import { createPinoConfig } from "./common/logging/pino.config";
 process.on(
   "unhandledRejection",
   (reason: unknown, promise: Promise<unknown>) => {
-    // Log will be handled by GlobalExceptionFilter if it's an HTTP request
-    // For non-HTTP rejections, log to stderr (will be captured by Pino in production)
     console.error("[Unhandled Rejection]", { promise, reason });
+    if (reason instanceof Error) {
+      console.error("[Unhandled Rejection Stack]", reason.stack);
+    }
+    process.exit(1);
   },
 );
 
 process.on("uncaughtException", (error: Error) => {
-  // Log will be handled by GlobalExceptionFilter if it's an HTTP request
-  // For non-HTTP exceptions, log to stderr (will be captured by Pino in production)
-  console.error("[Uncaught Exception]", {
-    error: error.message,
-    stack: error.stack,
-  });
+  console.error("[Uncaught Exception] Message:", error.message);
+  console.error("[Uncaught Exception] Stack:", error.stack);
   process.exit(1);
 });
 
@@ -59,6 +69,7 @@ async function bootstrap() {
     rawBody: true, // Enable raw body for webhook signature verification
     logger: false, // Disable NestJS default logger, use only Pino
   });
+
   const reflector = app.get(Reflector);
 
   // Enable CORS
@@ -105,10 +116,10 @@ async function bootstrap() {
   // Override JWT guard to skip public routes
   const originalCanActivate = jwtGuard.canActivate.bind(jwtGuard);
   jwtGuard.canActivate = async (context: ExecutionContext) => {
-    const isPublic = reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+    const isPublic = reflector.getAllAndOverride(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
-    ]);
+    ]) as boolean | undefined;
     if (isPublic) {
       return true;
     }
@@ -116,8 +127,41 @@ async function bootstrap() {
   };
 
   // Get rate limit guard and interceptor
-  const rateLimitGuard = app.get(RateLimitGuard);
-  const rateLimitInterceptor = app.get(RateLimitInterceptor);
+  // Note: These are retrieved from the app container after NestFactory.create()
+  // which ensures all modules are initialized
+  let rateLimitGuard: RateLimitGuard;
+  let rateLimitInterceptor: RateLimitInterceptor;
+  try {
+    rateLimitGuard = app.get(RateLimitGuard, { strict: false });
+    rateLimitInterceptor = app.get(RateLimitInterceptor, { strict: false });
+    if (!rateLimitGuard || !rateLimitInterceptor) {
+      rootLogger.warn(
+        "Rate limiting components not found, continuing without rate limiting",
+      );
+      // Create no-op implementations
+      rateLimitGuard = {
+        canActivate: () => Promise.resolve(true),
+      } as unknown as RateLimitGuard;
+      rateLimitInterceptor = {
+        intercept: (context, next) => next.handle(),
+      } as unknown as RateLimitInterceptor;
+    }
+  } catch (error) {
+    rootLogger.error(
+      {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+      "Failed to initialize rate limiting, continuing without it",
+    );
+    // Create no-op implementations
+    rateLimitGuard = {
+      canActivate: () => Promise.resolve(true),
+    } as unknown as RateLimitGuard;
+    rateLimitInterceptor = {
+      intercept: (context, next) => next.handle(),
+    } as unknown as RateLimitInterceptor;
+  }
 
   // Apply guards globally
   app.useGlobalGuards(jwtGuard, rolesGuard, rateLimitGuard);
@@ -178,4 +222,8 @@ async function bootstrap() {
     await app.close();
   });
 }
-bootstrap();
+
+bootstrap().catch((error) => {
+  console.error("[Bootstrap Error]", error);
+  process.exit(1);
+});

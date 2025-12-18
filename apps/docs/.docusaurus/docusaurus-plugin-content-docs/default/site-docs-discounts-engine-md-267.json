@@ -5,7 +5,7 @@
   "source": "@site/docs/discounts/engine.md",
   "sourceDirName": "discounts",
   "slug": "/discounts/engine",
-  "permalink": "/vcecom/docs/discounts/engine",
+  "permalink": "/docs/docs/discounts/engine",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/discounts/engine.md",
@@ -16,11 +16,11 @@
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
-    "title": "definitions",
-    "permalink": "/vcecom/docs/discounts/definitions"
+    "title": "Discount Definitions",
+    "permalink": "/docs/docs/discounts/definitions"
   },
   "next": {
     "title": "Discount Priority & Stacking",
-    "permalink": "/vcecom/docs/discounts/priority-stacking"
+    "permalink": "/docs/docs/discounts/priority-stacking"
   }
 }

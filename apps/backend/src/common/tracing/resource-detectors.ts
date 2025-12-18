@@ -1,6 +1,6 @@
 import { Resource } from "@opentelemetry/resources";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
-import { BUILD_INFO } from "../../build-info";
+import { BUILD_INFO } from "../../build-info.js";
 
 /**
  * Create OTEL resource with service metadata

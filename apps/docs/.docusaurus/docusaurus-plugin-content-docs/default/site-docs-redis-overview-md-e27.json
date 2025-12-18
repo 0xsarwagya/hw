@@ -1,11 +1,11 @@
 {
   "id": "redis/overview",
   "title": "Redis Architecture",
-  "description": "Overview",
+  "description": "Redis serves as the high-performance data layer for real-time operations, caching, session management, and distributed coordination. The architecture implements multiple Redis usage patterns optimized for different operational requirements.",
   "source": "@site/docs/redis/overview.md",
   "sourceDirName": "redis",
   "slug": "/redis/overview",
-  "permalink": "/vcecom/docs/redis/overview",
+  "permalink": "/docs/docs/redis/overview",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/redis/overview.md",
@@ -16,11 +16,11 @@
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
-    "title": "correlation",
-    "permalink": "/vcecom/docs/observability/correlation"
+    "title": "Log-Trace Correlation",
+    "permalink": "/docs/docs/observability/correlation"
   },
   "next": {
     "title": "Redis Key Patterns",
-    "permalink": "/vcecom/docs/redis/key-patterns"
+    "permalink": "/docs/docs/redis/key-patterns"
   }
 }

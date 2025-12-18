@@ -70,6 +70,7 @@ export class StorageModule {
       controllers: [StorageController],
       providers,
       exports: [StorageService, ImageCompressionService],
+      // LoggerModule and ContextModule are global, so no need to import them
       global: true, // Make it a global module so other modules can import it
     };
   }

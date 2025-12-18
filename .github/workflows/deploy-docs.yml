@@ -43,13 +43,18 @@ jobs:
         env:
           NODE_ENV: production
 
+      - name: Copy docs to root docs folder
+        run: |
+          mkdir -p docs
+          cp -r apps/docs/build/* docs/
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: apps/docs/build
+          path: docs
 
   deploy:
     environment:

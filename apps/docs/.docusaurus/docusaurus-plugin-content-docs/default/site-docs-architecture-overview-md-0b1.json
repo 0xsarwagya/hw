@@ -1,11 +1,11 @@
 {
   "id": "architecture/overview",
   "title": "System Architecture Overview",
-  "description": "Module-Level Breakdown",
+  "description": "VCEcom is built using a modular, scalable architecture that separates concerns while maintaining high performance and developer productivity. This document provides a comprehensive overview of the system architecture, design patterns, and technical decisions.",
   "source": "@site/docs/architecture/overview.md",
   "sourceDirName": "architecture",
   "slug": "/architecture/overview",
-  "permalink": "/vcecom/docs/architecture/overview",
+  "permalink": "/docs/docs/architecture/overview",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/architecture/overview.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Introduction",
-    "permalink": "/vcecom/docs/introduction"
+    "permalink": "/docs/docs/introduction"
   },
   "next": {
     "title": "Module Breakdown",
-    "permalink": "/vcecom/docs/architecture/modules"
+    "permalink": "/docs/docs/architecture/modules"
   }
 }

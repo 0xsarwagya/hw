@@ -5,7 +5,7 @@
   "source": "@site/docs/pricing/price-lists.md",
   "sourceDirName": "pricing",
   "slug": "/pricing/price-lists",
-  "permalink": "/vcecom/docs/pricing/price-lists",
+  "permalink": "/docs/docs/pricing/price-lists",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/pricing/price-lists.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Pricing System Overview",
-    "permalink": "/vcecom/docs/pricing/overview"
+    "permalink": "/docs/docs/pricing/overview"
   },
   "next": {
     "title": "Customer Groups",
-    "permalink": "/vcecom/docs/pricing/customer-groups"
+    "permalink": "/docs/docs/pricing/customer-groups"
   }
 }

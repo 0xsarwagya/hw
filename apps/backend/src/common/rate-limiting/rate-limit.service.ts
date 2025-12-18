@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { PinoLogger } from "nestjs-pino";
 import { RedisStoreService } from "../../modules/redis-store/redis-store.service";
 import { ContextService } from "../logging/context.service";
@@ -15,7 +15,7 @@ export interface RateLimitState {
 }
 
 @Injectable()
-export class RateLimitService implements OnModuleInit {
+export class RateLimitService {
   private readonly keyPrefix = "ratelimit:";
 
   constructor(
@@ -23,11 +23,6 @@ export class RateLimitService implements OnModuleInit {
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
   ) {}
-
-  onModuleInit() {
-    // Ensure Redis client is initialized
-    this.redisStoreService.getClient();
-  }
 
   /**
    * Check and increment rate limit counter
@@ -44,7 +39,7 @@ export class RateLimitService implements OnModuleInit {
     const resetTime = now + config.window;
 
     try {
-      const client = this.redisStoreService.getClient();
+      const client = await this.redisStoreService.getClient();
       const execResult = await client
         .multi()
         .incr(key)

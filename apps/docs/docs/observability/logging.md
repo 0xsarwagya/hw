@@ -1,296 +1,343 @@
-# Structured Logging
+# Logging System
 
-## Overview
+The logging system provides comprehensive application observability through structured logging, request correlation, and context propagation. It uses Pino for high-performance logging with automatic request tracing and sensitive data redaction.
 
-VCEcom uses Pino for structured logging with JSON output, request context correlation, and automatic sensitive data redaction.
+## Logging Architecture
 
-## Pino Logger
+### Core Components
+- **Pino Logger**: High-performance structured logging
+- **Context Service**: Request-scoped context propagation
+- **Middleware Integration**: Automatic request logging
+- **Sensitive Data Redaction**: Automatic PII protection
 
-Pino is a fast, structured logger for Node.js with:
-- **JSON Output**: Machine-readable log format
-- **Performance**: Minimal overhead
-- **Child Loggers**: Context-aware logging
-- **Redaction**: Automatic sensitive data filtering
-
-## Logger Configuration
+### Logger Configuration
 
 ```typescript
-import pino from "pino";
-
-const logger = pino({
-  level: process.env.LOG_LEVEL || "info",
+interface LoggerConfig {
+  level: 'debug' | 'info' | 'warn' | 'error';
+  format: 'json' | 'pretty';
+  redaction: string[];      // Paths to redact
   base: {
-    service: "vcecom-backend",
-    version: "1.0.0"
-  },
-  timestamp: pino.stdTimeFunctions.isoTime,
-  redact: {
-    paths: ["customer.email", "customer.phone", "body.password"],
-    remove: false,
-    censor: "[Redacted]"
-  }
-});
+    service: string;        // Service name
+    version: string;        // Build version
+  };
+}
 ```
-
-## Log Levels
-
-- **trace**: Very detailed debugging
-- **debug**: Debugging information
-- **info**: General information (default)
-- **warn**: Warning messages
-- **error**: Error messages
-- **fatal**: Critical errors
 
 ## Structured Logging
 
-All logs are structured JSON:
+### Log Levels
+```typescript
+enum LogLevel {
+  DEBUG = 'debug',    // Detailed debugging information
+  INFO = 'info',      // General information messages
+  WARN = 'warn',      // Warning conditions
+  ERROR = 'error',    // Error conditions
+}
+```
 
+### Log Structure
 ```json
 {
-  "level": "info",
-  "time": "2025-12-18T10:30:00.000Z",
+  "level": 30,
+  "time": 1735999200000,
+  "pid": 12345,
+  "hostname": "server-01",
   "service": "vcecom-backend",
-  "version": "1.0.0",
-  "requestId": "req-123",
-  "traceId": "trace-456",
+  "version": "2025.12.18",
+  "requestId": "req-123456",
+  "traceId": "trace-789012",
+  "spanId": "span-345678",
+  "correlationId": "corr-901234",
   "operation": "createOrder",
-  "orderId": "order-789",
-  "message": "Order created successfully"
+  "customerId": "cust-567890",
+  "orderId": "ord-20251218-0001",
+  "duration": 245,
+  "msg": "Order created successfully"
 }
 ```
 
-## Request Context
+## Request Context Propagation
 
-Request context is automatically attached to all logs:
-
+### Context Structure
 ```typescript
 interface RequestContext {
-  requestId: string;
-  correlationId?: string;
-  traceId?: string;
-  spanId?: string;
-  ip?: string;
-  customerId?: string;
-  orderId?: string;
-  checkoutId?: string;
-  cartId?: string;
+  requestId: string;        // Unique request identifier
+  spanId?: string;          // OpenTelemetry span ID
+  traceId?: string;         // OpenTelemetry trace ID
+  correlationId?: string;   // Cross-service correlation
+  ip?: string;              // Client IP address
+  customerId?: string;      // Authenticated customer ID
+  cartId?: string;          // Shopping cart ID
+  orderId?: string;         // Order ID
+  checkoutId?: string;      // Checkout session ID
 }
 ```
 
-## Using the Logger
-
-### In Services
-
+### Context Propagation
 ```typescript
-@Injectable()
-export class OrdersService {
-  constructor(
-    private readonly logger: PinoLogger,
-    private readonly contextService: ContextService
-  ) {}
+// Automatic context creation in middleware
+app.use((req, res, next) => {
+  const context: RequestContext = {
+    requestId: generateRequestId(),
+    traceId: getTraceId(),
+    spanId: getSpanId(),
+    correlationId: req.headers['x-correlation-id'] || generateCorrelationId(),
+    ip: getClientIP(req),
+    // Additional context populated during request lifecycle
+  };
 
-  async create(dto: CreateOrderDto) {
-    const context = createLogContext(
-      this.contextService,
-      "createOrder",
-      { orderId: "order-123" }
-    );
-
-    this.logger.info(context, "Creating order");
-    
-    try {
-      const order = await this.createOrder(dto);
-      this.logger.info(
-        { ...context, orderId: order.id },
-        "Order created successfully"
-      );
-      return order;
-    } catch (error) {
-      const errorContext = createErrorContext(
-        this.contextService,
-        "createOrder",
-        error,
-        { orderId: "order-123" }
-      );
-      this.logger.error(errorContext, "Failed to create order");
-      throw error;
-    }
-  }
-}
-```
-
-### Log Format
-
-```typescript
-// Info log
-this.logger.info(
-  { operation: "createOrder", orderId: "order-123" },
-  "Order created successfully"
-);
-
-// Error log
-this.logger.error(
-  { operation: "createOrder", error: error, stack: error.stack },
-  "Failed to create order"
-);
-
-// Debug log
-this.logger.debug(
-  { operation: "createOrder", dto },
-  "Creating order with DTO"
-);
+  contextService.run(context, () => next());
+});
 ```
 
 ## Sensitive Data Redaction
 
-Automatic redaction of sensitive fields:
-
+### Redaction Paths
 ```typescript
-redact: {
-  paths: [
-    "customer.email",
-    "customer.phone",
-    "body.password",
-    "body.cardNumber",
-    "headers.authorization"
-  ],
-  remove: false,
-  censor: "[Redacted]"
+const REDACTION_PATHS = [
+  "customer.email",
+  "customer.phone",
+  "customer.address",
+  "payment.card_last4",
+  "payment.card_number",
+  "payment.method",
+  "payload.email",
+  "payload.phone",
+  "body.email",
+  "body.phone",
+  "body.password",
+  "body.cardNumber",
+  "body.cvv",
+  "headers.authorization",
+  "headers.cookie",
+  "req.headers.authorization",
+  "req.headers.cookie",
+  "req.body.email",
+  "req.body.phone",
+  "req.body.password",
+  "req.body.cardNumber",
+  "req.body.cvv",
+];
+```
+
+### Redaction Behavior
+- **Censor**: Replace sensitive values with `[Redacted]`
+- **Preserve Structure**: Maintain object structure for debugging
+- **Configurable**: Environment-variable controlled redaction
+
+## Logging Patterns
+
+### Operation Logging
+```typescript
+async createOrder(orderData: CreateOrderDto): Promise<Order> {
+  const startTime = Date.now();
+
+  this.logger.info(
+    createLogContext(this.contextService, "createOrder", {
+      itemCount: orderData.items.length,
+      totalAmount: orderData.total,
+    }),
+    "Starting order creation"
+  );
+
+  try {
+    const order = await this.processOrder(orderData);
+
+    this.logger.info(
+      createLogContext(this.contextService, "createOrder", {
+        orderId: order.id,
+        duration: Date.now() - startTime,
+        itemCount: order.items.length,
+      }),
+      "Order created successfully"
+    );
+
+    return order;
+  } catch (error) {
+    this.logger.error(
+      createErrorContext(this.contextService, "createOrder", error, {
+        duration: Date.now() - startTime,
+        orderData: { ...orderData, payment: undefined }, // Redact payment data
+      }),
+      "Failed to create order"
+    );
+    throw error;
+  }
 }
 ```
 
-Example:
+### Error Context Creation
+```typescript
+function createErrorContext(
+  contextService: ContextService,
+  operation: string,
+  error: Error,
+  metadata?: any
+): any {
+  return {
+    ...createLogContext(contextService, operation, metadata),
+    error: error.message,
+    errorType: error.name,
+    stack: error.stack,
+    // Additional error context
+  };
+}
+```
 
-```json
+## Performance Considerations
+
+### Pino Performance Features
+- **Child Loggers**: Lightweight child logger creation
+- **Async Logging**: Non-blocking log writes
+- **Serialization**: Fast JSON serialization
+- **Destination Control**: Configurable output destinations
+
+### Memory Management
+```typescript
+// Avoid memory leaks with large objects
+this.logger.debug(
+  createLogContext(this.contextService, "largeOperation", {
+    itemCount: largeArray.length,
+    // Don't log the entire array
+    sampleItems: largeArray.slice(0, 3), // Log only samples
+  }),
+  "Processing large dataset"
+);
+```
+
+### Log Sampling
+```typescript
+// Sample debug logs to reduce volume
+if (Math.random() < 0.1) { // 10% sampling
+  this.logger.debug(
+    createLogContext(this.contextService, "frequentOperation", metadata),
+    "Frequent operation debug info"
+  );
+}
+```
+
+## Environment Configuration
+
+### Development Configuration
+```bash
+NODE_ENV=development
+LOG_LEVEL=debug
+LOG_PRETTY=true
+```
+
+### Production Configuration
+```bash
+NODE_ENV=production
+LOG_LEVEL=info
+LOG_PRETTY=false
+```
+
+### Log Level Control
+```typescript
+const logLevel = process.env.LOG_LEVEL || (isDevelopment ? 'debug' : 'info');
+
+// Dynamic log level changes
+if (process.env.LOG_LEVEL_CHANGE_SIGNAL) {
+  // Handle log level changes without restart
+}
+```
+
+## Log Aggregation & Analysis
+
+### Structured Querying
+```sql
+-- Query logs by operation
+SELECT * FROM logs
+WHERE json_extract(data, '$.operation') = 'createOrder'
+  AND json_extract(data, '$.level') = 50;
+
+-- Find errors with customer context
+SELECT * FROM logs
+WHERE json_extract(data, '$.level') = 50
+  AND json_extract(data, '$.customerId') IS NOT NULL;
+
+-- Performance analysis
+SELECT
+  json_extract(data, '$.operation') as operation,
+  AVG(json_extract(data, '$.duration')) as avg_duration
+FROM logs
+WHERE json_extract(data, '$.duration') IS NOT NULL
+GROUP BY operation;
+```
+
+### Monitoring Dashboards
+```typescript
+// Key metrics from logs
+order_creation_success_rate: gauge
+average_order_creation_time: histogram
+error_rate_by_operation: counter
+customer_journey_completion: funnel
+```
+
+## Integration with Tracing
+
+### Trace Correlation
+```typescript
+// Logs include trace context
 {
-  "customer": {
-    "email": "[Redacted]",
-    "phone": "[Redacted]"
-  },
-  "body": {
-    "password": "[Redacted]"
-  }
-}
-```
-
-## Context Service
-
-ContextService provides request-scoped context using AsyncLocalStorage:
-
-```typescript
-@Injectable()
-export class ContextService {
-  private readonly asyncLocalStorage = new AsyncLocalStorage<RequestContext>();
-
-  run<T>(context: RequestContext, fn: () => T): T {
-    return this.asyncLocalStorage.run(context, fn);
-  }
-
-  get(): RequestContext | undefined {
-    return this.asyncLocalStorage.getStore();
-  }
-}
-```
-
-## Context Middleware
-
-Automatically creates context for each request:
-
-```typescript
-@Injectable()
-export class ContextMiddleware implements NestMiddleware {
-  use(req: Request, res: Response, next: NextFunction): void {
-    const requestId = req.headers["x-request-id"] || randomUUID();
-    const context: RequestContext = {
-      requestId,
-      ip: req.ip,
-      traceId: trace.getActiveSpan()?.spanContext().traceId
-    };
-
-    this.contextService.run(context, () => {
-      const childLogger = this.logger.logger.child({
-        requestId,
-        traceId: context.traceId
-      });
-      req.logger = childLogger;
-      next();
-    });
-  }
-}
-```
-
-## Log Correlation
-
-All logs include correlation IDs:
-
-- **requestId**: Unique per request
-- **correlationId**: Cross-service correlation
-- **traceId**: Distributed trace ID
-- **spanId**: Current span ID
-
-## Development vs Production
-
-### Development
-
-Pretty-printed logs for readability:
-
-```
-[10:30:00.000] INFO: Order created successfully
-    requestId: "req-123"
-    orderId: "order-789"
-    operation: "createOrder"
-```
-
-### Production
-
-JSON logs for log aggregation:
-
-```json
-{
-  "level": "info",
-  "time": "2025-12-18T10:30:00.000Z",
-  "requestId": "req-123",
-  "orderId": "order-789",
+  "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "spanId": "00f067aa0ba902b7",
   "operation": "createOrder",
-  "message": "Order created successfully"
+  // ... other fields
 }
+```
+
+### Distributed Tracing Integration
+```typescript
+// Automatic trace context injection
+const span = trace.getTracer('vcecom-backend').startSpan('createOrder');
+
+this.logger.info(
+  createLogContext(this.contextService, "createOrder", {
+    spanId: span.spanContext().spanId,
+    traceId: span.spanContext().traceId,
+  }),
+  "Starting order creation"
+);
+
+span.end();
 ```
 
 ## Best Practices
 
-1. **Use Structured Fields**: Always use structured fields, not string interpolation
-2. **Include Context**: Include relevant context in logs
-3. **Appropriate Levels**: Use appropriate log levels
-4. **Error Context**: Include full error context in error logs
-5. **Avoid Sensitive Data**: Never log passwords, tokens, or PII
+### Log Message Guidelines
+1. **Descriptive Messages**: Clear, actionable log messages
+2. **Consistent Format**: Standardized message formats
+3. **Appropriate Levels**: Correct log levels for different scenarios
+4. **Context Rich**: Include relevant context without sensitive data
 
-## Log Aggregation
+### Structured Data
+1. **Key-Value Pairs**: Use structured data over string concatenation
+2. **Consistent Keys**: Standardized field names across the application
+3. **Type Safety**: Typed logging interfaces
+4. **Performance**: Avoid expensive operations in log data preparation
 
-Logs are designed for aggregation systems:
+### Error Logging
+1. **Full Context**: Include all relevant context when logging errors
+2. **Stack Traces**: Preserve stack traces for debugging
+3. **Error Classification**: Categorize errors for better analysis
+4. **Recovery Actions**: Log recovery attempts and outcomes
 
-- **ELK Stack**: Elasticsearch, Logstash, Kibana
-- **Loki**: Grafana Loki
-- **CloudWatch**: AWS CloudWatch Logs
-- **Datadog**: Datadog Log Management
+### Security Considerations
+1. **Data Redaction**: Automatic sensitive data protection
+2. **Access Control**: Log access restricted to authorized personnel
+3. **Retention Policies**: Configurable log retention periods
+4. **Audit Trail**: Immutable log records for compliance
 
-## Example Log Output
+### Performance Optimization
+1. **Async Logging**: Non-blocking log operations
+2. **Buffering**: Batch log writes for efficiency
+3. **Compression**: Compress logs for storage efficiency
+4. **Sampling**: Sample high-volume logs to reduce overhead
 
-```json
-{
-  "level": "info",
-  "time": "2025-12-18T10:30:00.000Z",
-  "service": "vcecom-backend",
-  "version": "1.0.0",
-  "requestId": "550e8400-e29b-41d4-a716-446655440000",
-  "traceId": "12345678901234567890123456789012",
-  "spanId": "1234567890123456",
-  "ip": "192.168.1.1",
-  "operation": "createOrder",
-  "orderId": "order-789",
-  "customerId": "customer-123",
-  "checkoutId": "checkout-456",
-  "message": "Order created successfully",
-  "duration": 125.5
-}
-```
-
+### Operational Excellence
+1. **Centralized Logging**: Aggregate logs from all services
+2. **Alerting**: Set up alerts on error patterns
+3. **Trend Analysis**: Monitor log patterns for system health
+4. **Capacity Planning**: Use log volume for infrastructure planning

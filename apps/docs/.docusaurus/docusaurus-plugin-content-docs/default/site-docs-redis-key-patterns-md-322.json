@@ -5,7 +5,7 @@
   "source": "@site/docs/redis/key-patterns.md",
   "sourceDirName": "redis",
   "slug": "/redis/key-patterns",
-  "permalink": "/vcecom/docs/redis/key-patterns",
+  "permalink": "/docs/docs/redis/key-patterns",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/redis/key-patterns.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Redis Architecture",
-    "permalink": "/vcecom/docs/redis/overview"
+    "permalink": "/docs/docs/redis/overview"
   },
   "next": {
-    "title": "caching-layers",
-    "permalink": "/vcecom/docs/redis/caching-layers"
+    "title": "Redis Caching Layers",
+    "permalink": "/docs/docs/redis/caching-layers"
   }
 }

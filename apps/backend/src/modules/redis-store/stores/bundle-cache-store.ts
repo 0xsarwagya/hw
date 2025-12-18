@@ -23,7 +23,7 @@ export class BundleCacheStore implements IBundleCacheStore, OnModuleInit {
   }
 
   async onModuleInit() {
-    this.client = this.redisStoreService.getClient();
+    this.client = await this.redisStoreService.getClient();
   }
 
   /**

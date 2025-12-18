@@ -10,6 +10,7 @@ import {
 @Injectable()
 export class RedisStoreService implements OnModuleInit, OnModuleDestroy {
   private client: Redis | null = null;
+  private initPromise: Promise<void> | null = null;
 
   constructor(
     private readonly logger: PinoLogger,
@@ -18,19 +19,50 @@ export class RedisStoreService implements OnModuleInit, OnModuleDestroy {
 
   /**
    * Get Redis client instance
-   * @throws Error if Redis is not initialized
+   * Waits for initialization if not yet complete
+   *
+   * This method handles lazy initialization if called before onModuleInit()
+   * Following NestJS best practices for async initialization
    */
-  getClient(): Redis {
-    if (!this.client) {
-      throw new Error("Redis client not initialized. Call onModuleInit first.");
+  async getClient(): Promise<Redis> {
+    if (this.client) {
+      return this.client;
     }
+
+    // If initPromise doesn't exist yet, create it
+    // This handles the case where getClient() is called before onModuleInit()
+    // NestJS doesn't guarantee onModuleInit() order, so we need this fallback
+    if (!this.initPromise) {
+      this.initPromise = this.initializeRedis();
+    }
+
+    // Wait for initialization to complete
+    await this.initPromise;
+
+    if (!this.client) {
+      throw new Error(
+        "Redis client not initialized. Initialization may have failed.",
+      );
+    }
+
     return this.client;
   }
 
   /**
    * Initialize Redis connection
+   * Called by NestJS during module initialization lifecycle
    */
   async onModuleInit() {
+    // Store initialization promise so getClient() can await it
+    // Only create if it doesn't exist (might have been created by getClient() call)
+    if (!this.initPromise) {
+      this.initPromise = this.initializeRedis();
+    }
+    // Wait for initialization to complete
+    await this.initPromise;
+  }
+
+  private async initializeRedis() {
     try {
       const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
       const options: RedisOptions = {

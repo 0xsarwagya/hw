@@ -1,11 +1,11 @@
 {
   "id": "observability/context",
-  "title": "context",
-  "description": "",
+  "title": "Request Context Propagation",
+  "description": "The context system provides request-scoped data propagation across async operations using AsyncLocalStorage. It enables correlation of logs, traces, and operations throughout the request lifecycle.",
   "source": "@site/docs/observability/context.md",
   "sourceDirName": "observability",
   "slug": "/observability/context",
-  "permalink": "/vcecom/docs/observability/context",
+  "permalink": "/docs/docs/observability/context",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/observability/context.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Distributed Tracing",
-    "permalink": "/vcecom/docs/observability/tracing"
+    "permalink": "/docs/docs/observability/tracing"
   },
   "next": {
-    "title": "correlation",
-    "permalink": "/vcecom/docs/observability/correlation"
+    "title": "Log-Trace Correlation",
+    "permalink": "/docs/docs/observability/correlation"
   }
 }

@@ -1,11 +1,11 @@
 {
   "id": "deployment/overview",
   "title": "Deployment Overview",
-  "description": "Quick Start",
+  "description": "VCEcom supports multiple deployment strategies for different environments and scaling requirements. This guide covers containerized deployment, cloud platforms, and operational considerations.",
   "source": "@site/docs/deployment/overview.md",
   "sourceDirName": "deployment",
   "slug": "/deployment/overview",
-  "permalink": "/vcecom/docs/deployment/overview",
+  "permalink": "/docs/docs/deployment/overview",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/deployment/overview.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Database Tables",
-    "permalink": "/vcecom/docs/database-schema/tables"
+    "permalink": "/docs/docs/database-schema/tables"
   },
   "next": {
     "title": "docker",
-    "permalink": "/vcecom/docs/deployment/docker"
+    "permalink": "/docs/docs/deployment/docker"
   }
 }

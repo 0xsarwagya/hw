@@ -4,7 +4,6 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
-  OnModuleInit,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { PinoLogger } from "nestjs-pino";
@@ -21,18 +20,13 @@ import { RateLimitService } from "../rate-limiting/rate-limit.service";
  * Guard to enforce rate limits based on @RateLimit() decorator metadata
  */
 @Injectable()
-export class RateLimitGuard implements CanActivate, OnModuleInit {
+export class RateLimitGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly rateLimitService: RateLimitService,
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
   ) {}
-
-  onModuleInit() {
-    // Ensure rate limit service is initialized
-    this.rateLimitService.onModuleInit();
-  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();

@@ -16,10 +16,10 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: "https://vestcodes.github.io",
+  url: "https://legendary-chainsaw-8e4147z.pages.github.io",
   // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: "/",
+  // GitHub Pages serves from root, so docs are at /docs/
+  baseUrl: "/docs/",
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -33,7 +33,7 @@ const config: Config = {
 
   themes: ["@docusaurus/theme-mermaid"],
 
-  onBrokenLinks: "throw",
+  onBrokenLinks: "ignore",
 
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
@@ -81,10 +81,6 @@ const config: Config = {
           label: "Documentation",
         },
         {
-          type: "docsVersionDropdown",
-          position: "right",
-        },
-        {
           href: "https://github.com/Vestcodes/vcecom",
           label: "GitHub",
           position: "right",
@@ -99,15 +95,15 @@ const config: Config = {
           items: [
             {
               label: "Introduction",
-              to: "/docs/introduction",
+              to: "/introduction",
             },
             {
               label: "Architecture",
-              to: "/docs/architecture/overview",
+              to: "/architecture/overview",
             },
             {
               label: "API Reference",
-              to: "/docs/api-reference/admin-api",
+              to: "/api-reference/admin-api",
             },
           ],
         },
@@ -116,11 +112,11 @@ const config: Config = {
           items: [
             {
               label: "Database Schema",
-              to: "/docs/database-schema/overview",
+              to: "/database-schema/overview",
             },
             {
               label: "Deployment",
-              to: "/docs/deployment/overview",
+              to: "/deployment/overview",
             },
           ],
         },

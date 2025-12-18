@@ -25,6 +25,7 @@ import { RulesetVersionManager } from "./services/ruleset-version-manager.servic
 
 @Module({
   imports: [RedisStoreModule],
+  // LoggerModule and ContextModule are global, so no need to import them
   controllers: [DiscountsController, PublicDiscountsController],
   providers: [
     DiscountsService,

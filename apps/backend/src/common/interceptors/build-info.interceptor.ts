@@ -5,7 +5,7 @@ import {
   NestInterceptor,
 } from "@nestjs/common";
 import { Observable } from "rxjs";
-import { BUILD_INFO } from "../../build-info";
+import { BUILD_INFO } from "../../build-info.js";
 
 @Injectable()
 export class BuildInfoInterceptor implements NestInterceptor {

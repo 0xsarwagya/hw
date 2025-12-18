@@ -1,5 +1,5 @@
 import pino from "pino";
-import { BUILD_INFO } from "../../build-info";
+import { BUILD_INFO } from "../../build-info.js";
 
 /**
  * Pino logger configuration

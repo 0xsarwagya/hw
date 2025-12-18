@@ -3,374 +3,374 @@ import ComponentCreator from '@docusaurus/ComponentCreator';
 
 export default [
   {
-    path: '/vcecom/docs',
-    component: ComponentCreator('/vcecom/docs', '731'),
+    path: '/docs/docs',
+    component: ComponentCreator('/docs/docs', '0ef'),
     routes: [
       {
-        path: '/vcecom/docs',
-        component: ComponentCreator('/vcecom/docs', '4cf'),
+        path: '/docs/docs',
+        component: ComponentCreator('/docs/docs', '61f'),
         routes: [
           {
-            path: '/vcecom/docs',
-            component: ComponentCreator('/vcecom/docs', 'c4e'),
+            path: '/docs/docs',
+            component: ComponentCreator('/docs/docs', '5ad'),
             routes: [
               {
-                path: '/vcecom/docs/api-reference/admin-api',
-                component: ComponentCreator('/vcecom/docs/api-reference/admin-api', 'd3f'),
+                path: '/docs/docs/api-reference/admin-api',
+                component: ComponentCreator('/docs/docs/api-reference/admin-api', '062'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/api-reference/store-api',
-                component: ComponentCreator('/vcecom/docs/api-reference/store-api', 'a7c'),
+                path: '/docs/docs/api-reference/store-api',
+                component: ComponentCreator('/docs/docs/api-reference/store-api', '84b'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/architecture/dependencies',
-                component: ComponentCreator('/vcecom/docs/architecture/dependencies', 'ebd'),
+                path: '/docs/docs/architecture/dependencies',
+                component: ComponentCreator('/docs/docs/architecture/dependencies', 'ab6'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/architecture/modules',
-                component: ComponentCreator('/vcecom/docs/architecture/modules', '068'),
+                path: '/docs/docs/architecture/modules',
+                component: ComponentCreator('/docs/docs/architecture/modules', '9d4'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/architecture/overview',
-                component: ComponentCreator('/vcecom/docs/architecture/overview', '6a4'),
+                path: '/docs/docs/architecture/overview',
+                component: ComponentCreator('/docs/docs/architecture/overview', '85e'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/authentication/admin-auth',
-                component: ComponentCreator('/vcecom/docs/authentication/admin-auth', 'c96'),
+                path: '/docs/docs/authentication/admin-auth',
+                component: ComponentCreator('/docs/docs/authentication/admin-auth', 'b1c'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/authentication/storefront-auth',
-                component: ComponentCreator('/vcecom/docs/authentication/storefront-auth', '3ad'),
+                path: '/docs/docs/authentication/storefront-auth',
+                component: ComponentCreator('/docs/docs/authentication/storefront-auth', '6b8'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/bundles/cart-integration',
-                component: ComponentCreator('/vcecom/docs/bundles/cart-integration', '998'),
+                path: '/docs/docs/bundles/cart-integration',
+                component: ComponentCreator('/docs/docs/bundles/cart-integration', '7ac'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/bundles/choice-sets',
-                component: ComponentCreator('/vcecom/docs/bundles/choice-sets', '790'),
+                path: '/docs/docs/bundles/choice-sets',
+                component: ComponentCreator('/docs/docs/bundles/choice-sets', '6ae'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/bundles/definition',
-                component: ComponentCreator('/vcecom/docs/bundles/definition', '47d'),
+                path: '/docs/docs/bundles/definition',
+                component: ComponentCreator('/docs/docs/bundles/definition', 'bcd'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/bundles/overview',
-                component: ComponentCreator('/vcecom/docs/bundles/overview', 'fec'),
+                path: '/docs/docs/bundles/overview',
+                component: ComponentCreator('/docs/docs/bundles/overview', 'ee1'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/bundles/pricing',
-                component: ComponentCreator('/vcecom/docs/bundles/pricing', 'e73'),
+                path: '/docs/docs/bundles/pricing',
+                component: ComponentCreator('/docs/docs/bundles/pricing', '12f'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/catalog/collections',
-                component: ComponentCreator('/vcecom/docs/catalog/collections', '6cf'),
+                path: '/docs/docs/catalog/collections',
+                component: ComponentCreator('/docs/docs/catalog/collections', 'bbd'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/catalog/inventory',
-                component: ComponentCreator('/vcecom/docs/catalog/inventory', '278'),
+                path: '/docs/docs/catalog/inventory',
+                component: ComponentCreator('/docs/docs/catalog/inventory', 'c8f'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/catalog/products',
-                component: ComponentCreator('/vcecom/docs/catalog/products', '7f8'),
+                path: '/docs/docs/catalog/products',
+                component: ComponentCreator('/docs/docs/catalog/products', '27b'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/catalog/variants',
-                component: ComponentCreator('/vcecom/docs/catalog/variants', '91c'),
+                path: '/docs/docs/catalog/variants',
+                component: ComponentCreator('/docs/docs/catalog/variants', '3fc'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/checkout/guest-checkout',
-                component: ComponentCreator('/vcecom/docs/checkout/guest-checkout', '1f0'),
+                path: '/docs/docs/checkout/guest-checkout',
+                component: ComponentCreator('/docs/docs/checkout/guest-checkout', '0bf'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/checkout/inventory-flow',
-                component: ComponentCreator('/vcecom/docs/checkout/inventory-flow', '251'),
+                path: '/docs/docs/checkout/inventory-flow',
+                component: ComponentCreator('/docs/docs/checkout/inventory-flow', 'f32'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/checkout/overview',
-                component: ComponentCreator('/vcecom/docs/checkout/overview', 'f7a'),
+                path: '/docs/docs/checkout/overview',
+                component: ComponentCreator('/docs/docs/checkout/overview', '732'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/checkout/payment-intent',
-                component: ComponentCreator('/vcecom/docs/checkout/payment-intent', 'f67'),
+                path: '/docs/docs/checkout/payment-intent',
+                component: ComponentCreator('/docs/docs/checkout/payment-intent', 'd1f'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/checkout/state-machine',
-                component: ComponentCreator('/vcecom/docs/checkout/state-machine', 'fee'),
+                path: '/docs/docs/checkout/state-machine',
+                component: ComponentCreator('/docs/docs/checkout/state-machine', 'fb4'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/checkout/webhooks',
-                component: ComponentCreator('/vcecom/docs/checkout/webhooks', 'b61'),
+                path: '/docs/docs/checkout/webhooks',
+                component: ComponentCreator('/docs/docs/checkout/webhooks', '027'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/database-schema/erd',
-                component: ComponentCreator('/vcecom/docs/database-schema/erd', 'bd2'),
+                path: '/docs/docs/database-schema/erd',
+                component: ComponentCreator('/docs/docs/database-schema/erd', '2fc'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/database-schema/overview',
-                component: ComponentCreator('/vcecom/docs/database-schema/overview', '6ed'),
+                path: '/docs/docs/database-schema/overview',
+                component: ComponentCreator('/docs/docs/database-schema/overview', '71e'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/database-schema/tables',
-                component: ComponentCreator('/vcecom/docs/database-schema/tables', '2b4'),
+                path: '/docs/docs/database-schema/tables',
+                component: ComponentCreator('/docs/docs/database-schema/tables', '11b'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/deployment/docker',
-                component: ComponentCreator('/vcecom/docs/deployment/docker', 'd4b'),
+                path: '/docs/docs/deployment/docker',
+                component: ComponentCreator('/docs/docs/deployment/docker', 'be3'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/deployment/overview',
-                component: ComponentCreator('/vcecom/docs/deployment/overview', '4f7'),
+                path: '/docs/docs/deployment/overview',
+                component: ComponentCreator('/docs/docs/deployment/overview', '85b'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/deployment/production',
-                component: ComponentCreator('/vcecom/docs/deployment/production', '193'),
+                path: '/docs/docs/deployment/production',
+                component: ComponentCreator('/docs/docs/deployment/production', '0b3'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/deployment/scaling',
-                component: ComponentCreator('/vcecom/docs/deployment/scaling', 'b8f'),
+                path: '/docs/docs/deployment/scaling',
+                component: ComponentCreator('/docs/docs/deployment/scaling', 'e05'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/discounts/definitions',
-                component: ComponentCreator('/vcecom/docs/discounts/definitions', '1eb'),
+                path: '/docs/docs/discounts/definitions',
+                component: ComponentCreator('/docs/docs/discounts/definitions', '608'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/discounts/drift-detection',
-                component: ComponentCreator('/vcecom/docs/discounts/drift-detection', 'de9'),
+                path: '/docs/docs/discounts/drift-detection',
+                component: ComponentCreator('/docs/docs/discounts/drift-detection', '0d7'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/discounts/engine',
-                component: ComponentCreator('/vcecom/docs/discounts/engine', '44a'),
+                path: '/docs/docs/discounts/engine',
+                component: ComponentCreator('/docs/docs/discounts/engine', 'cb7'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/discounts/overview',
-                component: ComponentCreator('/vcecom/docs/discounts/overview', 'c6f'),
+                path: '/docs/docs/discounts/overview',
+                component: ComponentCreator('/docs/docs/discounts/overview', '3c8'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/discounts/priority-stacking',
-                component: ComponentCreator('/vcecom/docs/discounts/priority-stacking', 'd55'),
+                path: '/docs/docs/discounts/priority-stacking',
+                component: ComponentCreator('/docs/docs/discounts/priority-stacking', 'e13'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/discounts/snapshots',
-                component: ComponentCreator('/vcecom/docs/discounts/snapshots', '0d4'),
+                path: '/docs/docs/discounts/snapshots',
+                component: ComponentCreator('/docs/docs/discounts/snapshots', '3ff'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/introduction',
-                component: ComponentCreator('/vcecom/docs/introduction', '39f'),
+                path: '/docs/docs/introduction',
+                component: ComponentCreator('/docs/docs/introduction', 'e80'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/observability/context',
-                component: ComponentCreator('/vcecom/docs/observability/context', '8ef'),
+                path: '/docs/docs/observability/context',
+                component: ComponentCreator('/docs/docs/observability/context', '312'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/observability/correlation',
-                component: ComponentCreator('/vcecom/docs/observability/correlation', '22f'),
+                path: '/docs/docs/observability/correlation',
+                component: ComponentCreator('/docs/docs/observability/correlation', '716'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/observability/logging',
-                component: ComponentCreator('/vcecom/docs/observability/logging', '12e'),
+                path: '/docs/docs/observability/logging',
+                component: ComponentCreator('/docs/docs/observability/logging', '994'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/observability/tracing',
-                component: ComponentCreator('/vcecom/docs/observability/tracing', 'c2b'),
+                path: '/docs/docs/observability/tracing',
+                component: ComponentCreator('/docs/docs/observability/tracing', '120'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/orders/creation',
-                component: ComponentCreator('/vcecom/docs/orders/creation', 'f91'),
+                path: '/docs/docs/orders/creation',
+                component: ComponentCreator('/docs/docs/orders/creation', '5ab'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/orders/fulfillment',
-                component: ComponentCreator('/vcecom/docs/orders/fulfillment', '0c3'),
+                path: '/docs/docs/orders/fulfillment',
+                component: ComponentCreator('/docs/docs/orders/fulfillment', '535'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/orders/overview',
-                component: ComponentCreator('/vcecom/docs/orders/overview', '19e'),
+                path: '/docs/docs/orders/overview',
+                component: ComponentCreator('/docs/docs/orders/overview', '4fc'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/orders/reconciliation',
-                component: ComponentCreator('/vcecom/docs/orders/reconciliation', '23c'),
+                path: '/docs/docs/orders/reconciliation',
+                component: ComponentCreator('/docs/docs/orders/reconciliation', 'a5c'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/orders/refunds',
-                component: ComponentCreator('/vcecom/docs/orders/refunds', '1f0'),
+                path: '/docs/docs/orders/refunds',
+                component: ComponentCreator('/docs/docs/orders/refunds', '289'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/pricing/customer-groups',
-                component: ComponentCreator('/vcecom/docs/pricing/customer-groups', 'd4d'),
+                path: '/docs/docs/pricing/customer-groups',
+                component: ComponentCreator('/docs/docs/pricing/customer-groups', '6e5'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/pricing/drift-detection',
-                component: ComponentCreator('/vcecom/docs/pricing/drift-detection', '182'),
+                path: '/docs/docs/pricing/drift-detection',
+                component: ComponentCreator('/docs/docs/pricing/drift-detection', 'eb5'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/pricing/overview',
-                component: ComponentCreator('/vcecom/docs/pricing/overview', '5c4'),
+                path: '/docs/docs/pricing/overview',
+                component: ComponentCreator('/docs/docs/pricing/overview', '3bf'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/pricing/price-lists',
-                component: ComponentCreator('/vcecom/docs/pricing/price-lists', '302'),
+                path: '/docs/docs/pricing/price-lists',
+                component: ComponentCreator('/docs/docs/pricing/price-lists', '1ff'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/pricing/pricing-engine',
-                component: ComponentCreator('/vcecom/docs/pricing/pricing-engine', '65f'),
+                path: '/docs/docs/pricing/pricing-engine',
+                component: ComponentCreator('/docs/docs/pricing/pricing-engine', 'd61'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/pricing/snapshots',
-                component: ComponentCreator('/vcecom/docs/pricing/snapshots', 'e0c'),
+                path: '/docs/docs/pricing/snapshots',
+                component: ComponentCreator('/docs/docs/pricing/snapshots', 'fe3'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/redis/caching-layers',
-                component: ComponentCreator('/vcecom/docs/redis/caching-layers', '0be'),
+                path: '/docs/docs/redis/caching-layers',
+                component: ComponentCreator('/docs/docs/redis/caching-layers', 'bc3'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/redis/expirations',
-                component: ComponentCreator('/vcecom/docs/redis/expirations', '554'),
+                path: '/docs/docs/redis/expirations',
+                component: ComponentCreator('/docs/docs/redis/expirations', '74f'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/redis/key-patterns',
-                component: ComponentCreator('/vcecom/docs/redis/key-patterns', 'cdf'),
+                path: '/docs/docs/redis/key-patterns',
+                component: ComponentCreator('/docs/docs/redis/key-patterns', '36e'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/redis/overview',
-                component: ComponentCreator('/vcecom/docs/redis/overview', '4af'),
+                path: '/docs/docs/redis/overview',
+                component: ComponentCreator('/docs/docs/redis/overview', '4d0'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/reviews/aggregation',
-                component: ComponentCreator('/vcecom/docs/reviews/aggregation', '9a2'),
+                path: '/docs/docs/reviews/aggregation',
+                component: ComponentCreator('/docs/docs/reviews/aggregation', '8cd'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/reviews/caching',
-                component: ComponentCreator('/vcecom/docs/reviews/caching', '9f3'),
+                path: '/docs/docs/reviews/caching',
+                component: ComponentCreator('/docs/docs/reviews/caching', 'c3b'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/reviews/moderation',
-                component: ComponentCreator('/vcecom/docs/reviews/moderation', '702'),
+                path: '/docs/docs/reviews/moderation',
+                component: ComponentCreator('/docs/docs/reviews/moderation', '7ec'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/reviews/overview',
-                component: ComponentCreator('/vcecom/docs/reviews/overview', '16b'),
+                path: '/docs/docs/reviews/overview',
+                component: ComponentCreator('/docs/docs/reviews/overview', '4cf'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/vcecom/docs/reviews/verified-purchase',
-                component: ComponentCreator('/vcecom/docs/reviews/verified-purchase', '595'),
+                path: '/docs/docs/reviews/verified-purchase',
+                component: ComponentCreator('/docs/docs/reviews/verified-purchase', '6fc'),
                 exact: true,
                 sidebar: "docsSidebar"
               }
@@ -381,8 +381,8 @@ export default [
     ]
   },
   {
-    path: '/vcecom/',
-    component: ComponentCreator('/vcecom/', '1d6'),
+    path: '/docs/',
+    component: ComponentCreator('/docs/', '2a6'),
     exact: true
   },
   {

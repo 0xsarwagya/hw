@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk_vestcodes_vcecom_docs=self.webpackChunk_vestcodes_vcecom_docs||[]).push([[5945],{5945:(e,c,s)=>{s.d(c,{createArchitectureServices:()=>t.S});var t=s(5709);s(9377)}}]);

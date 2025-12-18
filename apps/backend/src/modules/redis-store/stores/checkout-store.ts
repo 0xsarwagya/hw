@@ -69,7 +69,7 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
 
   async onModuleInit() {
     // Initialize Redis client
-    this.client = this.redisStoreService.getClient();
+    this.client = await this.redisStoreService.getClient();
 
     // Load Lua script for atomic state transitions
     try {

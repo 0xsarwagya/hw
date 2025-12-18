@@ -1,11 +1,11 @@
 {
   "id": "catalog/products",
-  "title": "products",
-  "description": "",
+  "title": "Products",
+  "description": "The products catalog is the core of the ecommerce system, providing comprehensive product management with features like GST calculation, category organization, image management, and advanced search capabilities.",
   "source": "@site/docs/catalog/products.md",
   "sourceDirName": "catalog",
   "slug": "/catalog/products",
-  "permalink": "/vcecom/docs/catalog/products",
+  "permalink": "/docs/docs/catalog/products",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/catalog/products.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Storefront Authentication",
-    "permalink": "/vcecom/docs/authentication/storefront-auth"
+    "permalink": "/docs/docs/authentication/storefront-auth"
   },
   "next": {
-    "title": "variants",
-    "permalink": "/vcecom/docs/catalog/variants"
+    "title": "Product Variants",
+    "permalink": "/docs/docs/catalog/variants"
   }
 }
