@@ -27,7 +27,7 @@ function HomepageHeader() {
   );
 }
 
-export default function Home(): JSX.Element {
+export default function Home() {
   return (
     <Layout
       title="VCEcom Documentation"
