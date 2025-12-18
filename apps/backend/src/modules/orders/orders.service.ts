@@ -345,6 +345,13 @@ export class OrdersService {
           );
         }
 
+        // Session ID is required for guest checkout
+        if (!sessionId) {
+          throw new BadRequestException(
+            "Session ID is required for guest checkout",
+          );
+        }
+
         // Create or get guest customer
         const customer = await this.customersService.createGuestCustomer(
           createOrderDto.email,
@@ -376,11 +383,6 @@ export class OrdersService {
         billingAddressId = billingAddress.id;
 
         // Get guest cart by sessionId
-        if (!sessionId) {
-          throw new BadRequestException(
-            "Session ID is required for guest checkout",
-          );
-        }
         const cart = await this.cartsService.getCart(null, sessionId);
         if (!cart || !cart.items || cart.items.length === 0) {
           throw new BadRequestException("Cart is empty");

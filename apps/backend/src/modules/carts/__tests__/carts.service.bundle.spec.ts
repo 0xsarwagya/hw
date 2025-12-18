@@ -547,21 +547,42 @@ describe("CartsService - Bundle Integration", () => {
           })),
         })),
       };
-      // Mock for getCartById call (third select)
-      const mockSelectCartById = {
-        from: jest.fn().mockReturnValue({
-          where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue([
+      // Mock for getCartById call (third select) - needs to support .limit() on where result
+      // getCartById returns a cart with items, so we need to mock it properly
+      // The actual getCartById will be called, so we need to mock the service method
+      jest.spyOn(service, "getCartById").mockResolvedValue({
+        id: "cart-1",
+        customerId: "customer-1",
+        items: [
+          {
+            id: "item-1",
+            productVariantId: "variant-1",
+            quantity: 2,
+            price: 999.99,
+            metadata: {
+              type: "bundle",
+              bundleId: "bundle-1",
+              selections: { "set-1": ["variant-1"] },
+            },
+            type: "bundle",
+            bundleId: "bundle-1",
+            bundleVariantBreakdown: [
               {
-                id: "cart-1",
-                customerId: "customer-1",
-                createdAt: new Date(),
-                updatedAt: new Date(),
+                variantId: "variant-1",
+                unitPrice: 499.99,
+                quantity: 2,
               },
-            ]),
-          }),
-        }),
-      };
+            ],
+          },
+        ],
+        subtotal: 1999.98,
+        gstAmount: 0,
+        total: 1999.98,
+        discountCode: null,
+        discountAmount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
 
       (db.select as jest.Mock)
         .mockReturnValueOnce(mockSelectItems)
@@ -590,6 +611,48 @@ describe("CartsService - Bundle Integration", () => {
         cgst: 0,
         sgst: 0,
         igst: 0,
+      });
+
+      // Mock getCartById since getCart calls it internally
+      jest.spyOn(service, "getCartById").mockResolvedValue({
+        id: "cart-1",
+        customerId: "customer-1",
+        items: [
+          {
+            id: "item-1",
+            productVariantId: "variant-1",
+            quantity: 2,
+            price: 999.99,
+            metadata: {
+              type: "bundle",
+              bundleId: "bundle-1",
+              selections: { "set-1": ["variant-1"] },
+            },
+            type: "bundle",
+            bundleId: "bundle-1",
+            bundleVariantBreakdown: [
+              {
+                variantId: "variant-1",
+                unitPrice: 499.99,
+                quantity: 2,
+              },
+            ],
+          },
+        ],
+        subtotal: 1999.98,
+        gstAmount: 0,
+        total: 1999.98,
+        discountCode: null,
+        discountAmount: 0,
+        gstBreakdown: {
+          cgst: 0,
+          sgst: 0,
+          igst: 0,
+          totalGst: 0,
+          isIntraState: false,
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
 
       const result = await service.getCart("user-1", null);

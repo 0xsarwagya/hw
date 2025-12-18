@@ -407,6 +407,7 @@ describe("OrdersService - Guest Checkout", () => {
         .mockResolvedValueOnce({ ...mockAddress, id: mockBillingAddressId });
 
       (cartsService.getCart as jest.Mock).mockResolvedValue(mockGuestCart);
+      (cartsService.getCartById as jest.Mock).mockResolvedValue(mockGuestCart);
       (checkoutStore.createSession as jest.Mock).mockResolvedValue({
         sessionId: mockCheckoutSessionId,
         session: { state: CheckoutState.CREATED, cartId: mockCartId },
@@ -507,6 +508,7 @@ describe("OrdersService - Guest Checkout", () => {
         .mockResolvedValueOnce({ ...mockAddress, id: mockBillingAddressId });
 
       (cartsService.getCart as jest.Mock).mockResolvedValue(mockGuestCart);
+      (cartsService.getCartById as jest.Mock).mockResolvedValue(mockGuestCart);
       (checkoutStore.createSession as jest.Mock).mockResolvedValue({
         sessionId: mockCheckoutSessionId,
         session: { state: CheckoutState.CREATED, cartId: mockCartId },
