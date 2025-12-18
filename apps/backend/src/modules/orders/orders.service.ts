@@ -327,6 +327,7 @@ export class OrdersService {
     let shippingAddressId: string;
     let billingAddressId: string;
     let actualUserId: string | null = userId;
+    let shippingAddress: { state: string } | null = null;
 
     try {
       // Determine if guest checkout or authenticated checkout
@@ -363,14 +364,13 @@ export class OrdersService {
         actualUserId = customer.userId;
 
         // Create addresses for guest customer
-        const shippingAddress = await this.addressesService.createByCustomerId(
-          customerId,
-          {
+        const guestShippingAddress =
+          await this.addressesService.createByCustomerId(customerId, {
             ...createOrderDto.address,
             type: "shipping",
-          },
-        );
-        shippingAddressId = shippingAddress.id;
+          });
+        shippingAddressId = guestShippingAddress.id;
+        shippingAddress = guestShippingAddress; // Store for later use
 
         // Create billing address (use same address if not specified separately)
         const billingAddress = await this.addressesService.createByCustomerId(
@@ -408,6 +408,16 @@ export class OrdersService {
         );
         shippingAddressId = createOrderDto.shippingAddressId;
         billingAddressId = createOrderDto.billingAddressId;
+
+        // Fetch shipping address for state calculation
+        const [fetchedShippingAddress] = await db
+          .select()
+          .from(addresses)
+          .where(eq(addresses.id, shippingAddressId))
+          .limit(1);
+        if (fetchedShippingAddress) {
+          shippingAddress = fetchedShippingAddress;
+        }
 
         // Get customer cart after address validation
         const cart = await this.cartsService.getCart(userId, null);
@@ -554,6 +564,9 @@ export class OrdersService {
 
       // Calculate totals
       const sellerState = this.getSellerState();
+      if (!shippingAddress) {
+        throw new BadRequestException("Shipping address not found");
+      }
       const buyerState = shippingAddress.state;
 
       let subtotal = 0;
@@ -956,7 +969,7 @@ export class OrdersService {
           await this.discountsService.getEligibleDiscounts(
             effectiveSubtotal, // Use effective price from pricing engine
             customerId,
-            userId,
+            userId || undefined,
             discountCode || undefined,
           );
 
@@ -1806,7 +1819,7 @@ export class OrdersService {
         await this.discountsService.recordUsage(
           discount.id,
           orderId,
-          metadata.userId,
+          metadata.userId || undefined,
         );
       } catch (error) {
         this.logger.error(
