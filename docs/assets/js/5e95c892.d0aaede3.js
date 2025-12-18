@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk_vestcodes_vcecom_docs=self.webpackChunk_vestcodes_vcecom_docs||[]).push([[9647],{4457:(e,s,c)=>{c.r(s),c.d(s,{default:()=>n});c(9430);var r=c(851),o=c(4836),d=c(9175),t=c(362),u=c(2699),a=c(5270);function n(e){return(0,a.jsx)(d.e3,{className:(0,r.A)(o.G.wrapper.docsPages),children:(0,a.jsx)(u.A,{children:(0,t.v)(e.route.routes)})})}}}]);

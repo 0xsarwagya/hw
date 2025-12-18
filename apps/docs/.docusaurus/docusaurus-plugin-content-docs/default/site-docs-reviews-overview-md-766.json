@@ -1,11 +1,11 @@
 {
   "id": "reviews/overview",
-  "title": "Reviews System Overview",
-  "description": "Features",
+  "title": "Reviews System",
+  "description": "The reviews system enables customers to share feedback on purchased products while providing robust content moderation, aggregation, and caching capabilities. It ensures authentic reviews through verified purchase validation and maintains review quality through automated and manual moderation.",
   "source": "@site/docs/reviews/overview.md",
   "sourceDirName": "reviews",
   "slug": "/reviews/overview",
-  "permalink": "/vcecom/docs/reviews/overview",
+  "permalink": "/docs/docs/reviews/overview",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/reviews/overview.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "reconciliation",
-    "permalink": "/vcecom/docs/orders/reconciliation"
+    "permalink": "/docs/docs/orders/reconciliation"
   },
   "next": {
     "title": "Verified Purchase Reviews",
-    "permalink": "/vcecom/docs/reviews/verified-purchase"
+    "permalink": "/docs/docs/reviews/verified-purchase"
   }
 }

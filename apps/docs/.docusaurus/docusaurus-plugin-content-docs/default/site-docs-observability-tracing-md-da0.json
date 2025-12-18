@@ -1,11 +1,11 @@
 {
   "id": "observability/tracing",
   "title": "Distributed Tracing",
-  "description": "Overview",
+  "description": "The system implements OpenTelemetry-based distributed tracing to provide end-to-end visibility across all services and operations. Traces help debug performance issues, understand request flows, and monitor system health.",
   "source": "@site/docs/observability/tracing.md",
   "sourceDirName": "observability",
   "slug": "/observability/tracing",
-  "permalink": "/vcecom/docs/observability/tracing",
+  "permalink": "/docs/docs/observability/tracing",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/observability/tracing.md",
@@ -16,11 +16,11 @@
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
-    "title": "Structured Logging",
-    "permalink": "/vcecom/docs/observability/logging"
+    "title": "Logging System",
+    "permalink": "/docs/docs/observability/logging"
   },
   "next": {
-    "title": "context",
-    "permalink": "/vcecom/docs/observability/context"
+    "title": "Request Context Propagation",
+    "permalink": "/docs/docs/observability/context"
   }
 }

@@ -20,9 +20,11 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { Public } from "../../common/decorators/public.decorator";
+import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
+import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { OrderResponseDto } from "./dto/order-response.dto";
 import { OrderTimelineDto } from "./dto/order-timeline.dto";
@@ -53,6 +55,7 @@ export class OrdersController {
 
   @Post()
   @Public()
+  @RateLimit(RATE_LIMIT_PRESETS.PAYMENT_INTENT)
   @ApiOperation({
     summary: "Create payment intent for checkout",
     description:

@@ -6,9 +6,11 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
+import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
+import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 import { AdminService } from "./admin.service";
 import {
   AdminQueryCustomersDto,
@@ -37,6 +39,7 @@ export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get("products")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_GET)
   @ApiOperation({
     summary: "Get all products (admin)",
     description:
@@ -92,6 +95,7 @@ export class AdminController {
   }
 
   @Get("orders")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_GET)
   @ApiOperation({
     summary: "Get all orders (admin)",
     description:
@@ -155,6 +159,7 @@ export class AdminController {
   }
 
   @Get("customers")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_GET)
   @ApiOperation({
     summary: "Get all customers (admin)",
     description:
@@ -198,6 +203,7 @@ export class AdminController {
   }
 
   @Get("stats")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_GET)
   @ApiOperation({
     summary: "Get dashboard statistics (admin)",
     description:
@@ -221,6 +227,7 @@ export class AdminController {
   }
 
   @Post("products/bulk")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_MUTATE)
   @ApiOperation({
     summary: "Perform bulk operations on products (admin)",
     description:

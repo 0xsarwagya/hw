@@ -1,11 +1,11 @@
 {
   "id": "observability/logging",
-  "title": "Structured Logging",
-  "description": "Overview",
+  "title": "Logging System",
+  "description": "The logging system provides comprehensive application observability through structured logging, request correlation, and context propagation. It uses Pino for high-performance logging with automatic request tracing and sensitive data redaction.",
   "source": "@site/docs/observability/logging.md",
   "sourceDirName": "observability",
   "slug": "/observability/logging",
-  "permalink": "/vcecom/docs/observability/logging",
+  "permalink": "/docs/docs/observability/logging",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/observability/logging.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "caching",
-    "permalink": "/vcecom/docs/reviews/caching"
+    "permalink": "/docs/docs/reviews/caching"
   },
   "next": {
     "title": "Distributed Tracing",
-    "permalink": "/vcecom/docs/observability/tracing"
+    "permalink": "/docs/docs/observability/tracing"
   }
 }

@@ -1,11 +1,11 @@
 {
   "id": "redis/expirations",
-  "title": "expirations",
-  "description": "",
+  "title": "Redis TTL and Expiration Strategy",
+  "description": "The system implements sophisticated TTL (Time-To-Live) strategies to manage data lifecycle, memory usage, and cache consistency across different operational requirements.",
   "source": "@site/docs/redis/expirations.md",
   "sourceDirName": "redis",
   "slug": "/redis/expirations",
-  "permalink": "/vcecom/docs/redis/expirations",
+  "permalink": "/docs/docs/redis/expirations",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/redis/expirations.md",
@@ -16,11 +16,11 @@
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
-    "title": "caching-layers",
-    "permalink": "/vcecom/docs/redis/caching-layers"
+    "title": "Redis Caching Layers",
+    "permalink": "/docs/docs/redis/caching-layers"
   },
   "next": {
     "title": "Admin API Reference",
-    "permalink": "/vcecom/docs/api-reference/admin-api"
+    "permalink": "/docs/docs/api-reference/admin-api"
   }
 }

@@ -1,11 +1,11 @@
 {
   "id": "catalog/variants",
-  "title": "variants",
-  "description": "",
+  "title": "Product Variants",
+  "description": "Product variants extend the base product with specific attributes like size, color, price variations, and inventory tracking. Variants enable selling multiple variations of the same product while maintaining a unified product identity.",
   "source": "@site/docs/catalog/variants.md",
   "sourceDirName": "catalog",
   "slug": "/catalog/variants",
-  "permalink": "/vcecom/docs/catalog/variants",
+  "permalink": "/docs/docs/catalog/variants",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/catalog/variants.md",
@@ -16,11 +16,11 @@
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
-    "title": "products",
-    "permalink": "/vcecom/docs/catalog/products"
+    "title": "Products",
+    "permalink": "/docs/docs/catalog/products"
   },
   "next": {
-    "title": "collections",
-    "permalink": "/vcecom/docs/catalog/collections"
+    "title": "Collections",
+    "permalink": "/docs/docs/catalog/collections"
   }
 }

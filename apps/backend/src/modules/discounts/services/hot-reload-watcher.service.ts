@@ -41,9 +41,10 @@ export class HotReloadWatcher implements OnModuleInit, OnModuleDestroy {
   async onModuleInit(): Promise<void> {
     // Create separate subscriber client (required for pub/sub)
     // Disable ready check to avoid conflicts with subscriber mode
-    this.subscriber = this.redisStoreService.getClient().duplicate({
+    const client = await this.redisStoreService.getClient();
+    this.subscriber = client.duplicate({
       enableReadyCheck: false,
-      enableOfflineQueue: false,
+      enableOfflineQueue: true,
     });
     try {
       // Load initial bundle

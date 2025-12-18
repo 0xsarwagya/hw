@@ -10,7 +10,6 @@
     "generate-build-info": "node scripts/generate-build-info.js",
     "dev": "nodemon",
     "start": "node dist/main.js",
-    "start:dev": "nodemon",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "test": "node scripts/generate-build-info.js && jest",

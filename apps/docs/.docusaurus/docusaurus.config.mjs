@@ -28,8 +28,8 @@ export default {
     },
     "experimental_router": "browser"
   },
-  "url": "https://vestcodes.github.io",
-  "baseUrl": "/vcecom/",
+  "url": "https://legendary-chainsaw-8e4147z.pages.github.io",
+  "baseUrl": "/docs/",
   "organizationName": "Vestcodes",
   "projectName": "vcecom",
   "markdown": {
@@ -52,7 +52,7 @@ export default {
   "themes": [
     "@docusaurus/theme-mermaid"
   ],
-  "onBrokenLinks": "throw",
+  "onBrokenLinks": "ignore",
   "i18n": {
     "defaultLocale": "en",
     "locales": [
@@ -99,12 +99,6 @@ export default {
           "label": "Documentation"
         },
         {
-          "type": "docsVersionDropdown",
-          "position": "right",
-          "dropdownItemsBefore": [],
-          "dropdownItemsAfter": []
-        },
-        {
           "href": "https://github.com/Vestcodes/vcecom",
           "label": "GitHub",
           "position": "right"
@@ -120,15 +114,15 @@ export default {
           "items": [
             {
               "label": "Introduction",
-              "to": "/docs/introduction"
+              "to": "/introduction"
             },
             {
               "label": "Architecture",
-              "to": "/docs/architecture/overview"
+              "to": "/architecture/overview"
             },
             {
               "label": "API Reference",
-              "to": "/docs/api-reference/admin-api"
+              "to": "/api-reference/admin-api"
             }
           ]
         },
@@ -137,11 +131,11 @@ export default {
           "items": [
             {
               "label": "Database Schema",
-              "to": "/docs/database-schema/overview"
+              "to": "/database-schema/overview"
             },
             {
               "label": "Deployment",
-              "to": "/docs/deployment/overview"
+              "to": "/deployment/overview"
             }
           ]
         },

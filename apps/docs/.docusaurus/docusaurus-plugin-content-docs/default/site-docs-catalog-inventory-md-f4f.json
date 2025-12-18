@@ -1,11 +1,11 @@
 {
   "id": "catalog/inventory",
-  "title": "inventory",
-  "description": "",
+  "title": "Inventory Management",
+  "description": "The inventory system provides real-time stock tracking, reservation management, and automatic reconciliation for product variants. It ensures accurate stock levels across high-concurrency operations and prevents overselling.",
   "source": "@site/docs/catalog/inventory.md",
   "sourceDirName": "catalog",
   "slug": "/catalog/inventory",
-  "permalink": "/vcecom/docs/catalog/inventory",
+  "permalink": "/docs/docs/catalog/inventory",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/catalog/inventory.md",
@@ -16,11 +16,11 @@
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
-    "title": "collections",
-    "permalink": "/vcecom/docs/catalog/collections"
+    "title": "Collections",
+    "permalink": "/docs/docs/catalog/collections"
   },
   "next": {
     "title": "Pricing System Overview",
-    "permalink": "/vcecom/docs/pricing/overview"
+    "permalink": "/docs/docs/pricing/overview"
   }
 }

@@ -1,11 +1,11 @@
 {
   "id": "api-reference/admin-api",
   "title": "Admin API Reference",
-  "description": "Base URL",
+  "description": "The Admin API provides comprehensive management capabilities for the VCEcom platform. All endpoints require authentication with admin privileges and follow RESTful conventions.",
   "source": "@site/docs/api-reference/admin-api.md",
   "sourceDirName": "api-reference",
   "slug": "/api-reference/admin-api",
-  "permalink": "/vcecom/docs/api-reference/admin-api",
+  "permalink": "/docs/docs/api-reference/admin-api",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/api-reference/admin-api.md",
@@ -16,11 +16,11 @@
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
-    "title": "expirations",
-    "permalink": "/vcecom/docs/redis/expirations"
+    "title": "Redis TTL and Expiration Strategy",
+    "permalink": "/docs/docs/redis/expirations"
   },
   "next": {
     "title": "Store API Reference",
-    "permalink": "/vcecom/docs/api-reference/store-api"
+    "permalink": "/docs/docs/api-reference/store-api"
   }
 }

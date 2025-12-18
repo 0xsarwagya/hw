@@ -5,22 +5,22 @@
   "source": "@site/docs/database-schema/tables.md",
   "sourceDirName": "database-schema",
   "slug": "/database-schema/tables",
-  "permalink": "/vcecom/docs/database-schema/tables",
+  "permalink": "/docs/docs/database-schema/tables",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/database-schema/tables.md",
   "tags": [],
   "version": "current",
   "lastUpdatedBy": "Sarwagya Singh",
-  "lastUpdatedAt": 1766018217000,
+  "lastUpdatedAt": 1766020206000,
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Entity Relationship Diagram",
-    "permalink": "/vcecom/docs/database-schema/erd"
+    "permalink": "/docs/docs/database-schema/erd"
   },
   "next": {
     "title": "Deployment Overview",
-    "permalink": "/vcecom/docs/deployment/overview"
+    "permalink": "/docs/docs/deployment/overview"
   }
 }

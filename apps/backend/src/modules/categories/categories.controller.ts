@@ -22,7 +22,9 @@ import {
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 import { Public } from "../../common/decorators/public.decorator";
+import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
+import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 import { CategoriesService } from "./categories.service";
 import {
   CategoryResponseDto,
@@ -38,6 +40,7 @@ export class CategoriesController {
 
   @Public()
   @Get()
+  @RateLimit(RATE_LIMIT_PRESETS.CATEGORIES_SEARCH)
   @ApiOperation({
     summary: "Get all categories",
     description: "Retrieve a list of all categories (public endpoint)",
@@ -52,6 +55,7 @@ export class CategoriesController {
 
   @Public()
   @Get("tree")
+  @RateLimit(RATE_LIMIT_PRESETS.CATEGORIES_SEARCH)
   @ApiOperation({
     summary: "Get category tree",
     description:
@@ -67,6 +71,7 @@ export class CategoriesController {
 
   @Public()
   @Get(":id")
+  @RateLimit(RATE_LIMIT_PRESETS.CATEGORIES_SEARCH)
   @ApiOperation({
     summary: "Get category by ID",
     description: "Retrieve a single category by its ID (public endpoint)",
@@ -89,6 +94,7 @@ export class CategoriesController {
 
   @Public()
   @Get("slug/:slug")
+  @RateLimit(RATE_LIMIT_PRESETS.CATEGORIES_SEARCH)
   @ApiOperation({
     summary: "Get category by slug",
     description: "Retrieve a single category by its slug (public endpoint)",

@@ -5,7 +5,7 @@
   "source": "@site/docs/deployment/scaling.md",
   "sourceDirName": "deployment",
   "slug": "/deployment/scaling",
-  "permalink": "/vcecom/docs/deployment/scaling",
+  "permalink": "/docs/docs/deployment/scaling",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/deployment/scaling.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "docker",
-    "permalink": "/vcecom/docs/deployment/docker"
+    "permalink": "/docs/docs/deployment/docker"
   },
   "next": {
     "title": "production",
-    "permalink": "/vcecom/docs/deployment/production"
+    "permalink": "/docs/docs/deployment/production"
   }
 }

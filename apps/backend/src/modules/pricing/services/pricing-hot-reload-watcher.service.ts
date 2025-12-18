@@ -39,9 +39,10 @@ export class PricingHotReloadWatcher implements OnModuleInit, OnModuleDestroy {
   async onModuleInit(): Promise<void> {
     // Create separate subscriber client (required for pub/sub)
     // Disable ready check to avoid conflicts with subscriber mode
-    this.subscriber = this.redisStoreService.getClient().duplicate({
+    const client = await this.redisStoreService.getClient();
+    this.subscriber = client.duplicate({
       enableReadyCheck: false,
-      enableOfflineQueue: false,
+      enableOfflineQueue: true,
     });
     try {
       await this.refreshBundle(); // Initial load
@@ -114,17 +115,37 @@ export class PricingHotReloadWatcher implements OnModuleInit, OnModuleDestroy {
           "In-memory pricing bundle refreshed",
         );
       } else {
-        this.logger.error(
-          createLogContext(this.contextService, "refreshBundle", { version }),
-          "Failed to refresh in-memory bundle: Invalid or missing bundle",
-        );
+        // Bundle doesn't exist yet (normal on first startup or after Redis restart)
+        // This is expected - the PricingCacheHydrationService will create it
+        if (this.currentBundle === null) {
+          // First time initialization - no bundle exists yet, this is normal
+          this.logger.debug(
+            createLogContext(this.contextService, "refreshBundle", { version }),
+            "No pricing bundle found yet (will be created by cache hydration service)",
+          );
+        } else {
+          // Bundle existed before but is now invalid/missing - this is an error
+          this.logger.warn(
+            createLogContext(this.contextService, "refreshBundle", { version }),
+            "Failed to refresh in-memory bundle: Invalid or missing bundle (keeping previous bundle)",
+          );
+        }
         // Keep old bundle if new one is invalid
       }
     } catch (error) {
-      this.logger.error(
-        createErrorContext(this.contextService, "refreshBundle", error),
-        "Error refreshing in-memory pricing bundle",
-      );
+      // Only log as error if we had a bundle before
+      if (this.currentBundle !== null) {
+        this.logger.error(
+          createErrorContext(this.contextService, "refreshBundle", error),
+          "Error refreshing in-memory pricing bundle",
+        );
+      } else {
+        // First time initialization - errors are expected if Redis isn't ready yet
+        this.logger.debug(
+          createErrorContext(this.contextService, "refreshBundle", error),
+          "Error refreshing in-memory pricing bundle (will retry after cache hydration)",
+        );
+      }
       // Keep old bundle if refresh fails
     }
   }

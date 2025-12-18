@@ -21,7 +21,7 @@ export class EligibilityStore implements IEligibilityStore, OnModuleInit {
   }
 
   async onModuleInit() {
-    this.client = this.redisStoreService.getClient();
+    this.client = await this.redisStoreService.getClient();
   }
 
   /**

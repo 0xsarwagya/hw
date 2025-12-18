@@ -58,7 +58,7 @@ export class InventoryStore implements IInventoryStore, OnModuleInit {
 
   async onModuleInit() {
     // Initialize Redis client
-    this.client = this.redisStoreService.getClient();
+    this.client = await this.redisStoreService.getClient();
 
     // Load Lua script
     try {
@@ -484,6 +484,12 @@ export class InventoryStore implements IInventoryStore, OnModuleInit {
     negativeCorrections: number;
     variantsProcessed: number;
   }> {
+    // Ensure Redis client is initialized before proceeding
+    // This handles the case where reconcileReservations() is called before onModuleInit() completes
+    if (!this.client) {
+      this.client = await this.redisStoreService.getClient();
+    }
+
     let released = 0;
     let inconsistencies = 0;
     let orphaned = 0;

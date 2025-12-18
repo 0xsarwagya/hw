@@ -5,22 +5,22 @@
   "source": "@site/docs/checkout/overview.md",
   "sourceDirName": "checkout",
   "slug": "/checkout/overview",
-  "permalink": "/vcecom/docs/checkout/overview",
+  "permalink": "/docs/docs/checkout/overview",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/checkout/overview.md",
   "tags": [],
   "version": "current",
   "lastUpdatedBy": "Sarwagya Singh",
-  "lastUpdatedAt": 1766018217000,
+  "lastUpdatedAt": 1766020206000,
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
     "title": "cart-integration",
-    "permalink": "/vcecom/docs/bundles/cart-integration"
+    "permalink": "/docs/docs/bundles/cart-integration"
   },
   "next": {
     "title": "Guest Checkout",
-    "permalink": "/vcecom/docs/checkout/guest-checkout"
+    "permalink": "/docs/docs/checkout/guest-checkout"
   }
 }

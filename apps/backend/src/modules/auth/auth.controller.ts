@@ -23,7 +23,9 @@ import type {
   Response as ExpressResponse,
 } from "express";
 import { Public } from "../../common/decorators/public.decorator";
+import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
+import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 import { AuthService } from "./auth.service";
 import { AuthResponseDto } from "./dto/auth-response.dto";
 import { LoginDto } from "./dto/login.dto";
@@ -62,6 +64,7 @@ export class AuthController {
   @Public()
   @Post("login")
   @HttpCode(HttpStatus.OK)
+  @RateLimit(RATE_LIMIT_PRESETS.LOGIN)
   @ApiOperation({
     summary: "Login user",
     description:

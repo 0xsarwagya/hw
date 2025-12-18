@@ -5,7 +5,7 @@
   "source": "@site/docs/orders/refunds.md",
   "sourceDirName": "orders",
   "slug": "/orders/refunds",
-  "permalink": "/vcecom/docs/orders/refunds",
+  "permalink": "/docs/docs/orders/refunds",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/orders/refunds.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "fulfillment",
-    "permalink": "/vcecom/docs/orders/fulfillment"
+    "permalink": "/docs/docs/orders/fulfillment"
   },
   "next": {
     "title": "reconciliation",
-    "permalink": "/vcecom/docs/orders/reconciliation"
+    "permalink": "/docs/docs/orders/reconciliation"
   }
 }

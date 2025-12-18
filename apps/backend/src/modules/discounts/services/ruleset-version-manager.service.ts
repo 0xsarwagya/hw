@@ -28,15 +28,15 @@ export class RulesetVersionManager implements OnModuleInit {
   }
 
   async onModuleInit() {
-    this.client = this.redisStoreService.getClient();
+    this.client = await this.redisStoreService.getClient();
   }
 
   /**
    * Ensure Redis client is initialized
    */
-  private ensureClientInitialized(): void {
+  private async ensureClientInitialized(): Promise<void> {
     if (!this.client) {
-      this.client = this.redisStoreService.getClient();
+      this.client = await this.redisStoreService.getClient();
     }
   }
 
@@ -44,7 +44,7 @@ export class RulesetVersionManager implements OnModuleInit {
    * Get current ruleset version
    */
   async getCurrentVersion(): Promise<number> {
-    this.ensureClientInitialized();
+    await this.ensureClientInitialized();
     try {
       const versionStr = await this.client.get(this.versionKey);
       if (!versionStr) {
@@ -67,7 +67,7 @@ export class RulesetVersionManager implements OnModuleInit {
    * Returns the new version number
    */
   async incrementVersion(): Promise<number> {
-    this.ensureClientInitialized();
+    await this.ensureClientInitialized();
     try {
       const newVersion = await this.client.incr(this.versionKey);
       this.logger.info(
@@ -100,7 +100,7 @@ export class RulesetVersionManager implements OnModuleInit {
    * Set version explicitly (for initialization or rollback)
    */
   async setVersion(version: number): Promise<void> {
-    this.ensureClientInitialized();
+    await this.ensureClientInitialized();
     try {
       await this.client.set(this.versionKey, version.toString());
       this.logger.info(

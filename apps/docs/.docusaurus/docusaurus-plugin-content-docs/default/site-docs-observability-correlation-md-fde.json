@@ -1,11 +1,11 @@
 {
   "id": "observability/correlation",
-  "title": "correlation",
-  "description": "",
+  "title": "Log-Trace Correlation",
+  "description": "The system provides comprehensive correlation between logs, traces, and requests to enable end-to-end observability and debugging across distributed operations.",
   "source": "@site/docs/observability/correlation.md",
   "sourceDirName": "observability",
   "slug": "/observability/correlation",
-  "permalink": "/vcecom/docs/observability/correlation",
+  "permalink": "/docs/docs/observability/correlation",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/observability/correlation.md",
@@ -16,11 +16,11 @@
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
-    "title": "context",
-    "permalink": "/vcecom/docs/observability/context"
+    "title": "Request Context Propagation",
+    "permalink": "/docs/docs/observability/context"
   },
   "next": {
     "title": "Redis Architecture",
-    "permalink": "/vcecom/docs/redis/overview"
+    "permalink": "/docs/docs/redis/overview"
   }
 }
