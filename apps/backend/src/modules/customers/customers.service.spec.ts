@@ -234,8 +234,10 @@ describe("CustomersService", () => {
     });
 
     it("should throw error if phone already exists", async () => {
-      // Mock: no customer by email
+      // Mock for first call: no customer by email, no user by email, existing customer by phone
+      // Mock for second call: same sequence
       (db.select as jest.Mock)
+        // First call mocks
         .mockReturnValueOnce({
           from: jest.fn().mockReturnValue({
             where: jest.fn().mockReturnValue({
@@ -243,7 +245,6 @@ describe("CustomersService", () => {
             }),
           }),
         })
-        // Mock: no user by email
         .mockReturnValueOnce({
           from: jest.fn().mockReturnValue({
             where: jest.fn().mockReturnValue({
@@ -251,7 +252,30 @@ describe("CustomersService", () => {
             }),
           }),
         })
-        // Mock: existing customer by phone
+        .mockReturnValueOnce({
+          from: jest.fn().mockReturnValue({
+            where: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue([
+                { id: "existing-customer", phone },
+              ]),
+            }),
+          }),
+        })
+        // Second call mocks
+        .mockReturnValueOnce({
+          from: jest.fn().mockReturnValue({
+            where: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue([]),
+            }),
+          }),
+        })
+        .mockReturnValueOnce({
+          from: jest.fn().mockReturnValue({
+            where: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue([]),
+            }),
+          }),
+        })
         .mockReturnValueOnce({
           from: jest.fn().mockReturnValue({
             where: jest.fn().mockReturnValue({
@@ -268,32 +292,6 @@ describe("CustomersService", () => {
       await expect(
         service.createGuestCustomer(email, name, phone, null),
       ).rejects.toThrow("Customer with this phone number already exists");
-      
-      // Reset mocks for second call
-      (db.select as jest.Mock)
-        .mockReturnValueOnce({
-          from: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([]),
-            }),
-          }),
-        })
-        .mockReturnValueOnce({
-          from: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([]),
-            }),
-          }),
-        })
-        .mockReturnValueOnce({
-          from: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([
-                { id: "existing-customer", phone },
-              ]),
-            }),
-          }),
-        });
     });
 
     it("should throw error if email format is invalid", async () => {
