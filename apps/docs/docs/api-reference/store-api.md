@@ -8,7 +8,7 @@ https://api.example.com
 
 ## Authentication
 
-Store endpoints use JWT authentication for customer-specific operations.
+Store endpoints use JWT authentication for customer-specific operations. However, guest checkout endpoints are public and do not require authentication.
 
 ## Endpoints
 
@@ -44,33 +44,103 @@ Content-Type: application/json
 
 ### Checkout
 
-#### Start Checkout
+#### Create Payment Intent (Authenticated)
 ```http
-POST /checkout/start
-```
-
-#### Confirm Checkout
-```http
-POST /checkout/confirm
+POST /orders
+Authorization: Bearer {token}
 Content-Type: application/json
 
 {
-  "sessionId": "session-123",
-  "paymentId": "pay_xyz"
+  "shippingAddressId": "uuid",
+  "billingAddressId": "uuid",
+  "shippingCost": 50.0
 }
 ```
 
+**Response:**
+```json
+{
+  "paymentIntent": {
+    "paymentIntentId": "pi_123",
+    "paymentProvider": "razorpay",
+    "status": "CREATED"
+  },
+  "checkoutSessionId": "session-123",
+  "message": "Payment intent created successfully"
+}
+```
+
+#### Create Payment Intent (Guest Checkout)
+```http
+POST /orders
+X-Session-Id: {session-id}
+Content-Type: application/json
+
+{
+  "email": "guest@example.com",
+  "name": "Guest User",
+  "phone": "+919876543210",
+  "address": {
+    "type": "shipping",
+    "street": "123 Main St",
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "pincode": "400001",
+    "district": "Mumbai",
+    "country": "India"
+  },
+  "password": "SecurePassword123!",
+  "shippingCost": 50.0
+}
+```
+
+**Note:** 
+- `password` is optional. If provided, creates an account instead of guest checkout.
+- `X-Session-Id` header is required for guest checkout to link the cart.
+- Guest checkout does not require authentication.
+
+**Response:** Same as authenticated checkout.
+
 ### Orders
 
-#### List Orders
+#### List Orders (Authenticated Only)
 ```http
 GET /orders
+Authorization: Bearer {token}
 ```
 
-#### Get Order
+#### Get Order (Authenticated Only)
 ```http
 GET /orders/:id
+Authorization: Bearer {token}
 ```
+
+### Customers
+
+#### Claim Guest Account
+```http
+POST /customers/claim
+Content-Type: application/json
+
+{
+  "email": "guest@example.com",
+  "token": "verification-token",
+  "newPassword": "SecurePassword123!"
+}
+```
+
+**Response:**
+```json
+{
+  "id": "customer-uuid",
+  "email": "guest@example.com",
+  "name": "Guest User",
+  "isGuest": false,
+  "emailVerified": true
+}
+```
+
+**Note:** This endpoint converts a guest customer to a regular account by setting a password.
 
 ### Reviews
 

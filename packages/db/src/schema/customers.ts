@@ -1,5 +1,12 @@
 import { relations } from "drizzle-orm";
-import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { customerGroups } from "./customer-groups";
 import { users } from "./users";
 
@@ -15,6 +22,8 @@ export const customers = pgTable(
     phone: text("phone").notNull().unique(),
     name: text("name").notNull(),
     gstin: text("gstin").unique(),
+    isGuest: boolean("is_guest").notNull().default(true),
+    emailVerified: boolean("email_verified").notNull().default(false),
     customerGroupId: uuid("customer_group_id").references(
       () => customerGroups.id,
       {

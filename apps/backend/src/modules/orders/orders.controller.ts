@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   Param,
   Patch,
   Post,
@@ -11,12 +12,14 @@ import {
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
+  ApiHeader,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
+import { Public } from "../../common/decorators/public.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
@@ -42,8 +45,6 @@ interface AuthenticatedRequest extends Request {
 
 @ApiTags("orders")
 @Controller("orders")
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth("JWT-auth")
 export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
@@ -51,10 +52,16 @@ export class OrdersController {
   ) {}
 
   @Post()
+  @Public()
   @ApiOperation({
     summary: "Create payment intent for checkout",
     description:
-      "Creates a payment intent for checkout. Orders are created only after payment confirmation via webhook. Returns payment intent and checkout session ID for redirecting to payment gateway.",
+      "Creates a payment intent for checkout. Supports both authenticated and guest checkout. Orders are created only after payment confirmation via webhook. Returns payment intent and checkout session ID for redirecting to payment gateway.",
+  })
+  @ApiHeader({
+    name: "X-Session-Id",
+    description: "Session ID for guest checkout (required for guest checkout)",
+    required: false,
   })
   @ApiResponse({
     status: 201,
@@ -67,7 +74,7 @@ export class OrdersController {
   })
   @ApiResponse({
     status: 401,
-    description: "Unauthorized",
+    description: "Unauthorized (for authenticated checkout)",
   })
   @ApiResponse({
     status: 404,
@@ -79,13 +86,19 @@ export class OrdersController {
       "Conflict (cart already being checked out, invalid state, etc.)",
   })
   async create(
-    @Request() req: AuthenticatedRequest,
+    @Request() req: Request & {
+      user?: { userId: string; email: string; role: string };
+    },
     @Body() createOrderDto: CreateOrderDto,
+    @Headers("x-session-id") sessionId?: string,
   ): Promise<PaymentIntentResponseDto> {
-    return this.ordersService.create(req.user.userId, createOrderDto);
+    const userId = req.user?.userId || null;
+    return this.ordersService.create(userId, createOrderDto, sessionId || null);
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth("JWT-auth")
   @ApiOperation({
     summary: "Get all orders for authenticated customer",
     description:
@@ -115,6 +128,8 @@ export class OrdersController {
   }
 
   @Get(":id")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth("JWT-auth")
   @ApiOperation({
     summary: "Get order by ID",
     description:
@@ -143,6 +158,8 @@ export class OrdersController {
   }
 
   @Patch(":id/status")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth("JWT-auth")
   @ApiOperation({
     summary: "Update order status",
     description:
@@ -183,6 +200,8 @@ export class OrdersController {
   }
 
   @Get(":id/tracking")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth("JWT-auth")
   @ApiOperation({
     summary: "Get order tracking information",
     description:
@@ -214,6 +233,8 @@ export class OrdersController {
   }
 
   @Get(":id/timeline")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth("JWT-auth")
   @ApiOperation({
     summary: "Get order timeline",
     description:

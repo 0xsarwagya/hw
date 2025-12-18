@@ -7,9 +7,16 @@ import { PricingSnapshot } from "../../pricing/engine/pricing-engine.types";
  */
 export interface CheckoutMetadata {
   /**
-   * User ID who initiated the checkout
+   * Customer ID who initiated the checkout (required)
+   * Used for both authenticated and guest customers
    */
-  userId: string;
+  customerId: string;
+
+  /**
+   * User ID who initiated the checkout (optional, null for guests)
+   * Kept for backward compatibility
+   */
+  userId: string | null;
 
   /**
    * Shipping address ID

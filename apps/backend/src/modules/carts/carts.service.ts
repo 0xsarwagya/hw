@@ -654,6 +654,27 @@ export class CartsService {
 
     const cart = await this.getOrCreateCart(customerId, sessionId);
 
+    return this.getCartById(cart.id, customerId);
+  }
+
+  /**
+   * Get cart by ID
+   */
+  async getCartById(cartId: string, customerId?: string | null) {
+    // Get cart from database
+    const [cart] = await db
+      .select()
+      .from(carts)
+      .where(eq(carts.id, cartId))
+      .limit(1);
+
+    if (!cart) {
+      throw new NotFoundException("Cart not found");
+    }
+
+    // Use customerId from cart if not provided
+    const effectiveCustomerId = customerId || cart.customerId;
+
     // Get cart items
     const items = await db
       .select()
@@ -665,7 +686,7 @@ export class CartsService {
       items.map(async (item) => {
         const metadata = item.metadata as BundleCartItemMetadata | null;
         if (metadata?.type === "bundle") {
-          return this.hydrateBundleItem(item, customerId);
+          return this.hydrateBundleItem(item, effectiveCustomerId);
         }
         // Variant item - return as-is with type
         return {
@@ -677,7 +698,10 @@ export class CartsService {
     );
 
     // Recalculate totals and get GST breakdown
-    const gstBreakdown = await this.recalculateCartTotals(cart.id, customerId);
+    const gstBreakdown = await this.recalculateCartTotals(
+      cart.id,
+      effectiveCustomerId,
+    );
 
     // Get updated cart
     const [updatedCart] = await db

@@ -22,6 +22,11 @@ export class AuthService {
       throw new UnauthorizedException("Invalid email or password");
     }
 
+    // Regular auth users must have a password hash
+    if (!user.passwordHash) {
+      throw new UnauthorizedException("Invalid email or password");
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {

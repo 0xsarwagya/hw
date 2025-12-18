@@ -78,6 +78,11 @@ export class AdminAuthService {
       throw new UnauthorizedException("Invalid email or password");
     }
 
+    // Admin users must have a password hash
+    if (!admin.passwordHash) {
+      throw new UnauthorizedException("Invalid email or password");
+    }
+
     // Verify password (supports both argon2id and bcrypt)
     const isValid = await verifyPassword(password, admin.passwordHash);
 
