@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
+import { AdminAuthModule } from "../admin-auth/admin-auth.module";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { JwtStrategy } from "./strategies/jwt.strategy";
@@ -14,6 +15,7 @@ import { JwtStrategy } from "./strategies/jwt.strategy";
         expiresIn: process.env.JWT_EXPIRES_IN || "1d",
       },
     }),
+    AdminAuthModule, // Import AdminAuthModule to make AdminSessionsService available to JwtStrategy
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
