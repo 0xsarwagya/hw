@@ -620,13 +620,23 @@ describe("CartsService - Bundle Integration", () => {
       };
 
       // Mock database queries
-      // First call: get cart items
+      // First call: getCartById - get cart
+      const mockSelectCartById2 = {
+        from: jest.fn(() => ({
+          where: jest.fn(() => {
+            const result = Promise.resolve([{ ...mockCart, subtotal: 0, gstAmount: 0, total: 0, discountCode: null, discountAmount: 0 }]);
+            (result as any).limit = jest.fn(() => Promise.resolve([{ ...mockCart, subtotal: 0, gstAmount: 0, total: 0, discountCode: null, discountAmount: 0 }]));
+            return result;
+          }),
+        })),
+      };
+      // Second call: get cart items
       const mockSelectItems2 = {
         from: jest.fn(() => ({
           where: jest.fn(() => Promise.resolve([mockBundleItem])),
         })),
       };
-      // Second call: get updated cart (won't be reached due to error, but needed for mock)
+      // Third call: get updated cart (won't be reached due to error, but needed for mock)
       const mockSelectCart2 = {
         from: jest.fn(() => ({
           where: jest.fn(() => ({
@@ -635,6 +645,7 @@ describe("CartsService - Bundle Integration", () => {
         })),
       };
       (db.select as jest.Mock)
+        .mockReturnValueOnce(mockSelectCartById2)
         .mockReturnValueOnce(mockSelectItems2)
         .mockReturnValueOnce(mockSelectCart2);
 

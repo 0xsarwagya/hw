@@ -415,11 +415,18 @@ export class OrdersService {
         cartId = cart.id;
       }
 
+      if (!cartId) {
+        throw new BadRequestException("Cart ID is required");
+      }
+
+      // Get cart object for later use (discount code, items, etc.)
+      const cart = await this.cartsService.getCartById(cartId);
+
       // Create checkout session (CREATED state)
       // Session creation failure is acceptable - we can proceed without state machine
       // but if session exists, we MUST validate its state before proceeding
       try {
-        const sessionResult = await this.checkoutStore.createSession(cart.id);
+        const sessionResult = await this.checkoutStore.createSession(cartId);
         checkoutSessionId = sessionResult.sessionId;
       } catch (error) {
         // Write failure - log but continue (order creation can proceed without session)
@@ -428,7 +435,7 @@ export class OrdersService {
             this.contextService,
             "createCheckoutSession",
             error,
-            { cartId: cart.id },
+            { cartId },
           ),
           "Failed to create checkout session, proceeding without state machine",
         );
@@ -436,7 +443,7 @@ export class OrdersService {
       }
 
       // Acquire checkout lock to prevent concurrent checkout attempts
-      lockAcquired = await this.checkoutStore.acquireCheckoutLock(cart.id);
+      lockAcquired = await this.checkoutStore.acquireCheckoutLock(cartId);
       if (!lockAcquired) {
         // Transition session to FAILED if lock acquisition fails
         if (checkoutSessionId) {
