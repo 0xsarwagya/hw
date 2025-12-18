@@ -22,8 +22,10 @@ import { AppModule } from "./app.module";
 import { IS_PUBLIC_KEY } from "./common/decorators/public.decorator";
 import { GlobalExceptionFilter } from "./common/filters/global-exception.filter";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
+import { RateLimitGuard } from "./common/guards/rate-limit.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
 import { BuildInfoInterceptor } from "./common/interceptors/build-info.interceptor";
+import { RateLimitInterceptor } from "./common/interceptors/rate-limit.interceptor";
 import { ContextService } from "./common/logging/context.service";
 import { createPinoConfig } from "./common/logging/pino.config";
 
@@ -113,11 +115,15 @@ async function bootstrap() {
     return originalCanActivate(context);
   };
 
+  // Get rate limit guard and interceptor
+  const rateLimitGuard = app.get(RateLimitGuard);
+  const rateLimitInterceptor = app.get(RateLimitInterceptor);
+
   // Apply guards globally
-  app.useGlobalGuards(jwtGuard, rolesGuard);
+  app.useGlobalGuards(jwtGuard, rolesGuard, rateLimitGuard);
 
   // Apply interceptors globally
-  app.useGlobalInterceptors(new BuildInfoInterceptor());
+  app.useGlobalInterceptors(new BuildInfoInterceptor(), rateLimitInterceptor);
 
   // Apply global exception filter
   const contextService = app.get(ContextService);

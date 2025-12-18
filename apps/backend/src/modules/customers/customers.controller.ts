@@ -18,7 +18,9 @@ import {
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 import { Public } from "../../common/decorators/public.decorator";
+import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
+import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 import { CustomersService } from "./customers.service";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { ClaimAccountDto } from "./dto/claim-account.dto";
@@ -138,6 +140,7 @@ export class CustomersController {
   @Public()
   @Post("claim")
   @HttpCode(HttpStatus.OK)
+  @RateLimit(RATE_LIMIT_PRESETS.CLAIM_ACCOUNT)
   @ApiOperation({
     summary: "Claim account for guest customer",
     description:
