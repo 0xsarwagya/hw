@@ -13,7 +13,8 @@ export class RolesGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<
-      ("admin" | "customer")[] | "admin" | "customer"
+      | ("admin" | "customer" | "support" | "reviewer" | "marketing")[]
+      | ("admin" | "customer" | "support" | "reviewer" | "marketing")
     >("roles", [context.getHandler(), context.getClass()]);
 
     // If no roles are required, allow access
@@ -42,7 +43,16 @@ export class RolesGuard implements CanActivate {
     }
 
     // If user role is in the required roles array, allow access
-    if (rolesArray.includes(user.role as "admin" | "customer")) {
+    if (
+      rolesArray.includes(
+        user.role as
+          | "admin"
+          | "customer"
+          | "support"
+          | "reviewer"
+          | "marketing",
+      )
+    ) {
       return true;
     }
 

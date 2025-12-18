@@ -1,6 +1,9 @@
 // Export all schema definitions
 
 export * from "./addresses";
+export * from "./admin-2fa";
+export * from "./admin-activity-logs";
+export * from "./admin-sessions";
 export * from "./bundle-set-items";
 export * from "./bundle-sets";
 export * from "./bundles";

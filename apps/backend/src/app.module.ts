@@ -7,6 +7,7 @@ import { LoggerModule } from "./common/logging/logger.module";
 import { OtelTracingModule } from "./common/tracing/otel-tracing.module";
 import { AddressAutocompleteModule } from "./modules/address-autocomplete/address-autocomplete.module";
 import { AdminModule } from "./modules/admin/admin.module";
+import { AdminAuthModule } from "./modules/admin-auth/admin-auth.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { BundlesModule } from "./modules/bundles/bundles.module";
 import { CategoriesModule } from "./modules/categories/categories.module";
@@ -39,6 +40,7 @@ import { StorageModule } from "./modules/storage/storage.module";
     PaymentsModule,
     ShippingModule,
     AdminModule,
+    AdminAuthModule,
     InvoicesModule,
     AddressAutocompleteModule,
     DiscountsModule,

@@ -1,12 +1,13 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
-import { db, eq, users } from "@vcecom/db";
+import { adminSessions, db, eq, users } from "@vcecom/db";
 import { Request } from "express";
 import { ExtractJwt, Strategy } from "passport-jwt";
+import { AdminSessionsService } from "../../admin-auth/admin-sessions.service";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly adminSessionsService: AdminSessionsService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         // Extract from cookie first
@@ -21,7 +22,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: { sub: string; email: string; role: string }) {
+  async validate(payload: {
+    sub: string;
+    email: string;
+    role: string;
+    sessionId?: string;
+    deviceId?: string;
+  }) {
     const [user] = await db
       .select()
       .from(users)
@@ -30,6 +37,34 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!user) {
       throw new UnauthorizedException();
+    }
+
+    // If it's an admin, validate the session
+    if (user.role !== "customer" && payload.sessionId) {
+      const session = await db
+        .select()
+        .from(adminSessions)
+        .where(eq(adminSessions.id, payload.sessionId))
+        .limit(1);
+
+      if (
+        !session ||
+        session.length === 0 ||
+        session[0].expiresAt < new Date()
+      ) {
+        throw new UnauthorizedException("Admin session invalid or expired");
+      }
+
+      // Update lastUsedAt for the session
+      await this.adminSessionsService.updateLastUsedAt(payload.sessionId);
+
+      return {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        sessionId: payload.sessionId,
+        deviceId: payload.deviceId,
+      };
     }
 
     return { id: user.id, email: user.email, role: user.role };
