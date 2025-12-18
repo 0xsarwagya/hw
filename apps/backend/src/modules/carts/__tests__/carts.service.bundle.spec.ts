@@ -547,9 +547,26 @@ describe("CartsService - Bundle Integration", () => {
           })),
         })),
       };
+      // Mock for getCartById call (third select)
+      const mockSelectCartById = {
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([
+              {
+                id: "cart-1",
+                customerId: "customer-1",
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ]),
+          }),
+        }),
+      };
+
       (db.select as jest.Mock)
         .mockReturnValueOnce(mockSelectItems)
-        .mockReturnValueOnce(mockSelectCart);
+        .mockReturnValueOnce(mockSelectCart)
+        .mockReturnValueOnce(mockSelectCartById);
 
       const mockBundle = {
         id: "bundle-1",

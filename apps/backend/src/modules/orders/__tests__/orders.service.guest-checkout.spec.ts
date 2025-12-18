@@ -12,7 +12,7 @@ import { CheckoutState } from "../../redis-store/constants/checkout-states";
 import { CheckoutStore } from "../../redis-store/stores/checkout-store";
 import { InventoryStore } from "../../redis-store/stores/inventory-store";
 import { CreateOrderDto } from "../../dto/create-order.dto";
-import { OrdersService } from "../../orders.service";
+import { OrdersService } from "../orders.service";
 
 // Mock dependencies
 jest.mock("@vcecom/db", () => ({

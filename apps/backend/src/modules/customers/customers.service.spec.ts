@@ -85,22 +85,37 @@ describe("CustomersService", () => {
         }),
       });
 
-      // Mock: customer insert
-      (db.insert as jest.Mock).mockReturnValueOnce({
-        values: jest.fn().mockReturnValue({
-          returning: jest.fn().mockResolvedValue([
-            {
-              id: "customer-123",
-              userId: "user-123",
-              email,
-              phone,
-              name,
-              isGuest: true,
-              emailVerified: false,
-            },
-          ]),
-        }),
-      });
+      // Mock: customer insert (second call to db.insert)
+      (db.insert as jest.Mock)
+        .mockReturnValueOnce({
+          // First call: user insert
+          values: jest.fn().mockReturnValue({
+            returning: jest.fn().mockResolvedValue([
+              {
+                id: "user-123",
+                email,
+                passwordHash: null,
+                role: "customer",
+              },
+            ]),
+          }),
+        })
+        .mockReturnValueOnce({
+          // Second call: customer insert
+          values: jest.fn().mockReturnValue({
+            returning: jest.fn().mockResolvedValue([
+              {
+                id: "customer-123",
+                userId: "user-123",
+                email,
+                phone,
+                name,
+                isGuest: true,
+                emailVerified: false,
+              },
+            ]),
+          }),
+        });
 
       const result = await service.createGuestCustomer(email, name, phone, null);
 
@@ -122,36 +137,35 @@ describe("CustomersService", () => {
         }),
       });
 
-      // Mock: user insert with password hash
-      (db.insert as jest.Mock).mockReturnValue({
-        values: jest.fn().mockReturnValue({
-          returning: jest.fn().mockResolvedValue([
-            {
-              id: "user-123",
-              email,
-              passwordHash: "hashed_SecurePassword123!",
-              role: "customer",
-            },
-          ]),
-        }),
-      });
-
-      // Mock: customer insert
-      (db.insert as jest.Mock).mockReturnValueOnce({
-        values: jest.fn().mockReturnValue({
-          returning: jest.fn().mockResolvedValue([
-            {
-              id: "customer-123",
-              userId: "user-123",
-              email,
-              phone,
-              name,
-              isGuest: false,
-              emailVerified: true,
-            },
-          ]),
-        }),
-      });
+      // Mock: user insert (first call) and customer insert (second call)
+      (db.insert as jest.Mock)
+        .mockReturnValueOnce({
+          values: jest.fn().mockReturnValue({
+            returning: jest.fn().mockResolvedValue([
+              {
+                id: "user-123",
+                email,
+                passwordHash: "hashed_SecurePassword123!",
+                role: "customer",
+              },
+            ]),
+          }),
+        })
+        .mockReturnValueOnce({
+          values: jest.fn().mockReturnValue({
+            returning: jest.fn().mockResolvedValue([
+              {
+                id: "customer-123",
+                userId: "user-123",
+                email,
+                phone,
+                name,
+                isGuest: false,
+                emailVerified: true,
+              },
+            ]),
+          }),
+        });
 
       const result = await service.createGuestCustomer(
         email,
@@ -254,6 +268,32 @@ describe("CustomersService", () => {
       await expect(
         service.createGuestCustomer(email, name, phone, null),
       ).rejects.toThrow("Customer with this phone number already exists");
+      
+      // Reset mocks for second call
+      (db.select as jest.Mock)
+        .mockReturnValueOnce({
+          from: jest.fn().mockReturnValue({
+            where: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue([]),
+            }),
+          }),
+        })
+        .mockReturnValueOnce({
+          from: jest.fn().mockReturnValue({
+            where: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue([]),
+            }),
+          }),
+        })
+        .mockReturnValueOnce({
+          from: jest.fn().mockReturnValue({
+            where: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue([
+                { id: "existing-customer", phone },
+              ]),
+            }),
+          }),
+        });
     });
 
     it("should throw error if email format is invalid", async () => {
