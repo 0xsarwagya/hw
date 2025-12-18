@@ -22,6 +22,8 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { Public } from "../../common/decorators/public.decorator";
+import { RateLimit } from "../../common/decorators/rate-limit.decorator";
+import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 import { CartsService } from "./carts.service";
 import { AddItemDto } from "./dto/add-item.dto";
 import { ApplyDiscountDto } from "./dto/apply-discount.dto";
@@ -60,6 +62,7 @@ export class CartsController {
   @Post("items")
   @Public()
   @HttpCode(HttpStatus.CREATED)
+  @RateLimit(RATE_LIMIT_PRESETS.CART_UPDATES)
   @ApiOperation({
     summary: "Add item to cart",
     description:
@@ -92,6 +95,7 @@ export class CartsController {
   @Put("items/:id")
   @Public()
   @HttpCode(HttpStatus.OK)
+  @RateLimit(RATE_LIMIT_PRESETS.CART_UPDATES)
   @ApiOperation({
     summary: "Update cart item quantity",
     description: "Update the quantity of an item in the cart",
@@ -134,6 +138,7 @@ export class CartsController {
   @Delete("items/:id")
   @Public()
   @HttpCode(HttpStatus.OK)
+  @RateLimit(RATE_LIMIT_PRESETS.CART_UPDATES)
   @ApiOperation({
     summary: "Remove item from cart",
     description: "Remove an item from the cart",

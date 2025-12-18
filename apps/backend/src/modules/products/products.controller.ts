@@ -24,7 +24,9 @@ import {
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 import { Public } from "../../common/decorators/public.decorator";
+import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
+import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { FilterProductsDto } from "./dto/filter.dto";
 import {
@@ -43,6 +45,7 @@ export class ProductsController {
 
   @Public()
   @Get()
+  @RateLimit(RATE_LIMIT_PRESETS.STOREFRONT_GET)
   @ApiOperation({
     summary: "Get all products with search and filters",
     description:
@@ -122,6 +125,7 @@ export class ProductsController {
   @Public()
   @Post("search")
   @HttpCode(HttpStatus.OK)
+  @RateLimit(RATE_LIMIT_PRESETS.CATEGORIES_SEARCH)
   @ApiOperation({
     summary: "Advanced product search with ranking",
     description:
@@ -143,6 +147,7 @@ export class ProductsController {
   @Public()
   @Post("filter")
   @HttpCode(HttpStatus.OK)
+  @RateLimit(RATE_LIMIT_PRESETS.CATEGORIES_SEARCH)
   @ApiOperation({
     summary: "Filter and sort products",
     description:
@@ -163,6 +168,7 @@ export class ProductsController {
 
   @Public()
   @Get(":id")
+  @RateLimit(RATE_LIMIT_PRESETS.PRODUCT_DETAIL)
   @ApiOperation({
     summary: "Get product by ID",
     description: "Retrieve a single product by its ID (public endpoint)",

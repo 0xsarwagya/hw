@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import type { Logger } from "pino";
+import { RateLimitState } from "../rate-limiting/rate-limit.service";
 import { RequestContext } from "./context.service";
 
 /**
@@ -13,6 +14,7 @@ export interface ExtendedRequest extends Request {
     role?: string;
     customerId?: string;
   };
+  rateLimitState?: RateLimitState;
 }
 
 /**

@@ -26,7 +26,9 @@ import {
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 import { Public } from "../../common/decorators/public.decorator";
+import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -54,6 +56,7 @@ export class ReviewsController {
 
   @Public()
   @Get(":id/reviews")
+  @RateLimit(RATE_LIMIT_PRESETS.REVIEWS_LISTING)
   @ApiOperation({
     summary: "Get reviews for a product variant",
     description:
@@ -81,6 +84,7 @@ export class ReviewsController {
 
   @Public()
   @Get(":id/reviews/aggregate")
+  @RateLimit(RATE_LIMIT_PRESETS.REVIEWS_LISTING)
   @ApiOperation({
     summary: "Get review aggregate for a product variant",
     description:
