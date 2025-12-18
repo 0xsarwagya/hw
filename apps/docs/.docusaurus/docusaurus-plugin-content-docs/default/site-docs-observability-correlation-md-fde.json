@@ -1,0 +1,26 @@
+{
+  "id": "observability/correlation",
+  "title": "correlation",
+  "description": "",
+  "source": "@site/docs/observability/correlation.md",
+  "sourceDirName": "observability",
+  "slug": "/observability/correlation",
+  "permalink": "/vcecom/docs/observability/correlation",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/observability/correlation.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "context",
+    "permalink": "/vcecom/docs/observability/context"
+  },
+  "next": {
+    "title": "Redis Architecture",
+    "permalink": "/vcecom/docs/redis/overview"
+  }
+}

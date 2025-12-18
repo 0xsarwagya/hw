@@ -35,6 +35,7 @@ This project uses a monorepo structure powered by [Turborepo](https://turborepo.
 ### Apps
 
 - **`admin`** - Next.js admin dashboard for managing products, orders, customers, and settings
+- **`docs`** - Docusaurus documentation site (hosted on GitHub Pages)
 - **`backend`** - NestJS REST API backend with modular architecture
 
 ### Packages

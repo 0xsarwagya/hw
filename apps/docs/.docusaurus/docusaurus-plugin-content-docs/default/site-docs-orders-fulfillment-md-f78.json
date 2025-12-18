@@ -1,0 +1,26 @@
+{
+  "id": "orders/fulfillment",
+  "title": "fulfillment",
+  "description": "",
+  "source": "@site/docs/orders/fulfillment.md",
+  "sourceDirName": "orders",
+  "slug": "/orders/fulfillment",
+  "permalink": "/vcecom/docs/orders/fulfillment",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/orders/fulfillment.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "creation",
+    "permalink": "/vcecom/docs/orders/creation"
+  },
+  "next": {
+    "title": "refunds",
+    "permalink": "/vcecom/docs/orders/refunds"
+  }
+}

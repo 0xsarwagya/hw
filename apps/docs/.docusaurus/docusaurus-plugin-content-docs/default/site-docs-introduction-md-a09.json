@@ -1,0 +1,22 @@
+{
+  "id": "introduction",
+  "title": "Introduction",
+  "description": "What is VCEcom?",
+  "source": "@site/docs/introduction.md",
+  "sourceDirName": ".",
+  "slug": "/introduction",
+  "permalink": "/vcecom/docs/introduction",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/introduction.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "next": {
+    "title": "System Architecture Overview",
+    "permalink": "/vcecom/docs/architecture/overview"
+  }
+}

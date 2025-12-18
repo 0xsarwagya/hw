@@ -1,0 +1,323 @@
+{
+  "docusaurus-plugin-content-docs": {
+    "default": {
+      "path": "/vcecom/docs",
+      "versions": [
+        {
+          "name": "current",
+          "label": "Next",
+          "isLast": true,
+          "path": "/vcecom/docs",
+          "mainDocId": "introduction",
+          "docs": [
+            {
+              "id": "api-reference/admin-api",
+              "path": "/vcecom/docs/api-reference/admin-api",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "api-reference/store-api",
+              "path": "/vcecom/docs/api-reference/store-api",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "architecture/dependencies",
+              "path": "/vcecom/docs/architecture/dependencies",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "architecture/modules",
+              "path": "/vcecom/docs/architecture/modules",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "architecture/overview",
+              "path": "/vcecom/docs/architecture/overview",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "authentication/admin-auth",
+              "path": "/vcecom/docs/authentication/admin-auth",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "authentication/storefront-auth",
+              "path": "/vcecom/docs/authentication/storefront-auth",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "bundles/cart-integration",
+              "path": "/vcecom/docs/bundles/cart-integration",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "bundles/choice-sets",
+              "path": "/vcecom/docs/bundles/choice-sets",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "bundles/definition",
+              "path": "/vcecom/docs/bundles/definition",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "bundles/overview",
+              "path": "/vcecom/docs/bundles/overview",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "bundles/pricing",
+              "path": "/vcecom/docs/bundles/pricing",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "catalog/collections",
+              "path": "/vcecom/docs/catalog/collections",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "catalog/inventory",
+              "path": "/vcecom/docs/catalog/inventory",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "catalog/products",
+              "path": "/vcecom/docs/catalog/products",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "catalog/variants",
+              "path": "/vcecom/docs/catalog/variants",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "checkout/inventory-flow",
+              "path": "/vcecom/docs/checkout/inventory-flow",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "checkout/overview",
+              "path": "/vcecom/docs/checkout/overview",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "checkout/payment-intent",
+              "path": "/vcecom/docs/checkout/payment-intent",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "checkout/state-machine",
+              "path": "/vcecom/docs/checkout/state-machine",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "checkout/webhooks",
+              "path": "/vcecom/docs/checkout/webhooks",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "database-schema/erd",
+              "path": "/vcecom/docs/database-schema/erd",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "database-schema/overview",
+              "path": "/vcecom/docs/database-schema/overview",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "database-schema/tables",
+              "path": "/vcecom/docs/database-schema/tables",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "deployment/docker",
+              "path": "/vcecom/docs/deployment/docker",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "deployment/overview",
+              "path": "/vcecom/docs/deployment/overview",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "deployment/production",
+              "path": "/vcecom/docs/deployment/production",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "deployment/scaling",
+              "path": "/vcecom/docs/deployment/scaling",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "discounts/definitions",
+              "path": "/vcecom/docs/discounts/definitions",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "discounts/drift-detection",
+              "path": "/vcecom/docs/discounts/drift-detection",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "discounts/engine",
+              "path": "/vcecom/docs/discounts/engine",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "discounts/overview",
+              "path": "/vcecom/docs/discounts/overview",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "discounts/priority-stacking",
+              "path": "/vcecom/docs/discounts/priority-stacking",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "discounts/snapshots",
+              "path": "/vcecom/docs/discounts/snapshots",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "introduction",
+              "path": "/vcecom/docs/introduction",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "observability/context",
+              "path": "/vcecom/docs/observability/context",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "observability/correlation",
+              "path": "/vcecom/docs/observability/correlation",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "observability/logging",
+              "path": "/vcecom/docs/observability/logging",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "observability/tracing",
+              "path": "/vcecom/docs/observability/tracing",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "orders/creation",
+              "path": "/vcecom/docs/orders/creation",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "orders/fulfillment",
+              "path": "/vcecom/docs/orders/fulfillment",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "orders/overview",
+              "path": "/vcecom/docs/orders/overview",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "orders/reconciliation",
+              "path": "/vcecom/docs/orders/reconciliation",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "orders/refunds",
+              "path": "/vcecom/docs/orders/refunds",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "pricing/customer-groups",
+              "path": "/vcecom/docs/pricing/customer-groups",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "pricing/drift-detection",
+              "path": "/vcecom/docs/pricing/drift-detection",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "pricing/overview",
+              "path": "/vcecom/docs/pricing/overview",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "pricing/price-lists",
+              "path": "/vcecom/docs/pricing/price-lists",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "pricing/pricing-engine",
+              "path": "/vcecom/docs/pricing/pricing-engine",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "pricing/snapshots",
+              "path": "/vcecom/docs/pricing/snapshots",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "redis/caching-layers",
+              "path": "/vcecom/docs/redis/caching-layers",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "redis/expirations",
+              "path": "/vcecom/docs/redis/expirations",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "redis/key-patterns",
+              "path": "/vcecom/docs/redis/key-patterns",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "redis/overview",
+              "path": "/vcecom/docs/redis/overview",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "reviews/aggregation",
+              "path": "/vcecom/docs/reviews/aggregation",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "reviews/caching",
+              "path": "/vcecom/docs/reviews/caching",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "reviews/moderation",
+              "path": "/vcecom/docs/reviews/moderation",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "reviews/overview",
+              "path": "/vcecom/docs/reviews/overview",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "reviews/verified-purchase",
+              "path": "/vcecom/docs/reviews/verified-purchase",
+              "sidebar": "docsSidebar"
+            }
+          ],
+          "draftIds": [],
+          "sidebars": {
+            "docsSidebar": {
+              "link": {
+                "path": "/vcecom/docs/introduction",
+                "label": "introduction"
+              }
+            }
+          }
+        }
+      ],
+      "breadcrumbs": true
+    }
+  }
+}

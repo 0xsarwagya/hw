@@ -1,0 +1,26 @@
+{
+  "id": "api-reference/admin-api",
+  "title": "Admin API Reference",
+  "description": "Base URL",
+  "source": "@site/docs/api-reference/admin-api.md",
+  "sourceDirName": "api-reference",
+  "slug": "/api-reference/admin-api",
+  "permalink": "/vcecom/docs/api-reference/admin-api",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/api-reference/admin-api.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "expirations",
+    "permalink": "/vcecom/docs/redis/expirations"
+  },
+  "next": {
+    "title": "Store API Reference",
+    "permalink": "/vcecom/docs/api-reference/store-api"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": "deployment/production",
+  "title": "production",
+  "description": "",
+  "source": "@site/docs/deployment/production.md",
+  "sourceDirName": "deployment",
+  "slug": "/deployment/production",
+  "permalink": "/vcecom/docs/deployment/production",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/deployment/production.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "scaling",
+    "permalink": "/vcecom/docs/deployment/scaling"
+  }
+}

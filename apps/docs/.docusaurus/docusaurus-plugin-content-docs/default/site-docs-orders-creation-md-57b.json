@@ -1,0 +1,26 @@
+{
+  "id": "orders/creation",
+  "title": "creation",
+  "description": "",
+  "source": "@site/docs/orders/creation.md",
+  "sourceDirName": "orders",
+  "slug": "/orders/creation",
+  "permalink": "/vcecom/docs/orders/creation",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/orders/creation.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "overview",
+    "permalink": "/vcecom/docs/orders/overview"
+  },
+  "next": {
+    "title": "fulfillment",
+    "permalink": "/vcecom/docs/orders/fulfillment"
+  }
+}

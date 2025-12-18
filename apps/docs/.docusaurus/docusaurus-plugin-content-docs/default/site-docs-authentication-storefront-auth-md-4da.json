@@ -1,0 +1,26 @@
+{
+  "id": "authentication/storefront-auth",
+  "title": "Storefront Authentication",
+  "description": "Overview",
+  "source": "@site/docs/authentication/storefront-auth.md",
+  "sourceDirName": "authentication",
+  "slug": "/authentication/storefront-auth",
+  "permalink": "/vcecom/docs/authentication/storefront-auth",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/authentication/storefront-auth.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Admin Authentication",
+    "permalink": "/vcecom/docs/authentication/admin-auth"
+  },
+  "next": {
+    "title": "products",
+    "permalink": "/vcecom/docs/catalog/products"
+  }
+}

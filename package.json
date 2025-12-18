@@ -50,6 +50,7 @@
     "@biomejs/biome": "^2.3.7",
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
+    "@docusaurus/theme-mermaid": "^3.9.2",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.1",
     "@semantic-release/git": "^10.0.1",

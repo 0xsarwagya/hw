@@ -1,0 +1,26 @@
+{
+  "id": "discounts/priority-stacking",
+  "title": "Discount Priority & Stacking",
+  "description": "Priority System",
+  "source": "@site/docs/discounts/priority-stacking.md",
+  "sourceDirName": "discounts",
+  "slug": "/discounts/priority-stacking",
+  "permalink": "/vcecom/docs/discounts/priority-stacking",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/discounts/priority-stacking.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Discount Engine",
+    "permalink": "/vcecom/docs/discounts/engine"
+  },
+  "next": {
+    "title": "Discount Snapshots",
+    "permalink": "/vcecom/docs/discounts/snapshots"
+  }
+}

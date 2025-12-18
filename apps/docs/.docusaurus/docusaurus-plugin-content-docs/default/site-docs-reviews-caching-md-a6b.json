@@ -1,0 +1,26 @@
+{
+  "id": "reviews/caching",
+  "title": "caching",
+  "description": "",
+  "source": "@site/docs/reviews/caching.md",
+  "sourceDirName": "reviews",
+  "slug": "/reviews/caching",
+  "permalink": "/vcecom/docs/reviews/caching",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/reviews/caching.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "aggregation",
+    "permalink": "/vcecom/docs/reviews/aggregation"
+  },
+  "next": {
+    "title": "Structured Logging",
+    "permalink": "/vcecom/docs/observability/logging"
+  }
+}

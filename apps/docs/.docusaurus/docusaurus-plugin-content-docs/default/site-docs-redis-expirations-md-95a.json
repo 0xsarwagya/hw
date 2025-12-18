@@ -1,0 +1,26 @@
+{
+  "id": "redis/expirations",
+  "title": "expirations",
+  "description": "",
+  "source": "@site/docs/redis/expirations.md",
+  "sourceDirName": "redis",
+  "slug": "/redis/expirations",
+  "permalink": "/vcecom/docs/redis/expirations",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/redis/expirations.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "caching-layers",
+    "permalink": "/vcecom/docs/redis/caching-layers"
+  },
+  "next": {
+    "title": "Admin API Reference",
+    "permalink": "/vcecom/docs/api-reference/admin-api"
+  }
+}

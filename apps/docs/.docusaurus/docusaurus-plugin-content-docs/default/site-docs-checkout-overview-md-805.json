@@ -1,0 +1,26 @@
+{
+  "id": "checkout/overview",
+  "title": "Checkout System Overview",
+  "description": "State Machine",
+  "source": "@site/docs/checkout/overview.md",
+  "sourceDirName": "checkout",
+  "slug": "/checkout/overview",
+  "permalink": "/vcecom/docs/checkout/overview",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/checkout/overview.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "cart-integration",
+    "permalink": "/vcecom/docs/bundles/cart-integration"
+  },
+  "next": {
+    "title": "state-machine",
+    "permalink": "/vcecom/docs/checkout/state-machine"
+  }
+}

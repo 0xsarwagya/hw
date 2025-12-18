@@ -1,0 +1,26 @@
+{
+  "id": "architecture/modules",
+  "title": "Module Breakdown",
+  "description": "Core Modules",
+  "source": "@site/docs/architecture/modules.md",
+  "sourceDirName": "architecture",
+  "slug": "/architecture/modules",
+  "permalink": "/vcecom/docs/architecture/modules",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/architecture/modules.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "System Architecture Overview",
+    "permalink": "/vcecom/docs/architecture/overview"
+  },
+  "next": {
+    "title": "Cross-Module Dependencies",
+    "permalink": "/vcecom/docs/architecture/dependencies"
+  }
+}

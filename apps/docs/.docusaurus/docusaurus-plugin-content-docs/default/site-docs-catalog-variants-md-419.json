@@ -1,0 +1,26 @@
+{
+  "id": "catalog/variants",
+  "title": "variants",
+  "description": "",
+  "source": "@site/docs/catalog/variants.md",
+  "sourceDirName": "catalog",
+  "slug": "/catalog/variants",
+  "permalink": "/vcecom/docs/catalog/variants",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/catalog/variants.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "products",
+    "permalink": "/vcecom/docs/catalog/products"
+  },
+  "next": {
+    "title": "collections",
+    "permalink": "/vcecom/docs/catalog/collections"
+  }
+}

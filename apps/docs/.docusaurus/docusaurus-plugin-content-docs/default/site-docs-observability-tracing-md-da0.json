@@ -1,0 +1,26 @@
+{
+  "id": "observability/tracing",
+  "title": "Distributed Tracing",
+  "description": "Overview",
+  "source": "@site/docs/observability/tracing.md",
+  "sourceDirName": "observability",
+  "slug": "/observability/tracing",
+  "permalink": "/vcecom/docs/observability/tracing",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/observability/tracing.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Structured Logging",
+    "permalink": "/vcecom/docs/observability/logging"
+  },
+  "next": {
+    "title": "context",
+    "permalink": "/vcecom/docs/observability/context"
+  }
+}

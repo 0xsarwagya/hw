@@ -1,0 +1,26 @@
+{
+  "id": "pricing/overview",
+  "title": "Pricing System Overview",
+  "description": "Architecture",
+  "source": "@site/docs/pricing/overview.md",
+  "sourceDirName": "pricing",
+  "slug": "/pricing/overview",
+  "permalink": "/vcecom/docs/pricing/overview",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/pricing/overview.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "inventory",
+    "permalink": "/vcecom/docs/catalog/inventory"
+  },
+  "next": {
+    "title": "Price Lists",
+    "permalink": "/vcecom/docs/pricing/price-lists"
+  }
+}

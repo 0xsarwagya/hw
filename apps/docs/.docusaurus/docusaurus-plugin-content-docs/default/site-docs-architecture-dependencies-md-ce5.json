@@ -1,0 +1,26 @@
+{
+  "id": "architecture/dependencies",
+  "title": "Cross-Module Dependencies",
+  "description": "Dependency Graph",
+  "source": "@site/docs/architecture/dependencies.md",
+  "sourceDirName": "architecture",
+  "slug": "/architecture/dependencies",
+  "permalink": "/vcecom/docs/architecture/dependencies",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/architecture/dependencies.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Module Breakdown",
+    "permalink": "/vcecom/docs/architecture/modules"
+  },
+  "next": {
+    "title": "Admin Authentication",
+    "permalink": "/vcecom/docs/authentication/admin-auth"
+  }
+}

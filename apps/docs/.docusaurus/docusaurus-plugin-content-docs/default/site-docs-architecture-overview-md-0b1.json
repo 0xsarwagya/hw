@@ -1,0 +1,26 @@
+{
+  "id": "architecture/overview",
+  "title": "System Architecture Overview",
+  "description": "Module-Level Breakdown",
+  "source": "@site/docs/architecture/overview.md",
+  "sourceDirName": "architecture",
+  "slug": "/architecture/overview",
+  "permalink": "/vcecom/docs/architecture/overview",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/architecture/overview.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Introduction",
+    "permalink": "/vcecom/docs/introduction"
+  },
+  "next": {
+    "title": "Module Breakdown",
+    "permalink": "/vcecom/docs/architecture/modules"
+  }
+}
