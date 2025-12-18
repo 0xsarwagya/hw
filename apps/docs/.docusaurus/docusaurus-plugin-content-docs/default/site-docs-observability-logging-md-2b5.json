@@ -1,0 +1,26 @@
+{
+  "id": "observability/logging",
+  "title": "Structured Logging",
+  "description": "Overview",
+  "source": "@site/docs/observability/logging.md",
+  "sourceDirName": "observability",
+  "slug": "/observability/logging",
+  "permalink": "/vcecom/docs/observability/logging",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/observability/logging.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "caching",
+    "permalink": "/vcecom/docs/reviews/caching"
+  },
+  "next": {
+    "title": "Distributed Tracing",
+    "permalink": "/vcecom/docs/observability/tracing"
+  }
+}

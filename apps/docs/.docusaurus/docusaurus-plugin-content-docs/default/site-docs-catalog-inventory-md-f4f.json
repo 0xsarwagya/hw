@@ -1,0 +1,26 @@
+{
+  "id": "catalog/inventory",
+  "title": "inventory",
+  "description": "",
+  "source": "@site/docs/catalog/inventory.md",
+  "sourceDirName": "catalog",
+  "slug": "/catalog/inventory",
+  "permalink": "/vcecom/docs/catalog/inventory",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/catalog/inventory.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "collections",
+    "permalink": "/vcecom/docs/catalog/collections"
+  },
+  "next": {
+    "title": "Pricing System Overview",
+    "permalink": "/vcecom/docs/pricing/overview"
+  }
+}

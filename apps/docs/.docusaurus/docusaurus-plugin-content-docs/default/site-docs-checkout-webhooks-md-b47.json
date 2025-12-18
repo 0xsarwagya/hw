@@ -1,0 +1,26 @@
+{
+  "id": "checkout/webhooks",
+  "title": "webhooks",
+  "description": "",
+  "source": "@site/docs/checkout/webhooks.md",
+  "sourceDirName": "checkout",
+  "slug": "/checkout/webhooks",
+  "permalink": "/vcecom/docs/checkout/webhooks",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/checkout/webhooks.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "payment-intent",
+    "permalink": "/vcecom/docs/checkout/payment-intent"
+  },
+  "next": {
+    "title": "inventory-flow",
+    "permalink": "/vcecom/docs/checkout/inventory-flow"
+  }
+}

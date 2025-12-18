@@ -1,0 +1,26 @@
+{
+  "id": "reviews/aggregation",
+  "title": "aggregation",
+  "description": "",
+  "source": "@site/docs/reviews/aggregation.md",
+  "sourceDirName": "reviews",
+  "slug": "/reviews/aggregation",
+  "permalink": "/vcecom/docs/reviews/aggregation",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/reviews/aggregation.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "moderation",
+    "permalink": "/vcecom/docs/reviews/moderation"
+  },
+  "next": {
+    "title": "caching",
+    "permalink": "/vcecom/docs/reviews/caching"
+  }
+}

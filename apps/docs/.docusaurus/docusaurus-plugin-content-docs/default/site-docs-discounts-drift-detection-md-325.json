@@ -1,0 +1,26 @@
+{
+  "id": "discounts/drift-detection",
+  "title": "Discount Drift Detection",
+  "description": "Overview",
+  "source": "@site/docs/discounts/drift-detection.md",
+  "sourceDirName": "discounts",
+  "slug": "/discounts/drift-detection",
+  "permalink": "/vcecom/docs/discounts/drift-detection",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/discounts/drift-detection.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Discount Snapshots",
+    "permalink": "/vcecom/docs/discounts/snapshots"
+  },
+  "next": {
+    "title": "Bundles Engine Overview",
+    "permalink": "/vcecom/docs/bundles/overview"
+  }
+}

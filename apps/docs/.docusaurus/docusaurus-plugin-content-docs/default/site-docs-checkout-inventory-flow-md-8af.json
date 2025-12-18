@@ -1,0 +1,26 @@
+{
+  "id": "checkout/inventory-flow",
+  "title": "inventory-flow",
+  "description": "",
+  "source": "@site/docs/checkout/inventory-flow.md",
+  "sourceDirName": "checkout",
+  "slug": "/checkout/inventory-flow",
+  "permalink": "/vcecom/docs/checkout/inventory-flow",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/checkout/inventory-flow.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "webhooks",
+    "permalink": "/vcecom/docs/checkout/webhooks"
+  },
+  "next": {
+    "title": "overview",
+    "permalink": "/vcecom/docs/orders/overview"
+  }
+}

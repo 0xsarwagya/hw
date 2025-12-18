@@ -1,0 +1,26 @@
+{
+  "id": "bundles/cart-integration",
+  "title": "cart-integration",
+  "description": "",
+  "source": "@site/docs/bundles/cart-integration.md",
+  "sourceDirName": "bundles",
+  "slug": "/bundles/cart-integration",
+  "permalink": "/vcecom/docs/bundles/cart-integration",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/bundles/cart-integration.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "pricing",
+    "permalink": "/vcecom/docs/bundles/pricing"
+  },
+  "next": {
+    "title": "Checkout System Overview",
+    "permalink": "/vcecom/docs/checkout/overview"
+  }
+}

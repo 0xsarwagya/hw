@@ -1,0 +1,26 @@
+{
+  "id": "redis/overview",
+  "title": "Redis Architecture",
+  "description": "Overview",
+  "source": "@site/docs/redis/overview.md",
+  "sourceDirName": "redis",
+  "slug": "/redis/overview",
+  "permalink": "/vcecom/docs/redis/overview",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/redis/overview.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "correlation",
+    "permalink": "/vcecom/docs/observability/correlation"
+  },
+  "next": {
+    "title": "Redis Key Patterns",
+    "permalink": "/vcecom/docs/redis/key-patterns"
+  }
+}

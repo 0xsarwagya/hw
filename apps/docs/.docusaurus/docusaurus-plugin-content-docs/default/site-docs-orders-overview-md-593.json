@@ -1,0 +1,26 @@
+{
+  "id": "orders/overview",
+  "title": "overview",
+  "description": "",
+  "source": "@site/docs/orders/overview.md",
+  "sourceDirName": "orders",
+  "slug": "/orders/overview",
+  "permalink": "/vcecom/docs/orders/overview",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/orders/overview.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "inventory-flow",
+    "permalink": "/vcecom/docs/checkout/inventory-flow"
+  },
+  "next": {
+    "title": "creation",
+    "permalink": "/vcecom/docs/orders/creation"
+  }
+}

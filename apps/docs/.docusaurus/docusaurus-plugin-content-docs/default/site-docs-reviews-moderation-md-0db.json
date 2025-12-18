@@ -1,0 +1,26 @@
+{
+  "id": "reviews/moderation",
+  "title": "moderation",
+  "description": "",
+  "source": "@site/docs/reviews/moderation.md",
+  "sourceDirName": "reviews",
+  "slug": "/reviews/moderation",
+  "permalink": "/vcecom/docs/reviews/moderation",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/reviews/moderation.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Verified Purchase Reviews",
+    "permalink": "/vcecom/docs/reviews/verified-purchase"
+  },
+  "next": {
+    "title": "aggregation",
+    "permalink": "/vcecom/docs/reviews/aggregation"
+  }
+}

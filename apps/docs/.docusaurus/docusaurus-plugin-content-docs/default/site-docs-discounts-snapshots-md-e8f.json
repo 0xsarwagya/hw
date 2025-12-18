@@ -1,0 +1,26 @@
+{
+  "id": "discounts/snapshots",
+  "title": "Discount Snapshots",
+  "description": "Overview",
+  "source": "@site/docs/discounts/snapshots.md",
+  "sourceDirName": "discounts",
+  "slug": "/discounts/snapshots",
+  "permalink": "/vcecom/docs/discounts/snapshots",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/discounts/snapshots.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Discount Priority & Stacking",
+    "permalink": "/vcecom/docs/discounts/priority-stacking"
+  },
+  "next": {
+    "title": "Discount Drift Detection",
+    "permalink": "/vcecom/docs/discounts/drift-detection"
+  }
+}

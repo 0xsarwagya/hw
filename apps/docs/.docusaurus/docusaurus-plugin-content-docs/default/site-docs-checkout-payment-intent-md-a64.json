@@ -1,0 +1,26 @@
+{
+  "id": "checkout/payment-intent",
+  "title": "payment-intent",
+  "description": "",
+  "source": "@site/docs/checkout/payment-intent.md",
+  "sourceDirName": "checkout",
+  "slug": "/checkout/payment-intent",
+  "permalink": "/vcecom/docs/checkout/payment-intent",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/checkout/payment-intent.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "state-machine",
+    "permalink": "/vcecom/docs/checkout/state-machine"
+  },
+  "next": {
+    "title": "webhooks",
+    "permalink": "/vcecom/docs/checkout/webhooks"
+  }
+}

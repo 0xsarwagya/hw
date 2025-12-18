@@ -1,0 +1,26 @@
+{
+  "id": "checkout/state-machine",
+  "title": "state-machine",
+  "description": "",
+  "source": "@site/docs/checkout/state-machine.md",
+  "sourceDirName": "checkout",
+  "slug": "/checkout/state-machine",
+  "permalink": "/vcecom/docs/checkout/state-machine",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/checkout/state-machine.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Checkout System Overview",
+    "permalink": "/vcecom/docs/checkout/overview"
+  },
+  "next": {
+    "title": "payment-intent",
+    "permalink": "/vcecom/docs/checkout/payment-intent"
+  }
+}

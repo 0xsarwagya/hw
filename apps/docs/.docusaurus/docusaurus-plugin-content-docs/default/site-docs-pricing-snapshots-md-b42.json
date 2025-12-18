@@ -1,0 +1,26 @@
+{
+  "id": "pricing/snapshots",
+  "title": "Pricing Snapshots",
+  "description": "Overview",
+  "source": "@site/docs/pricing/snapshots.md",
+  "sourceDirName": "pricing",
+  "slug": "/pricing/snapshots",
+  "permalink": "/vcecom/docs/pricing/snapshots",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/pricing/snapshots.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Pricing Engine",
+    "permalink": "/vcecom/docs/pricing/pricing-engine"
+  },
+  "next": {
+    "title": "Pricing Drift Detection",
+    "permalink": "/vcecom/docs/pricing/drift-detection"
+  }
+}

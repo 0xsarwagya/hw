@@ -1,0 +1,26 @@
+{
+  "id": "observability/context",
+  "title": "context",
+  "description": "",
+  "source": "@site/docs/observability/context.md",
+  "sourceDirName": "observability",
+  "slug": "/observability/context",
+  "permalink": "/vcecom/docs/observability/context",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/observability/context.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Distributed Tracing",
+    "permalink": "/vcecom/docs/observability/tracing"
+  },
+  "next": {
+    "title": "correlation",
+    "permalink": "/vcecom/docs/observability/correlation"
+  }
+}

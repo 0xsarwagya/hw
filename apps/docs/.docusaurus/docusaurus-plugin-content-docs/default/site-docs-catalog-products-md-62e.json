@@ -1,0 +1,26 @@
+{
+  "id": "catalog/products",
+  "title": "products",
+  "description": "",
+  "source": "@site/docs/catalog/products.md",
+  "sourceDirName": "catalog",
+  "slug": "/catalog/products",
+  "permalink": "/vcecom/docs/catalog/products",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/catalog/products.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Storefront Authentication",
+    "permalink": "/vcecom/docs/authentication/storefront-auth"
+  },
+  "next": {
+    "title": "variants",
+    "permalink": "/vcecom/docs/catalog/variants"
+  }
+}

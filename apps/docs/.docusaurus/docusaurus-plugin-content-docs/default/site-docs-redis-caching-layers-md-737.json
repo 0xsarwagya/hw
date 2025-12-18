@@ -1,0 +1,26 @@
+{
+  "id": "redis/caching-layers",
+  "title": "caching-layers",
+  "description": "",
+  "source": "@site/docs/redis/caching-layers.md",
+  "sourceDirName": "redis",
+  "slug": "/redis/caching-layers",
+  "permalink": "/vcecom/docs/redis/caching-layers",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/redis/caching-layers.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Redis Key Patterns",
+    "permalink": "/vcecom/docs/redis/key-patterns"
+  },
+  "next": {
+    "title": "expirations",
+    "permalink": "/vcecom/docs/redis/expirations"
+  }
+}

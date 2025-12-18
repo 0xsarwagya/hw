@@ -1,0 +1,26 @@
+{
+  "id": "database-schema/tables",
+  "title": "Database Tables",
+  "description": "Core Tables",
+  "source": "@site/docs/database-schema/tables.md",
+  "sourceDirName": "database-schema",
+  "slug": "/database-schema/tables",
+  "permalink": "/vcecom/docs/database-schema/tables",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/database-schema/tables.md",
+  "tags": [],
+  "version": "current",
+  "lastUpdatedBy": null,
+  "lastUpdatedAt": null,
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Entity Relationship Diagram",
+    "permalink": "/vcecom/docs/database-schema/erd"
+  },
+  "next": {
+    "title": "Deployment Overview",
+    "permalink": "/vcecom/docs/deployment/overview"
+  }
+}

@@ -1,0 +1,258 @@
+{
+  "/vcecom/docs-588": {
+    "__comp": "5e95c892",
+    "__context": {
+      "plugin": "aba21aa0"
+    }
+  },
+  "/vcecom/docs-7d0": {
+    "__comp": "a7bd4aaa",
+    "__props": "e8fab818"
+  },
+  "/vcecom/docs-a42": {
+    "__comp": "a94703ab"
+  },
+  "/vcecom/docs/api-reference/admin-api-81d": {
+    "__comp": "17896441",
+    "content": "d8b6cdbf"
+  },
+  "/vcecom/docs/api-reference/store-api-827": {
+    "__comp": "17896441",
+    "content": "3fdde753"
+  },
+  "/vcecom/docs/architecture/dependencies-a47": {
+    "__comp": "17896441",
+    "content": "ce56f640"
+  },
+  "/vcecom/docs/architecture/modules-3ad": {
+    "__comp": "17896441",
+    "content": "1cd9f096"
+  },
+  "/vcecom/docs/architecture/overview-193": {
+    "__comp": "17896441",
+    "content": "0b1ac180"
+  },
+  "/vcecom/docs/authentication/admin-auth-235": {
+    "__comp": "17896441",
+    "content": "28c9f219"
+  },
+  "/vcecom/docs/authentication/storefront-auth-259": {
+    "__comp": "17896441",
+    "content": "4da77233"
+  },
+  "/vcecom/docs/bundles/cart-integration-b1f": {
+    "__comp": "17896441",
+    "content": "8efba4bb"
+  },
+  "/vcecom/docs/bundles/choice-sets-c2a": {
+    "__comp": "17896441",
+    "content": "427aa2a0"
+  },
+  "/vcecom/docs/bundles/definition-af1": {
+    "__comp": "17896441",
+    "content": "ac2e62c3"
+  },
+  "/vcecom/docs/bundles/overview-5c3": {
+    "__comp": "17896441",
+    "content": "c2042449"
+  },
+  "/vcecom/docs/bundles/pricing-cb1": {
+    "__comp": "17896441",
+    "content": "71a843cd"
+  },
+  "/vcecom/docs/catalog/collections-300": {
+    "__comp": "17896441",
+    "content": "6aa1d44c"
+  },
+  "/vcecom/docs/catalog/inventory-4db": {
+    "__comp": "17896441",
+    "content": "f4f7ca35"
+  },
+  "/vcecom/docs/catalog/products-cc5": {
+    "__comp": "17896441",
+    "content": "62ea8477"
+  },
+  "/vcecom/docs/catalog/variants-dca": {
+    "__comp": "17896441",
+    "content": "41972ccc"
+  },
+  "/vcecom/docs/checkout/inventory-flow-dc1": {
+    "__comp": "17896441",
+    "content": "8afc2c65"
+  },
+  "/vcecom/docs/checkout/overview-b1b": {
+    "__comp": "17896441",
+    "content": "8053e6dc"
+  },
+  "/vcecom/docs/checkout/payment-intent-010": {
+    "__comp": "17896441",
+    "content": "a64b2381"
+  },
+  "/vcecom/docs/checkout/state-machine-418": {
+    "__comp": "17896441",
+    "content": "50aafbb1"
+  },
+  "/vcecom/docs/checkout/webhooks-c65": {
+    "__comp": "17896441",
+    "content": "b473dddb"
+  },
+  "/vcecom/docs/database-schema/erd-4ee": {
+    "__comp": "17896441",
+    "content": "22ed46b6"
+  },
+  "/vcecom/docs/database-schema/overview-cad": {
+    "__comp": "17896441",
+    "content": "b76438c1"
+  },
+  "/vcecom/docs/database-schema/tables-513": {
+    "__comp": "17896441",
+    "content": "f8e58cd3"
+  },
+  "/vcecom/docs/deployment/docker-49e": {
+    "__comp": "17896441",
+    "content": "ff8b1e34"
+  },
+  "/vcecom/docs/deployment/overview-ea7": {
+    "__comp": "17896441",
+    "content": "69425d0e"
+  },
+  "/vcecom/docs/deployment/production-36e": {
+    "__comp": "17896441",
+    "content": "1973956f"
+  },
+  "/vcecom/docs/deployment/scaling-1d9": {
+    "__comp": "17896441",
+    "content": "bdbc3a07"
+  },
+  "/vcecom/docs/discounts/definitions-7a6": {
+    "__comp": "17896441",
+    "content": "42b5df3a"
+  },
+  "/vcecom/docs/discounts/drift-detection-e92": {
+    "__comp": "17896441",
+    "content": "325554f3"
+  },
+  "/vcecom/docs/discounts/engine-ff0": {
+    "__comp": "17896441",
+    "content": "26747f5c"
+  },
+  "/vcecom/docs/discounts/overview-09e": {
+    "__comp": "17896441",
+    "content": "aad49ae9"
+  },
+  "/vcecom/docs/discounts/priority-stacking-629": {
+    "__comp": "17896441",
+    "content": "e4710e77"
+  },
+  "/vcecom/docs/discounts/snapshots-69e": {
+    "__comp": "17896441",
+    "content": "e8f2c13e"
+  },
+  "/vcecom/docs/introduction-23b": {
+    "__comp": "17896441",
+    "content": "a09c2993"
+  },
+  "/vcecom/docs/observability/context-615": {
+    "__comp": "17896441",
+    "content": "361d7a1c"
+  },
+  "/vcecom/docs/observability/correlation-e0f": {
+    "__comp": "17896441",
+    "content": "fde88871"
+  },
+  "/vcecom/docs/observability/logging-de7": {
+    "__comp": "17896441",
+    "content": "2b5a7889"
+  },
+  "/vcecom/docs/observability/tracing-199": {
+    "__comp": "17896441",
+    "content": "da03633c"
+  },
+  "/vcecom/docs/orders/creation-820": {
+    "__comp": "17896441",
+    "content": "57b76398"
+  },
+  "/vcecom/docs/orders/fulfillment-e01": {
+    "__comp": "17896441",
+    "content": "f780f0b5"
+  },
+  "/vcecom/docs/orders/overview-6c9": {
+    "__comp": "17896441",
+    "content": "593e8d2f"
+  },
+  "/vcecom/docs/orders/reconciliation-d9e": {
+    "__comp": "17896441",
+    "content": "d05b1696"
+  },
+  "/vcecom/docs/orders/refunds-7b6": {
+    "__comp": "17896441",
+    "content": "2ef541d3"
+  },
+  "/vcecom/docs/pricing/customer-groups-57c": {
+    "__comp": "17896441",
+    "content": "a3e5e60a"
+  },
+  "/vcecom/docs/pricing/drift-detection-58e": {
+    "__comp": "17896441",
+    "content": "7bc26092"
+  },
+  "/vcecom/docs/pricing/overview-5ee": {
+    "__comp": "17896441",
+    "content": "ecd14ad9"
+  },
+  "/vcecom/docs/pricing/price-lists-2ce": {
+    "__comp": "17896441",
+    "content": "e7196e37"
+  },
+  "/vcecom/docs/pricing/pricing-engine-c1b": {
+    "__comp": "17896441",
+    "content": "dc0fee91"
+  },
+  "/vcecom/docs/pricing/snapshots-7b3": {
+    "__comp": "17896441",
+    "content": "b4254be9"
+  },
+  "/vcecom/docs/redis/caching-layers-72b": {
+    "__comp": "17896441",
+    "content": "737a8b3b"
+  },
+  "/vcecom/docs/redis/expirations-0d9": {
+    "__comp": "17896441",
+    "content": "95a32ece"
+  },
+  "/vcecom/docs/redis/key-patterns-f5b": {
+    "__comp": "17896441",
+    "content": "3226a077"
+  },
+  "/vcecom/docs/redis/overview-fb4": {
+    "__comp": "17896441",
+    "content": "e27b3cc1"
+  },
+  "/vcecom/docs/reviews/aggregation-1f9": {
+    "__comp": "17896441",
+    "content": "0329dde4"
+  },
+  "/vcecom/docs/reviews/caching-5df": {
+    "__comp": "17896441",
+    "content": "a6bc3cca"
+  },
+  "/vcecom/docs/reviews/moderation-7b6": {
+    "__comp": "17896441",
+    "content": "0dbac33d"
+  },
+  "/vcecom/docs/reviews/overview-70f": {
+    "__comp": "17896441",
+    "content": "766752d4"
+  },
+  "/vcecom/docs/reviews/verified-purchase-2ab": {
+    "__comp": "17896441",
+    "content": "07d217bc"
+  },
+  "/vcecom/-1d6": {
+    "__comp": "1df93b7f",
+    "__context": {
+      "plugin": "a7456010"
+    },
+    "config": "5e9f5e1a"
+  }
+}
