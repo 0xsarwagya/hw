@@ -4,190 +4,206 @@
  * Modify the docusaurus.config.js file at your site's root instead.
  */
 export default {
-  title: "VCEcom Documentation",
-  tagline:
-    "Lightweight ecommerce backend built with NestJS, Drizzle ORM, and Next.js",
-  favicon: "img/favicon.ico",
-  future: {
-    v4: {
-      removeLegacyPostBuildHeadAttribute: true,
-      useCssCascadeLayers: true,
+  "title": "VCEcom Documentation",
+  "tagline": "Lightweight ecommerce backend built with NestJS, Drizzle ORM, and Next.js",
+  "favicon": "img/favicon.ico",
+  "future": {
+    "v4": {
+      "removeLegacyPostBuildHeadAttribute": true,
+      "useCssCascadeLayers": true
     },
-    experimental_faster: {
-      swcJsLoader: false,
-      swcJsMinimizer: false,
-      swcHtmlMinimizer: false,
-      lightningCssMinimizer: false,
-      mdxCrossCompilerCache: false,
-      rspackBundler: false,
-      rspackPersistentCache: false,
-      ssgWorkerThreads: false,
+    "experimental_faster": {
+      "swcJsLoader": false,
+      "swcJsMinimizer": false,
+      "swcHtmlMinimizer": false,
+      "lightningCssMinimizer": false,
+      "mdxCrossCompilerCache": false,
+      "rspackBundler": false,
+      "rspackPersistentCache": false,
+      "ssgWorkerThreads": false
     },
-    experimental_storage: {
-      type: "localStorage",
-      namespace: false,
+    "experimental_storage": {
+      "type": "localStorage",
+      "namespace": false
     },
-    experimental_router: "browser",
+    "experimental_router": "browser"
   },
-  url: "https://vestcodes.github.io",
-  baseUrl: "/vcecom/",
-  organizationName: "Vestcodes",
-  projectName: "vcecom",
-  markdown: {
-    mermaid: true,
-    format: "mdx",
-    emoji: true,
-    mdx1Compat: {
-      comments: true,
-      admonitions: true,
-      headingIds: true,
+  "url": "https://vestcodes.github.io",
+  "baseUrl": "/vcecom/",
+  "organizationName": "Vestcodes",
+  "projectName": "vcecom",
+  "markdown": {
+    "mermaid": true,
+    "format": "mdx",
+    "emoji": true,
+    "mdx1Compat": {
+      "comments": true,
+      "admonitions": true,
+      "headingIds": true
     },
-    anchors: {
-      maintainCase: false,
+    "anchors": {
+      "maintainCase": false
     },
-    hooks: {
-      onBrokenMarkdownLinks: "warn",
-      onBrokenMarkdownImages: "throw",
-    },
+    "hooks": {
+      "onBrokenMarkdownLinks": "warn",
+      "onBrokenMarkdownImages": "throw"
+    }
   },
-  themes: ["@docusaurus/theme-mermaid"],
-  onBrokenLinks: "throw",
-  i18n: {
-    defaultLocale: "en",
-    locales: ["en"],
-    path: "i18n",
-    localeConfigs: {},
+  "themes": [
+    "@docusaurus/theme-mermaid"
+  ],
+  "onBrokenLinks": "throw",
+  "i18n": {
+    "defaultLocale": "en",
+    "locales": [
+      "en"
+    ],
+    "path": "i18n",
+    "localeConfigs": {}
   },
-  presets: [
+  "presets": [
     [
       "classic",
       {
-        docs: {
-          sidebarPath: "./sidebars.ts",
-          editUrl: "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/",
-          showLastUpdateAuthor: true,
-          showLastUpdateTime: true,
+        "docs": {
+          "sidebarPath": "./sidebars.ts",
+          "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/",
+          "showLastUpdateAuthor": true,
+          "showLastUpdateTime": true
         },
-        blog: false,
-        theme: {
-          customCss: "./src/css/custom.css",
-        },
-      },
-    ],
+        "blog": false,
+        "theme": {
+          "customCss": "./src/css/custom.css"
+        }
+      }
+    ]
   ],
-  themeConfig: {
-    image: "img/docusaurus-social-card.jpg",
-    colorMode: {
-      respectPrefersColorScheme: true,
-      defaultMode: "light",
-      disableSwitch: false,
+  "themeConfig": {
+    "image": "img/docusaurus-social-card.jpg",
+    "colorMode": {
+      "respectPrefersColorScheme": true,
+      "defaultMode": "light",
+      "disableSwitch": false
     },
-    navbar: {
-      title: "VCEcom",
-      logo: {
-        alt: "VCEcom Logo",
-        src: "img/logo.svg",
+    "navbar": {
+      "title": "VCEcom",
+      "logo": {
+        "alt": "VCEcom Logo",
+        "src": "img/logo.svg"
       },
-      items: [
+      "items": [
         {
-          type: "docSidebar",
-          sidebarId: "docsSidebar",
-          position: "left",
-          label: "Documentation",
+          "type": "docSidebar",
+          "sidebarId": "docsSidebar",
+          "position": "left",
+          "label": "Documentation"
         },
         {
-          type: "docsVersionDropdown",
-          position: "right",
-          dropdownItemsBefore: [],
-          dropdownItemsAfter: [],
+          "type": "docsVersionDropdown",
+          "position": "right",
+          "dropdownItemsBefore": [],
+          "dropdownItemsAfter": []
         },
         {
-          href: "https://github.com/Vestcodes/vcecom",
-          label: "GitHub",
-          position: "right",
-        },
+          "href": "https://github.com/Vestcodes/vcecom",
+          "label": "GitHub",
+          "position": "right"
+        }
       ],
-      hideOnScroll: false,
+      "hideOnScroll": false
     },
-    footer: {
-      style: "dark",
-      links: [
+    "footer": {
+      "style": "dark",
+      "links": [
         {
-          title: "Documentation",
-          items: [
+          "title": "Documentation",
+          "items": [
             {
-              label: "Introduction",
-              to: "/docs/introduction",
+              "label": "Introduction",
+              "to": "/docs/introduction"
             },
             {
-              label: "Architecture",
-              to: "/docs/architecture/overview",
+              "label": "Architecture",
+              "to": "/docs/architecture/overview"
             },
             {
-              label: "API Reference",
-              to: "/docs/api-reference/admin-api",
-            },
-          ],
+              "label": "API Reference",
+              "to": "/docs/api-reference/admin-api"
+            }
+          ]
         },
         {
-          title: "Resources",
-          items: [
+          "title": "Resources",
+          "items": [
             {
-              label: "Database Schema",
-              to: "/docs/database-schema/overview",
+              "label": "Database Schema",
+              "to": "/docs/database-schema/overview"
             },
             {
-              label: "Deployment",
-              to: "/docs/deployment/overview",
-            },
-          ],
+              "label": "Deployment",
+              "to": "/docs/deployment/overview"
+            }
+          ]
         },
         {
-          title: "More",
-          items: [
+          "title": "More",
+          "items": [
             {
-              label: "GitHub",
-              href: "https://github.com/Vestcodes/vcecom",
-            },
-          ],
-        },
+              "label": "GitHub",
+              "href": "https://github.com/Vestcodes/vcecom"
+            }
+          ]
+        }
       ],
-      copyright: "Copyright © 2025 Vestcodes. Built with Docusaurus.",
+      "copyright": "Copyright © 2025 Vestcodes. Built with Docusaurus."
     },
-    prism: {
-      theme: {
-        plain: {
-          color: "#393A34",
-          backgroundColor: "#f6f8fa",
+    "prism": {
+      "theme": {
+        "plain": {
+          "color": "#393A34",
+          "backgroundColor": "#f6f8fa"
         },
-        styles: [
+        "styles": [
           {
-            types: ["comment", "prolog", "doctype", "cdata"],
-            style: {
-              color: "#999988",
-              fontStyle: "italic",
-            },
+            "types": [
+              "comment",
+              "prolog",
+              "doctype",
+              "cdata"
+            ],
+            "style": {
+              "color": "#999988",
+              "fontStyle": "italic"
+            }
           },
           {
-            types: ["namespace"],
-            style: {
-              opacity: 0.7,
-            },
+            "types": [
+              "namespace"
+            ],
+            "style": {
+              "opacity": 0.7
+            }
           },
           {
-            types: ["string", "attr-value"],
-            style: {
-              color: "#e3116c",
-            },
+            "types": [
+              "string",
+              "attr-value"
+            ],
+            "style": {
+              "color": "#e3116c"
+            }
           },
           {
-            types: ["punctuation", "operator"],
-            style: {
-              color: "#393A34",
-            },
+            "types": [
+              "punctuation",
+              "operator"
+            ],
+            "style": {
+              "color": "#393A34"
+            }
           },
           {
-            types: [
+            "types": [
               "entity",
               "url",
               "symbol",
@@ -197,148 +213,191 @@ export default {
               "constant",
               "property",
               "regex",
-              "inserted",
+              "inserted"
             ],
-            style: {
-              color: "#36acaa",
-            },
+            "style": {
+              "color": "#36acaa"
+            }
           },
           {
-            types: ["atrule", "keyword", "attr-name", "selector"],
-            style: {
-              color: "#00a4db",
-            },
+            "types": [
+              "atrule",
+              "keyword",
+              "attr-name",
+              "selector"
+            ],
+            "style": {
+              "color": "#00a4db"
+            }
           },
           {
-            types: ["function", "deleted", "tag"],
-            style: {
-              color: "#d73a49",
-            },
+            "types": [
+              "function",
+              "deleted",
+              "tag"
+            ],
+            "style": {
+              "color": "#d73a49"
+            }
           },
           {
-            types: ["function-variable"],
-            style: {
-              color: "#6f42c1",
-            },
+            "types": [
+              "function-variable"
+            ],
+            "style": {
+              "color": "#6f42c1"
+            }
           },
           {
-            types: ["tag", "selector", "keyword"],
-            style: {
-              color: "#00009f",
-            },
-          },
-        ],
+            "types": [
+              "tag",
+              "selector",
+              "keyword"
+            ],
+            "style": {
+              "color": "#00009f"
+            }
+          }
+        ]
       },
-      darkTheme: {
-        plain: {
-          color: "#F8F8F2",
-          backgroundColor: "#282A36",
+      "darkTheme": {
+        "plain": {
+          "color": "#F8F8F2",
+          "backgroundColor": "#282A36"
         },
-        styles: [
+        "styles": [
           {
-            types: ["prolog", "constant", "builtin"],
-            style: {
-              color: "rgb(189, 147, 249)",
-            },
+            "types": [
+              "prolog",
+              "constant",
+              "builtin"
+            ],
+            "style": {
+              "color": "rgb(189, 147, 249)"
+            }
           },
           {
-            types: ["inserted", "function"],
-            style: {
-              color: "rgb(80, 250, 123)",
-            },
+            "types": [
+              "inserted",
+              "function"
+            ],
+            "style": {
+              "color": "rgb(80, 250, 123)"
+            }
           },
           {
-            types: ["deleted"],
-            style: {
-              color: "rgb(255, 85, 85)",
-            },
+            "types": [
+              "deleted"
+            ],
+            "style": {
+              "color": "rgb(255, 85, 85)"
+            }
           },
           {
-            types: ["changed"],
-            style: {
-              color: "rgb(255, 184, 108)",
-            },
+            "types": [
+              "changed"
+            ],
+            "style": {
+              "color": "rgb(255, 184, 108)"
+            }
           },
           {
-            types: ["punctuation", "symbol"],
-            style: {
-              color: "rgb(248, 248, 242)",
-            },
+            "types": [
+              "punctuation",
+              "symbol"
+            ],
+            "style": {
+              "color": "rgb(248, 248, 242)"
+            }
           },
           {
-            types: ["string", "char", "tag", "selector"],
-            style: {
-              color: "rgb(255, 121, 198)",
-            },
+            "types": [
+              "string",
+              "char",
+              "tag",
+              "selector"
+            ],
+            "style": {
+              "color": "rgb(255, 121, 198)"
+            }
           },
           {
-            types: ["keyword", "variable"],
-            style: {
-              color: "rgb(189, 147, 249)",
-              fontStyle: "italic",
-            },
+            "types": [
+              "keyword",
+              "variable"
+            ],
+            "style": {
+              "color": "rgb(189, 147, 249)",
+              "fontStyle": "italic"
+            }
           },
           {
-            types: ["comment"],
-            style: {
-              color: "rgb(98, 114, 164)",
-            },
+            "types": [
+              "comment"
+            ],
+            "style": {
+              "color": "rgb(98, 114, 164)"
+            }
           },
           {
-            types: ["attr-name"],
-            style: {
-              color: "rgb(241, 250, 140)",
-            },
-          },
-        ],
+            "types": [
+              "attr-name"
+            ],
+            "style": {
+              "color": "rgb(241, 250, 140)"
+            }
+          }
+        ]
       },
-      additionalLanguages: [],
-      magicComments: [
+      "additionalLanguages": [],
+      "magicComments": [
         {
-          className: "theme-code-block-highlighted-line",
-          line: "highlight-next-line",
-          block: {
-            start: "highlight-start",
-            end: "highlight-end",
-          },
-        },
-      ],
+          "className": "theme-code-block-highlighted-line",
+          "line": "highlight-next-line",
+          "block": {
+            "start": "highlight-start",
+            "end": "highlight-end"
+          }
+        }
+      ]
     },
-    docs: {
-      versionPersistence: "localStorage",
-      sidebar: {
-        hideable: false,
-        autoCollapseCategories: false,
+    "docs": {
+      "versionPersistence": "localStorage",
+      "sidebar": {
+        "hideable": false,
+        "autoCollapseCategories": false
+      }
+    },
+    "blog": {
+      "sidebar": {
+        "groupByYear": true
+      }
+    },
+    "metadata": [],
+    "tableOfContents": {
+      "minHeadingLevel": 2,
+      "maxHeadingLevel": 3
+    },
+    "mermaid": {
+      "theme": {
+        "dark": "dark",
+        "light": "default"
       },
-    },
-    blog: {
-      sidebar: {
-        groupByYear: true,
-      },
-    },
-    metadata: [],
-    tableOfContents: {
-      minHeadingLevel: 2,
-      maxHeadingLevel: 3,
-    },
-    mermaid: {
-      theme: {
-        dark: "dark",
-        light: "default",
-      },
-      options: {},
-    },
+      "options": {}
+    }
   },
-  baseUrlIssueBanner: true,
-  onBrokenAnchors: "warn",
-  onDuplicateRoutes: "warn",
-  staticDirectories: ["static"],
-  customFields: {},
-  plugins: [],
-  scripts: [],
-  headTags: [],
-  stylesheets: [],
-  clientModules: [],
-  titleDelimiter: "|",
-  noIndex: false,
+  "baseUrlIssueBanner": true,
+  "onBrokenAnchors": "warn",
+  "onDuplicateRoutes": "warn",
+  "staticDirectories": [
+    "static"
+  ],
+  "customFields": {},
+  "plugins": [],
+  "scripts": [],
+  "headTags": [],
+  "stylesheets": [],
+  "clientModules": [],
+  "titleDelimiter": "|",
+  "noIndex": false
 };

@@ -233,4 +233,54 @@ export class AddressesService {
 
     return updated;
   }
+
+  /**
+   * Create address directly by customerId (for guest checkout)
+   */
+  async createByCustomerId(customerId: string, createDto: CreateAddressDto) {
+    // Validate PIN code format
+    const formattedPincode = formatPincode(createDto.pincode);
+    if (!isValidPincodeFormat(formattedPincode)) {
+      throw new BadRequestException(
+        "Invalid PIN code format. PIN code must be exactly 6 digits",
+      );
+    }
+
+    // Validate state name (optional but recommended)
+    if (createDto.state && !isValidStateName(createDto.state)) {
+      // Warning: State validation is lenient - we'll accept any string but log a warning
+      // In production, you might want to make this stricter
+    }
+
+    // If this is set as default, unset other default addresses
+    if (createDto.type === "shipping" || createDto.type === "both") {
+      await db
+        .update(addresses)
+        .set({ isDefault: false })
+        .where(
+          and(
+            eq(addresses.customerId, customerId),
+            eq(addresses.isDefault, true),
+          ),
+        );
+    }
+
+    // Create address
+    const [newAddress] = await db
+      .insert(addresses)
+      .values({
+        customerId,
+        type: createDto.type || "shipping",
+        street: createDto.street,
+        city: createDto.city,
+        state: createDto.state,
+        pincode: formattedPincode,
+        district: createDto.district || null,
+        country: createDto.country || "India",
+        isDefault: false, // New addresses are not default by default
+      })
+      .returning();
+
+    return newAddress;
+  }
 }

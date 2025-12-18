@@ -10,12 +10,44 @@ Stores user accounts (customers and admins):
 CREATE TABLE users (
   id UUID PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
-  password_hash TEXT NOT NULL,
+  password_hash TEXT, -- Nullable for guest users
   role TEXT NOT NULL, -- 'customer', 'admin', 'support', 'reviewer', 'marketing'
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP NOT NULL
 );
 ```
+
+**Note:** `password_hash` is nullable to support guest checkout. Guest users have `password_hash = NULL`.
+
+### customers
+
+Stores customer profiles (both authenticated and guest customers):
+
+```sql
+CREATE TABLE customers (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES users(id) NOT NULL UNIQUE,
+  email TEXT UNIQUE NOT NULL,
+  phone TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  gstin TEXT UNIQUE,
+  is_guest BOOLEAN NOT NULL DEFAULT true,
+  email_verified BOOLEAN NOT NULL DEFAULT false,
+  customer_group_id UUID REFERENCES customer_groups(id),
+  created_at TIMESTAMP NOT NULL,
+  updated_at TIMESTAMP NOT NULL
+);
+```
+
+**Key Fields:**
+- `is_guest` - `true` for guest customers, `false` for registered customers
+- `email_verified` - `true` if email is verified (always `true` if password set during checkout)
+- `user_id` - Links to users table (required, but user may have null password_hash for guests)
+
+**Guest Customer Characteristics:**
+- `is_guest = true`
+- `email_verified = false` (unless password was set during checkout)
+- Associated user has `password_hash = NULL`
 
 ### products
 

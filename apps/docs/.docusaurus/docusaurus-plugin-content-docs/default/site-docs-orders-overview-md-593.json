@@ -11,8 +11,8 @@
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/orders/overview.md",
   "tags": [],
   "version": "current",
-  "lastUpdatedBy": null,
-  "lastUpdatedAt": null,
+  "lastUpdatedBy": "Sarwagya Singh",
+  "lastUpdatedAt": 1766018217000,
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
@@ -20,7 +20,7 @@
     "permalink": "/vcecom/docs/checkout/inventory-flow"
   },
   "next": {
-    "title": "creation",
+    "title": "Order Creation",
     "permalink": "/vcecom/docs/orders/creation"
   }
 }

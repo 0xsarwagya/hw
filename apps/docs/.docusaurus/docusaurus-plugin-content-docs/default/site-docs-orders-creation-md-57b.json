@@ -1,7 +1,7 @@
 {
   "id": "orders/creation",
-  "title": "creation",
-  "description": "",
+  "title": "Order Creation",
+  "description": "Overview",
   "source": "@site/docs/orders/creation.md",
   "sourceDirName": "orders",
   "slug": "/orders/creation",
@@ -11,8 +11,8 @@
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/orders/creation.md",
   "tags": [],
   "version": "current",
-  "lastUpdatedBy": null,
-  "lastUpdatedAt": null,
+  "lastUpdatedBy": "Sarwagya Singh",
+  "lastUpdatedAt": 1766018217000,
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {

@@ -122,12 +122,23 @@ Checkout sessions stored in Redis:
 - **TTL**: 30 minutes (configurable)
 - **Data**: Cart items, pricing, discounts, payment intent
 
+## Guest Checkout
+
+The system supports guest checkout, allowing customers to complete purchases without creating an account. See [Guest Checkout Documentation](/docs/checkout/guest-checkout) for details.
+
+### Guest vs Authenticated Checkout
+
+- **Authenticated**: Requires JWT token, uses existing customer and addresses
+- **Guest**: Public endpoint, creates customer on-the-fly, requires session ID
+
+Both flows use the same order creation pipeline and payment processing.
+
 ## API Endpoints
 
-- `POST /checkout/start` - Start checkout session
-- `GET /checkout/session/:id` - Get checkout session
-- `POST /checkout/confirm` - Confirm payment and create order
-- `DELETE /checkout/session/:id` - Cancel checkout
+- `POST /orders` - Create payment intent (supports both authenticated and guest checkout)
+- `GET /orders` - List orders (authenticated only)
+- `GET /orders/:id` - Get order (authenticated only)
+- `POST /customers/claim` - Claim guest account (public)
 
 ## Error Handling
 

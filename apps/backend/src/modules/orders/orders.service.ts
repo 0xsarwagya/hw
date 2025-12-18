@@ -34,6 +34,8 @@ import {
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { CartsService } from "../carts/carts.service";
 import { BundleCartItemMetadata } from "../carts/dto/bundle-cart-item.dto";
+import { AddressesService } from "../customers/addresses.service";
+import { CustomersService } from "../customers/customers.service";
 import { DiscountsService } from "../discounts/discounts.service";
 import { runDiscountEngine } from "../discounts/engine/discount-engine";
 import {
@@ -87,6 +89,8 @@ export class OrdersService {
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
     private readonly cartsService: CartsService,
+    private readonly customersService: CustomersService,
+    private readonly addressesService: AddressesService,
     private readonly discountsService: DiscountsService,
     private readonly inventoryStore: InventoryStore,
     private readonly checkoutStore: CheckoutStore,
@@ -307,33 +311,109 @@ export class OrdersService {
   /**
    * Create payment intent for checkout
    * Orders are now created only after payment confirmation via webhook
+   * Supports both authenticated and guest checkout
    */
   async create(
-    userId: string,
+    userId: string | null,
     createOrderDto: CreateOrderDto,
+    sessionId?: string | null,
   ): Promise<PaymentIntentResponseDto> {
     // Note: Idempotency is now handled at payment intent level (createOrGetPaymentIntent)
     // No need for request-level idempotency here since payment intent creation is idempotent
     let lockAcquired = false;
     let cartId: string | null = null;
     let checkoutSessionId: string | null = null;
+    let customerId: string;
+    let shippingAddressId: string;
+    let billingAddressId: string;
+    let actualUserId: string | null = userId;
+
     try {
-      const customerId = await this.getCustomerId(userId);
+      // Determine if guest checkout or authenticated checkout
+      const isGuestCheckout = !userId || !!createOrderDto.email;
 
-      // Validate addresses first (before cart check to match test expectations)
-      const { shippingAddress } = await this.validateAddresses(
-        customerId,
-        createOrderDto.shippingAddressId,
-        createOrderDto.billingAddressId,
-      );
+      if (isGuestCheckout) {
+        // Guest checkout flow
+        if (
+          !createOrderDto.email ||
+          !createOrderDto.name ||
+          !createOrderDto.phone ||
+          !createOrderDto.address
+        ) {
+          throw new BadRequestException(
+            "Email, name, phone, and address are required for guest checkout",
+          );
+        }
 
-      // Get customer cart after address validation
-      const cart = await this.cartsService.getCart(userId, null);
-      if (!cart || !cart.items || cart.items.length === 0) {
-        throw new BadRequestException("Cart is empty");
+        // Create or get guest customer
+        const customer = await this.customersService.createGuestCustomer(
+          createOrderDto.email,
+          createOrderDto.name,
+          createOrderDto.phone,
+          createOrderDto.password || null,
+        );
+        customerId = customer.id;
+        actualUserId = customer.userId;
+
+        // Create addresses for guest customer
+        const shippingAddress = await this.addressesService.createByCustomerId(
+          customerId,
+          {
+            ...createOrderDto.address,
+            type: "shipping",
+          },
+        );
+        shippingAddressId = shippingAddress.id;
+
+        // Create billing address (use same address if not specified separately)
+        const billingAddress = await this.addressesService.createByCustomerId(
+          customerId,
+          {
+            ...createOrderDto.address,
+            type: "billing",
+          },
+        );
+        billingAddressId = billingAddress.id;
+
+        // Get guest cart by sessionId
+        if (!sessionId) {
+          throw new BadRequestException(
+            "Session ID is required for guest checkout",
+          );
+        }
+        const cart = await this.cartsService.getCart(null, sessionId);
+        if (!cart || !cart.items || cart.items.length === 0) {
+          throw new BadRequestException("Cart is empty");
+        }
+        cartId = cart.id;
+      } else {
+        // Authenticated checkout flow (existing logic)
+        customerId = await this.getCustomerId(userId);
+
+        // Validate addresses first (before cart check to match test expectations)
+        if (
+          !createOrderDto.shippingAddressId ||
+          !createOrderDto.billingAddressId
+        ) {
+          throw new BadRequestException(
+            "Shipping and billing address IDs are required for authenticated checkout",
+          );
+        }
+        await this.validateAddresses(
+          customerId,
+          createOrderDto.shippingAddressId,
+          createOrderDto.billingAddressId,
+        );
+        shippingAddressId = createOrderDto.shippingAddressId;
+        billingAddressId = createOrderDto.billingAddressId;
+
+        // Get customer cart after address validation
+        const cart = await this.cartsService.getCart(userId, null);
+        if (!cart || !cart.items || cart.items.length === 0) {
+          throw new BadRequestException("Cart is empty");
+        }
+        cartId = cart.id;
       }
-
-      cartId = cart.id;
 
       // Create checkout session (CREATED state)
       // Session creation failure is acceptable - we can proceed without state machine
@@ -1015,9 +1095,10 @@ export class OrdersService {
       }
 
       const checkoutMetadata: CheckoutMetadata = {
-        userId,
-        shippingAddressId: createOrderDto.shippingAddressId,
-        billingAddressId: createOrderDto.billingAddressId,
+        customerId,
+        userId: actualUserId,
+        shippingAddressId,
+        billingAddressId,
         shippingCost: createOrderDto.shippingCost || 0,
         discountSnapshot,
         pricingSnapshot,
@@ -1337,11 +1418,11 @@ export class OrdersService {
       );
     }
 
-    // Get customer ID from userId
-    const customerId = await this.getCustomerId(metadata.userId);
+    // Use customerId from metadata (required field)
+    const customerId = metadata.customerId;
 
-    // Get cart data
-    const cart = await this.cartsService.getCart(metadata.userId, null);
+    // Get cart data - use cartId from session (more reliable than userId/sessionId lookup)
+    const cart = await this.cartsService.getCartById(session.cartId);
     if (!cart || !cart.items || cart.items.length === 0) {
       throw new BadRequestException("Cart is empty or not found");
     }

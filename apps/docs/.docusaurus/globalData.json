@@ -91,6 +91,11 @@
               "sidebar": "docsSidebar"
             },
             {
+              "id": "checkout/guest-checkout",
+              "path": "/vcecom/docs/checkout/guest-checkout",
+              "sidebar": "docsSidebar"
+            },
+            {
               "id": "checkout/inventory-flow",
               "path": "/vcecom/docs/checkout/inventory-flow",
               "sidebar": "docsSidebar"

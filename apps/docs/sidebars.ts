@@ -67,6 +67,7 @@ const sidebars: SidebarsConfig = {
       label: "Checkout System",
       items: [
         "checkout/overview",
+        "checkout/guest-checkout",
         "checkout/state-machine",
         "checkout/payment-intent",
         "checkout/webhooks",

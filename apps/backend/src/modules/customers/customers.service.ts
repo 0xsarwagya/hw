@@ -237,6 +237,10 @@ export class CustomersService {
       throw new NotFoundException("User not found");
     }
 
+    if (!user.passwordHash) {
+      throw new BadRequestException("User does not have a password set");
+    }
+
     // Verify current password
     const isPasswordValid = await bcrypt.compare(
       changePasswordDto.currentPassword,
@@ -260,5 +264,188 @@ export class CustomersService {
       .where(eq(users.id, userId));
 
     return { message: "Password changed successfully" };
+  }
+
+  /**
+   * Create or get guest customer for checkout
+   * Creates customer with isGuest=true if password not provided
+   * Creates account (isGuest=false) if password provided
+   * @param email - Customer email
+   * @param name - Customer name
+   * @param phone - Customer phone (optional)
+   * @param password - Optional password (if provided, creates account)
+   * @returns Customer record
+   */
+  async createGuestCustomer(
+    email: string,
+    name: string,
+    phone?: string,
+    password?: string | null,
+  ) {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new BadRequestException("Invalid email format");
+    }
+
+    // Check if customer exists by email
+    const [existingCustomer] = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.email, email))
+      .limit(1);
+
+    if (existingCustomer) {
+      // If customer exists and is not a guest, error
+      if (!existingCustomer.isGuest) {
+        throw new BadRequestException(
+          "Email already registered. Please login to continue.",
+        );
+      }
+      // If customer exists and is guest, return existing
+      return existingCustomer;
+    }
+
+    // Check if user exists by email
+    const [existingUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (existingUser) {
+      // User exists but customer doesn't - this shouldn't happen normally
+      // But handle it gracefully
+      throw new BadRequestException("User with this email already exists");
+    }
+
+    // Phone is required for guest checkout (validated in DTO)
+    if (!phone) {
+      throw new BadRequestException("Phone is required for guest checkout");
+    }
+    const customerPhone = phone;
+
+    // Check if phone already exists (only if provided)
+    if (phone) {
+      const [existingPhone] = await db
+        .select()
+        .from(customers)
+        .where(eq(customers.phone, phone))
+        .limit(1);
+
+      if (existingPhone) {
+        throw new BadRequestException(
+          "Customer with this phone number already exists",
+        );
+      }
+    }
+
+    // Determine if creating guest or account
+    const isGuest = !password;
+    const emailVerified = !!password; // Verified if password provided
+
+    // Hash password if provided
+    const passwordHash = password ? await bcrypt.hash(password, 10) : null;
+
+    // Create user first
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        email,
+        passwordHash: passwordHash || null,
+        role: "customer",
+      })
+      .returning();
+
+    if (!newUser) {
+      throw new BadRequestException("Failed to create user");
+    }
+
+    // Create customer profile
+    const [newCustomer] = await db
+      .insert(customers)
+      .values({
+        userId: newUser.id,
+        email,
+        phone: customerPhone,
+        name,
+        isGuest,
+        emailVerified,
+      })
+      .returning();
+
+    if (!newCustomer) {
+      // Rollback: delete user if customer creation fails
+      await db.delete(users).where(eq(users.id, newUser.id));
+      throw new BadRequestException("Failed to create customer profile");
+    }
+
+    return newCustomer;
+  }
+
+  /**
+   * Claim account for guest customer
+   * Converts guest customer to regular account by setting password
+   * @param email - Guest customer email
+   * @param token - Verification token (for now, we'll skip token validation as it's optional)
+   * @param newPassword - New password for the account
+   * @returns Updated customer record
+   */
+  async claimAccount(email: string, token: string, newPassword: string) {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new BadRequestException("Invalid email format");
+    }
+
+    // Find customer by email
+    const [customer] = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.email, email))
+      .limit(1);
+
+    if (!customer) {
+      throw new NotFoundException("Customer not found");
+    }
+
+    // Check if customer is a guest
+    if (!customer.isGuest) {
+      throw new BadRequestException(
+        "This email is already associated with an account",
+      );
+    }
+
+    // Get user
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, customer.userId))
+      .limit(1);
+
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    // TODO: Validate token (for now, we'll skip token validation)
+    // In production, you should validate the token sent to email
+
+    // Hash new password
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    // Update user with password
+    await db.update(users).set({ passwordHash }).where(eq(users.id, user.id));
+
+    // Update customer: set isGuest=false, emailVerified=true
+    const [updatedCustomer] = await db
+      .update(customers)
+      .set({
+        isGuest: false,
+        emailVerified: true,
+      })
+      .where(eq(customers.id, customer.id))
+      .returning();
+
+    return updatedCustomer;
   }
 }

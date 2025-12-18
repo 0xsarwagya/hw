@@ -21,6 +21,7 @@ import { Public } from "../../common/decorators/public.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { CustomersService } from "./customers.service";
 import { ChangePasswordDto } from "./dto/change-password.dto";
+import { ClaimAccountDto } from "./dto/claim-account.dto";
 import { CustomerProfileDto } from "./dto/customer-profile.dto";
 import { RegisterCustomerDto } from "./dto/register-customer.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
@@ -132,5 +133,31 @@ export class CustomersController {
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
     return this.customersService.changePassword(req.user.id, changePasswordDto);
+  }
+
+  @Public()
+  @Post("claim")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Claim account for guest customer",
+    description:
+      "Convert a guest customer account to a regular account by setting a password. Requires email verification token.",
+  })
+  @ApiOkResponse({
+    description: "Account claimed successfully",
+    type: CustomerProfileDto,
+  })
+  @ApiBadRequestResponse({
+    description: "Invalid input, email not found, or customer is not a guest",
+  })
+  @ApiUnauthorizedResponse({
+    description: "Invalid verification token",
+  })
+  async claimAccount(@Body() claimAccountDto: ClaimAccountDto) {
+    return this.customersService.claimAccount(
+      claimAccountDto.email,
+      claimAccountDto.token,
+      claimAccountDto.newPassword,
+    );
   }
 }

@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
+import { AddressesService } from "./addresses.service";
 import { CustomersController } from "./customers.controller";
 import { CustomersService } from "./customers.service";
 import { GstinVerificationService } from "./gstin-verification.service";
@@ -14,7 +15,7 @@ import { GstinVerificationService } from "./gstin-verification.service";
     }),
   ],
   controllers: [CustomersController],
-  providers: [CustomersService, GstinVerificationService],
-  exports: [CustomersService, GstinVerificationService],
+  providers: [CustomersService, AddressesService, GstinVerificationService],
+  exports: [CustomersService, AddressesService, GstinVerificationService],
 })
 export class CustomersModule {}
