@@ -1,12 +1,12 @@
-import clsx from 'clsx';
-import Link from '@docusaurus/Link';
-import Layout from '@theme/Layout';
-import Heading from '@theme/Heading';
-import styles from './index.module.css';
+import Link from "@docusaurus/Link";
+import Heading from "@theme/Heading";
+import Layout from "@theme/Layout";
+import clsx from "clsx";
+import styles from "./index.module.css";
 
 function HomepageHeader() {
   return (
-    <header className={clsx('hero hero--primary', styles.heroBanner)}>
+    <header className={clsx("hero hero--primary", styles.heroBanner)}>
       <div className="container">
         <Heading as="h1" className="hero__title">
           VCEcom Documentation
@@ -17,7 +17,8 @@ function HomepageHeader() {
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"
-            to="/docs/introduction">
+            to="/docs/introduction"
+          >
             Get Started
           </Link>
         </div>
@@ -30,7 +31,8 @@ export default function Home(): JSX.Element {
   return (
     <Layout
       title="VCEcom Documentation"
-      description="Lightweight ecommerce backend built with NestJS, Drizzle ORM, and Next.js">
+      description="Lightweight ecommerce backend built with NestJS, Drizzle ORM, and Next.js"
+    >
       <HomepageHeader />
       <main>
         <div className="container margin-vert--lg">
@@ -42,10 +44,12 @@ export default function Home(): JSX.Element {
                 </div>
                 <div className="card__body">
                   <p>
-                    Learn about the modular architecture, component interactions,
-                    and cross-module dependencies.
+                    Learn about the modular architecture, component
+                    interactions, and cross-module dependencies.
                   </p>
-                  <Link to="/docs/architecture/overview">View Architecture →</Link>
+                  <Link to="/docs/architecture/overview">
+                    View Architecture →
+                  </Link>
                 </div>
               </div>
             </div>
@@ -59,7 +63,9 @@ export default function Home(): JSX.Element {
                     Secure admin authentication with 2FA, session management,
                     and activity logging.
                   </p>
-                  <Link to="/docs/authentication/admin-auth">View Auth Docs →</Link>
+                  <Link to="/docs/authentication/admin-auth">
+                    View Auth Docs →
+                  </Link>
                 </div>
               </div>
             </div>
@@ -70,9 +76,12 @@ export default function Home(): JSX.Element {
                 </div>
                 <div className="card__body">
                   <p>
-                    Complete API documentation for admin and storefront endpoints.
+                    Complete API documentation for admin and storefront
+                    endpoints.
                   </p>
-                  <Link to="/docs/api-reference/admin-api">View API Docs →</Link>
+                  <Link to="/docs/api-reference/admin-api">
+                    View API Docs →
+                  </Link>
                 </div>
               </div>
             </div>
@@ -82,4 +91,3 @@ export default function Home(): JSX.Element {
     </Layout>
   );
 }
-
