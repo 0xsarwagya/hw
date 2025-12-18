@@ -229,6 +229,14 @@ describe("CustomersService", () => {
             }),
           }),
         })
+        // Mock: no user by email
+        .mockReturnValueOnce({
+          from: jest.fn().mockReturnValue({
+            where: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue([]),
+            }),
+          }),
+        })
         // Mock: existing customer by phone
         .mockReturnValueOnce({
           from: jest.fn().mockReturnValue({
@@ -258,6 +266,15 @@ describe("CustomersService", () => {
     });
 
     it("should throw error if phone is not provided", async () => {
+      // Mock: no existing customer by email
+      (db.select as jest.Mock).mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      });
+
       await expect(
         service.createGuestCustomer(email, name, undefined, null),
       ).rejects.toThrow(BadRequestException);

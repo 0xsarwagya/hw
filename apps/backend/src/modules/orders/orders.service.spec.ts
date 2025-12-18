@@ -23,6 +23,8 @@ import {
   users,
 } from "@vcecom/db";
 import { CartsService } from "../carts/carts.service";
+import { CustomersService } from "../customers/customers.service";
+import { AddressesService } from "../customers/addresses.service";
 import { DiscountAuditService } from "../discounts/services/discount-audit.service";
 import { DiscountSnapshotValidator } from "../discounts/services/discount-snapshot-validator.service";
 import { DriftDetectorService } from "../discounts/services/drift-detector.service";
@@ -276,6 +278,8 @@ describe("OrdersService", () => {
         PricingDriftDetectorService,
         BundleEligibilityService,
         BundlePricingService,
+        CustomersService,
+        AddressesService,
         {
           provide: PinoLogger,
           useValue: {
@@ -305,7 +309,18 @@ describe("OrdersService", () => {
       .overrideProvider(CartsService)
       .useValue({
         getCart: jest.fn(),
+        getCartById: jest.fn(),
         clearCart: jest.fn(),
+      })
+      .overrideProvider(CustomersService)
+      .useValue({
+        createGuestCustomer: jest.fn(),
+        getCustomerId: jest.fn(),
+      })
+      .overrideProvider(AddressesService)
+      .useValue({
+        createByCustomerId: jest.fn(),
+        validateAddresses: jest.fn(),
       })
       .overrideProvider(DiscountsService)
       .useValue({

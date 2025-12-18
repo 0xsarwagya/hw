@@ -26,7 +26,11 @@ jest.mock("@vcecom/db", () => {
 
   // Create a chainable from result
   const createFromResult = () => ({
-    where: jest.fn(() => createWhereResult()),
+    where: jest.fn(() => {
+      const result = Promise.resolve([]);
+      (result as any).limit = jest.fn(() => Promise.resolve([]));
+      return result;
+    }),
     limit: jest.fn(() => Promise.resolve([])),
     leftJoin: jest.fn(() => ({
       where: jest.fn(() => createWhereResult()),
@@ -35,7 +39,11 @@ jest.mock("@vcecom/db", () => {
       innerJoin: jest.fn(() => ({
         where: jest.fn(() => createWhereResult()),
       })),
-      where: jest.fn(() => createWhereResult()),
+      where: jest.fn(() => {
+        const result = Promise.resolve([]);
+        (result as any).limit = jest.fn(() => Promise.resolve([]));
+        return result;
+      }),
     })),
   });
 
