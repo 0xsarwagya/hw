@@ -7,10 +7,25 @@ import { AddressesService } from "../../customers/addresses.service";
 import { CustomersService } from "../../customers/customers.service";
 import { CartsService } from "../../carts/carts.service";
 import { DiscountsService } from "../../discounts/discounts.service";
+import { DiscountAuditService } from "../../discounts/services/discount-audit.service";
+import { DiscountSnapshotValidator } from "../../discounts/services/discount-snapshot-validator.service";
+import { DriftDetectorService } from "../../discounts/services/drift-detector.service";
+import { HotReloadWatcher } from "../../discounts/services/hot-reload-watcher.service";
+import { RulesetBundleService } from "../../discounts/services/ruleset-bundle.service";
+import { DiscountProfiler } from "../../discounts/services/discount-profiler.service";
 import { PaymentsService } from "../../payments/payments.service";
+import { PricingHotReloadWatcher } from "../../pricing/services/pricing-hot-reload-watcher.service";
+import { PriceListService } from "../../pricing/services/price-list.service";
+import { CustomerGroupService } from "../../pricing/services/customer-group.service";
+import { PricingSnapshotValidator } from "../../pricing/services/pricing-snapshot-validator.service";
+import { PricingAuditService } from "../../pricing/services/pricing-audit.service";
+import { PricingDriftDetectorService } from "../../pricing/services/pricing-drift-detector.service";
+import { BundleEligibilityService } from "../../bundles/services/bundle-eligibility.service";
+import { BundlePricingService } from "../../pricing/services/bundle-pricing.service";
 import { CheckoutState } from "../../redis-store/constants/checkout-states";
 import { CheckoutStore } from "../../redis-store/stores/checkout-store";
 import { InventoryStore } from "../../redis-store/stores/inventory-store";
+import { IdempotencyStore } from "../../redis-store/stores/idempotency-store";
 import { CreateOrderDto } from "../../dto/create-order.dto";
 import { OrdersService } from "../orders.service";
 
@@ -133,37 +148,124 @@ describe("OrdersService - Guest Checkout", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrdersService,
-        {
-          provide: CartsService,
-          useValue: mockCartsService,
-        },
-        {
-          provide: CustomersService,
-          useValue: mockCustomersService,
-        },
-        {
-          provide: AddressesService,
-          useValue: mockAddressesService,
-        },
-        {
-          provide: CheckoutStore,
-          useValue: mockCheckoutStore,
-        },
-        {
-          provide: InventoryStore,
-          useValue: mockInventoryStore,
-        },
-        {
-          provide: DiscountsService,
-          useValue: mockDiscountsService,
-        },
-        {
-          provide: PaymentsService,
-          useValue: mockPaymentsService,
-        },
+        CartsService,
+        CustomersService,
+        AddressesService,
+        DiscountsService,
+        InventoryStore,
+        IdempotencyStore,
+        CheckoutStore,
+        PaymentsService,
+        DiscountSnapshotValidator,
+        DiscountAuditService,
+        DriftDetectorService,
+        HotReloadWatcher,
+        RulesetBundleService,
+        DiscountProfiler,
+        PricingHotReloadWatcher,
+        PriceListService,
+        CustomerGroupService,
+        PricingSnapshotValidator,
+        PricingAuditService,
+        PricingDriftDetectorService,
+        BundleEligibilityService,
+        BundlePricingService,
         ...getCommonTestProviders(),
       ],
-    }).compile();
+    })
+      .overrideProvider(CartsService)
+      .useValue(mockCartsService)
+      .overrideProvider(CustomersService)
+      .useValue(mockCustomersService)
+      .overrideProvider(AddressesService)
+      .useValue(mockAddressesService)
+      .overrideProvider(CheckoutStore)
+      .useValue(mockCheckoutStore)
+      .overrideProvider(InventoryStore)
+      .useValue(mockInventoryStore)
+      .overrideProvider(DiscountsService)
+      .useValue(mockDiscountsService)
+      .overrideProvider(PaymentsService)
+      .useValue(mockPaymentsService)
+      .overrideProvider(DiscountSnapshotValidator)
+      .useValue({
+        validateSnapshot: jest.fn(),
+      })
+      .overrideProvider(DiscountAuditService)
+      .useValue({
+        logEvent: jest.fn(),
+        logEngineRun: jest.fn(),
+        logSnapshotCreated: jest.fn(),
+        logSnapshotUsed: jest.fn(),
+        logDrift: jest.fn(),
+      })
+      .overrideProvider(DriftDetectorService)
+      .useValue({
+        detectPaymentIntentDrift: jest.fn(),
+        detectOrderDrift: jest.fn(),
+      })
+      .overrideProvider(HotReloadWatcher)
+      .useValue({
+        watch: jest.fn(),
+        unwatch: jest.fn(),
+      })
+      .overrideProvider(RulesetBundleService)
+      .useValue({
+        getRulesetBundle: jest.fn(),
+      })
+      .overrideProvider(DiscountProfiler)
+      .useValue({
+        start: jest.fn(),
+        end: jest.fn(),
+      })
+      .overrideProvider(PricingHotReloadWatcher)
+      .useValue({
+        watch: jest.fn(),
+        unwatch: jest.fn(),
+      })
+      .overrideProvider(PriceListService)
+      .useValue({
+        getPriceListsForCustomer: jest.fn(),
+      })
+      .overrideProvider(CustomerGroupService)
+      .useValue({
+        getCustomerGroup: jest.fn(),
+      })
+      .overrideProvider(PricingSnapshotValidator)
+      .useValue({
+        validateSnapshot: jest.fn(),
+      })
+      .overrideProvider(PricingAuditService)
+      .useValue({
+        logEvent: jest.fn(),
+        logEngineRun: jest.fn(),
+        logSnapshotCreated: jest.fn(),
+        logSnapshotUsed: jest.fn(),
+        logDrift: jest.fn(),
+      })
+      .overrideProvider(PricingDriftDetectorService)
+      .useValue({
+        detectPaymentIntentDrift: jest.fn(),
+        detectOrderDrift: jest.fn(),
+      })
+      .overrideProvider(BundleEligibilityService)
+      .useValue({
+        getBundle: jest.fn(),
+        validateUserSelection: jest.fn(),
+      })
+      .overrideProvider(BundlePricingService)
+      .useValue({
+        calculateBundlePrice: jest.fn(),
+        getBundleVariantBreakdown: jest.fn(),
+      })
+      .overrideProvider(IdempotencyStore)
+      .useValue({
+        getIdempotencyResult: jest.fn(),
+        checkAndSet: jest.fn(),
+        set: jest.fn(),
+        deleteIdempotency: jest.fn(),
+      })
+      .compile();
 
     service = module.get<OrdersService>(OrdersService);
     customersService = module.get<CustomersService>(CustomersService);
