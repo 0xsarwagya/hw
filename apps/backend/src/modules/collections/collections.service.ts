@@ -525,7 +525,7 @@ export class CollectionsService {
         case CollectionRuleField.INVENTORY: {
           // For inventory, sum up variant inventories per product
           const inventoryValue = Number(rule.value);
-          let inventoryProducts: Product[] = [];
+          let inventoryProducts: { productId: string }[] = [];
 
           if (rule.operator === CollectionRuleOperator.EQUALS) {
             inventoryProducts = await db
