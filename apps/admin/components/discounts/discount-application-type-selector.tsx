@@ -2,7 +2,7 @@
 
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import type { DiscountApplicationType } from "@/lib/types/discounts";
+import { DiscountApplicationType } from "@/lib/types/discounts";
 
 interface DiscountApplicationTypeSelectorProps {
   value?: DiscountApplicationType;
@@ -10,7 +10,7 @@ interface DiscountApplicationTypeSelectorProps {
 }
 
 export function DiscountApplicationTypeSelector({
-  value = "MANUAL",
+  value = DiscountApplicationType.MANUAL,
   onValueChange,
 }: DiscountApplicationTypeSelectorProps) {
   return (
@@ -18,13 +18,16 @@ export function DiscountApplicationTypeSelector({
       <Label>Application Type</Label>
       <RadioGroup value={value} onValueChange={onValueChange}>
         <div className="flex items-center space-x-2">
-          <RadioGroupItem value="MANUAL" id="manual" />
+          <RadioGroupItem value={DiscountApplicationType.MANUAL} id="manual" />
           <Label htmlFor="manual" className="font-normal cursor-pointer">
             Manual - Requires discount code
           </Label>
         </div>
         <div className="flex items-center space-x-2">
-          <RadioGroupItem value="AUTOMATIC" id="automatic" />
+          <RadioGroupItem
+            value={DiscountApplicationType.AUTOMATIC}
+            id="automatic"
+          />
           <Label htmlFor="automatic" className="font-normal cursor-pointer">
             Automatic - Applied automatically when conditions are met
           </Label>

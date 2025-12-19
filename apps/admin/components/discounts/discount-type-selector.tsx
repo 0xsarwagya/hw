@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { DiscountType } from "@/lib/types/discounts";
+import { DiscountType } from "@/lib/types/discounts";
 
 interface DiscountTypeSelectorProps {
   value?: DiscountType;
@@ -21,28 +21,28 @@ const DISCOUNT_TYPES: {
   description: string;
 }[] = [
   {
-    value: "FIXED_AMOUNT",
+    value: DiscountType.FIXED_AMOUNT,
     label: "Fixed Amount",
     description: "Fixed discount amount (e.g., ₹100 off)",
   },
   {
-    value: "PERCENTAGE",
+    value: DiscountType.PERCENTAGE,
     label: "Percentage",
     description: "Percentage discount (e.g., 20% off)",
   },
   {
-    value: "BUY_X_GET_Y",
+    value: DiscountType.BUY_X_GET_Y,
     label: "Buy X Get Y",
     description: "Buy X items, get Y items free or discounted",
   },
   {
-    value: "TIERED",
+    value: DiscountType.TIERED,
     label: "Tiered",
     description:
       "Discount increases with quantity (e.g., 10% off 3+, 20% off 5+)",
   },
   {
-    value: "CART_LEVEL",
+    value: DiscountType.CART_LEVEL,
     label: "Cart Level",
     description: "Discount applied to entire cart based on total",
   },

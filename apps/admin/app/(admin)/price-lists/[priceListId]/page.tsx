@@ -32,7 +32,7 @@ export default function PriceListDetailPage() {
 
   const { data: priceList, isLoading } = useAdminPriceList(priceListId);
   const updatePriceList = useAdminUpdatePriceList(priceListId);
-  const deletePriceList = useAdminDeletePriceList();
+  const deletePriceList = useAdminDeletePriceList(priceListId);
 
   const {
     register,
@@ -46,7 +46,7 @@ export default function PriceListDetailPage() {
     if (priceList) {
       reset({
         name: priceList.name,
-        description: priceList.description,
+        description: priceList.description ?? undefined,
         isActive: priceList.isActive,
       });
     }
@@ -74,7 +74,7 @@ export default function PriceListDetailPage() {
   };
 
   const handleDelete = async () => {
-    await deletePriceList.mutateAsync(priceListId);
+    await deletePriceList.mutateAsync();
     setDeleteDialogOpen(false);
   };
 

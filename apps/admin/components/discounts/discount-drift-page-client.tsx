@@ -135,7 +135,7 @@ export function DiscountDriftPageClient() {
             }
             onNextPage={() => handlePageChange(paginationData.currentPage + 1)}
             canGoPrevious={data?.page !== 1}
-            canGoNext={data?.page < (data?.totalPages || 1)}
+            canGoNext={(data?.page ?? 1) < (data?.totalPages || 1)}
             isLoading={isLoading}
             itemLabel="events"
           />

@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { PriceListType } from "@/lib/types/price-lists";
+import { PriceListType } from "@/lib/types/price-lists";
 
 interface PriceListTypeSelectorProps {
   value?: PriceListType;
@@ -16,11 +16,11 @@ interface PriceListTypeSelectorProps {
 }
 
 const PRICE_LIST_TYPES: { value: PriceListType; label: string }[] = [
-  { value: "B2C", label: "B2C (Business to Consumer)" },
-  { value: "B2B", label: "B2B (Business to Business)" },
-  { value: "WHOLESALE", label: "Wholesale" },
-  { value: "RETAIL", label: "Retail" },
-  { value: "CUSTOM", label: "Custom" },
+  { value: PriceListType.B2C, label: "B2C (Business to Consumer)" },
+  { value: PriceListType.B2B, label: "B2B (Business to Business)" },
+  { value: PriceListType.WHOLESALE, label: "Wholesale" },
+  { value: PriceListType.RETAIL, label: "Retail" },
+  { value: PriceListType.CUSTOM, label: "Custom" },
 ];
 
 export function PriceListTypeSelector({

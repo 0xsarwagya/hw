@@ -136,7 +136,11 @@ export function CustomerGroupDetailPageClient() {
             </CardHeader>
             <CardContent>
               <CustomerGroupForm
-                initialData={group}
+                initialData={{
+                  name: group.name,
+                  description: group.description ?? undefined,
+                  isActive: group.isActive,
+                }}
                 onSubmit={handleSubmit}
                 isLoading={updateGroup.isPending}
               />

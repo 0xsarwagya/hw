@@ -23,15 +23,17 @@ import type {
 
 const customerGroupSchema = z.object({
   name: z.string().min(1, "Name is required").max(255, "Name too long"),
-  description: z.string().optional().nullable(),
-  isActive: z.boolean().default(true),
+  description: z.string().nullable().optional(),
+  isActive: z.boolean(),
 });
 
 type CustomerGroupFormValues = z.infer<typeof customerGroupSchema>;
 
 interface CustomerGroupFormProps {
   initialData?: CreateCustomerGroupInput | UpdateCustomerGroupInput;
-  onSubmit: (data: CreateCustomerGroupInput | UpdateCustomerGroupInput) => void;
+  onSubmit: (
+    data: CreateCustomerGroupInput | UpdateCustomerGroupInput,
+  ) => Promise<void> | void;
   isLoading?: boolean;
 }
 
@@ -44,17 +46,18 @@ export function CustomerGroupForm({
     resolver: zodResolver(customerGroupSchema),
     defaultValues: {
       name: initialData?.name || "",
-      description: initialData?.description || "",
+      description: initialData?.description ?? null,
       isActive: initialData?.isActive ?? true,
     },
   });
 
   const handleSubmit = (values: CustomerGroupFormValues) => {
-    onSubmit({
+    const submitData: CreateCustomerGroupInput | UpdateCustomerGroupInput = {
       name: values.name,
-      description: values.description || undefined,
+      description: values.description ?? undefined,
       isActive: values.isActive,
-    });
+    };
+    onSubmit(submitData);
   };
 
   return (

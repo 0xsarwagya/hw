@@ -14,6 +14,7 @@ import {
   lt,
   ne,
   or,
+  Product,
   productCollections,
   products,
   productTags,
@@ -524,7 +525,7 @@ export class CollectionsService {
         case CollectionRuleField.INVENTORY: {
           // For inventory, sum up variant inventories per product
           const inventoryValue = Number(rule.value);
-          let inventoryProducts: typeof products = [];
+          let inventoryProducts: Product[] = [];
 
           if (rule.operator === CollectionRuleOperator.EQUALS) {
             inventoryProducts = await db

@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import type {
-  CreateDiscountInput,
+import {
+  type CreateDiscountInput,
+  DiscountApplicationType,
+  DiscountType,
   DiscountValueType,
 } from "@/lib/types/discounts";
 import { DiscountApplicationTypeSelector } from "./discount-application-type-selector";
@@ -37,19 +39,20 @@ export function DiscountFormWizard({
     code: initialData?.code || "",
     name: initialData?.name || "",
     description: initialData?.description || "",
-    type: initialData?.type || "PERCENTAGE",
-    applicationType: initialData?.applicationType || "MANUAL",
-    valueType: initialData?.valueType || "PERCENTAGE",
+    type: initialData?.type || DiscountType.PERCENTAGE,
+    applicationType:
+      initialData?.applicationType || DiscountApplicationType.MANUAL,
+    valueType: initialData?.valueType || DiscountValueType.PERCENTAGE,
     value: initialData?.value || 0,
     priority: initialData?.priority || 1,
     canStack: initialData?.canStack ?? true,
     mutuallyExclusive: initialData?.mutuallyExclusive ?? false,
     isActive: initialData?.isActive ?? true,
-    minOrderAmount: initialData?.minOrderAmount || null,
-    maxDiscountAmount: initialData?.maxDiscountAmount || null,
-    usageLimit: initialData?.usageLimit || null,
-    perUserLimit: initialData?.perUserLimit || null,
-    customerGroupIds: initialData?.customerGroupIds || null,
+    minOrderAmount: initialData?.minOrderAmount ?? undefined,
+    maxDiscountAmount: initialData?.maxDiscountAmount ?? undefined,
+    usageLimit: initialData?.usageLimit ?? undefined,
+    perUserLimit: initialData?.perUserLimit ?? undefined,
+    customerGroupIds: initialData?.customerGroupIds ?? undefined,
     startDate: initialData?.startDate || new Date().toISOString(),
     endDate: initialData?.endDate || undefined,
     productIds: initialData?.productIds || [],
@@ -258,15 +261,19 @@ export function DiscountFormWizard({
             perUserLimit={formData.perUserLimit}
             customerGroupIds={formData.customerGroupIds}
             onMinOrderAmountChange={(value) =>
-              updateField("minOrderAmount", value)
+              updateField("minOrderAmount", value ?? undefined)
             }
             onMaxDiscountAmountChange={(value) =>
-              updateField("maxDiscountAmount", value)
+              updateField("maxDiscountAmount", value ?? undefined)
             }
-            onUsageLimitChange={(value) => updateField("usageLimit", value)}
-            onPerUserLimitChange={(value) => updateField("perUserLimit", value)}
+            onUsageLimitChange={(value) =>
+              updateField("usageLimit", value ?? undefined)
+            }
+            onPerUserLimitChange={(value) =>
+              updateField("perUserLimit", value ?? undefined)
+            }
             onCustomerGroupIdsChange={(value) =>
-              updateField("customerGroupIds", value)
+              updateField("customerGroupIds", value ?? undefined)
             }
           />
         </TabsContent>

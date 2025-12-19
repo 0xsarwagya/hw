@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { DiscountValueType, TieredRule } from "@/lib/types/discounts";
+import { DiscountValueType, type TieredRule } from "@/lib/types/discounts";
 
 interface DiscountTieredEditorProps {
   tieredRules?: TieredRule[];
@@ -26,7 +26,7 @@ export function DiscountTieredEditor({
   const [newRule, setNewRule] = useState<Partial<TieredRule>>({
     minQuantity: 1,
     value: 0,
-    valueType: "PERCENTAGE",
+    valueType: DiscountValueType.PERCENTAGE,
   });
 
   const handleAddRule = () => {
@@ -46,7 +46,7 @@ export function DiscountTieredEditor({
       setNewRule({
         minQuantity: Math.max(...tieredRules.map((r) => r.minQuantity), 0) + 1,
         value: 0,
-        valueType: "PERCENTAGE",
+        valueType: DiscountValueType.PERCENTAGE,
       });
     }
   };
@@ -171,7 +171,11 @@ export function DiscountTieredEditor({
             <Input
               type="number"
               min="0"
-              max={newRule.valueType === "PERCENTAGE" ? 100 : undefined}
+              max={
+                newRule.valueType === DiscountValueType.PERCENTAGE
+                  ? 100
+                  : undefined
+              }
               value={newRule.value || ""}
               onChange={(e) =>
                 setNewRule({

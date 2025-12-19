@@ -115,7 +115,47 @@ export function DiscountDetailPageClient() {
             </CardHeader>
             <CardContent>
               <DiscountFormWizard
-                initialData={discount}
+                initialData={{
+                  code: discount.code,
+                  name: discount.name,
+                  description: discount.description ?? undefined,
+                  type: discount.type,
+                  applicationType: discount.applicationType,
+                  valueType: discount.valueType,
+                  value: discount.value,
+                  priority: discount.priority,
+                  canStack: discount.canStack,
+                  mutuallyExclusive: discount.mutuallyExclusive,
+                  isActive: discount.isActive,
+                  minOrderAmount: discount.minOrderAmount ?? undefined,
+                  maxDiscountAmount: discount.maxDiscountAmount ?? undefined,
+                  usageLimit: discount.usageLimit ?? undefined,
+                  perUserLimit: discount.perUserLimit ?? undefined,
+                  customerGroupIds: discount.customerGroupIds ?? undefined,
+                  startDate:
+                    discount.startDate instanceof Date
+                      ? discount.startDate.toISOString()
+                      : new Date(discount.startDate).toISOString(),
+                  endDate: discount.endDate
+                    ? discount.endDate instanceof Date
+                      ? discount.endDate.toISOString()
+                      : new Date(discount.endDate).toISOString()
+                    : undefined,
+                  productIds: discount.productIds,
+                  categoryIds: discount.categoryIds,
+                  collectionIds: discount.collectionIds,
+                  tagIds: discount.tagIds,
+                  buyProductIds: discount.buyProductIds,
+                  buyCategoryIds: discount.buyCategoryIds,
+                  buyCollectionIds: discount.buyCollectionIds,
+                  buyTagIds: discount.buyTagIds,
+                  getProductIds: discount.getProductIds,
+                  getCategoryIds: discount.getCategoryIds,
+                  getCollectionIds: discount.getCollectionIds,
+                  getTagIds: discount.getTagIds,
+                  tieredRules: discount.tieredRules,
+                  excludedDiscountIds: discount.excludedDiscountIds,
+                }}
                 onSubmit={handleSubmit}
                 isLoading={updateDiscount.isPending}
               />

@@ -37,10 +37,8 @@ import { useAdminAddPriceListItem } from "@/hooks/pricing/use-admin-add-price-li
 import { useAdminProducts } from "@/hooks/products/use-admin-products";
 import { api } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
-import type {
-  PriceListItem,
-  PriceListOverrideType,
-} from "@/lib/types/price-lists";
+import type { PriceListItem } from "@/lib/types/price-lists";
+import { PriceListOverrideType } from "@/lib/types/price-lists";
 
 interface PriceListItemTableProps {
   priceListId: string;
@@ -52,8 +50,9 @@ export function PriceListItemTable({
   items,
 }: PriceListItemTableProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [overrideType, setOverrideType] =
-    useState<PriceListOverrideType>("PERCENTAGE");
+  const [overrideType, setOverrideType] = useState<PriceListOverrideType>(
+    PriceListOverrideType.PERCENTAGE,
+  );
   const [overrideValue, setOverrideValue] = useState<string>("");
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");

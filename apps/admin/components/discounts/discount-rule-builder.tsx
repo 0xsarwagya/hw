@@ -24,7 +24,7 @@ interface DiscountRuleBuilderProps {
   onProductIdsChange: (ids: string[]) => void;
   onCategoryIdsChange: (ids: string[]) => void;
   onCollectionIdsChange: (ids: string[]) => void;
-  onTagIdsChange: (ids: string[]) => void;
+  onTagIdsChange?: (ids: string[]) => void;
 }
 
 export function DiscountRuleBuilder({

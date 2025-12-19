@@ -140,7 +140,9 @@ export function DiscountBogoEditor({
         <AddProductsDialog
           open={buyProductDialogOpen}
           onOpenChange={setBuyProductDialogOpen}
-          onAdd={(ids) => onBuyProductIdsChange([...buyProductIds, ...ids])}
+          onAdd={async (ids) => {
+            onBuyProductIdsChange([...buyProductIds, ...ids]);
+          }}
           existingProductIds={buyProductIds}
         />
       </div>
@@ -233,7 +235,9 @@ export function DiscountBogoEditor({
         <AddProductsDialog
           open={getProductDialogOpen}
           onOpenChange={setGetProductDialogOpen}
-          onAdd={(ids) => onGetProductIdsChange([...getProductIds, ...ids])}
+          onAdd={async (ids) => {
+            onGetProductIdsChange([...getProductIds, ...ids]);
+          }}
           existingProductIds={getProductIds}
         />
       </div>
