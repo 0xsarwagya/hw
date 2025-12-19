@@ -55,15 +55,30 @@ describe("RedisStoreService", () => {
     it("should return Redis client after initialization", async () => {
       await service.onModuleInit();
 
-      const client = service.getClient();
+      const client = await service.getClient();
 
       expect(client).toBe(mockRedisClient);
     });
 
-    it("should throw error if client not initialized", () => {
-      expect(() => service.getClient()).toThrow(
+    it("should throw error if client not initialized", async () => {
+      // Create a fresh service instance without calling onModuleInit
+      const logger = (service as any).logger;
+      const contextService = (service as any).contextService;
+      const newService = new RedisStoreService(logger, contextService);
+      
+      // Mock initializeRedis to resolve but not set client, simulating a scenario where
+      // initialization completes but client is still null (shouldn't happen in practice)
+      const initializeRedisSpy = jest.spyOn(newService as any, "initializeRedis").mockResolvedValue(undefined);
+      
+      // Ensure initPromise is cleared so getClient() will create a new one
+      (newService as any).initPromise = null;
+      (newService as any).client = null;
+      
+      await expect(newService.getClient()).rejects.toThrow(
         "Redis client not initialized",
       );
+      
+      initializeRedisSpy.mockRestore();
     });
   });
 

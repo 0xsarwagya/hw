@@ -1,6 +1,7 @@
 /**
  * Rate limit configuration presets for different endpoint types
  * Values are tuned for production traffic: 1-5K DAU, CDN caching, mobile apps
+ * In development mode, limits are significantly increased for easier testing
  */
 
 export type RateLimitKeyType = "ip" | "sessionId" | "userId" | "ip+email";
@@ -12,6 +13,8 @@ export interface RateLimitConfig {
   skipIfAuthenticated?: boolean;
 }
 
+const isDevelopment = process.env.NODE_ENV === "development";
+
 /**
  * Rate limit presets for different endpoint categories
  */
@@ -20,7 +23,7 @@ export const RATE_LIMIT_PRESETS = {
    * Storefront GET endpoints - high throughput for browsing
    */
   STOREFRONT_GET: {
-    limit: 1000,
+    limit: isDevelopment ? 5000 : 1000,
     window: 300, // 5 minutes
     keyType: "ip" as RateLimitKeyType,
   },
@@ -65,7 +68,7 @@ export const RATE_LIMIT_PRESETS = {
    * Checkout session creation - tighter limits to prevent abuse
    */
   CHECKOUT_SESSION: {
-    limit: 50,
+    limit: isDevelopment ? 200 : 50,
     window: 300, // 5 minutes
     keyType: "sessionId" as RateLimitKeyType,
   },
@@ -74,7 +77,7 @@ export const RATE_LIMIT_PRESETS = {
    * Payment intent creation - strictest checkout limit
    */
   PAYMENT_INTENT: {
-    limit: 30,
+    limit: isDevelopment ? 100 : 30,
     window: 300, // 5 minutes
     keyType: "sessionId" as RateLimitKeyType,
   },
@@ -83,7 +86,7 @@ export const RATE_LIMIT_PRESETS = {
    * Cart updates - moderate limits
    */
   CART_UPDATES: {
-    limit: 300,
+    limit: isDevelopment ? 1000 : 300,
     window: 300, // 5 minutes
     keyType: "sessionId" as RateLimitKeyType,
   },
@@ -92,8 +95,8 @@ export const RATE_LIMIT_PRESETS = {
    * Login attempts - strict for brute force protection
    */
   LOGIN: {
-    limit: 10,
-    window: 600, // 10 minutes
+    limit: isDevelopment ? 100 : 10,
+    window: isDevelopment ? 300 : 600, // 5 min in dev, 10 min in prod
     keyType: "ip+email" as RateLimitKeyType,
   },
 
@@ -101,8 +104,8 @@ export const RATE_LIMIT_PRESETS = {
    * Reset password - strict for security
    */
   RESET_PASSWORD: {
-    limit: 8,
-    window: 600, // 10 minutes
+    limit: isDevelopment ? 50 : 8,
+    window: isDevelopment ? 300 : 600, // 5 min in dev, 10 min in prod
     keyType: "ip+email" as RateLimitKeyType,
   },
 
@@ -110,8 +113,8 @@ export const RATE_LIMIT_PRESETS = {
    * Claim account - strict for security
    */
   CLAIM_ACCOUNT: {
-    limit: 8,
-    window: 600, // 10 minutes
+    limit: isDevelopment ? 50 : 8,
+    window: isDevelopment ? 300 : 600, // 5 min in dev, 10 min in prod
     keyType: "ip+email" as RateLimitKeyType,
   },
 
@@ -119,7 +122,7 @@ export const RATE_LIMIT_PRESETS = {
    * Admin GET endpoints - high throughput for admin UI
    */
   ADMIN_GET: {
-    limit: 1000,
+    limit: isDevelopment ? 5000 : 1000,
     window: 300, // 5 minutes
     keyType: "userId" as RateLimitKeyType,
   },
@@ -128,7 +131,7 @@ export const RATE_LIMIT_PRESETS = {
    * Admin POST/PATCH/DELETE - moderate limits
    */
   ADMIN_MUTATE: {
-    limit: 200,
+    limit: isDevelopment ? 1000 : 200,
     window: 300, // 5 minutes
     keyType: "userId" as RateLimitKeyType,
   },

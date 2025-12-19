@@ -11,6 +11,7 @@ import {
   db,
   desc,
   eq,
+  sql,
 } from "@vcecom/db";
 import { BundleCacheStore } from "../../redis-store/stores/bundle-cache-store";
 import { BundleResponseDto } from "../dto/bundle-response.dto";
@@ -61,8 +62,11 @@ export class BundleDefinitionService {
       .limit(maxLimit)
       .offset(offset);
 
-    const allBundlesForCount = await db.select().from(bundles);
-    const total = allBundlesForCount.length;
+    // Get total count using COUNT(*) for performance
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(bundles);
+    const total = Number(countResult[0]?.count || 0);
     const totalPages = Math.ceil(total / maxLimit);
 
     const hydratedBundles = await Promise.all(

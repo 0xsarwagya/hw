@@ -4,19 +4,19 @@ import ComponentCreator from '@docusaurus/ComponentCreator';
 export default [
   {
     path: '/docs/docs',
-    component: ComponentCreator('/docs/docs', '0ef'),
+    component: ComponentCreator('/docs/docs', '219'),
     routes: [
       {
         path: '/docs/docs',
-        component: ComponentCreator('/docs/docs', '61f'),
+        component: ComponentCreator('/docs/docs', '0aa'),
         routes: [
           {
             path: '/docs/docs',
-            component: ComponentCreator('/docs/docs', '5ad'),
+            component: ComponentCreator('/docs/docs', '5fe'),
             routes: [
               {
                 path: '/docs/docs/api-reference/admin-api',
-                component: ComponentCreator('/docs/docs/api-reference/admin-api', '062'),
+                component: ComponentCreator('/docs/docs/api-reference/admin-api', 'a58'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
@@ -40,7 +40,7 @@ export default [
               },
               {
                 path: '/docs/docs/architecture/overview',
-                component: ComponentCreator('/docs/docs/architecture/overview', '85e'),
+                component: ComponentCreator('/docs/docs/architecture/overview', 'd3a'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
@@ -70,7 +70,7 @@ export default [
               },
               {
                 path: '/docs/docs/bundles/definition',
-                component: ComponentCreator('/docs/docs/bundles/definition', 'bcd'),
+                component: ComponentCreator('/docs/docs/bundles/definition', '433'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
@@ -88,25 +88,25 @@ export default [
               },
               {
                 path: '/docs/docs/catalog/collections',
-                component: ComponentCreator('/docs/docs/catalog/collections', 'bbd'),
+                component: ComponentCreator('/docs/docs/catalog/collections', '5f1'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
                 path: '/docs/docs/catalog/inventory',
-                component: ComponentCreator('/docs/docs/catalog/inventory', 'c8f'),
+                component: ComponentCreator('/docs/docs/catalog/inventory', 'bad'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
                 path: '/docs/docs/catalog/products',
-                component: ComponentCreator('/docs/docs/catalog/products', '27b'),
+                component: ComponentCreator('/docs/docs/catalog/products', '6e5'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
                 path: '/docs/docs/catalog/variants',
-                component: ComponentCreator('/docs/docs/catalog/variants', '3fc'),
+                component: ComponentCreator('/docs/docs/catalog/variants', '516'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
@@ -136,7 +136,7 @@ export default [
               },
               {
                 path: '/docs/docs/checkout/state-machine',
-                component: ComponentCreator('/docs/docs/checkout/state-machine', 'fb4'),
+                component: ComponentCreator('/docs/docs/checkout/state-machine', '13b'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
@@ -154,7 +154,7 @@ export default [
               },
               {
                 path: '/docs/docs/database-schema/overview',
-                component: ComponentCreator('/docs/docs/database-schema/overview', '71e'),
+                component: ComponentCreator('/docs/docs/database-schema/overview', 'f8b'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
@@ -172,7 +172,7 @@ export default [
               },
               {
                 path: '/docs/docs/deployment/overview',
-                component: ComponentCreator('/docs/docs/deployment/overview', '85b'),
+                component: ComponentCreator('/docs/docs/deployment/overview', '624'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
@@ -190,7 +190,7 @@ export default [
               },
               {
                 path: '/docs/docs/discounts/definitions',
-                component: ComponentCreator('/docs/docs/discounts/definitions', '608'),
+                component: ComponentCreator('/docs/docs/discounts/definitions', '49d'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
@@ -226,31 +226,31 @@ export default [
               },
               {
                 path: '/docs/docs/introduction',
-                component: ComponentCreator('/docs/docs/introduction', 'e80'),
+                component: ComponentCreator('/docs/docs/introduction', '478'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
                 path: '/docs/docs/observability/context',
-                component: ComponentCreator('/docs/docs/observability/context', '312'),
+                component: ComponentCreator('/docs/docs/observability/context', '160'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
                 path: '/docs/docs/observability/correlation',
-                component: ComponentCreator('/docs/docs/observability/correlation', '716'),
+                component: ComponentCreator('/docs/docs/observability/correlation', '16c'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
                 path: '/docs/docs/observability/logging',
-                component: ComponentCreator('/docs/docs/observability/logging', '994'),
+                component: ComponentCreator('/docs/docs/observability/logging', 'b47'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
                 path: '/docs/docs/observability/tracing',
-                component: ComponentCreator('/docs/docs/observability/tracing', '120'),
+                component: ComponentCreator('/docs/docs/observability/tracing', 'ef5'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
@@ -268,7 +268,7 @@ export default [
               },
               {
                 path: '/docs/docs/orders/overview',
-                component: ComponentCreator('/docs/docs/orders/overview', '4fc'),
+                component: ComponentCreator('/docs/docs/orders/overview', '68f'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
@@ -322,13 +322,13 @@ export default [
               },
               {
                 path: '/docs/docs/redis/caching-layers',
-                component: ComponentCreator('/docs/docs/redis/caching-layers', 'bc3'),
+                component: ComponentCreator('/docs/docs/redis/caching-layers', '872'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
                 path: '/docs/docs/redis/expirations',
-                component: ComponentCreator('/docs/docs/redis/expirations', '74f'),
+                component: ComponentCreator('/docs/docs/redis/expirations', '6ff'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
@@ -340,7 +340,7 @@ export default [
               },
               {
                 path: '/docs/docs/redis/overview',
-                component: ComponentCreator('/docs/docs/redis/overview', '4d0'),
+                component: ComponentCreator('/docs/docs/redis/overview', '9d0'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
@@ -364,7 +364,7 @@ export default [
               },
               {
                 path: '/docs/docs/reviews/overview',
-                component: ComponentCreator('/docs/docs/reviews/overview', '4cf'),
+                component: ComponentCreator('/docs/docs/reviews/overview', '123'),
                 exact: true,
                 sidebar: "docsSidebar"
               },

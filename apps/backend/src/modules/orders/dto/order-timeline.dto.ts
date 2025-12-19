@@ -2,11 +2,17 @@ import { ApiProperty } from "@nestjs/swagger";
 
 export enum TimelineEventType {
   ORDER_CREATED = "order_created",
+  ORDER_CONFIRMED = "order_confirmed",
+  ORDER_PROCESSING = "order_processing",
+  ORDER_SHIPPED = "order_shipped",
+  ORDER_DELIVERED = "order_delivered",
+  ORDER_CANCELLED = "order_cancelled",
   STATUS_CHANGED = "status_changed",
   PAYMENT_INITIATED = "payment_initiated",
   PAYMENT_COMPLETED = "payment_completed",
   PAYMENT_FAILED = "payment_failed",
   SHIPMENT_CREATED = "shipment_created",
+  SHIPMENT_TRACKING_UPDATED = "shipment_tracking_updated",
   SHIPMENT_LABEL_GENERATED = "shipment_label_generated",
   SHIPMENT_PICKED_UP = "shipment_picked_up",
   SHIPMENT_IN_TRANSIT = "shipment_in_transit",

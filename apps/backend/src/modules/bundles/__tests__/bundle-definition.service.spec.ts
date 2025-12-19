@@ -26,6 +26,14 @@ jest.mock("@vcecom/db", () => ({
   and: jest.fn(),
   asc: jest.fn(),
   desc: jest.fn(),
+  sql: jest.fn((strings, ...values) => {
+    // Return a mock SQL template tag function
+    const template = Object.assign(
+      (strings: TemplateStringsArray, ...values: any[]) => strings[0],
+      { raw: strings }
+    );
+    return template;
+  }),
   bundles: {},
   bundleSets: {},
   bundleSetItems: {},

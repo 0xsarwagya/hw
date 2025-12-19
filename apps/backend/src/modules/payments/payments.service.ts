@@ -10,6 +10,7 @@ import {
 import { db, eq, orders, payments } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import Razorpay from "razorpay";
+import { AppConfigService } from "../../common/config/app.config.service";
 import { ContextService } from "../../common/logging/context.service";
 import {
   createErrorContext,
@@ -41,20 +42,20 @@ export class PaymentsService implements OnModuleInit {
     private readonly ordersService: OrdersService,
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    private readonly appConfigService: AppConfigService,
   ) {}
 
   /**
    * Initialize Razorpay on module initialization
-   * Reads configuration from environment variables
+   * Reads configuration from AppConfigService
    */
   onModuleInit() {
-    const keyId = process.env.RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const config = this.appConfigService.getRazorpayConfig();
 
-    if (keyId && keySecret) {
+    if (config.keyId && config.keySecret) {
       this.razorpay = this.razorpayConfigService.initialize({
-        keyId,
-        keySecret,
+        keyId: config.keyId,
+        keySecret: config.keySecret,
       });
     }
   }

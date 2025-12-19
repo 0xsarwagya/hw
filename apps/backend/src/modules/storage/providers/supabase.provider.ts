@@ -2,6 +2,7 @@ import "dotenv/config";
 import { Injectable } from "@nestjs/common";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { PinoLogger } from "nestjs-pino";
+import { AppConfigService } from "../../../common/config/app.config.service";
 import { ContextService } from "../../../common/logging/context.service";
 import {
   createErrorContext,
@@ -17,22 +18,22 @@ export class SupabaseProvider implements StorageProvider {
   constructor(
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    private readonly appConfigService: AppConfigService,
   ) {
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey =
-      process.env.SUPABASE_STORAGE_KEY || process.env.SUPABASE_ANON_KEY;
+    const config = this.appConfigService.getSupabaseConfig();
+    const supabaseKey = config.storageKey || config.anonKey;
 
-    if (!supabaseUrl || !supabaseKey) {
+    if (!config.url || !supabaseKey) {
       throw new Error(
         "Supabase configuration missing: SUPABASE_URL and SUPABASE_STORAGE_KEY are required",
       );
     }
 
-    this.client = createClient(supabaseUrl, supabaseKey);
-    this.bucket = process.env.STORAGE_BUCKET || "vcecom";
+    this.client = createClient(config.url, supabaseKey);
+    this.bucket = config.bucket;
 
     // Only ensure bucket exists if not in test environment
-    if (process.env.NODE_ENV !== "test") {
+    if (!this.appConfigService.isTestEnvironment()) {
       this.ensureBucketExists().catch((error) => {
         this.logger.error(
           createErrorContext(this.contextService, "ensureBucketExists", error, {
@@ -184,6 +185,53 @@ export class SupabaseProvider implements StorageProvider {
       );
       throw new Error(
         `Failed to list files: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  async getMetadata(
+    key: string,
+  ): Promise<{ size: number; contentType?: string }> {
+    try {
+      const pathParts = key.split("/");
+      const fileName = pathParts.pop() || "";
+      const folderPath = pathParts.join("/");
+
+      const { data, error } = await this.client.storage
+        .from(this.bucket)
+        .list(folderPath || "", {
+          limit: 1000,
+        });
+
+      if (error) throw error;
+
+      const file = data?.find((f) => f.name === fileName);
+      if (!file) {
+        throw new Error(`File not found: ${key}`);
+      }
+
+      // Supabase file objects have metadata property with size and mimetype
+      // The structure may vary, so we check multiple possible locations
+      interface SupabaseFile {
+        metadata?: { size?: number; mimetype?: string };
+        size?: number;
+        mimetype?: string;
+      }
+      const typedFile = file as SupabaseFile;
+      const size = typedFile.metadata?.size || typedFile.size || 0;
+      const contentType =
+        typedFile.metadata?.mimetype || typedFile.mimetype || undefined;
+
+      return {
+        size: typeof size === "number" ? size : 0,
+        contentType: typeof contentType === "string" ? contentType : undefined,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to get metadata for ${key}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw new Error(
+        `Failed to get file metadata: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

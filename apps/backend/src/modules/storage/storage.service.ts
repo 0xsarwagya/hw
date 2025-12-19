@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { Injectable, OnModuleInit, Optional } from "@nestjs/common";
 import { PinoLogger } from "nestjs-pino";
+import { AppConfigService } from "../../common/config/app.config.service";
 import { ContextService } from "../../common/logging/context.service";
 import { createLogContext } from "../../common/logging/logging.helper";
 import {
@@ -18,6 +19,7 @@ export class StorageService implements OnModuleInit {
   constructor(
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    private readonly appConfigService: AppConfigService,
     @Optional() private readonly minioProvider?: MinioProvider,
     @Optional() private readonly supabaseProvider?: SupabaseProvider,
     @Optional() private readonly awsS3Provider?: AwsS3Provider,
@@ -29,7 +31,7 @@ export class StorageService implements OnModuleInit {
 
   private initializeProvider(): void {
     const providerType = (
-      process.env.STORAGE_PROVIDER || this.detectProvider()
+      this.appConfigService.getStorageProvider() || this.detectProvider()
     ).toLowerCase() as StorageProviderType;
 
     switch (providerType) {
@@ -92,21 +94,27 @@ export class StorageService implements OnModuleInit {
   }
 
   private detectProvider(): StorageProviderType {
+    const awsConfig = this.appConfigService.getAwsS3Config();
     // Check for AWS credentials
-    if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+    if (awsConfig.accessKeyId && awsConfig.secretAccessKey) {
       return "aws";
     }
 
+    const supabaseConfig = this.appConfigService.getSupabaseConfig();
     // Check for Supabase credentials
     if (
-      process.env.SUPABASE_URL &&
-      (process.env.SUPABASE_STORAGE_KEY || process.env.SUPABASE_ANON_KEY)
+      supabaseConfig.url &&
+      (supabaseConfig.storageKey || supabaseConfig.anonKey)
     ) {
       return "supabase";
     }
 
+    const minioConfig = this.appConfigService.getMinioConfig();
     // Check for MINIO credentials (or use defaults)
-    if (process.env.MINIO_ENDPOINT || process.env.MINIO_ACCESS_KEY) {
+    if (
+      minioConfig.endpoint !== "localhost:9000" ||
+      minioConfig.accessKey !== "minioadmin"
+    ) {
       return "minio";
     }
 
@@ -161,11 +169,20 @@ export class StorageService implements OnModuleInit {
   }
 
   /**
+   * Get file metadata (size, content type)
+   */
+  async getMetadata(
+    key: string,
+  ): Promise<{ size: number; contentType?: string }> {
+    return this.provider.getMetadata(key);
+  }
+
+  /**
    * Get the current storage provider type
    */
   getProviderType(): StorageProviderType {
     const providerType = (
-      process.env.STORAGE_PROVIDER || this.detectProvider()
+      this.appConfigService.getStorageProvider() || this.detectProvider()
     ).toLowerCase() as StorageProviderType;
     return providerType;
   }

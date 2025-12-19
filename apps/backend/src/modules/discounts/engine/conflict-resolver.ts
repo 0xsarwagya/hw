@@ -4,6 +4,13 @@ import { ResolvedDiscounts } from "./discount-engine.types";
 
 /**
  * Resolve conflicts between discounts based on priority, stacking, and exclusivity
+ *
+ * This algorithm ensures that:
+ * - Higher priority discounts (lower priority number) take precedence
+ * - Mutually exclusive discounts are properly handled
+ * - Stacking rules are respected (canStack flag)
+ * - Exclusion lists are bidirectional (if A excludes B, B excludes A)
+ *
  * Returns separated product and cart discounts ready for application
  */
 export function resolveConflicts(
@@ -13,10 +20,12 @@ export function resolveConflicts(
     return { productDiscounts: [], cartDiscounts: [] };
   }
 
-  // STEP 1: Sort by priority (ascending: lower = stronger)
+  // Sort by priority: lower number = higher priority
+  // This ensures we process discounts in order of importance
   const sorted = [...discounts].sort((a, b) => a.priority - b.priority);
 
-  // STEP 2: Build exclusion graph
+  // Build bidirectional exclusion graph
+  // This allows us to quickly check if two discounts conflict
   const exclusionMap = new Map<string, Set<string>>();
   for (const discount of sorted) {
     if (!exclusionMap.has(discount.id)) {
@@ -28,7 +37,8 @@ export function resolveConflicts(
     ) {
       for (const excludedId of discount.excludedDiscountIds) {
         exclusionMap.get(discount.id)?.add(excludedId);
-        // Bidirectional exclusion
+        // Make exclusion bidirectional: if A excludes B, then B also excludes A
+        // This simplifies conflict detection later
         if (!exclusionMap.has(excludedId)) {
           exclusionMap.set(excludedId, new Set());
         }
@@ -37,28 +47,32 @@ export function resolveConflicts(
     }
   }
 
-  // STEP 3: Resolve mutually exclusive groups
+  // Resolve conflicts: process discounts in priority order
+  // Higher priority discounts (lower number) are applied first
   const resolved: DiscountResponseDto[] = [];
   const processed = new Set<string>();
 
   for (const discount of sorted) {
+    // Skip if already processed (excluded by higher priority discount)
     if (processed.has(discount.id)) {
       continue;
     }
 
-    // If mutually exclusive, check conflicts
+    // Handle mutually exclusive discounts
+    // If this discount is mutually exclusive, we need to check all its exclusions
     if (discount.mutuallyExclusive) {
       const exclusions = exclusionMap.get(discount.id) || new Set();
-      // Mark conflicting discounts as processed (lower priority ones)
       for (const excludedId of exclusions) {
         if (!processed.has(excludedId)) {
-          // Find the excluded discount
-          const excludedDiscount = sorted.find((d) => d.id === excludedId);
+          const excludedDiscount = sorted.find(
+            (discount) => discount.id === excludedId,
+          );
+          // If excluded discount has lower priority (higher number), mark it as processed
+          // If excluded discount has higher priority (lower number), skip current discount
           if (
             excludedDiscount &&
             excludedDiscount.priority > discount.priority
           ) {
-            // Lower priority discount wins (lower number = higher priority)
             processed.add(excludedId);
           } else if (
             excludedDiscount &&
@@ -76,11 +90,12 @@ export function resolveConflicts(
     }
 
     // Check if this discount conflicts with already resolved discounts
+    // This prevents applying discounts that exclude each other
     const exclusions = exclusionMap.get(discount.id) || new Set();
     let hasConflict = false;
     for (const resolvedDiscount of resolved) {
       if (exclusions.has(resolvedDiscount.id)) {
-        // Conflict found - skip this discount (already have higher priority one)
+        // Conflict found: a higher priority discount already excludes this one
         hasConflict = true;
         break;
       }
@@ -92,11 +107,13 @@ export function resolveConflicts(
     }
   }
 
-  // STEP 4: Separate by scope
+  // Separate discounts by scope: product-level vs cart-level
+  // Product discounts are applied first, then cart discounts
   const productDiscounts: DiscountResponseDto[] = [];
   const cartDiscounts: DiscountResponseDto[] = [];
 
   for (const discount of resolved) {
+    // Tiered and BOGO discounts are always product-level (quantity-based)
     if (
       discount.scope === DiscountScope.PRODUCT ||
       discount.type === DiscountType.TIERED ||
@@ -111,8 +128,8 @@ export function resolveConflicts(
     }
   }
 
-  // STEP 5: Handle stacking rules
-  // If canStack=false, only keep highest priority discount per scope
+  // Apply stacking rules: non-stackable discounts can't be combined
+  // If canStack=false, only the highest priority discount is kept
   const finalProductDiscounts = applyStackingRules(productDiscounts);
   const finalCartDiscounts = applyStackingRules(cartDiscounts);
 
@@ -124,7 +141,10 @@ export function resolveConflicts(
 
 /**
  * Apply stacking rules to a list of discounts
- * If canStack=false, only keep highest priority (lowest number)
+ *
+ * Business rule: Non-stackable discounts cannot be combined
+ * Only the highest priority (lowest priority number) non-stackable discount is kept
+ * Stackable discounts can all be applied together
  */
 function applyStackingRules(
   discounts: DiscountResponseDto[],
@@ -133,7 +153,7 @@ function applyStackingRules(
     return [];
   }
 
-  // Group by stacking compatibility
+  // Separate stackable from non-stackable discounts
   const stackable: DiscountResponseDto[] = [];
   const nonStackable: DiscountResponseDto[] = [];
 
@@ -145,7 +165,8 @@ function applyStackingRules(
     }
   }
 
-  // For non-stackable, only keep highest priority (lowest number)
+  // For non-stackable discounts, only keep the highest priority one
+  // This enforces the business rule that non-stackable discounts can't be combined
   const finalNonStackable =
     nonStackable.length > 0
       ? [
@@ -155,6 +176,6 @@ function applyStackingRules(
         ]
       : [];
 
-  // Stackable discounts can all be applied
+  // All stackable discounts can be applied together
   return [...stackable, ...finalNonStackable];
 }

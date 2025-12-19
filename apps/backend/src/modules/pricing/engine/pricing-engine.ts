@@ -1,4 +1,8 @@
 import {
+  calculateEffectivePrice,
+  calculatePriceAfterOverride,
+} from "./pricing-calculation.helper";
+import {
   PriceList,
   PriceListOverride,
   PricingEngineInput,
@@ -16,18 +20,21 @@ function roundToTwoDecimals(value: number): number {
 }
 
 /**
- * Check if sale is active
+ * Check if sale is active for a variant at the given date
  */
-function isSaleActive(variant: VariantPricingInput, now: Date): boolean {
+function isSaleActive(
+  variant: VariantPricingInput,
+  currentDate: Date,
+): boolean {
   if (variant.salePrice === undefined) {
     return false;
   }
 
-  if (variant.saleStartDate && new Date(variant.saleStartDate) > now) {
+  if (variant.saleStartDate && new Date(variant.saleStartDate) > currentDate) {
     return false;
   }
 
-  if (variant.saleEndDate && new Date(variant.saleEndDate) < now) {
+  if (variant.saleEndDate && new Date(variant.saleEndDate) < currentDate) {
     return false;
   }
 
@@ -36,6 +43,14 @@ function isSaleActive(variant: VariantPricingInput, now: Date): boolean {
 
 /**
  * Resolve price list overrides for a variant
+ *
+ * Override priority (most specific wins):
+ * 1. Variant-specific override (highest priority)
+ * 2. Product-level override
+ * 3. Category-level override (lowest priority)
+ *
+ * Multiple price lists can apply, but only the most specific override from
+ * the highest priority price list is used.
  */
 function resolvePriceListOverrides(
   variant: VariantPricingInput,
@@ -45,7 +60,7 @@ function resolvePriceListOverrides(
 
   for (const priceList of priceLists) {
     for (const item of priceList.items) {
-      // Check variant-specific override (most specific)
+      // Variant-specific override takes precedence (most specific match)
       if (item.productVariantId === variant.variantId) {
         overrides.push({
           priceListId: priceList.id,
@@ -58,7 +73,7 @@ function resolvePriceListOverrides(
         continue;
       }
 
-      // Check product-level override
+      // Product-level override (less specific than variant, but more than category)
       if (item.productId === variant.productId) {
         overrides.push({
           priceListId: priceList.id,
@@ -71,7 +86,7 @@ function resolvePriceListOverrides(
         continue;
       }
 
-      // Check category-level override (least specific)
+      // Category-level override (least specific - applies to all variants in category)
       if (
         item.categoryId &&
         variant.categoryId &&
@@ -94,47 +109,102 @@ function resolvePriceListOverrides(
 
 /**
  * Pure pricing engine
- * Takes variants, customer, and price lists, returns effective prices
- * Deterministic: same input → same output
+ *
+ * This is a deterministic function: same input → same output.
+ * Never touches DB/Redis - all data must be pre-fetched.
+ *
+ * **Price calculation order:**
+ * 1. Base price (from product variant)
+ * 2. Price list override (customer-specific pricing)
+ * 3. Sale price (if active and scheduled)
+ *
+ * Sale price takes precedence over price list overrides when active.
+ * This ensures promotional sales are always honored, even for VIP customers.
+ *
+ * @param input - Pricing engine input containing:
+ *   - `variants`: Array of product variants with base prices
+ *   - `priceLists`: Customer-specific price lists with overrides
+ *   - `now`: Current date for sale price validation
+ * @returns Pricing result with:
+ *   - `variantPrices`: Calculated prices for each variant
+ *   - `totalBasePrice`: Sum of all base prices
+ *   - `totalEffectivePrice`: Sum of all effective prices (after overrides/sales)
+ *   - `totalSavings`: Difference between base and effective prices
+ *   - `appliedPriceListIds`: IDs of price lists that were applied
+ *
+ * @example
+ * ```typescript
+ * const result = runPricingEngine({
+ *   variants: [
+ *     {
+ *       variantId: "v1",
+ *       productId: "p1",
+ *       basePrice: 100,
+ *       salePrice: 80,
+ *       saleStartDate: new Date("2024-01-01"),
+ *       saleEndDate: new Date("2024-12-31"),
+ *     },
+ *   ],
+ *   priceLists: [
+ *     {
+ *       id: "pl1",
+ *       name: "VIP Customers",
+ *       priority: 1,
+ *       items: [
+ *         {
+ *           productVariantId: "v1",
+ *           overrideType: "PERCENTAGE",
+ *           overrideValue: 20, // 20% off
+ *         },
+ *       ],
+ *     },
+ *   ],
+ *   now: new Date("2024-06-01"),
+ * });
+ * // Sale price (80) takes precedence over price list override
+ * ```
  */
 export function runPricingEngine(
   input: PricingEngineInput,
 ): PricingEngineResult {
-  // Validate input
+  // Filter out invalid variants (missing required fields)
   const validVariants = validatePricingInput(input);
-  const { priceLists, now } = input;
+  const { priceLists, now: currentDate } = input;
 
   const variantPrices: VariantPricingResult[] = [];
   let totalBasePrice = 0;
   let totalEffectivePrice = 0;
   const appliedPriceListIds = new Set<string>();
 
-  // Process each variant
+  // Process each variant independently
   for (const variant of validVariants) {
-    // STEP 1: Resolve price list overrides (most specific wins)
+    // Resolve price list overrides (most specific match wins)
+    // Overrides are sorted by specificity: variant > product > category
     const overrides = resolvePriceListOverrides(variant, priceLists);
     const bestOverride = overrides.length > 0 ? overrides[0] : null;
 
-    // STEP 2: Calculate price after override
-    let priceAfterOverride = variant.basePrice;
+    // Calculate price after applying price list override
+    // Override can be FIXED (set price) or PERCENTAGE (discount from base)
+    const priceAfterOverride = calculatePriceAfterOverride(
+      variant.basePrice,
+      bestOverride,
+    );
+
     if (bestOverride) {
-      if (bestOverride.overrideType === "FIXED") {
-        priceAfterOverride = bestOverride.overrideValue;
-      } else if (bestOverride.overrideType === "PERCENTAGE") {
-        priceAfterOverride =
-          variant.basePrice * (1 - bestOverride.overrideValue / 100);
-      }
       appliedPriceListIds.add(bestOverride.priceListId);
     }
 
-    // STEP 3: Apply scheduled sale price (if active)
-    const saleActive = isSaleActive(variant, now);
-    const effectivePrice =
-      saleActive && variant.salePrice !== undefined
-        ? Math.max(0, roundToTwoDecimals(variant.salePrice))
-        : Math.max(0, roundToTwoDecimals(priceAfterOverride));
+    // Check if sale is active (within start/end date range)
+    // Sale price takes precedence over price list overrides when active
+    const saleActive = isSaleActive(variant, currentDate);
+    const effectivePrice = calculateEffectivePrice(
+      variant.basePrice,
+      priceAfterOverride,
+      variant.salePrice,
+      saleActive,
+    );
 
-    // STEP 4: Build result
+    // Build result with all pricing information for transparency
     variantPrices.push({
       variantId: variant.variantId,
       basePrice: variant.basePrice,

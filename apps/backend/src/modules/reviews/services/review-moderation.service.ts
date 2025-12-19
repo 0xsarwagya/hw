@@ -10,17 +10,13 @@ import {
   sql,
 } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
+import { AUTO_APPROVE_THRESHOLD } from "../../../common/constants";
 import { ContextService } from "../../../common/logging/context.service";
 import { createLogContext } from "../../../common/logging/logging.helper";
 import { ReviewResponseDto } from "../dto/review-response.dto";
 import { ReviewAggregationService } from "./review-aggregation.service";
 import { ReviewCacheService } from "./review-cache.service";
 import { ReviewEventsService } from "./review-events.service";
-
-/**
- * Auto-approve threshold: customers with this many approved reviews get auto-approved
- */
-const AUTO_APPROVE_THRESHOLD = 3;
 
 @Injectable()
 export class ReviewModerationService {

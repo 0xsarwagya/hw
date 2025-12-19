@@ -33,4 +33,5 @@ export * from "./shipments";
 export * from "./shipping-rules";
 export * from "./tags";
 export * from "./users";
+export * from "./variant-option-types";
 export * from "./variant-review-aggregate";

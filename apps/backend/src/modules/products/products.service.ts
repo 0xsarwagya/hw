@@ -7,6 +7,7 @@ import {
   and,
   asc,
   categories,
+  collections,
   db,
   desc,
   eq,
@@ -15,14 +16,20 @@ import {
   inArray,
   lte,
   or,
+  productCollections,
   productImages,
   products,
+  productVariantOptionTypes,
   productVariants,
   sql,
+  variantOptionTypes,
+  variantOptionValues,
 } from "@vcecom/db";
 import Fuse from "fuse.js";
 import {
+  calculateBasePrice,
   calculateGstAmount,
+  calculateGstFromInclusivePrice,
   calculatePriceWithGst,
   isValidGstRate,
 } from "../../common/utils/gst.utils";
@@ -85,6 +92,7 @@ export class ProductsService {
         description: createProductDto.description || null,
         price: createProductDto.price,
         gstRate,
+        pricingType: createProductDto.pricingType || "exclusive",
         hsnCode: createProductDto.hsnCode || null,
         status: createProductDto.status || "draft",
         categoryId: createProductDto.categoryId || null,
@@ -204,13 +212,12 @@ export class ProductsService {
       whereCondition = and(...conditions);
     }
 
-    // Get total count
-    const countQuery = db.select().from(products);
-    if (whereCondition) {
-      countQuery.where(whereCondition);
-    }
-    const allProductsForCount = await countQuery;
-    const total = allProductsForCount.length;
+    // Get total count using COUNT(*) for performance
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(products)
+      .where(whereCondition || undefined);
+    const total = Number(countResult[0]?.count || 0);
 
     // Build sort order
     const sortBy = query.sortBy || "date";
@@ -242,8 +249,15 @@ export class ProductsService {
 
     const pagination = generatePaginationMetadata(Number(total), page, limit);
 
+    // Get first images for all products
+    const productIds = allProducts.map((p) => p.id);
+    const firstImages = await this.getFirstImagesForProducts(productIds);
+
     return {
-      data: allProducts.map((product) => this.enrichProductWithGst(product)),
+      data: allProducts.map((product) => ({
+        ...this.enrichProductWithGst(product),
+        thumbnailUrl: firstImages.get(product.id) || null,
+      })),
       total: pagination.total,
       page: pagination.page,
       limit: pagination.limit,
@@ -333,13 +347,12 @@ export class ProductsService {
       whereCondition = and(...conditions);
     }
 
-    // Get total count
-    const countQuery = db.select().from(products);
-    if (whereCondition) {
-      countQuery.where(whereCondition);
-    }
-    const allProductsForCount = await countQuery;
-    const total = allProductsForCount.length;
+    // Get total count using COUNT(*) for performance
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(products)
+      .where(whereCondition || undefined);
+    const total = Number(countResult[0]?.count || 0);
 
     // Build sort order
     const sortBy = filterDto.sortBy || SortField.DATE;
@@ -443,6 +456,8 @@ export class ProductsService {
       updateData.price = updateProductDto.price;
     if (updateProductDto.gstRate !== undefined)
       updateData.gstRate = updateProductDto.gstRate;
+    if (updateProductDto.pricingType !== undefined)
+      updateData.pricingType = updateProductDto.pricingType;
     if (updateProductDto.status !== undefined)
       updateData.status = updateProductDto.status;
     if (updateProductDto.categoryId !== undefined)
@@ -781,21 +796,88 @@ export class ProductsService {
   }
 
   /**
+   * Get first image URL for multiple products
+   * @param productIds - Array of product IDs
+   * @returns Map of product ID to first image URL
+   */
+  private async getFirstImagesForProducts(
+    productIds: string[],
+  ): Promise<Map<string, string>> {
+    if (productIds.length === 0) {
+      return new Map();
+    }
+
+    // Fetch all product images (not variant images) for these products
+    const allImages = await db
+      .select({
+        productId: productImages.productId,
+        url: productImages.url,
+        order: productImages.order,
+      })
+      .from(productImages)
+      .where(
+        and(
+          inArray(productImages.productId, productIds),
+          sql`${productImages.variantId} IS NULL`, // Only product images, not variant images
+        ),
+      )
+      .orderBy(asc(productImages.order));
+
+    // Group by productId and get the first image (lowest order) for each product
+    const imageMap = new Map<string, string>();
+    const processedProducts = new Set<string>();
+
+    for (const image of allImages) {
+      if (!processedProducts.has(image.productId)) {
+        // Resolve S3 key to URL if needed
+        let url = image.url;
+        if (this.isS3Key(image.url)) {
+          try {
+            url = await this.storageService.getUrl(image.url);
+          } catch {
+            // If S3 key resolution fails, keep original
+            url = image.url;
+          }
+        }
+        imageMap.set(image.productId, url);
+        processedProducts.add(image.productId);
+      }
+    }
+
+    return imageMap;
+  }
+
+  /**
    * Enrich product with GST calculations
    * @param product - Product from database
    * @returns Product with GST calculations added
    */
   private enrichProductWithGst(product: typeof products.$inferSelect) {
-    const gstAmount = calculateGstAmount(product.price, product.gstRate);
-    const priceIncludingGst = calculatePriceWithGst(
-      product.price,
-      product.gstRate,
-    );
+    const pricingType = product.pricingType || "exclusive";
+
+    let gstAmount: number;
+    let priceExcludingGst: number;
+    let priceIncludingGst: number;
+
+    if (pricingType === "inclusive") {
+      // Price already includes GST
+      priceIncludingGst = product.price;
+      priceExcludingGst = calculateBasePrice(product.price, product.gstRate);
+      gstAmount = calculateGstFromInclusivePrice(
+        product.price,
+        product.gstRate,
+      );
+    } else {
+      // Price excludes GST (default/exclusive)
+      priceExcludingGst = product.price;
+      priceIncludingGst = calculatePriceWithGst(product.price, product.gstRate);
+      gstAmount = calculateGstAmount(product.price, product.gstRate);
+    }
 
     return {
       ...product,
       gstAmount: Number(gstAmount.toFixed(2)),
-      priceExcludingGst: Number(product.price.toFixed(2)),
+      priceExcludingGst: Number(priceExcludingGst.toFixed(2)),
       priceIncludingGst: Number(priceIncludingGst.toFixed(2)),
       hsnCode: product.hsnCode || null,
     };
@@ -944,6 +1026,43 @@ export class ProductsService {
   }
 
   /**
+   * Get collections for a product
+   */
+  async getProductCollections(productId: string) {
+    // Check if product exists
+    const [product] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, productId))
+      .limit(1);
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${productId} not found`);
+    }
+
+    // Get collections for this product
+    const productCollectionsData = await db
+      .select({
+        id: collections.id,
+        name: collections.name,
+        slug: collections.slug,
+        description: collections.description,
+        imageUrl: collections.imageUrl,
+        createdAt: collections.createdAt,
+        updatedAt: collections.updatedAt,
+      })
+      .from(productCollections)
+      .innerJoin(
+        collections,
+        eq(productCollections.collectionId, collections.id),
+      )
+      .where(eq(productCollections.productId, productId))
+      .orderBy(collections.name);
+
+    return productCollectionsData;
+  }
+
+  /**
    * Update product image order
    */
   async updateImageOrder(imageId: string, order: number) {
@@ -964,5 +1083,301 @@ export class ProductsService {
       .returning();
 
     return updated;
+  }
+
+  /**
+   * Create a global variant option type template
+   */
+  async createVariantOptionType(name: string, description?: string) {
+    const [existing] = await db
+      .select()
+      .from(variantOptionTypes)
+      .where(eq(variantOptionTypes.name, name))
+      .limit(1);
+
+    if (existing) {
+      throw new BadRequestException(
+        `Variant option type with name '${name}' already exists`,
+      );
+    }
+
+    const [newOptionType] = await db
+      .insert(variantOptionTypes)
+      .values({
+        name,
+        description: description || null,
+      })
+      .returning();
+
+    return newOptionType;
+  }
+
+  /**
+   * Get all global variant option type templates
+   */
+  async getVariantOptionTypes() {
+    return db
+      .select()
+      .from(variantOptionTypes)
+      .orderBy(asc(variantOptionTypes.name));
+  }
+
+  /**
+   * Add a variant option type to a product
+   */
+  async addVariantOptionTypeToProduct(
+    productId: string,
+    optionTypeId: string | undefined,
+    name: string,
+    displayOrder?: number,
+  ) {
+    // Validate product exists
+    const [product] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, productId))
+      .limit(1);
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${productId} not found`);
+    }
+
+    // Validate option type template exists if provided
+    if (optionTypeId) {
+      const [optionType] = await db
+        .select()
+        .from(variantOptionTypes)
+        .where(eq(variantOptionTypes.id, optionTypeId))
+        .limit(1);
+
+      if (!optionType) {
+        throw new NotFoundException(
+          `Variant option type with ID ${optionTypeId} not found`,
+        );
+      }
+    }
+
+    // Check if product already has an option type with this name
+    const [existing] = await db
+      .select()
+      .from(productVariantOptionTypes)
+      .where(
+        and(
+          eq(productVariantOptionTypes.productId, productId),
+          eq(productVariantOptionTypes.name, name),
+        ),
+      )
+      .limit(1);
+
+    if (existing) {
+      throw new BadRequestException(
+        `Product already has a variant option type named '${name}'`,
+      );
+    }
+
+    // Get max display order for this product
+    const existingOptionTypes = await db
+      .select()
+      .from(productVariantOptionTypes)
+      .where(eq(productVariantOptionTypes.productId, productId));
+
+    const maxDisplayOrder =
+      existingOptionTypes.length > 0
+        ? Math.max(...existingOptionTypes.map((ot) => ot.displayOrder))
+        : -1;
+
+    const [newProductOptionType] = await db
+      .insert(productVariantOptionTypes)
+      .values({
+        productId,
+        optionTypeId: optionTypeId || null,
+        name,
+        displayOrder: displayOrder ?? maxDisplayOrder + 1,
+      })
+      .returning();
+
+    return newProductOptionType;
+  }
+
+  /**
+   * Add a value to a product variant option type
+   */
+  async addValueToVariantOptionType(
+    productVariantOptionTypeId: string,
+    value: string,
+    displayOrder?: number,
+  ) {
+    // Validate option type exists
+    const [optionType] = await db
+      .select()
+      .from(productVariantOptionTypes)
+      .where(eq(productVariantOptionTypes.id, productVariantOptionTypeId))
+      .limit(1);
+
+    if (!optionType) {
+      throw new NotFoundException(
+        `Product variant option type with ID ${productVariantOptionTypeId} not found`,
+      );
+    }
+
+    // Check if value already exists for this option type
+    const [existing] = await db
+      .select()
+      .from(variantOptionValues)
+      .where(
+        and(
+          eq(
+            variantOptionValues.productVariantOptionTypeId,
+            productVariantOptionTypeId,
+          ),
+          eq(variantOptionValues.value, value),
+        ),
+      )
+      .limit(1);
+
+    if (existing) {
+      throw new BadRequestException(
+        `Value '${value}' already exists for this option type`,
+      );
+    }
+
+    // Get max display order for this option type
+    const existingValues = await db
+      .select()
+      .from(variantOptionValues)
+      .where(
+        eq(
+          variantOptionValues.productVariantOptionTypeId,
+          productVariantOptionTypeId,
+        ),
+      );
+
+    const maxDisplayOrder =
+      existingValues.length > 0
+        ? Math.max(...existingValues.map((v) => v.displayOrder))
+        : -1;
+
+    const [newValue] = await db
+      .insert(variantOptionValues)
+      .values({
+        productVariantOptionTypeId,
+        value,
+        displayOrder: displayOrder ?? maxDisplayOrder + 1,
+      })
+      .returning();
+
+    return newValue;
+  }
+
+  /**
+   * Get variant option types for a product
+   */
+  async getProductVariantOptionTypes(productId: string) {
+    // Validate product exists
+    const [product] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, productId))
+      .limit(1);
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${productId} not found`);
+    }
+
+    // Get option types with their values
+    const optionTypes = await db
+      .select()
+      .from(productVariantOptionTypes)
+      .where(eq(productVariantOptionTypes.productId, productId))
+      .orderBy(asc(productVariantOptionTypes.displayOrder));
+
+    // Get values for each option type
+    const optionTypesWithValues = await Promise.all(
+      optionTypes.map(async (optionType) => {
+        const values = await db
+          .select()
+          .from(variantOptionValues)
+          .where(
+            eq(variantOptionValues.productVariantOptionTypeId, optionType.id),
+          )
+          .orderBy(asc(variantOptionValues.displayOrder));
+
+        return {
+          ...optionType,
+          values,
+        };
+      }),
+    );
+
+    return optionTypesWithValues;
+  }
+
+  /**
+   * Remove a variant option type from a product
+   */
+  async removeVariantOptionTypeFromProduct(
+    productId: string,
+    productVariantOptionTypeId: string,
+  ) {
+    // Validate option type belongs to product
+    const [optionType] = await db
+      .select()
+      .from(productVariantOptionTypes)
+      .where(
+        and(
+          eq(productVariantOptionTypes.id, productVariantOptionTypeId),
+          eq(productVariantOptionTypes.productId, productId),
+        ),
+      )
+      .limit(1);
+
+    if (!optionType) {
+      throw new NotFoundException(
+        `Product variant option type with ID ${productVariantOptionTypeId} not found for product ${productId}`,
+      );
+    }
+
+    // Delete will cascade to values and assignments
+    await db
+      .delete(productVariantOptionTypes)
+      .where(eq(productVariantOptionTypes.id, productVariantOptionTypeId));
+
+    return { success: true };
+  }
+
+  /**
+   * Remove a value from a variant option type
+   */
+  async removeValueFromVariantOptionType(
+    productVariantOptionTypeId: string,
+    valueId: string,
+  ) {
+    // Validate value belongs to option type
+    const [value] = await db
+      .select()
+      .from(variantOptionValues)
+      .where(
+        and(
+          eq(variantOptionValues.id, valueId),
+          eq(
+            variantOptionValues.productVariantOptionTypeId,
+            productVariantOptionTypeId,
+          ),
+        ),
+      )
+      .limit(1);
+
+    if (!value) {
+      throw new NotFoundException(
+        `Variant option value with ID ${valueId} not found for option type ${productVariantOptionTypeId}`,
+      );
+    }
+
+    // Delete will cascade to assignments
+    await db
+      .delete(variantOptionValues)
+      .where(eq(variantOptionValues.id, valueId));
+
+    return { success: true };
   }
 }

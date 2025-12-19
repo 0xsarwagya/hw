@@ -1,5 +1,17 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { db, eq, products, productVariants } from "@vcecom/db";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import {
+  db,
+  eq,
+  inArray,
+  products,
+  productVariants,
+  variantOptionValueAssignments,
+  variantOptionValues,
+} from "@vcecom/db";
 import { CreateVariantDto } from "./dto/create-variant.dto";
 import { UpdateVariantDto } from "./dto/update-variant.dto";
 
@@ -116,6 +128,34 @@ export class VariantsService {
       })
       .returning();
 
+    // Handle option value assignments (new flexible system)
+    if (
+      createVariantDto.optionValueIds &&
+      createVariantDto.optionValueIds.length > 0
+    ) {
+      // Validate all option values exist
+      const optionValues = await db
+        .select()
+        .from(variantOptionValues)
+        .where(
+          inArray(variantOptionValues.id, createVariantDto.optionValueIds),
+        );
+
+      if (optionValues.length !== createVariantDto.optionValueIds.length) {
+        throw new BadRequestException(
+          "One or more option value IDs are invalid",
+        );
+      }
+
+      // Create assignments
+      await db.insert(variantOptionValueAssignments).values(
+        createVariantDto.optionValueIds.map((optionValueId) => ({
+          variantId: newVariant.id,
+          optionValueId,
+        })),
+      );
+    }
+
     return newVariant;
   }
 
@@ -225,6 +265,39 @@ export class VariantsService {
       .set(updateData)
       .where(eq(productVariants.id, id))
       .returning();
+
+    // Handle option value assignments update (new flexible system)
+    if (updateVariantDto.optionValueIds !== undefined) {
+      // Delete existing assignments
+      await db
+        .delete(variantOptionValueAssignments)
+        .where(eq(variantOptionValueAssignments.variantId, id));
+
+      // Create new assignments if provided
+      if (updateVariantDto.optionValueIds.length > 0) {
+        // Validate all option values exist
+        const optionValues = await db
+          .select()
+          .from(variantOptionValues)
+          .where(
+            inArray(variantOptionValues.id, updateVariantDto.optionValueIds),
+          );
+
+        if (optionValues.length !== updateVariantDto.optionValueIds.length) {
+          throw new BadRequestException(
+            "One or more option value IDs are invalid",
+          );
+        }
+
+        // Create assignments
+        await db.insert(variantOptionValueAssignments).values(
+          updateVariantDto.optionValueIds.map((optionValueId) => ({
+            variantId: id,
+            optionValueId,
+          })),
+        );
+      }
+    }
 
     return updated;
   }

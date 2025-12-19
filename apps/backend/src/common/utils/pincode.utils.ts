@@ -3,6 +3,11 @@
  * PIN codes are 6-digit numbers used by India Post
  */
 
+import {
+  DEFAULT_FALLBACK_SHIPPING_RATE_INR,
+  DEFAULT_WEIGHT_INCREMENT_GRAMS,
+} from "../constants";
+
 /**
  * Validate PIN code format
  * PIN code must be exactly 6 digits
@@ -213,10 +218,10 @@ export function getShippingRateByZone(
     zone_e: 200,
   };
 
-  const baseRate = baseRates[zone] || 100;
+  const baseRate = baseRates[zone] || DEFAULT_FALLBACK_SHIPPING_RATE_INR;
 
-  // Add weight-based charges (per 500g)
-  const weightMultiplier = Math.ceil(weight / 500);
+  // Add weight-based charges (per configured increment)
+  const weightMultiplier = Math.ceil(weight / DEFAULT_WEIGHT_INCREMENT_GRAMS);
   const totalRate = baseRate * weightMultiplier;
 
   return totalRate;

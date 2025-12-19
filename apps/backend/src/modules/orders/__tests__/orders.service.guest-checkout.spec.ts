@@ -28,6 +28,11 @@ import { InventoryStore } from "../../redis-store/stores/inventory-store";
 import { IdempotencyStore } from "../../redis-store/stores/idempotency-store";
 import { CreateOrderDto } from "../dto/create-order.dto";
 import { OrdersService } from "../orders.service";
+import { OrderValidationService } from "../services/order-validation.service";
+import { OrderPricingService } from "../services/order-pricing.service";
+import { OrderStatusService } from "../services/order-status.service";
+import { OrderGstService } from "../services/order-gst.service";
+import { OrderTimelineService } from "../services/order-timeline.service";
 import { db, cartItems, inArray } from "@vcecom/db";
 
 // Mock dependencies
@@ -205,6 +210,11 @@ describe("OrdersService - Guest Checkout", () => {
         PricingDriftDetectorService,
         BundleEligibilityService,
         BundlePricingService,
+        OrderValidationService,
+        OrderPricingService,
+        OrderGstService,
+        OrderStatusService,
+        OrderTimelineService,
         ...getCommonTestProviders(),
       ],
     })

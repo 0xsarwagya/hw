@@ -34,6 +34,14 @@
       "cache": false,
       "persistent": true
     },
+    "lint": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$"],
+      "cache": false
+    },
+    "format": {
+      "cache": false
+    },
     "//#format-and-lint": {},
     "//#format-and-lint:fix": {
       "cache": false

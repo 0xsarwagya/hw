@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -6,12 +15,17 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
+import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "../../common/constants";
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 import { AdminService } from "./admin.service";
+import {
+  AdminQueryAbandonedCheckoutsDto,
+  PaginatedAbandonedCheckoutsResponseDto,
+} from "./dto/admin-abandoned-checkouts.dto";
 import {
   AdminQueryCustomersDto,
   PaginatedCustomersResponseDto,
@@ -55,7 +69,7 @@ export class AdminController {
     name: "limit",
     required: false,
     type: Number,
-    description: "Items per page (default: 10, max: 100)",
+    description: `Items per page (default: ${DEFAULT_PAGE_SIZE}, max: ${MAX_PAGE_SIZE})`,
   })
   @ApiQuery({
     name: "search",
@@ -74,6 +88,37 @@ export class AdminController {
     required: false,
     type: String,
     description: "Filter by category ID",
+  })
+  @ApiQuery({
+    name: "minPrice",
+    required: false,
+    type: Number,
+    description: "Minimum price filter (INR)",
+  })
+  @ApiQuery({
+    name: "maxPrice",
+    required: false,
+    type: Number,
+    description: "Maximum price filter (INR)",
+  })
+  @ApiQuery({
+    name: "inStock",
+    required: false,
+    type: Boolean,
+    description:
+      "Filter by availability (true = in stock, false = out of stock)",
+  })
+  @ApiQuery({
+    name: "sortBy",
+    required: false,
+    enum: ["price", "name", "date"],
+    description: "Sort field (default: date)",
+  })
+  @ApiQuery({
+    name: "sortOrder",
+    required: false,
+    enum: ["asc", "desc"],
+    description: "Sort order (default: desc)",
   })
   @ApiResponse({
     status: 200,
@@ -111,7 +156,7 @@ export class AdminController {
     name: "limit",
     required: false,
     type: Number,
-    description: "Items per page (default: 10, max: 100)",
+    description: `Items per page (default: ${DEFAULT_PAGE_SIZE}, max: ${MAX_PAGE_SIZE})`,
   })
   @ApiQuery({
     name: "status",
@@ -175,7 +220,7 @@ export class AdminController {
     name: "limit",
     required: false,
     type: Number,
-    description: "Items per page (default: 10, max: 100)",
+    description: `Items per page (default: ${DEFAULT_PAGE_SIZE}, max: ${MAX_PAGE_SIZE})`,
   })
   @ApiQuery({
     name: "search",
@@ -254,5 +299,93 @@ export class AdminController {
     @Body() dto: BulkProductOperationDto,
   ): Promise<BulkProductOperationResponseDto> {
     return this.adminService.bulkProductOperation(dto);
+  }
+
+  @Get("abandoned-checkouts")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_GET)
+  @ApiOperation({
+    summary: "Get abandoned checkouts (admin)",
+    description:
+      "Retrieve a paginated list of abandoned checkouts (carts with checkout sessions in CREATED or LOCKED state but no orders). Admin-only endpoint.",
+  })
+  @ApiQuery({
+    name: "page",
+    required: false,
+    type: Number,
+    description: "Page number (default: 1)",
+  })
+  @ApiQuery({
+    name: "limit",
+    required: false,
+    type: Number,
+    description: `Items per page (default: ${DEFAULT_PAGE_SIZE}, max: ${MAX_PAGE_SIZE})`,
+  })
+  @ApiQuery({
+    name: "recoverable",
+    required: false,
+    type: Boolean,
+    description: "Filter by recoverable status (has payment intent)",
+  })
+  @ApiQuery({
+    name: "hasEmail",
+    required: false,
+    type: Boolean,
+    description: "Filter by whether cart has customer email",
+  })
+  @ApiQuery({
+    name: "minValue",
+    required: false,
+    type: Number,
+    description: "Minimum cart value",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "List of abandoned checkouts retrieved successfully",
+    type: PaginatedAbandonedCheckoutsResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  async getAbandonedCheckouts(
+    @Query() query: AdminQueryAbandonedCheckoutsDto,
+  ): Promise<PaginatedAbandonedCheckoutsResponseDto> {
+    return this.adminService.getAbandonedCheckouts(query);
+  }
+
+  @Get("abandoned-checkouts/:cartId")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_GET)
+  @ApiOperation({
+    summary: "Get abandoned checkout by cart ID (admin)",
+    description:
+      "Retrieve a single abandoned checkout by cart ID. Admin-only endpoint.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Abandoned checkout retrieved successfully",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Abandoned checkout not found",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  async getAbandonedCheckoutByCartId(@Param("cartId") cartId: string) {
+    const checkout =
+      await this.adminService.getAbandonedCheckoutByCartId(cartId);
+    if (!checkout) {
+      throw new NotFoundException("Abandoned checkout not found");
+    }
+    return checkout;
   }
 }

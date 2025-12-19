@@ -1,21 +1,31 @@
+// External libraries
 import { Injectable } from "@nestjs/common";
 import {
   and,
   db,
   desc,
   eq,
-  gte,
   pincodes,
   shippingRules,
   shippingZoneRates,
   stateShippingRules,
 } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
+import { DEFAULT_SHIPPING_ZONE } from "../../common/constants";
+// Internal modules - Common
 import {
   checkPincodeServiceability,
-  getShippingRateByZone,
   ServiceabilityResult,
 } from "../../common/utils/pincode.utils";
+
+// Relative imports
+import {
+  calculateExcessWeightCharges,
+  calculateFinalShippingRate,
+  getFallbackZoneRates,
+  getStateRulesFromDatabase,
+  getZoneRatesFromDatabase,
+} from "./services/shipping-rate.helper";
 
 export interface ShippingCalculation {
   baseRate: number;
@@ -64,7 +74,7 @@ export class ShippingRulesService {
           isValid: true,
           isServiceable: data.isServiceable,
           codAvailable: data.codAvailable ?? false,
-          shippingZone: data.shippingZone ?? "zone_c",
+          shippingZone: data.shippingZone ?? DEFAULT_SHIPPING_ZONE,
           state: data.state,
           district: data.district,
           city: data.city,
@@ -101,89 +111,70 @@ export class ShippingRulesService {
       throw new Error(`PIN code ${pincode} is not serviceable`);
     }
 
-    const zone = serviceability.shippingZone;
+    const zone = serviceability.shippingZone || "zone_c";
 
-    // Get zone-based rates from database
-    const defaultZone = zone || "zone_c";
-    const zoneRates = await db
-      .select()
-      .from(shippingZoneRates)
-      .where(
-        and(
-          eq(shippingZoneRates.zone, defaultZone),
-          eq(shippingZoneRates.isActive, true),
-          gte(shippingZoneRates.minWeight, 0),
-        ),
-      )
-      .orderBy(desc(shippingZoneRates.minWeight))
-      .limit(1);
-
+    // Get zone-based rates from database or fallback
+    const zoneRateData = await getZoneRatesFromDatabase(zone);
     let baseRate: number;
-    let additionalPerKg: number;
     let estimatedDays: number;
     let codCharge: number | undefined;
 
-    if (zoneRates.length > 0) {
-      const rate = zoneRates[0];
-      baseRate = rate.baseRate;
-      additionalPerKg = rate.additionalPerKg || 0;
-      estimatedDays = rate.estimatedDays;
-      codCharge = rate.codCharge ?? undefined;
+    if (zoneRateData) {
+      baseRate = zoneRateData.baseRate;
+      estimatedDays = zoneRateData.estimatedDays;
+      codCharge = zoneRateData.codCharge;
 
-      // Check if weight exceeds max weight for this rate
-      if (rate.maxWeight && weight > rate.maxWeight) {
-        // Calculate additional charges
-        const excessWeight = weight - rate.maxWeight;
-        const additionalCharges =
-          Math.ceil(excessWeight / 1000) * additionalPerKg;
-        baseRate += additionalCharges;
+      // Calculate additional charges for excess weight
+      if (zoneRateData.maxWeight) {
+        const excessCharges = calculateExcessWeightCharges(
+          weight,
+          zoneRateData.maxWeight,
+          zoneRateData.additionalPerKg,
+        );
+        baseRate += excessCharges;
       }
     } else {
       // Fallback to utility function
-      baseRate = getShippingRateByZone(defaultZone, weight) || 100;
-      estimatedDays =
-        defaultZone === "metro" ? 2 : defaultZone === "zone_a" ? 3 : 5;
+      const fallbackRates = getFallbackZoneRates(zone, weight);
+      baseRate = fallbackRates.baseRate;
+      estimatedDays = fallbackRates.estimatedDays;
     }
 
-    // Check state-specific rules
-    const stateRules = await db
-      .select()
-      .from(stateShippingRules)
-      .where(
-        and(
-          eq(stateShippingRules.state, serviceability.state || ""),
-          eq(stateShippingRules.isActive, true),
-        ),
-      )
-      .limit(1);
-
+    // Apply state-specific rules
+    const stateRuleData = await getStateRulesFromDatabase(serviceability.state);
     let additionalDays = 0;
-    if (stateRules.length > 0) {
-      additionalDays = stateRules[0].additionalDays;
-      if (isCod && stateRules[0].codCharge) {
-        codCharge = stateRules[0].codCharge;
+    let finalCodAvailable = serviceability.codAvailable ?? false;
+
+    if (stateRuleData) {
+      additionalDays = stateRuleData.additionalDays;
+      if (isCod && stateRuleData.codCharge) {
+        codCharge = stateRuleData.codCharge;
       }
-      // Override COD availability if state rule specifies it
-      if (!stateRules[0].codAvailable) {
-        serviceability.codAvailable = false;
-      }
+      finalCodAvailable = stateRuleData.codAvailable;
     }
 
-    // Calculate total
-    const codChargeAmount =
-      isCod && serviceability.codAvailable && codCharge ? codCharge : 0;
-    const totalRate = baseRate + codChargeAmount;
+    // Calculate final rates
+    const finalRates = calculateFinalShippingRate(
+      baseRate,
+      isCod,
+      finalCodAvailable,
+      codCharge,
+    );
 
     return {
-      baseRate,
+      baseRate: finalRates.baseRate,
       additionalCharges: 0, // Additional charges are already included in baseRate
-      codCharge: codChargeAmount,
-      totalRate,
+      codCharge: finalRates.codChargeAmount,
+      totalRate: finalRates.totalRate,
       estimatedDays: estimatedDays + additionalDays,
-      isCodAvailable: serviceability.codAvailable ?? false,
-      zone: defaultZone,
+      isCodAvailable: finalCodAvailable,
+      zone,
     };
   }
+
+  // ============================================================================
+  // Public API Methods - Configuration Retrieval
+  // ============================================================================
 
   /**
    * Get all active shipping rules
@@ -277,6 +268,10 @@ export class ShippingRulesService {
 
     return results;
   }
+
+  // ============================================================================
+  // Public API Methods - Validation & Utilities
+  // ============================================================================
 
   /**
    * Validate PIN code format and basic rules

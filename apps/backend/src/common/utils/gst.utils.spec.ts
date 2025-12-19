@@ -29,24 +29,121 @@ describe("GST Utils", () => {
   });
 
   describe("isValidGstRate", () => {
-    it("should return true for valid GST rates", () => {
-      expect(isValidGstRate(0)).toBe(true);
-      expect(isValidGstRate(5)).toBe(true);
-      expect(isValidGstRate(12)).toBe(true);
-      expect(isValidGstRate(18)).toBe(true);
-      expect(isValidGstRate(28)).toBe(true);
+    it("should return true for GST rate 0", () => {
+      // Arrange
+      const rate = 0;
+
+      // Act
+      const result = isValidGstRate(rate);
+
+      // Assert
+      expect(result).toBe(true);
     });
 
-    it("should return false for invalid GST rates", () => {
-      expect(isValidGstRate(10)).toBe(false);
-      expect(isValidGstRate(15)).toBe(false);
-      expect(isValidGstRate(25)).toBe(false);
-      expect(isValidGstRate(-5)).toBe(false);
-      expect(isValidGstRate(100)).toBe(false);
+    it("should return true for GST rate 5", () => {
+      // Arrange
+      const rate = 5;
+
+      // Act
+      const result = isValidGstRate(rate);
+
+      // Assert
+      expect(result).toBe(true);
     });
 
-    it("should work with type narrowing", () => {
+    it("should return true for GST rate 12", () => {
+      // Arrange
+      const rate = 12;
+
+      // Act
+      const result = isValidGstRate(rate);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it("should return true for GST rate 18", () => {
+      // Arrange
+      const rate = 18;
+
+      // Act
+      const result = isValidGstRate(rate);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it("should return true for GST rate 28", () => {
+      // Arrange
+      const rate = 28;
+
+      // Act
+      const result = isValidGstRate(rate);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it("should return false for invalid GST rate 10", () => {
+      // Arrange
+      const rate = 10;
+
+      // Act
+      const result = isValidGstRate(rate);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it("should return false for invalid GST rate 15", () => {
+      // Arrange
+      const rate = 15;
+
+      // Act
+      const result = isValidGstRate(rate);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it("should return false for invalid GST rate 25", () => {
+      // Arrange
+      const rate = 25;
+
+      // Act
+      const result = isValidGstRate(rate);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it("should return false for negative GST rate", () => {
+      // Arrange
+      const rate = -5;
+
+      // Act
+      const result = isValidGstRate(rate);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it("should return false for GST rate exceeding maximum", () => {
+      // Arrange
+      const rate = 100;
+
+      // Act
+      const result = isValidGstRate(rate);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it("should narrow type to ValidGstRate when rate is valid", () => {
+      // Arrange
       const rate: number = 18;
+
+      // Act & Assert
       if (isValidGstRate(rate)) {
         const validRate: ValidGstRate = rate; // Type should be narrowed
         expect(validRate).toBe(18);
@@ -55,22 +152,110 @@ describe("GST Utils", () => {
   });
 
   describe("calculateGstAmount", () => {
-    it("should calculate GST amount correctly", () => {
-      expect(calculateGstAmount(100, 18)).toBe(18);
-      expect(calculateGstAmount(500, 12)).toBe(60);
-      expect(calculateGstAmount(1000, 28)).toBe(280);
-      expect(calculateGstAmount(200, 5)).toBe(10);
-      expect(calculateGstAmount(50, 0)).toBe(0);
+    it("should calculate GST amount for 18% rate on 100", () => {
+      // Arrange
+      const baseAmount = 100;
+      const gstRate = 18;
+
+      // Act
+      const result = calculateGstAmount(baseAmount, gstRate);
+
+      // Assert
+      expect(result).toBe(18);
     });
 
-    it("should handle decimal amounts", () => {
-      expect(calculateGstAmount(99.99, 18)).toBeCloseTo(17.9982, 4);
-      expect(calculateGstAmount(123.45, 12)).toBeCloseTo(14.814, 3);
+    it("should calculate GST amount for 12% rate on 500", () => {
+      // Arrange
+      const baseAmount = 500;
+      const gstRate = 12;
+
+      // Act
+      const result = calculateGstAmount(baseAmount, gstRate);
+
+      // Assert
+      expect(result).toBe(60);
     });
 
-    it("should throw error for invalid GST rates", () => {
-      expect(() => calculateGstAmount(100, -5)).toThrow("GST rate must be between 0 and 100");
-      expect(() => calculateGstAmount(100, 150)).toThrow("GST rate must be between 0 and 100");
+    it("should calculate GST amount for 28% rate on 1000", () => {
+      // Arrange
+      const baseAmount = 1000;
+      const gstRate = 28;
+
+      // Act
+      const result = calculateGstAmount(baseAmount, gstRate);
+
+      // Assert
+      expect(result).toBe(280);
+    });
+
+    it("should calculate GST amount for 5% rate on 200", () => {
+      // Arrange
+      const baseAmount = 200;
+      const gstRate = 5;
+
+      // Act
+      const result = calculateGstAmount(baseAmount, gstRate);
+
+      // Assert
+      expect(result).toBe(10);
+    });
+
+    it("should return zero GST amount for 0% rate", () => {
+      // Arrange
+      const baseAmount = 50;
+      const gstRate = 0;
+
+      // Act
+      const result = calculateGstAmount(baseAmount, gstRate);
+
+      // Assert
+      expect(result).toBe(0);
+    });
+
+    it("should handle decimal amounts with 18% rate", () => {
+      // Arrange
+      const baseAmount = 99.99;
+      const gstRate = 18;
+
+      // Act
+      const result = calculateGstAmount(baseAmount, gstRate);
+
+      // Assert
+      expect(result).toBeCloseTo(17.9982, 4);
+    });
+
+    it("should handle decimal amounts with 12% rate", () => {
+      // Arrange
+      const baseAmount = 123.45;
+      const gstRate = 12;
+
+      // Act
+      const result = calculateGstAmount(baseAmount, gstRate);
+
+      // Assert
+      expect(result).toBeCloseTo(14.814, 3);
+    });
+
+    it("should throw error when GST rate is negative", () => {
+      // Arrange
+      const baseAmount = 100;
+      const invalidGstRate = -5;
+
+      // Act & Assert
+      expect(() => calculateGstAmount(baseAmount, invalidGstRate)).toThrow(
+        "GST rate must be between 0 and 100",
+      );
+    });
+
+    it("should throw error when GST rate exceeds 100", () => {
+      // Arrange
+      const baseAmount = 100;
+      const invalidGstRate = 150;
+
+      // Act & Assert
+      expect(() => calculateGstAmount(baseAmount, invalidGstRate)).toThrow(
+        "GST rate must be between 0 and 100",
+      );
     });
   });
 

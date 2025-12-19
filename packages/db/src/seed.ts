@@ -18,6 +18,7 @@ if (!process.env.DATABASE_URL) {
 import * as bcrypt from "bcrypt";
 import { db } from "./db/index";
 import { users } from "./schema";
+import type { NewUser } from "./schema/users";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@vcecom.local";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Admin@123";
@@ -32,7 +33,7 @@ async function seedAdminUser() {
       process.exit(0);
     }
 
-    // Hash password
+    // Hash password with bcrypt
     const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
 
     // Create admin user
@@ -42,7 +43,7 @@ async function seedAdminUser() {
         email: ADMIN_EMAIL,
         passwordHash,
         role: "admin",
-      } as typeof users.$inferInsert)
+      } as NewUser)
       .returning();
 
     if (!adminUser) {
@@ -53,6 +54,7 @@ async function seedAdminUser() {
     console.log(`   Email: ${ADMIN_EMAIL}`);
     console.log(`   Password: ${ADMIN_PASSWORD}`);
     console.log(`   Role: admin`);
+    console.log(`   Hash format: bcrypt (starts with $2b$)`);
     process.exit(0);
   } catch (error) {
     console.error("❌ Error seeding admin user:", error);

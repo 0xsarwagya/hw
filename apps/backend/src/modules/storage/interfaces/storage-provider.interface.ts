@@ -47,6 +47,13 @@ export interface StorageProvider {
    * @returns Array of file keys
    */
   list(prefix: string, maxKeys?: number): Promise<string[]>;
+
+  /**
+   * Get file metadata (size, content type)
+   * @param key - File key/path in storage
+   * @returns File metadata with size and content type
+   */
+  getMetadata(key: string): Promise<{ size: number; contentType?: string }>;
 }
 
 export type StorageProviderType = "minio" | "supabase" | "aws";

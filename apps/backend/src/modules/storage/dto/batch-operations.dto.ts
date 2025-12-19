@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
 } from "class-validator";
+import { FileMetadataDto } from "./file-response.dto";
 
 export class BatchDeleteDto {
   @ApiProperty({
@@ -58,11 +59,10 @@ export class ListFilesDto {
 
 export class ListFilesResponseDto {
   @ApiProperty({
-    description: "Array of file keys",
-    example: ["products/file1.webp", "products/file2.webp"],
-    type: [String],
+    description: "Array of file metadata",
+    type: [FileMetadataDto],
   })
-  files: string[];
+  files: FileMetadataDto[];
 
   @ApiProperty({
     description: "Total number of files found",

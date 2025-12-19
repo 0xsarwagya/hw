@@ -1,3 +1,4 @@
+// External libraries
 import {
   BadRequestException,
   forwardRef,
@@ -27,8 +28,12 @@ import {
   or,
   sql,
 } from "@vcecom/db";
+
+// Internal modules - Redis stores
 import { DiscountRuleStore } from "../redis-store/stores/discount-rule-store";
 import { EligibilityStore } from "../redis-store/stores/eligibility-store";
+
+// Relative imports - DTOs
 import {
   CreateDiscountDto,
   DiscountApplicationType,
@@ -38,6 +43,12 @@ import {
 } from "./dto/create-discount.dto";
 import { DiscountResponseDto } from "./dto/discount-response.dto";
 import { UpdateDiscountDto } from "./dto/update-discount.dto";
+
+// Relative imports - Services and helpers
+import {
+  isDiscountAlreadyInList,
+  passesEligibilityConstraints,
+} from "./services/discount-eligibility.helper";
 import { DiscountInvalidationService } from "./services/discount-invalidation.service";
 import { DiscountProfiler } from "./services/discount-profiler.service";
 import { HotReloadWatcher } from "./services/hot-reload-watcher.service";
@@ -56,6 +67,11 @@ export class DiscountsService {
     private readonly rulesetRebuilder: RulesetRebuilder,
     private readonly profiler: DiscountProfiler,
   ) {}
+
+  // ============================================================================
+  // Public API Methods - CRUD Operations
+  // ============================================================================
+
   /**
    * Create a new discount
    */
@@ -197,8 +213,11 @@ export class DiscountsService {
       .limit(limit)
       .offset(offset);
 
-    const allDiscountsForCount = await db.select().from(discounts);
-    const total = allDiscountsForCount.length;
+    // Get total count using COUNT(*) for performance
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(discounts);
+    const total = Number(countResult[0]?.count || 0);
     const totalPages = Math.ceil(total / limit);
 
     const enrichedDiscounts = await Promise.all(
@@ -452,6 +471,10 @@ export class DiscountsService {
     return { message: "Discount deleted successfully" };
   }
 
+  // ============================================================================
+  // Public API Methods - Discount Validation & Eligibility
+  // ============================================================================
+
   /**
    * Validate discount code
    */
@@ -593,35 +616,18 @@ export class DiscountsService {
     const eligible: DiscountResponseDto[] = [];
     for (const discount of rules) {
       try {
-        // Check usage limits
-        if (discount.usageLimit && discount.usageCount >= discount.usageLimit) {
-          continue;
+        const isEligible = await passesEligibilityConstraints(
+          discount,
+          cartSubtotal,
+          userId,
+        );
+
+        if (isEligible) {
+          eligible.push(discount);
         }
-
-        // Check minimum order amount
-        if (discount.minOrderAmount && cartSubtotal < discount.minOrderAmount) {
-          continue;
-        }
-
-        // Check per-user limit if userId provided
-        if (userId && discount.perUserLimit) {
-          const userUsages = await db
-            .select()
-            .from(discountUsages)
-            .where(
-              and(
-                eq(discountUsages.discountId, discount.id),
-                eq(discountUsages.userId, userId),
-              ),
-            );
-
-          if (userUsages.length >= discount.perUserLimit) {
-            continue;
-          }
-        }
-
-        eligible.push(discount);
-      } catch {}
+      } catch {
+        // Skip discount on error
+      }
     }
 
     // STEP 4: Add manual discount code if provided
@@ -633,11 +639,12 @@ export class DiscountsService {
           cartSubtotal,
         );
 
-        if (validation.isValid && validation.discount) {
-          // Check if already in eligible list (avoid duplicates)
-          if (!eligible.find((d) => d.id === validation.discount?.id)) {
-            eligible.push(validation.discount);
-          }
+        if (
+          validation.isValid &&
+          validation.discount &&
+          !isDiscountAlreadyInList(validation.discount.id, eligible)
+        ) {
+          eligible.push(validation.discount);
         }
       } catch {
         // Invalid discount code, skip
@@ -666,7 +673,9 @@ export class DiscountsService {
 
     // Enrich with relations
     const enriched = await Promise.all(
-      automaticDiscounts.map((d) => this.enrichDiscountWithRelations(d.id)),
+      automaticDiscounts.map((discount) =>
+        this.enrichDiscountWithRelations(discount.id),
+      ),
     );
 
     return enriched;
@@ -706,6 +715,10 @@ export class DiscountsService {
 
     return eligible;
   }
+
+  // ============================================================================
+  // Public API Methods - Usage Tracking
+  // ============================================================================
 
   /**
    * Record discount usage
@@ -1022,45 +1035,51 @@ export class DiscountsService {
       productIds:
         discount.type === DiscountType.BUY_X_GET_Y
           ? []
-          : discountProductsList.map((p) => p.productId),
+          : discountProductsList.map((product) => product.productId),
       categoryIds:
         discount.type === DiscountType.BUY_X_GET_Y
           ? []
-          : discountCategoriesList.map((c) => c.categoryId),
+          : discountCategoriesList.map((category) => category.categoryId),
       collectionIds:
         discount.type === DiscountType.BUY_X_GET_Y
           ? []
-          : discountCollectionsList.map((c) => c.collectionId),
+          : discountCollectionsList.map(
+              (collection) => collection.collectionId,
+            ),
       tagIds:
         discount.type === DiscountType.BUY_X_GET_Y
           ? []
-          : discountTagsList.map((t) => t.tagId),
+          : discountTagsList.map((tag) => tag.tagId),
       buyProductIds:
         discount.type === DiscountType.BUY_X_GET_Y
-          ? discountProductsList.map((p) => p.productId)
+          ? discountProductsList.map((product) => product.productId)
           : [],
       buyCategoryIds:
         discount.type === DiscountType.BUY_X_GET_Y
-          ? discountCategoriesList.map((c) => c.categoryId)
+          ? discountCategoriesList.map((category) => category.categoryId)
           : [],
       buyCollectionIds:
         discount.type === DiscountType.BUY_X_GET_Y
-          ? discountCollectionsList.map((c) => c.collectionId)
+          ? discountCollectionsList.map((collection) => collection.collectionId)
           : [],
       buyTagIds:
         discount.type === DiscountType.BUY_X_GET_Y
-          ? discountTagsList.map((t) => t.tagId)
+          ? discountTagsList.map((tag) => tag.tagId)
           : [],
-      getProductIds: getProductsList.map((p) => p.productId),
-      getCategoryIds: getCategoriesList.map((c) => c.categoryId),
-      getCollectionIds: getCollectionsList.map((c) => c.collectionId),
-      getTagIds: getTagsList.map((t) => t.tagId),
+      getProductIds: getProductsList.map((product) => product.productId),
+      getCategoryIds: getCategoriesList.map((category) => category.categoryId),
+      getCollectionIds: getCollectionsList.map(
+        (collection) => collection.collectionId,
+      ),
+      getTagIds: getTagsList.map((tag) => tag.tagId),
       tieredRules: tieredRulesList.map((rule) => ({
         minQuantity: Number(rule.minQuantity),
         value: Number(rule.value),
         valueType: rule.valueType as DiscountValueType,
       })),
-      excludedDiscountIds: exclusionsList.map((e) => e.excludedDiscountId),
+      excludedDiscountIds: exclusionsList.map(
+        (exclusion) => exclusion.excludedDiscountId,
+      ),
       createdAt: discount.createdAt,
       updatedAt: discount.updatedAt,
     };

@@ -377,16 +377,11 @@ describe("InventoryStore", () => {
       mockRedisClient.get
         .mockResolvedValueOnce("5") // cart-1 reservation
         .mockResolvedValueOnce("3") // cart-2 reservation
-        .mockResolvedValueOnce("10") // getReservedInventory
-        .mockResolvedValueOnce("100") // getAvailableInventory
-        .mockResolvedValueOnce("8"); // getReservedInventory after fix
-
-      // Mock getReservedInventory for the variant (returns 10, but should be 8)
-      jest
-        .spyOn(store, "getReservedInventory")
-        .mockResolvedValueOnce(10) // initial
-        .mockResolvedValueOnce(10) // before fix
-        .mockResolvedValueOnce(8); // after fix
+        .mockResolvedValueOnce("10") // getReservedInventory - actualReserved (line 542)
+        .mockResolvedValueOnce("100") // getAvailableInventory (line 544)
+        .mockResolvedValueOnce("10") // getReservedInventory - currentReserved (line 559)
+        .mockResolvedValueOnce("10") // getReservedInventory - finalReserved (line 572)
+        .mockResolvedValueOnce("8"); // client.get after incrby in fixReservationInconsistency
 
       jest.spyOn(store, "getAvailableInventory").mockResolvedValue(100);
 

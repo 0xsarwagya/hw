@@ -9,6 +9,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { products } from "./products";
+import { variantOptionValueAssignments } from "./variant-option-types";
 
 export const productVariants = pgTable(
   "product_variants",
@@ -39,11 +40,12 @@ export const productVariants = pgTable(
 
 export const productVariantsRelations = relations(
   productVariants,
-  ({ one }) => ({
+  ({ one, many }) => ({
     product: one(products, {
       fields: [productVariants.productId],
       references: [products.id],
     }),
+    optionValueAssignments: many(variantOptionValueAssignments),
   }),
 );
 

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { addresses, db, eq, orderItems, orders, shipments } from "@vcecom/db";
+import { AppConfigService } from "../../common/config/app.config.service";
 import { ShiprocketConfigService } from "./shiprocket-config.service";
 
 export interface ShiprocketAuthToken {
@@ -16,24 +17,24 @@ export class ShiprocketService implements OnModuleInit {
 
   constructor(
     private readonly shiprocketConfigService: ShiprocketConfigService,
+    private readonly appConfigService: AppConfigService,
   ) {
     this.baseUrl = this.shiprocketConfigService.getBaseUrl();
   }
 
   /**
    * Initialize Shiprocket on module initialization
-   * Reads configuration from environment variables
+   * Reads configuration from AppConfigService
    */
   onModuleInit() {
     // Note: We don't authenticate here to avoid blocking module initialization
     // Authentication will happen on first use or via manual initialization
-    const email = process.env.SHIPROCKET_EMAIL;
-    const password = process.env.SHIPROCKET_PASSWORD;
+    const config = this.appConfigService.getShiprocketConfig();
 
-    if (email && password) {
+    if (config.email && config.password) {
       // Store credentials but don't authenticate yet
-      this.email = email;
-      this.password = password;
+      this.email = config.email;
+      this.password = config.password;
     }
   }
 

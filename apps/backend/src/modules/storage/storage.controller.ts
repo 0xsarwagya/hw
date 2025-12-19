@@ -27,6 +27,13 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
+import {
+  DEFAULT_IMAGE_QUALITY,
+  DEFAULT_LIST_KEYS,
+  MAX_IMAGE_QUALITY,
+  MAX_LIST_KEYS,
+  MIN_IMAGE_QUALITY,
+} from "../../common/constants";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
@@ -115,8 +122,8 @@ export class StorageController {
         },
         quality: {
           type: "number",
-          description: "Image quality (0-100), default: 60",
-          example: 60,
+          description: `Image quality (${MIN_IMAGE_QUALITY}-${MAX_IMAGE_QUALITY}), default: ${DEFAULT_IMAGE_QUALITY}`,
+          example: DEFAULT_IMAGE_QUALITY,
         },
         maxWidth: {
           type: "number",
@@ -215,8 +222,8 @@ export class StorageController {
         },
         quality: {
           type: "number",
-          description: "Image quality (0-100), default: 60",
-          example: 60,
+          description: `Image quality (${MIN_IMAGE_QUALITY}-${MAX_IMAGE_QUALITY}), default: ${DEFAULT_IMAGE_QUALITY}`,
+          example: DEFAULT_IMAGE_QUALITY,
         },
         maxWidth: {
           type: "number",
@@ -289,25 +296,72 @@ export class StorageController {
     return results;
   }
 
-  @Delete(":key")
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @Get("list")
   @ApiOperation({
-    summary: "Delete a file",
-    description: "Delete a file from storage by key. Admin-only endpoint.",
+    summary: "List files",
+    description:
+      "List files in storage with optional prefix filter. Admin-only endpoint.",
   })
-  @ApiParam({
-    name: "key",
-    description: "File key/path in storage",
-    example: "products/20251216-abc123-def456.webp",
+  @ApiQuery({
+    name: "prefix",
+    required: false,
+    type: String,
+    description: "Prefix to filter files",
+    example: "products",
+  })
+  @ApiQuery({
+    name: "maxKeys",
+    required: false,
+    type: Number,
+    description: `Maximum number of files to return (default: ${DEFAULT_LIST_KEYS}, max: ${MAX_LIST_KEYS})`,
+    example: DEFAULT_LIST_KEYS,
   })
   @ApiResponse({
-    status: 204,
-    description: "File deleted successfully",
+    status: 200,
+    description: "List of files",
+    type: ListFilesResponseDto,
   })
   @ApiUnauthorizedResponse({ description: "Unauthorized" })
   @ApiForbiddenResponse({ description: "Forbidden - Admin role required" })
-  async deleteFile(@Param("key") key: string): Promise<void> {
-    await this.storageService.delete(key);
+  async listFiles(@Query() dto: ListFilesDto): Promise<ListFilesResponseDto> {
+    const prefix = dto.prefix || "";
+    const maxKeys = dto.maxKeys
+      ? Math.min(dto.maxKeys, MAX_LIST_KEYS)
+      : DEFAULT_LIST_KEYS;
+    const fileKeys = await this.storageService.list(prefix, maxKeys);
+
+    // Transform file keys into file metadata with URLs and size
+    const files = await Promise.all(
+      fileKeys.map(async (key) => {
+        try {
+          const [url, metadata] = await Promise.all([
+            this.storageService.getUrl(key),
+            this.storageService
+              .getMetadata(key)
+              .catch(() => ({ size: undefined, contentType: undefined })),
+          ]);
+          return {
+            key,
+            url,
+            size: metadata.size,
+            contentType: metadata.contentType,
+          };
+        } catch (_error) {
+          // If metadata fetch fails, still return the file with URL
+          const url = await this.storageService.getUrl(key);
+          return {
+            key,
+            url,
+          };
+        }
+      }),
+    );
+
+    return {
+      files,
+      total: files.length,
+      prefix,
+    };
   }
 
   @Get(":key")
@@ -338,72 +392,6 @@ export class StorageController {
     return {
       key,
       url,
-    };
-  }
-
-  @Get("list")
-  @ApiOperation({
-    summary: "List files",
-    description:
-      "List files in storage with optional prefix filter. Admin-only endpoint.",
-  })
-  @ApiQuery({
-    name: "prefix",
-    required: false,
-    type: String,
-    description: "Prefix to filter files",
-    example: "products",
-  })
-  @ApiQuery({
-    name: "maxKeys",
-    required: false,
-    type: Number,
-    description: "Maximum number of files to return (default: 100, max: 1000)",
-    example: 100,
-  })
-  @ApiResponse({
-    status: 200,
-    description: "List of files",
-    type: ListFilesResponseDto,
-  })
-  @ApiUnauthorizedResponse({ description: "Unauthorized" })
-  @ApiForbiddenResponse({ description: "Forbidden - Admin role required" })
-  async listFiles(@Query() dto: ListFilesDto): Promise<ListFilesResponseDto> {
-    const prefix = dto.prefix || "";
-    const maxKeys = dto.maxKeys ? Math.min(dto.maxKeys, 1000) : 100;
-    const files = await this.storageService.list(prefix, maxKeys);
-
-    return {
-      files,
-      total: files.length,
-      prefix,
-    };
-  }
-
-  @Post("presigned-url")
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
-    summary: "Generate presigned URL",
-    description:
-      "Generate a presigned URL for direct file upload. Admin-only endpoint.",
-  })
-  @ApiResponse({
-    status: 201,
-    description: "Presigned URL generated",
-    type: PresignedUrlResponseDto,
-  })
-  @ApiUnauthorizedResponse({ description: "Unauthorized" })
-  @ApiForbiddenResponse({ description: "Forbidden - Admin role required" })
-  async generatePresignedUrl(
-    @Body() dto: GeneratePresignedUrlDto,
-  ): Promise<PresignedUrlResponseDto> {
-    const expiresIn = dto.expiresIn || 3600;
-    const url = await this.storageService.getPresignedUrl(dto.key, expiresIn);
-
-    return {
-      key: dto.key,
-      url,
-      expiresIn,
     };
   }
 
@@ -438,6 +426,54 @@ export class StorageController {
     return {
       deleted,
       failed,
+    };
+  }
+
+  @Delete(":key")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: "Delete a file",
+    description: "Delete a file from storage by key. Admin-only endpoint.",
+  })
+  @ApiParam({
+    name: "key",
+    description: "File key/path in storage",
+    example: "products/20251216-abc123-def456.webp",
+  })
+  @ApiResponse({
+    status: 204,
+    description: "File deleted successfully",
+  })
+  @ApiUnauthorizedResponse({ description: "Unauthorized" })
+  @ApiForbiddenResponse({ description: "Forbidden - Admin role required" })
+  async deleteFile(@Param("key") key: string): Promise<void> {
+    await this.storageService.delete(key);
+  }
+
+  @Post("presigned-url")
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: "Generate presigned URL",
+    description:
+      "Generate a presigned URL for direct file upload. Admin-only endpoint.",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Presigned URL generated",
+    type: PresignedUrlResponseDto,
+  })
+  @ApiUnauthorizedResponse({ description: "Unauthorized" })
+  @ApiForbiddenResponse({ description: "Forbidden - Admin role required" })
+  async generatePresignedUrl(
+    @Body() dto: GeneratePresignedUrlDto,
+  ): Promise<PresignedUrlResponseDto> {
+    const expiresIn = dto.expiresIn || 3600;
+    const url = await this.storageService.getPresignedUrl(dto.key, expiresIn);
+
+    return {
+      key: dto.key,
+      url,
+      expiresIn,
     };
   }
 }

@@ -6,49 +6,127 @@ import {
 
 describe("Address Utils", () => {
   describe("validateIndianAddress", () => {
-    it("should validate complete valid address", () => {
-      const result = validateIndianAddress({
+    it("should return isValid true for complete valid address", () => {
+      // Arrange
+      const address = {
         street: "123 Main Street, Apartment 4B",
         city: "Mumbai",
         state: "Maharashtra",
         pincode: "400001",
         district: "Mumbai",
-      });
+      };
 
+      // Act
+      const result = validateIndianAddress(address);
+
+      // Assert
       expect(result.isValid).toBe(true);
+    });
+
+    it("should return empty errors array for complete valid address", () => {
+      // Arrange
+      const address = {
+        street: "123 Main Street, Apartment 4B",
+        city: "Mumbai",
+        state: "Maharashtra",
+        pincode: "400001",
+        district: "Mumbai",
+      };
+
+      // Act
+      const result = validateIndianAddress(address);
+
+      // Assert
       expect(result.errors).toHaveLength(0);
     });
 
-    it("should reject address with missing street", () => {
-      const result = validateIndianAddress({
+    it("should return isValid false when street is missing", () => {
+      // Arrange
+      const address = {
         city: "Mumbai",
         state: "Maharashtra",
         pincode: "400001",
-      });
+      };
 
+      // Act
+      const result = validateIndianAddress(address);
+
+      // Assert
       expect(result.isValid).toBe(false);
+    });
+
+    it("should include street error when street is missing", () => {
+      // Arrange
+      const address = {
+        city: "Mumbai",
+        state: "Maharashtra",
+        pincode: "400001",
+      };
+
+      // Act
+      const result = validateIndianAddress(address);
+
+      // Assert
       expect(result.errors).toContain("Street address is required");
     });
 
-    it("should reject address with missing city", () => {
-      const result = validateIndianAddress({
+    it("should return isValid false when city is missing", () => {
+      // Arrange
+      const address = {
         street: "123 Main Street",
         state: "Maharashtra",
         pincode: "400001",
-      });
+      };
 
+      // Act
+      const result = validateIndianAddress(address);
+
+      // Assert
       expect(result.isValid).toBe(false);
+    });
+
+    it("should include city error when city is missing", () => {
+      // Arrange
+      const address = {
+        street: "123 Main Street",
+        state: "Maharashtra",
+        pincode: "400001",
+      };
+
+      // Act
+      const result = validateIndianAddress(address);
+
+      // Assert
       expect(result.errors).toContain("City is required");
     });
 
-    it("should reject address with missing state", () => {
-      const result = validateIndianAddress({
+    it("should return isValid false when state is missing", () => {
+      // Arrange
+      const address = {
         street: "123 Main Street",
         city: "Mumbai",
         pincode: "400001",
-      });
+      };
 
+      // Act
+      const result = validateIndianAddress(address);
+
+      // Assert
       expect(result.isValid).toBe(false);
+    });
+
+    it("should include state error when state is missing", () => {
+      // Arrange
+      const address = {
+        street: "123 Main Street",
+        city: "Mumbai",
+        pincode: "400001",
+      };
+
+      // Act
+      const result = validateIndianAddress(address);
+
+      // Assert
       expect(result.errors).toContain("State is required");
     });
 

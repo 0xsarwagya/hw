@@ -1,1176 +1,0 @@
-
-> @vestcodes/vcecom@0.0.0 test /Users/sarwagya/Desktop/personal/vestcodes/ecommerce
-> turbo run test
-
-turbo 2.6.1
-
-• Packages in scope: @vcecom/db, @vcecom/typescript-config, @vestcodes/vcecom-admin, @vestcodes/vcecom-backend
-• Running test in 4 packages
-• Remote caching disabled
-@vcecom/db:test: cache hit, replaying logs ec7e7497e2a9ce86
-@vcecom/db:test: 
-@vcecom/db:test: > @vcecom/db@0.0.0 test /Users/sarwagya/Desktop/personal/vestcodes/ecommerce/packages/db
-@vcecom/db:test: > echo 'Skipping DB tests' && exit 0
-@vcecom/db:test: 
-@vcecom/db:test: Skipping DB tests
-@vestcodes/vcecom-admin:test: cache hit, replaying logs bf0b6d0a832b2e78
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: > @vestcodes/vcecom-admin@0.1.0 test /Users/sarwagya/Desktop/personal/vestcodes/ecommerce/apps/admin
-@vestcodes/vcecom-admin:test: > jest
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-@vestcodes/vcecom-admin:test: [1m[2mDetermining test suites to run...[22m[22m[?2026h[999D[K
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m0 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m0 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        0 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mauth.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mapi.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m0 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m0 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        0 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mauth.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mapi.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m0 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m0 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        0 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mauth.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mapi.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m0 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m0 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        0 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mauth.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mapi.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m0 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m0 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        0 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mauth.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mapi.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m0 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m0 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        0 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mauth.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mapi.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m0 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m0 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        0 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mauth.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mapi.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m0 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m0 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        0 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mauth.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mapi.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m0 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m0 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        0 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mauth.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mapi.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m0 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m0 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        0 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mauth.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mapi.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m0 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m0 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        0 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mauth.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mapi.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m0 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m0 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        1 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2m__tests__/lib/[22m[1mauth.test.ts[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mauth.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mapi.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m0 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m0 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        1 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mauth.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mapi.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m0 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m0 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        1 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mapi.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-recent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m1 passed[39m[22m, 1 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[32m12 passed[39m[22m, 12 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        2 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2m__tests__/lib/[22m[1mapi.test.ts[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/lib/[22m[1mapi.test.ts[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-recent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m1 passed[39m[22m, 1 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[32m12 passed[39m[22m, 12 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        2 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-recent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m2 passed[39m[22m, 2 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[32m18 passed[39m[22m, 18 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        2 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-recent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m2 passed[39m[22m, 2 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[32m22 passed[39m[22m, 22 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        2 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-recent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m2 passed[39m[22m, 2 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[32m22 passed[39m[22m, 22 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        2 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-product-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-recent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m2 passed[39m[22m, 2 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[32m22 passed[39m[22m, 22 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        2 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-recent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m4 passed[39m[22m, 4 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[32m27 passed[39m[22m, 27 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        2 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-order-mutations.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-recent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m4 passed[39m[22m, 4 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[32m27 passed[39m[22m, 27 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        2 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1moverview-cards.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-recent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m5 passed[39m[22m, 5 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[32m29 passed[39m[22m, 29 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        2 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2m__tests__/hooks/[22m[1muse-recent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1moverview-cards.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-recent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m5 passed[39m[22m, 5 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[32m29 passed[39m[22m, 29 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        2 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1moverview-cards.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-admin-stats.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m6 passed[39m[22m, 6 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[32m31 passed[39m[22m, 31 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        2 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1moverview-cards.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-admin-stats.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m6 passed[39m[22m, 6 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[32m34 passed[39m[22m, 34 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        2 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1moverview-cards.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-admin-stats.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m6 passed[39m[22m, 6 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[32m35 passed[39m[22m, 35 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        3 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1moverview-cards.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-admin-stats.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m6 passed[39m[22m, 6 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[32m35 passed[39m[22m, 35 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        3 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1moverview-cards.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-admin-stats.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-products.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m7 passed[39m[22m, 7 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m4 skipped[39m[22m, [1m[32m35 passed[39m[22m, 39 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        3 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1moverview-cards.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-admin-stats.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-products.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m7 passed[39m[22m, 7 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m4 skipped[39m[22m, [1m[32m37 passed[39m[22m, 41 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        3 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1moverview-cards.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-admin-stats.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-products.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m7 passed[39m[22m, 7 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m4 skipped[39m[22m, [1m[32m39 passed[39m[22m, 43 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        3 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/orders/[22m[1morder-details.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1moverview-cards.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-admin-stats.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-products.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m7 passed[39m[22m, 7 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m4 skipped[39m[22m, [1m[32m39 passed[39m[22m, 43 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        3 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mstats-chart.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1moverview-cards.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-admin-stats.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-products.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m8 passed[39m[22m, 8 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m10 skipped[39m[22m, [1m[32m45 passed[39m[22m, 55 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        3 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mstats-chart.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1moverview-cards.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-admin-stats.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-products.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m8 passed[39m[22m, 8 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m10 skipped[39m[22m, [1m[32m45 passed[39m[22m, 55 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        3 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2m__tests__/components/dashboard/[22m[1moverview-cards.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mstats-chart.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1moverview-cards.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-admin-stats.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mrecent-orders.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-products.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m8 passed[39m[22m, 8 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m10 skipped[39m[22m, [1m[32m45 passed[39m[22m, 55 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        3 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mstats-chart.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-admin-stats.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-products.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m10 passed[39m[22m, 10 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m10 skipped[39m[22m, [1m[32m53 passed[39m[22m, 63 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        3 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2m__tests__/hooks/[22m[1muse-admin-stats.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mstats-chart.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-admin-stats.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-products.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m10 passed[39m[22m, 10 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m10 skipped[39m[22m, [1m[32m53 passed[39m[22m, 63 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        3 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mstats-chart.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-products.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m11 passed[39m[22m, 11 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m10 skipped[39m[22m, [1m[32m57 passed[39m[22m, 67 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        3 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mstats-chart.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-products.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m11 passed[39m[22m, 11 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m10 skipped[39m[22m, [1m[32m59 passed[39m[22m, 69 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        4 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2m__tests__/hooks/[22m[1muse-products.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mstats-chart.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-products.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m11 passed[39m[22m, 11 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m10 skipped[39m[22m, [1m[32m59 passed[39m[22m, 69 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        4 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mstats-chart.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/auth/[22m[1mlogin-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/hooks/[22m[1muse-products.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m11 passed[39m[22m, 11 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m10 skipped[39m[22m, [1m[32m59 passed[39m[22m, 69 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        4 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mstats-chart.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m13 passed[39m[22m, 13 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m10 skipped[39m[22m, [1m[32m62 passed[39m[22m, 72 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        4 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mstats-chart.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/app/dashboard/[22m[1mpage.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m13 passed[39m[22m, 13 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m10 skipped[39m[22m, [1m[32m62 passed[39m[22m, 72 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        4 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mstats-chart.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m14 passed[39m[22m, 14 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m10 skipped[39m[22m, [1m[32m66 passed[39m[22m, 76 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        4 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mstats-chart.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m14 passed[39m[22m, 14 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m10 skipped[39m[22m, [1m[32m66 passed[39m[22m, 76 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        4 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mstats-chart.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m14 passed[39m[22m, 14 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m10 skipped[39m[22m, [1m[32m66 passed[39m[22m, 76 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        4 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2m__tests__/components/dashboard/[22m[1mstats-chart.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/dashboard/[22m[1mstats-chart.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-list.test.tsx[22m
-@vestcodes/vcecom-admin:test: [0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m__tests__/components/products/[22m[1mproduct-form.test.tsx[22m
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m14 passed[39m[22m, 14 of 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m10 skipped[39m[22m, [1m[32m66 passed[39m[22m, 76 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        4 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A
-@vestcodes/vcecom-admin:test: 
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m17 passed[39m[22m, 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m10 skipped[39m[22m, [1m[32m73 passed[39m[22m, 83 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        4 s[?2026l[?2026h@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A@vestcodes/vcecom-admin:test: [K@vestcodes/vcecom-admin:test: [1A[?2026l[999D[K
-@vestcodes/vcecom-admin:test: [1mTest Suites: [22m[1m[32m17 passed[39m[22m, 17 total
-@vestcodes/vcecom-admin:test: [1mTests:       [22m[1m[33m10 skipped[39m[22m, [1m[32m73 passed[39m[22m, 83 total
-@vestcodes/vcecom-admin:test: [1mSnapshots:   [22m0 total
-@vestcodes/vcecom-admin:test: [1mTime:[22m        4.59 s
-@vestcodes/vcecom-admin:test: [2mRan all test suites[22m[2m.[22m
-@vcecom/db:build: cache hit, replaying logs 3f03cbe906a9da42
-@vcecom/db:build: 
-@vcecom/db:build: > @vcecom/db@0.0.0 build /Users/sarwagya/Desktop/personal/vestcodes/ecommerce/packages/db
-@vcecom/db:build: > tsc
-@vcecom/db:build: 
-@vcecom/db:build: 
-@vcecom/db:build: > @vcecom/db@0.0.0 postbuild /Users/sarwagya/Desktop/personal/vestcodes/ecommerce/packages/db
-@vcecom/db:build: > pnpm db:seed || true
-@vcecom/db:build: 
-@vcecom/db:build: 
-@vcecom/db:build: > @vcecom/db@0.0.0 db:seed /Users/sarwagya/Desktop/personal/vestcodes/ecommerce/packages/db
-@vcecom/db:build: > node dist/seed.js
-@vcecom/db:build: 
-@vcecom/db:build: [dotenv@17.2.3] injecting env (6) from ../../.env -- tip: ⚙️  write to custom object with { processEnv: myObject }
-@vcecom/db:build: ✅ Users already exist, skipping seed
-@vestcodes/vcecom-backend:test: cache miss, executing 55da147018fd9f4d
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test: > @vestcodes/vcecom-backend@0.0.1 test /Users/sarwagya/Desktop/personal/vestcodes/ecommerce/apps/backend
-@vestcodes/vcecom-backend:test: > node scripts/generate-build-info.js && jest
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test: ✅ Generated build-info.ts
-@vestcodes/vcecom-backend:test:    Version: 2025.12.17
-@vestcodes/vcecom-backend:test:    Commit: 5981042
-@vestcodes/vcecom-backend:test:    Build Date: 2025-12-17T20:48:07.913Z
-@vestcodes/vcecom-backend:test: (node:16031) Warning: `--localstorage-file` was provided without a valid path
-@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
-@vestcodes/vcecom-backend:test: [31m[Nest] 16034  - [39m12/17/2025, 9:48:09 PM [31m  ERROR[39m [38;5;3m[BundleWarmupService] [39m[31mFailed to warm up bundle cache for bundle-1: Bundle not found[39m
-@vestcodes/vcecom-backend:test: (node:16036) Warning: `--localstorage-file` was provided without a valid path
-@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
-@vestcodes/vcecom-backend:test: PASS src/modules/redis-store/stores/cart-store.spec.ts
-@vestcodes/vcecom-backend:test: [31m[Nest] 16034  - [39m12/17/2025, 9:48:09 PM [31m  ERROR[39m [38;5;3m[BundleWarmupService] [39m[31mFailed to warm up bundle cache for bundle-1: Failed to load bundle-1[39m
-@vestcodes/vcecom-backend:test: [31m[Nest] 16032  - [39m12/17/2025, 9:48:09 PM [31m  ERROR[39m [38;5;3m[BundlePricingService] [39m[31mFailed to get customer group: Cannot read properties of undefined (reading 'id')[39m
-@vestcodes/vcecom-backend:test: (node:16032) Warning: `--localstorage-file` was provided without a valid path
-@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
-@vestcodes/vcecom-backend:test: PASS src/modules/pricing/__tests__/bundle-pricing.service.spec.ts
-@vestcodes/vcecom-backend:test: (node:16034) Warning: `--localstorage-file` was provided without a valid path
-@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
-@vestcodes/vcecom-backend:test: PASS src/modules/bundles/__tests__/bundle-warmup.service.spec.ts
-@vestcodes/vcecom-backend:test: [31m[Nest] 16035  - [39m12/17/2025, 9:48:09 PM [31m  ERROR[39m [38;5;3m[InventoryStore] [39m[31mFailed to reserve inventory for cart cart-123, variant variant-123: Redis error[39m
-@vestcodes/vcecom-backend:test: (node:16035) Warning: `--localstorage-file` was provided without a valid path
-@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
-@vestcodes/vcecom-backend:test: PASS src/modules/redis-store/stores/inventory-store.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/redis-store/stores/idempotency-store.spec.ts
-@vestcodes/vcecom-backend:test: (node:16033) Warning: `--localstorage-file` was provided without a valid path
-@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
-@vestcodes/vcecom-backend:test: (node:16030) Warning: `--localstorage-file` was provided without a valid path
-@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
-@vestcodes/vcecom-backend:test: FAIL src/modules/carts/__tests__/carts.service.bundle.spec.ts
-@vestcodes/vcecom-backend:test:   ● CartsService - Bundle Integration › getCart - Bundle Hydration › should hydrate bundle items with full structure
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: items.map is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       640 |     // Hydrate bundle items
-@vestcodes/vcecom-backend:test:       641 |     const hydratedItems = await Promise.all(
-@vestcodes/vcecom-backend:test:     > 642 |       items.map(async (item) => {
-@vestcodes/vcecom-backend:test:           |             ^
-@vestcodes/vcecom-backend:test:       643 |         const metadata = item.metadata as BundleCartItemMetadata | null;
-@vestcodes/vcecom-backend:test:       644 |         if (metadata?.type === "bundle") {
-@vestcodes/vcecom-backend:test:       645 |           return this.hydrateBundleItem(item, customerId);
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at CartsService.getCart (modules/carts/carts.service.ts:642:13)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/carts/__tests__/carts.service.bundle.spec.ts:528:22)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:   ● CartsService - Bundle Integration › getCart - Bundle Hydration › should throw error if bundle is no longer active
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     expect(received).rejects.toThrow(expected)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     Expected constructor: BadRequestException
-@vestcodes/vcecom-backend:test:     Received constructor: NotFoundException
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     Received message: "Bundle bundle-1 not found"
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:           700 |
-@vestcodes/vcecom-backend:test:           701 |     if (!bundle) {
-@vestcodes/vcecom-backend:test:         > 702 |       throw new NotFoundException(
-@vestcodes/vcecom-backend:test:               |             ^
-@vestcodes/vcecom-backend:test:           703 |         `Bundle ${metadata.bundleId} not found`,
-@vestcodes/vcecom-backend:test:           704 |       );
-@vestcodes/vcecom-backend:test:           705 |     }
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at CartsService.hydrateBundleItem (modules/carts/carts.service.ts:702:13)
-@vestcodes/vcecom-backend:test:       at Object.toThrow (../../../node_modules/.pnpm/expect@30.2.0/node_modules/expect/build/index.js:2155:20)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/carts/__tests__/carts.service.bundle.spec.ts:579:61)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test: PASS src/modules/bundles/__tests__/bundle-eligibility.service.spec.ts
-@vestcodes/vcecom-backend:test: (node:16029) Warning: `--localstorage-file` was provided without a valid path
-@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
-@vestcodes/vcecom-backend:test: FAIL src/modules/orders/__tests__/orders.service.bundle.spec.ts
-@vestcodes/vcecom-backend:test:   ● OrdersService - Bundle Integration › create - Bundle Pricing Snapshot › should create pricing snapshot with bundle breakdowns
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       1291 |       .select()
-@vestcodes/vcecom-backend:test:       1292 |       .from(addresses)
-@vestcodes/vcecom-backend:test:     > 1293 |       .where(eq(addresses.id, metadata.shippingAddressId))
-@vestcodes/vcecom-backend:test:            |        ^
-@vestcodes/vcecom-backend:test:       1294 |       .limit(1);
-@vestcodes/vcecom-backend:test:       1295 |
-@vestcodes/vcecom-backend:test:       1296 |     if (!shippingAddress) {
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.finalizeOrderFromPayment (modules/orders/orders.service.ts:1293:8)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/__tests__/orders.service.bundle.spec.ts:387:7)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:   ● OrdersService - Bundle Integration › finalizeOrderFromPayment - Bundle Expansion › should expand bundle to multiple order items
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       1291 |       .select()
-@vestcodes/vcecom-backend:test:       1292 |       .from(addresses)
-@vestcodes/vcecom-backend:test:     > 1293 |       .where(eq(addresses.id, metadata.shippingAddressId))
-@vestcodes/vcecom-backend:test:            |        ^
-@vestcodes/vcecom-backend:test:       1294 |       .limit(1);
-@vestcodes/vcecom-backend:test:       1295 |
-@vestcodes/vcecom-backend:test:       1296 |     if (!shippingAddress) {
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.finalizeOrderFromPayment (modules/orders/orders.service.ts:1293:8)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/__tests__/orders.service.bundle.spec.ts:554:7)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:   ● OrdersService - Bundle Integration › finalizeOrderFromPayment - Bundle Expansion › should commit inventory for all bundle variants
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       1291 |       .select()
-@vestcodes/vcecom-backend:test:       1292 |       .from(addresses)
-@vestcodes/vcecom-backend:test:     > 1293 |       .where(eq(addresses.id, metadata.shippingAddressId))
-@vestcodes/vcecom-backend:test:            |        ^
-@vestcodes/vcecom-backend:test:       1294 |       .limit(1);
-@vestcodes/vcecom-backend:test:       1295 |
-@vestcodes/vcecom-backend:test:       1296 |     if (!shippingAddress) {
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.finalizeOrderFromPayment (modules/orders/orders.service.ts:1293:8)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/__tests__/orders.service.bundle.spec.ts:689:7)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test: [31m[Nest] 16032  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[PaymentsService] [39m[31mCheckout session ID not found for payment.captured webhook (paymentIntentId: order_MNOPQRSTUVWXYZ). Cannot create order.[39m
-@vestcodes/vcecom-backend:test: [31m[Nest] 16032  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[PaymentsService] [39m[31mCheckout session ID not found for payment.captured webhook (paymentIntentId: order_MNOPQRSTUVWXYZ). Cannot create order.[39m
-@vestcodes/vcecom-backend:test: [31m[Nest] 16032  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[PaymentsService] [39m[31mCheckout session ID not found for payment.captured webhook (paymentIntentId: order_NOTFOUND). Cannot create order.[39m
-@vestcodes/vcecom-backend:test: PASS src/modules/storage/storage.service.spec.ts
-@vestcodes/vcecom-backend:test: (node:16028) Warning: `--localstorage-file` was provided without a valid path
-@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
-@vestcodes/vcecom-backend:test: FAIL src/modules/orders/orders.service.spec.ts
-@vestcodes/vcecom-backend:test:   ● OrdersService › create › should create order successfully from cart
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       388 |         })
-@vestcodes/vcecom-backend:test:       389 |         .from(cartItems)
-@vestcodes/vcecom-backend:test:     > 390 |         .where(inArray(cartItems.id, cartItemIds));
-@vestcodes/vcecom-backend:test:           |          ^
-@vestcodes/vcecom-backend:test:       391 |
-@vestcodes/vcecom-backend:test:       392 |       if (allCartItems.length === 0) {
-@vestcodes/vcecom-backend:test:       393 |         throw new BadRequestException("Cart items not found or invalid");
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.create (modules/orders/orders.service.ts:390:10)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/orders.service.spec.ts:653:22)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:   ● OrdersService › finalizeOrderFromPayment › should create order when payment is confirmed
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       1231 |       })
-@vestcodes/vcecom-backend:test:       1232 |       .from(cartItems)
-@vestcodes/vcecom-backend:test:     > 1233 |       .where(inArray(cartItems.id, cartItemIds));
-@vestcodes/vcecom-backend:test:            |        ^
-@vestcodes/vcecom-backend:test:       1234 |
-@vestcodes/vcecom-backend:test:       1235 |     if (allCartItems.length === 0) {
-@vestcodes/vcecom-backend:test:       1236 |       throw new BadRequestException("Cart items not found or invalid");
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.finalizeOrderFromPayment (modules/orders/orders.service.ts:1233:8)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/orders.service.spec.ts:4595:22)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:   ● OrdersService › finalizeOrderFromPayment › should handle concurrent order creation (idempotent)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       1231 |       })
-@vestcodes/vcecom-backend:test:       1232 |       .from(cartItems)
-@vestcodes/vcecom-backend:test:     > 1233 |       .where(inArray(cartItems.id, cartItemIds));
-@vestcodes/vcecom-backend:test:            |        ^
-@vestcodes/vcecom-backend:test:       1234 |
-@vestcodes/vcecom-backend:test:       1235 |     if (allCartItems.length === 0) {
-@vestcodes/vcecom-backend:test:       1236 |       throw new BadRequestException("Cart items not found or invalid");
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.finalizeOrderFromPayment (modules/orders/orders.service.ts:1233:8)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/orders.service.spec.ts:4781:22)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:   ● OrdersService › finalizeOrderFromPayment › should handle inventory commit failure gracefully
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       1231 |       })
-@vestcodes/vcecom-backend:test:       1232 |       .from(cartItems)
-@vestcodes/vcecom-backend:test:     > 1233 |       .where(inArray(cartItems.id, cartItemIds));
-@vestcodes/vcecom-backend:test:            |        ^
-@vestcodes/vcecom-backend:test:       1234 |
-@vestcodes/vcecom-backend:test:       1235 |     if (allCartItems.length === 0) {
-@vestcodes/vcecom-backend:test:       1236 |       throw new BadRequestException("Cart items not found or invalid");
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.finalizeOrderFromPayment (modules/orders/orders.service.ts:1233:8)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/orders.service.spec.ts:4950:22)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:   ● OrdersService › finalizeOrderFromPayment › should handle inventory commit idempotency (multiple commits don't double-consume)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       1231 |       })
-@vestcodes/vcecom-backend:test:       1232 |       .from(cartItems)
-@vestcodes/vcecom-backend:test:     > 1233 |       .where(inArray(cartItems.id, cartItemIds));
-@vestcodes/vcecom-backend:test:            |        ^
-@vestcodes/vcecom-backend:test:       1234 |
-@vestcodes/vcecom-backend:test:       1235 |     if (allCartItems.length === 0) {
-@vestcodes/vcecom-backend:test:       1236 |       throw new BadRequestException("Cart items not found or invalid");
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.finalizeOrderFromPayment (modules/orders/orders.service.ts:1233:8)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/orders.service.spec.ts:5085:7)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:   ● OrdersService › finalizeOrderFromPayment › should throw error if trying to transition to ORDER_CREATED from invalid state
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       1231 |       })
-@vestcodes/vcecom-backend:test:       1232 |       .from(cartItems)
-@vestcodes/vcecom-backend:test:     > 1233 |       .where(inArray(cartItems.id, cartItemIds));
-@vestcodes/vcecom-backend:test:            |        ^
-@vestcodes/vcecom-backend:test:       1234 |
-@vestcodes/vcecom-backend:test:       1235 |     if (allCartItems.length === 0) {
-@vestcodes/vcecom-backend:test:       1236 |       throw new BadRequestException("Cart items not found or invalid");
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.finalizeOrderFromPayment (modules/orders/orders.service.ts:1233:8)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/orders.service.spec.ts:5309:22)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test: PASS src/modules/storage/storage.controller.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/shipping/shipping.controller.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/products/products.service.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/orders/reconciliation.service.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/admin/admin.service.spec.ts
-@vestcodes/vcecom-backend:test: [31m[Nest] 16031  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[CheckoutStore] [39m[31mFailed to acquire checkout lock for cartId=cart-123: Redis connection failed[39m
-@vestcodes/vcecom-backend:test: [31m[Nest] 16031  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[CheckoutStore] [39m[31mFailed to delete key checkout:lock:cart-123: Redis deletion failed[39m
-@vestcodes/vcecom-backend:test: [31m[Nest] 16031  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[CheckoutStore] [39m[31mFailed to release checkout lock for cartId=cart-123: Redis deletion failed[39m
-@vestcodes/vcecom-backend:test: [31m[Nest] 16031  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[CheckoutStore] [39m[31mFailed to check existence of key checkout:lock:cart-123: Redis connection failed[39m
-@vestcodes/vcecom-backend:test: [31m[Nest] 16031  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[CheckoutStore] [39m[31mFailed to check checkout lock status for cartId=cart-123: Redis connection failed[39m
-@vestcodes/vcecom-backend:test: [31m[Nest] 16031  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[CheckoutStore] [39m[31mFailed to set key checkout:session:222d676c-a6fe-43bb-b09e-bec96b3f9b43: Redis connection failed[39m
-@vestcodes/vcecom-backend:test: [31m[Nest] 16031  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[CheckoutStore] [39m[31mFailed to create checkout session for cartId=cart-123: Redis connection failed[39m
-@vestcodes/vcecom-backend:test: [31m[Nest] 16031  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[CheckoutStore] [39m[31mFailed to transition state for sessionId=session-123: Transition failed[39m
-@vestcodes/vcecom-backend:test: [31m[Nest] 16031  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[CheckoutStore] [39m[31mFailed to fail session session-123: Transition failed[39m
-@vestcodes/vcecom-backend:test: [31m[Nest] 16031  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[CheckoutStore] [39m[31mPayment provider call failed for checkoutSessionId=checkout-session-123: Provider error[39m
-@vestcodes/vcecom-backend:test: [31m[Nest] 16031  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[CheckoutStore] [39m[31mFailed to set key payment:intent:checkout-session-123: Redis error[39m
-@vestcodes/vcecom-backend:test: [31m[Nest] 16031  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[CheckoutStore] [39m[31mRedis write failed after provider success for checkoutSessionId=checkout-session-123, retrying...[39m
-@vestcodes/vcecom-backend:test: [31m[Nest] 16031  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[CheckoutStore] [39mError: Redis error
-@vestcodes/vcecom-backend:test:     at Object.<anonymous> [90m(/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/apps/backend/[39msrc/modules/redis-store/stores/checkout-store.spec.ts:930:51[90m)[39m
-@vestcodes/vcecom-backend:test:     at Promise.finally.completed (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/[4m.pnpm[24m/jest-circus@30.2.0/node_modules/[4mjest-circus[24m/build/jestAdapterInit.js:1557:28)
-@vestcodes/vcecom-backend:test:     at new Promise (<anonymous>)
-@vestcodes/vcecom-backend:test:     at callAsyncCircusFn (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/[4m.pnpm[24m/jest-circus@30.2.0/node_modules/[4mjest-circus[24m/build/jestAdapterInit.js:1497:10)
-@vestcodes/vcecom-backend:test:     at _callCircusTest (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/[4m.pnpm[24m/jest-circus@30.2.0/node_modules/[4mjest-circus[24m/build/jestAdapterInit.js:1007:40)
-@vestcodes/vcecom-backend:test: [90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
-@vestcodes/vcecom-backend:test:     at _runTest (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/[4m.pnpm[24m/jest-circus@30.2.0/node_modules/[4mjest-circus[24m/build/jestAdapterInit.js:947:3)
-@vestcodes/vcecom-backend:test:     at /Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/[4m.pnpm[24m/jest-circus@30.2.0/node_modules/[4mjest-circus[24m/build/jestAdapterInit.js:849:7
-@vestcodes/vcecom-backend:test:     at _runTestsForDescribeBlock (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/[4m.pnpm[24m/jest-circus@30.2.0/node_modules/[4mjest-circus[24m/build/jestAdapterInit.js:862:11)
-@vestcodes/vcecom-backend:test:     at _runTestsForDescribeBlock (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/[4m.pnpm[24m/jest-circus@30.2.0/node_modules/[4mjest-circus[24m/build/jestAdapterInit.js:857:11)
-@vestcodes/vcecom-backend:test:     at _runTestsForDescribeBlock (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/[4m.pnpm[24m/jest-circus@30.2.0/node_modules/[4mjest-circus[24m/build/jestAdapterInit.js:857:11)
-@vestcodes/vcecom-backend:test:     at run (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/[4m.pnpm[24m/jest-circus@30.2.0/node_modules/[4mjest-circus[24m/build/jestAdapterInit.js:761:3)
-@vestcodes/vcecom-backend:test:     at runAndTransformResultsToJestFormat (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/[4m.pnpm[24m/jest-circus@30.2.0/node_modules/[4mjest-circus[24m/build/jestAdapterInit.js:1918:21)
-@vestcodes/vcecom-backend:test:     at jestAdapter (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/[4m.pnpm[24m/jest-circus@30.2.0/node_modules/[4mjest-circus[24m/build/runner.js:101:19)
-@vestcodes/vcecom-backend:test:     at runTestInternal (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/[4m.pnpm[24m/jest-runner@30.2.0/node_modules/[4mjest-runner[24m/build/testWorker.js:275:16)
-@vestcodes/vcecom-backend:test:     at runTest (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/[4m.pnpm[24m/jest-runner@30.2.0/node_modules/[4mjest-runner[24m/build/testWorker.js:343:7)
-@vestcodes/vcecom-backend:test:     at Object.worker (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/[4m.pnpm[24m/jest-runner@30.2.0/node_modules/[4mjest-runner[24m/build/testWorker.js:497:12)
-@vestcodes/vcecom-backend:test: PASS src/modules/auth/auth.service.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/redis-store/stores/checkout-store.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/invoices/invoices.service.spec.ts
-@vestcodes/vcecom-backend:test: [31m[Nest] 16032  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[PaymentsService] [39m[31mFailed to finalize order from payment: paymentIntentId=order_123456, checkoutSessionId=cs-123: Order creation failed[39m
-@vestcodes/vcecom-backend:test: PASS src/modules/carts/carts.controller.spec.ts
-@vestcodes/vcecom-backend:test: [31m[Nest] 16032  - [39m12/17/2025, 9:48:10 PM [31m  ERROR[39m [38;5;3m[PaymentsService] [39m[31mFailed to finalize order from payment: paymentIntentId=order_123456, checkoutSessionId=cs-123: Cannot create order: checkout session is in state PAYMENT_PENDING, expected PAYMENT_CONFIRMED[39m
-@vestcodes/vcecom-backend:test: PASS src/modules/payments/payments.service.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/bundles/__tests__/bundles.controller.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/discounts/discounts.controller.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/bundles/__tests__/bundle-set-items.service.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/discounts/discount-validation.service.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/common/utils/discount.utils.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/shipping/nimbus-post.service.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/bundles/__tests__/bundle-sets.service.spec.ts
-@vestcodes/vcecom-backend:test: [31m[Nest] 16029  - [39m12/17/2025, 9:48:11 PM [31m  ERROR[39m [38;5;3m[ImageCompressionService] [39m[31mFailed to compress image: Invalid image[39m
-@vestcodes/vcecom-backend:test: PASS src/modules/bundles/__tests__/bundle-definition.service.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/redis-store/redis-store.service.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/storage/services/image-compression.service.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/customers/gstin-verification.service.spec.ts
-@vestcodes/vcecom-backend:test: [31m[Nest] 16031  - [39m12/17/2025, 9:48:11 PM [31m  ERROR[39m [38;5;3m[InventoryRecoveryService] [39m[31mFailed to run inventory recovery: Reconciliation failed[39m
-@vestcodes/vcecom-backend:test: [31m[Nest] 16031  - [39m12/17/2025, 9:48:11 PM [31m  ERROR[39m [38;5;3m[InventoryRecoveryService] [39m[31mFailed to run periodic reconciliation: Reconciliation failed[39m
-@vestcodes/vcecom-backend:test: Error: Reconciliation failed
-@vestcodes/vcecom-backend:test:     at Object.<anonymous> (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/apps/backend/src/modules/redis-store/services/inventory-recovery.service.spec.ts:152:9)
-@vestcodes/vcecom-backend:test:     at Promise.finally.completed (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/.pnpm/jest-circus@30.2.0/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
-@vestcodes/vcecom-backend:test:     at new Promise (<anonymous>)
-@vestcodes/vcecom-backend:test:     at callAsyncCircusFn (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/.pnpm/jest-circus@30.2.0/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
-@vestcodes/vcecom-backend:test:     at _callCircusTest (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/.pnpm/jest-circus@30.2.0/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
-@vestcodes/vcecom-backend:test:     at processTicksAndRejections (node:internal/process/task_queues:103:5)
-@vestcodes/vcecom-backend:test:     at _runTest (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/.pnpm/jest-circus@30.2.0/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
-@vestcodes/vcecom-backend:test:     at /Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/.pnpm/jest-circus@30.2.0/node_modules/jest-circus/build/jestAdapterInit.js:849:7
-@vestcodes/vcecom-backend:test:     at _runTestsForDescribeBlock (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/.pnpm/jest-circus@30.2.0/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
-@vestcodes/vcecom-backend:test:     at _runTestsForDescribeBlock (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/.pnpm/jest-circus@30.2.0/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
-@vestcodes/vcecom-backend:test:     at _runTestsForDescribeBlock (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/.pnpm/jest-circus@30.2.0/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
-@vestcodes/vcecom-backend:test:     at run (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/.pnpm/jest-circus@30.2.0/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
-@vestcodes/vcecom-backend:test:     at runAndTransformResultsToJestFormat (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/.pnpm/jest-circus@30.2.0/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
-@vestcodes/vcecom-backend:test:     at jestAdapter (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/.pnpm/jest-circus@30.2.0/node_modules/jest-circus/build/runner.js:101:19)
-@vestcodes/vcecom-backend:test:     at runTestInternal (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/.pnpm/jest-runner@30.2.0/node_modules/jest-runner/build/testWorker.js:275:16)
-@vestcodes/vcecom-backend:test:     at runTest (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/.pnpm/jest-runner@30.2.0/node_modules/jest-runner/build/testWorker.js:343:7)
-@vestcodes/vcecom-backend:test:     at Object.worker (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/node_modules/.pnpm/jest-runner@30.2.0/node_modules/jest-runner/build/testWorker.js:497:12)
-@vestcodes/vcecom-backend:test: PASS src/modules/redis-store/services/inventory-recovery.service.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/app.controller.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/address-autocomplete/address-autocomplete.service.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/common/guards/jwt-auth.guard.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/payments/razorpay-config.service.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/shipping/nimbus-post-config.service.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/shipping/shiprocket-config.service.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/common/validators/gstin.validator.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/common/utils/gst.utils.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/discounts/engine/discount-engine.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/common/guards/roles.guard.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/shipping/shipping-rules.service.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/common/utils/gstin.utils.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/common/utils/search.utils.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/common/utils/address.utils.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/common/data/indian-states.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/common/utils/pagination.utils.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/modules/shipping/shiprocket.service.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/common/utils/pincode.utils.spec.ts
-@vestcodes/vcecom-backend:test: PASS src/common/utils/phone.utils.spec.ts
-@vestcodes/vcecom-backend:test: [33m[Nest] 16029  - [39m12/17/2025, 9:48:11 PM [33m   WARN[39m [38;5;3m[ShippingRulesService] [39m[33mPIN code 12345 not found in database, using fallback logic[39m
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test: Summary of all failing tests
-@vestcodes/vcecom-backend:test: FAIL modules/carts/__tests__/carts.service.bundle.spec.ts
-@vestcodes/vcecom-backend:test:   ● CartsService - Bundle Integration › getCart - Bundle Hydration › should hydrate bundle items with full structure
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: items.map is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       640 |     // Hydrate bundle items
-@vestcodes/vcecom-backend:test:       641 |     const hydratedItems = await Promise.all(
-@vestcodes/vcecom-backend:test:     > 642 |       items.map(async (item) => {
-@vestcodes/vcecom-backend:test:           |             ^
-@vestcodes/vcecom-backend:test:       643 |         const metadata = item.metadata as BundleCartItemMetadata | null;
-@vestcodes/vcecom-backend:test:       644 |         if (metadata?.type === "bundle") {
-@vestcodes/vcecom-backend:test:       645 |           return this.hydrateBundleItem(item, customerId);
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at CartsService.getCart (modules/carts/carts.service.ts:642:13)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/carts/__tests__/carts.service.bundle.spec.ts:528:22)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:   ● CartsService - Bundle Integration › getCart - Bundle Hydration › should throw error if bundle is no longer active
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     expect(received).rejects.toThrow(expected)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     Expected constructor: BadRequestException
-@vestcodes/vcecom-backend:test:     Received constructor: NotFoundException
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     Received message: "Bundle bundle-1 not found"
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:           700 |
-@vestcodes/vcecom-backend:test:           701 |     if (!bundle) {
-@vestcodes/vcecom-backend:test:         > 702 |       throw new NotFoundException(
-@vestcodes/vcecom-backend:test:               |             ^
-@vestcodes/vcecom-backend:test:           703 |         `Bundle ${metadata.bundleId} not found`,
-@vestcodes/vcecom-backend:test:           704 |       );
-@vestcodes/vcecom-backend:test:           705 |     }
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at CartsService.hydrateBundleItem (modules/carts/carts.service.ts:702:13)
-@vestcodes/vcecom-backend:test:       at Object.toThrow (../../../node_modules/.pnpm/expect@30.2.0/node_modules/expect/build/index.js:2155:20)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/carts/__tests__/carts.service.bundle.spec.ts:579:61)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test: FAIL modules/orders/__tests__/orders.service.bundle.spec.ts
-@vestcodes/vcecom-backend:test:   ● OrdersService - Bundle Integration › create - Bundle Pricing Snapshot › should create pricing snapshot with bundle breakdowns
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       1291 |       .select()
-@vestcodes/vcecom-backend:test:       1292 |       .from(addresses)
-@vestcodes/vcecom-backend:test:     > 1293 |       .where(eq(addresses.id, metadata.shippingAddressId))
-@vestcodes/vcecom-backend:test:            |        ^
-@vestcodes/vcecom-backend:test:       1294 |       .limit(1);
-@vestcodes/vcecom-backend:test:       1295 |
-@vestcodes/vcecom-backend:test:       1296 |     if (!shippingAddress) {
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.finalizeOrderFromPayment (modules/orders/orders.service.ts:1293:8)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/__tests__/orders.service.bundle.spec.ts:387:7)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:   ● OrdersService - Bundle Integration › finalizeOrderFromPayment - Bundle Expansion › should expand bundle to multiple order items
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       1291 |       .select()
-@vestcodes/vcecom-backend:test:       1292 |       .from(addresses)
-@vestcodes/vcecom-backend:test:     > 1293 |       .where(eq(addresses.id, metadata.shippingAddressId))
-@vestcodes/vcecom-backend:test:            |        ^
-@vestcodes/vcecom-backend:test:       1294 |       .limit(1);
-@vestcodes/vcecom-backend:test:       1295 |
-@vestcodes/vcecom-backend:test:       1296 |     if (!shippingAddress) {
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.finalizeOrderFromPayment (modules/orders/orders.service.ts:1293:8)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/__tests__/orders.service.bundle.spec.ts:554:7)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:   ● OrdersService - Bundle Integration › finalizeOrderFromPayment - Bundle Expansion › should commit inventory for all bundle variants
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       1291 |       .select()
-@vestcodes/vcecom-backend:test:       1292 |       .from(addresses)
-@vestcodes/vcecom-backend:test:     > 1293 |       .where(eq(addresses.id, metadata.shippingAddressId))
-@vestcodes/vcecom-backend:test:            |        ^
-@vestcodes/vcecom-backend:test:       1294 |       .limit(1);
-@vestcodes/vcecom-backend:test:       1295 |
-@vestcodes/vcecom-backend:test:       1296 |     if (!shippingAddress) {
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.finalizeOrderFromPayment (modules/orders/orders.service.ts:1293:8)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/__tests__/orders.service.bundle.spec.ts:689:7)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test: FAIL modules/orders/orders.service.spec.ts
-@vestcodes/vcecom-backend:test:   ● OrdersService › create › should create order successfully from cart
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       388 |         })
-@vestcodes/vcecom-backend:test:       389 |         .from(cartItems)
-@vestcodes/vcecom-backend:test:     > 390 |         .where(inArray(cartItems.id, cartItemIds));
-@vestcodes/vcecom-backend:test:           |          ^
-@vestcodes/vcecom-backend:test:       391 |
-@vestcodes/vcecom-backend:test:       392 |       if (allCartItems.length === 0) {
-@vestcodes/vcecom-backend:test:       393 |         throw new BadRequestException("Cart items not found or invalid");
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.create (modules/orders/orders.service.ts:390:10)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/orders.service.spec.ts:653:22)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:   ● OrdersService › finalizeOrderFromPayment › should create order when payment is confirmed
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       1231 |       })
-@vestcodes/vcecom-backend:test:       1232 |       .from(cartItems)
-@vestcodes/vcecom-backend:test:     > 1233 |       .where(inArray(cartItems.id, cartItemIds));
-@vestcodes/vcecom-backend:test:            |        ^
-@vestcodes/vcecom-backend:test:       1234 |
-@vestcodes/vcecom-backend:test:       1235 |     if (allCartItems.length === 0) {
-@vestcodes/vcecom-backend:test:       1236 |       throw new BadRequestException("Cart items not found or invalid");
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.finalizeOrderFromPayment (modules/orders/orders.service.ts:1233:8)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/orders.service.spec.ts:4595:22)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:   ● OrdersService › finalizeOrderFromPayment › should handle concurrent order creation (idempotent)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       1231 |       })
-@vestcodes/vcecom-backend:test:       1232 |       .from(cartItems)
-@vestcodes/vcecom-backend:test:     > 1233 |       .where(inArray(cartItems.id, cartItemIds));
-@vestcodes/vcecom-backend:test:            |        ^
-@vestcodes/vcecom-backend:test:       1234 |
-@vestcodes/vcecom-backend:test:       1235 |     if (allCartItems.length === 0) {
-@vestcodes/vcecom-backend:test:       1236 |       throw new BadRequestException("Cart items not found or invalid");
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.finalizeOrderFromPayment (modules/orders/orders.service.ts:1233:8)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/orders.service.spec.ts:4781:22)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:   ● OrdersService › finalizeOrderFromPayment › should handle inventory commit failure gracefully
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       1231 |       })
-@vestcodes/vcecom-backend:test:       1232 |       .from(cartItems)
-@vestcodes/vcecom-backend:test:     > 1233 |       .where(inArray(cartItems.id, cartItemIds));
-@vestcodes/vcecom-backend:test:            |        ^
-@vestcodes/vcecom-backend:test:       1234 |
-@vestcodes/vcecom-backend:test:       1235 |     if (allCartItems.length === 0) {
-@vestcodes/vcecom-backend:test:       1236 |       throw new BadRequestException("Cart items not found or invalid");
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.finalizeOrderFromPayment (modules/orders/orders.service.ts:1233:8)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/orders.service.spec.ts:4950:22)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:   ● OrdersService › finalizeOrderFromPayment › should handle inventory commit idempotency (multiple commits don't double-consume)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       1231 |       })
-@vestcodes/vcecom-backend:test:       1232 |       .from(cartItems)
-@vestcodes/vcecom-backend:test:     > 1233 |       .where(inArray(cartItems.id, cartItemIds));
-@vestcodes/vcecom-backend:test:            |        ^
-@vestcodes/vcecom-backend:test:       1234 |
-@vestcodes/vcecom-backend:test:       1235 |     if (allCartItems.length === 0) {
-@vestcodes/vcecom-backend:test:       1236 |       throw new BadRequestException("Cart items not found or invalid");
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.finalizeOrderFromPayment (modules/orders/orders.service.ts:1233:8)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/orders.service.spec.ts:5085:7)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:   ● OrdersService › finalizeOrderFromPayment › should throw error if trying to transition to ORDER_CREATED from invalid state
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:     TypeError: db_1.db.select(...).from(...).where is not a function
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       1231 |       })
-@vestcodes/vcecom-backend:test:       1232 |       .from(cartItems)
-@vestcodes/vcecom-backend:test:     > 1233 |       .where(inArray(cartItems.id, cartItemIds));
-@vestcodes/vcecom-backend:test:            |        ^
-@vestcodes/vcecom-backend:test:       1234 |
-@vestcodes/vcecom-backend:test:       1235 |     if (allCartItems.length === 0) {
-@vestcodes/vcecom-backend:test:       1236 |       throw new BadRequestException("Cart items not found or invalid");
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test:       at OrdersService.finalizeOrderFromPayment (modules/orders/orders.service.ts:1233:8)
-@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/orders.service.spec.ts:5309:22)
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test: 
-@vestcodes/vcecom-backend:test: Test Suites: 3 failed, 2 skipped, 48 passed, 51 of 53 total
-@vestcodes/vcecom-backend:test: Tests:       11 failed, 95 skipped, 712 passed, 818 total
-@vestcodes/vcecom-backend:test: Snapshots:   0 total
-@vestcodes/vcecom-backend:test: Time:        3.496 s
-@vestcodes/vcecom-backend:test: Ran all test suites.
-@vestcodes/vcecom-backend:test:  ELIFECYCLE  Test failed. See above for more details.
-@vestcodes/vcecom-backend:test: ERROR: command finished with error: command (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/apps/backend) /opt/homebrew/bin/pnpm run test exited (1)
-@vestcodes/vcecom-backend#test: command (/Users/sarwagya/Desktop/personal/vestcodes/ecommerce/apps/backend) /opt/homebrew/bin/pnpm run test exited (1)
-
- Tasks:    3 successful, 4 total
-Cached:    3 cached, 4 total
-  Time:    4.312s 
-Failed:    @vestcodes/vcecom-backend#test
-
- ERROR  run failed: command  exited (1)
- ELIFECYCLE  Test failed. See above for more details.

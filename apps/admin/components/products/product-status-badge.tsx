@@ -1,25 +1,35 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import type { ProductStatus } from "@/lib/types/products";
 
-type Props = {
-  status: "draft" | "active" | "archived";
-};
+interface ProductStatusBadgeProps {
+  status: ProductStatus;
+}
 
-export function ProductStatusBadge({ status }: Props) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-        status === "draft" &&
-          "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-        status === "active" &&
-          "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-        status === "archived" &&
-          "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
-      )}
-    >
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
+export function ProductStatusBadge({ status }: ProductStatusBadgeProps) {
+  const variants: Record<
+    ProductStatus,
+    {
+      label: string;
+      variant: "default" | "secondary" | "destructive" | "outline";
+    }
+  > = {
+    draft: {
+      label: "Draft",
+      variant: "outline",
+    },
+    active: {
+      label: "Active",
+      variant: "default",
+    },
+    archived: {
+      label: "Archived",
+      variant: "secondary",
+    },
+  };
+
+  const { label, variant } = variants[status];
+
+  return <Badge variant={variant}>{label}</Badge>;
 }

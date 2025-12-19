@@ -84,7 +84,7 @@ export class AdminAuthService {
     }
 
     // Verify password (supports both argon2id and bcrypt)
-    const isValid = await verifyPassword(password, admin.passwordHash);
+    const isValid = await verifyPassword(admin.passwordHash, password);
 
     if (!isValid) {
       throw new UnauthorizedException("Invalid email or password");

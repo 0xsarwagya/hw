@@ -1,18 +1,18 @@
 {
-  "/docs/docs-0ef": {
+  "/docs/docs-219": {
     "__comp": "5e95c892",
     "__context": {
       "plugin": "aba21aa0"
     }
   },
-  "/docs/docs-61f": {
+  "/docs/docs-0aa": {
     "__comp": "a7bd4aaa",
     "__props": "a2065270"
   },
-  "/docs/docs-5ad": {
+  "/docs/docs-5fe": {
     "__comp": "a94703ab"
   },
-  "/docs/docs/api-reference/admin-api-062": {
+  "/docs/docs/api-reference/admin-api-a58": {
     "__comp": "17896441",
     "content": "d8b6cdbf"
   },
@@ -28,7 +28,7 @@
     "__comp": "17896441",
     "content": "1cd9f096"
   },
-  "/docs/docs/architecture/overview-85e": {
+  "/docs/docs/architecture/overview-d3a": {
     "__comp": "17896441",
     "content": "0b1ac180"
   },
@@ -48,7 +48,7 @@
     "__comp": "17896441",
     "content": "427aa2a0"
   },
-  "/docs/docs/bundles/definition-bcd": {
+  "/docs/docs/bundles/definition-433": {
     "__comp": "17896441",
     "content": "ac2e62c3"
   },
@@ -60,19 +60,19 @@
     "__comp": "17896441",
     "content": "71a843cd"
   },
-  "/docs/docs/catalog/collections-bbd": {
+  "/docs/docs/catalog/collections-5f1": {
     "__comp": "17896441",
     "content": "6aa1d44c"
   },
-  "/docs/docs/catalog/inventory-c8f": {
+  "/docs/docs/catalog/inventory-bad": {
     "__comp": "17896441",
     "content": "f4f7ca35"
   },
-  "/docs/docs/catalog/products-27b": {
+  "/docs/docs/catalog/products-6e5": {
     "__comp": "17896441",
     "content": "62ea8477"
   },
-  "/docs/docs/catalog/variants-3fc": {
+  "/docs/docs/catalog/variants-516": {
     "__comp": "17896441",
     "content": "41972ccc"
   },
@@ -92,7 +92,7 @@
     "__comp": "17896441",
     "content": "a64b2381"
   },
-  "/docs/docs/checkout/state-machine-fb4": {
+  "/docs/docs/checkout/state-machine-13b": {
     "__comp": "17896441",
     "content": "50aafbb1"
   },
@@ -104,7 +104,7 @@
     "__comp": "17896441",
     "content": "22ed46b6"
   },
-  "/docs/docs/database-schema/overview-71e": {
+  "/docs/docs/database-schema/overview-f8b": {
     "__comp": "17896441",
     "content": "b76438c1"
   },
@@ -116,7 +116,7 @@
     "__comp": "17896441",
     "content": "ff8b1e34"
   },
-  "/docs/docs/deployment/overview-85b": {
+  "/docs/docs/deployment/overview-624": {
     "__comp": "17896441",
     "content": "69425d0e"
   },
@@ -128,7 +128,7 @@
     "__comp": "17896441",
     "content": "bdbc3a07"
   },
-  "/docs/docs/discounts/definitions-608": {
+  "/docs/docs/discounts/definitions-49d": {
     "__comp": "17896441",
     "content": "42b5df3a"
   },
@@ -152,23 +152,23 @@
     "__comp": "17896441",
     "content": "e8f2c13e"
   },
-  "/docs/docs/introduction-e80": {
+  "/docs/docs/introduction-478": {
     "__comp": "17896441",
     "content": "a09c2993"
   },
-  "/docs/docs/observability/context-312": {
+  "/docs/docs/observability/context-160": {
     "__comp": "17896441",
     "content": "361d7a1c"
   },
-  "/docs/docs/observability/correlation-716": {
+  "/docs/docs/observability/correlation-16c": {
     "__comp": "17896441",
     "content": "fde88871"
   },
-  "/docs/docs/observability/logging-994": {
+  "/docs/docs/observability/logging-b47": {
     "__comp": "17896441",
     "content": "2b5a7889"
   },
-  "/docs/docs/observability/tracing-120": {
+  "/docs/docs/observability/tracing-ef5": {
     "__comp": "17896441",
     "content": "da03633c"
   },
@@ -180,7 +180,7 @@
     "__comp": "17896441",
     "content": "f780f0b5"
   },
-  "/docs/docs/orders/overview-4fc": {
+  "/docs/docs/orders/overview-68f": {
     "__comp": "17896441",
     "content": "593e8d2f"
   },
@@ -216,11 +216,11 @@
     "__comp": "17896441",
     "content": "b4254be9"
   },
-  "/docs/docs/redis/caching-layers-bc3": {
+  "/docs/docs/redis/caching-layers-872": {
     "__comp": "17896441",
     "content": "737a8b3b"
   },
-  "/docs/docs/redis/expirations-74f": {
+  "/docs/docs/redis/expirations-6ff": {
     "__comp": "17896441",
     "content": "95a32ece"
   },
@@ -228,7 +228,7 @@
     "__comp": "17896441",
     "content": "3226a077"
   },
-  "/docs/docs/redis/overview-4d0": {
+  "/docs/docs/redis/overview-9d0": {
     "__comp": "17896441",
     "content": "e27b3cc1"
   },
@@ -244,7 +244,7 @@
     "__comp": "17896441",
     "content": "0dbac33d"
   },
-  "/docs/docs/reviews/overview-4cf": {
+  "/docs/docs/reviews/overview-123": {
     "__comp": "17896441",
     "content": "766752d4"
   },

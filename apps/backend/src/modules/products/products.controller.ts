@@ -14,6 +14,7 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -36,6 +37,13 @@ import {
 import { QueryProductsDto } from "./dto/query-products.dto";
 import { SearchProductsDto, SearchResponseDto } from "./dto/search.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
+import { CreateProductVariantOptionTypeDto } from "./dto/variant-option-types/create-product-variant-option-type.dto";
+import { CreateVariantOptionTypeDto } from "./dto/variant-option-types/create-variant-option-type.dto";
+import { CreateVariantOptionValueDto } from "./dto/variant-option-types/create-variant-option-value.dto";
+import {
+  ProductVariantOptionTypeResponseDto,
+  VariantOptionTypeResponseDto,
+} from "./dto/variant-option-types/variant-option-type-response.dto";
 import { ProductsService } from "./products.service";
 
 @ApiTags("products")
@@ -288,6 +296,242 @@ export class ProductsController {
   })
   async remove(@Param("id") id: string) {
     return this.productsService.remove(id);
+  }
+
+  @Get(":id/collections")
+  @Roles("admin")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_GET)
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({
+    summary: "Get collections for a product",
+    description: "Get all collections that contain this product (admin only)",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Product ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiOkResponse({
+    description: "Collections retrieved successfully",
+  })
+  @ApiNotFoundResponse({
+    description: "Product not found",
+  })
+  @ApiUnauthorizedResponse({
+    description: "Authentication required",
+  })
+  @ApiForbiddenResponse({
+    description: "Access denied. Admin role required.",
+  })
+  async getProductCollections(@Param("id") id: string) {
+    return this.productsService.getProductCollections(id);
+  }
+
+  @Get("variant-option-types")
+  @ApiOperation({
+    summary: "Get all global variant option type templates",
+    description: "Get all reusable variant option type templates",
+  })
+  @ApiOkResponse({
+    description: "Variant option types retrieved successfully",
+    type: [VariantOptionTypeResponseDto],
+  })
+  async getVariantOptionTypes() {
+    return this.productsService.getVariantOptionTypes();
+  }
+
+  @Post("variant-option-types")
+  @Roles("admin")
+  @HttpCode(HttpStatus.CREATED)
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({
+    summary: "Create a global variant option type template",
+    description: "Create a reusable variant option type template (admin only)",
+  })
+  @ApiCreatedResponse({
+    description: "Variant option type created successfully",
+    type: VariantOptionTypeResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: "Authentication required",
+  })
+  @ApiForbiddenResponse({
+    description: "Access denied. Admin role required.",
+  })
+  async createVariantOptionType(@Body() createDto: CreateVariantOptionTypeDto) {
+    return this.productsService.createVariantOptionType(
+      createDto.name,
+      createDto.description,
+    );
+  }
+
+  @Get(":id/variant-option-types")
+  @ApiOperation({
+    summary: "Get product variant option types",
+    description: "Get all variant option types for a product with their values",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Product ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiOkResponse({
+    description: "Product variant option types retrieved successfully",
+    type: [ProductVariantOptionTypeResponseDto],
+  })
+  async getProductVariantOptionTypes(@Param("id") id: string) {
+    return this.productsService.getProductVariantOptionTypes(id);
+  }
+
+  @Post(":id/variant-option-types")
+  @Roles("admin")
+  @HttpCode(HttpStatus.CREATED)
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({
+    summary: "Add variant option type to product",
+    description: "Add a variant option type to a product (admin only)",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Product ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiCreatedResponse({
+    description: "Variant option type added successfully",
+    type: ProductVariantOptionTypeResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: "Authentication required",
+  })
+  @ApiForbiddenResponse({
+    description: "Access denied. Admin role required.",
+  })
+  async addVariantOptionTypeToProduct(
+    @Param("id") productId: string,
+    @Body() createDto: CreateProductVariantOptionTypeDto,
+  ) {
+    return this.productsService.addVariantOptionTypeToProduct(
+      productId,
+      createDto.optionTypeId,
+      createDto.name,
+      createDto.displayOrder,
+    );
+  }
+
+  @Delete(":id/variant-option-types/:optionTypeId")
+  @Roles("admin")
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({
+    summary: "Remove variant option type from product",
+    description: "Remove a variant option type from a product (admin only)",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Product ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiParam({
+    name: "optionTypeId",
+    description: "Product variant option type ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiOkResponse({
+    description: "Variant option type removed successfully",
+  })
+  @ApiUnauthorizedResponse({
+    description: "Authentication required",
+  })
+  @ApiForbiddenResponse({
+    description: "Access denied. Admin role required.",
+  })
+  async removeVariantOptionTypeFromProduct(
+    @Param("id") productId: string,
+    @Param("optionTypeId") optionTypeId: string,
+  ) {
+    return this.productsService.removeVariantOptionTypeFromProduct(
+      productId,
+      optionTypeId,
+    );
+  }
+
+  @Post(":id/variant-option-types/:optionTypeId/values")
+  @Roles("admin")
+  @HttpCode(HttpStatus.CREATED)
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({
+    summary: "Add value to variant option type",
+    description: "Add a value to a product variant option type (admin only)",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Product ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiParam({
+    name: "optionTypeId",
+    description: "Product variant option type ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiCreatedResponse({
+    description: "Variant option value added successfully",
+  })
+  @ApiUnauthorizedResponse({
+    description: "Authentication required",
+  })
+  @ApiForbiddenResponse({
+    description: "Access denied. Admin role required.",
+  })
+  async addValueToVariantOptionType(
+    @Param("optionTypeId") optionTypeId: string,
+    @Body() createDto: CreateVariantOptionValueDto,
+  ) {
+    return this.productsService.addValueToVariantOptionType(
+      optionTypeId,
+      createDto.value,
+      createDto.displayOrder,
+    );
+  }
+
+  @Delete(":id/variant-option-types/:optionTypeId/values/:valueId")
+  @Roles("admin")
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({
+    summary: "Remove value from variant option type",
+    description:
+      "Remove a value from a product variant option type (admin only)",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Product ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiParam({
+    name: "optionTypeId",
+    description: "Product variant option type ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiParam({
+    name: "valueId",
+    description: "Variant option value ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiOkResponse({
+    description: "Variant option value removed successfully",
+  })
+  @ApiUnauthorizedResponse({
+    description: "Authentication required",
+  })
+  @ApiForbiddenResponse({
+    description: "Access denied. Admin role required.",
+  })
+  async removeValueFromVariantOptionType(
+    @Param("optionTypeId") optionTypeId: string,
+    @Param("valueId") valueId: string,
+  ) {
+    return this.productsService.removeValueFromVariantOptionType(
+      optionTypeId,
+      valueId,
+    );
   }
 
   @Get(":id/images")

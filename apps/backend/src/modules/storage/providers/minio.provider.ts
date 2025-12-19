@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import * as Minio from "minio";
 import { PinoLogger } from "nestjs-pino";
+import { AppConfigService } from "../../../common/config/app.config.service";
 import { ContextService } from "../../../common/logging/context.service";
 import {
   createErrorContext,
@@ -17,25 +18,22 @@ export class MinioProvider implements StorageProvider {
   constructor(
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    private readonly appConfigService: AppConfigService,
   ) {
-    const endpoint = process.env.MINIO_ENDPOINT || "localhost:9000";
-    const accessKey = process.env.MINIO_ACCESS_KEY || "minioadmin";
-    const secretKey = process.env.MINIO_SECRET_KEY || "minioadmin";
-    const useSSL = process.env.MINIO_USE_SSL === "true";
-    this.bucket = process.env.STORAGE_BUCKET || "vcecom";
-    this.publicUrl =
-      process.env.MINIO_PUBLIC_URL || `http://${endpoint}/${this.bucket}`;
+    const config = this.appConfigService.getMinioConfig();
+    this.bucket = config.bucket;
+    this.publicUrl = config.publicUrl;
 
     this.client = new Minio.Client({
-      endPoint: endpoint.split(":")[0],
-      port: parseInt(endpoint.split(":")[1] || "9000", 10),
-      useSSL,
-      accessKey,
-      secretKey,
+      endPoint: config.endpoint.split(":")[0],
+      port: parseInt(config.endpoint.split(":")[1] || "9000", 10),
+      useSSL: config.useSSL,
+      accessKey: config.accessKey,
+      secretKey: config.secretKey,
     });
 
     // Only ensure bucket exists if not in test environment
-    if (process.env.NODE_ENV !== "test") {
+    if (!this.appConfigService.isTestEnvironment()) {
       this.ensureBucketExists().catch((error) => {
         this.logger.error(
           createErrorContext(this.contextService, "ensureBucketExists", error, {
@@ -149,6 +147,26 @@ export class MinioProvider implements StorageProvider {
       );
       throw new Error(
         `Failed to list files: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  async getMetadata(
+    key: string,
+  ): Promise<{ size: number; contentType?: string }> {
+    try {
+      const stat = await this.client.statObject(this.bucket, key);
+      return {
+        size: stat.size,
+        contentType:
+          stat.metaData?.["content-type"] || stat.metaData?.["Content-Type"],
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to get metadata for ${key}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw new Error(
+        `Failed to get file metadata: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

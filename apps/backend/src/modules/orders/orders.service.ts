@@ -1,3 +1,4 @@
+// External libraries
 import {
   BadRequestException,
   ConflictException,
@@ -10,7 +11,6 @@ import {
   addresses,
   and,
   cartItems,
-  customers,
   db,
   desc,
   eq,
@@ -18,20 +18,22 @@ import {
   inArray,
   orderItems,
   orders,
-  payments,
   productCollections,
   products,
   productTags,
   productVariants,
-  shipments,
 } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
+
+// Internal modules - Common
 import { ContextService } from "../../common/logging/context.service";
 import {
   createErrorContext,
   createLogContext,
 } from "../../common/logging/logging.helper";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
+
+// Internal modules - Feature modules
 import { CartsService } from "../carts/carts.service";
 import { BundleCartItemMetadata } from "../carts/dto/bundle-cart-item.dto";
 import { AddressesService } from "../customers/addresses.service";
@@ -69,19 +71,28 @@ import { CheckoutMetadata } from "../redis-store/dto/checkout-metadata.dto";
 import { PaymentIntent } from "../redis-store/dto/payment-intent.dto";
 import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
+
+// Relative imports - DTOs
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { OrderResponseDto } from "./dto/order-response.dto";
-import {
-  OrderTimelineDto,
-  TimelineEventDto,
-  TimelineEventType,
-} from "./dto/order-timeline.dto";
+import { OrderTimelineDto } from "./dto/order-timeline.dto";
 import { OrderTrackingDto } from "./dto/order-tracking.dto";
 import { PaymentIntentResponseDto } from "./dto/payment-intent-response.dto";
 import {
   OrderStatus,
   UpdateOrderStatusDto,
 } from "./dto/update-order-status.dto";
+import {
+  isGuestCheckout,
+  validateAuthenticatedCheckoutRequirements,
+  validateGuestCheckoutRequirements,
+} from "./services/order-creation.helper";
+// Relative imports - Services
+import { OrderGstService } from "./services/order-gst.service";
+import { OrderPricingService } from "./services/order-pricing.service";
+import { OrderStatusService } from "./services/order-status.service";
+import { OrderTimelineService } from "./services/order-timeline.service";
+import { OrderValidationService } from "./services/order-validation.service";
 
 @Injectable()
 export class OrdersService {
@@ -101,212 +112,25 @@ export class OrdersService {
     private readonly bundleService: RulesetBundleService,
     private readonly discountProfiler: DiscountProfiler,
     private readonly pricingHotReloadWatcher: PricingHotReloadWatcher,
-    private readonly priceListService: PriceListService,
-    private readonly customerGroupService: CustomerGroupService,
+    readonly _priceListService: PriceListService,
+    readonly _customerGroupService: CustomerGroupService,
     private readonly pricingSnapshotValidator: PricingSnapshotValidator,
     private readonly pricingAuditService: PricingAuditService,
     private readonly pricingDriftDetector: PricingDriftDetectorService,
     private readonly bundlePricingService: BundlePricingService,
     @Inject(forwardRef(() => PaymentsService))
     private readonly paymentsService: PaymentsService,
+    // Extracted services
+    private readonly validationService: OrderValidationService,
+    private readonly pricingService: OrderPricingService,
+    private readonly statusService: OrderStatusService,
+    private readonly gstService: OrderGstService,
+    private readonly timelineService: OrderTimelineService,
   ) {}
 
-  /**
-   * Get customer group ID for a customer
-   */
-  private async getCustomerGroupId(customerId: string): Promise<string | null> {
-    try {
-      const [customer] = await db
-        .select()
-        .from(customers)
-        .where(eq(customers.id, customerId))
-        .limit(1);
-      return customer?.customerGroupId || null;
-    } catch (error) {
-      this.logger.error(
-        createErrorContext(this.contextService, "getCustomerGroupId", error, {
-          customerId,
-        }),
-        "Failed to get customer group",
-      );
-      return null;
-    }
-  }
-
-  /**
-   * Get price lists for a customer (based on customer group)
-   */
-  private async getPriceListsForCustomer(
-    customerGroupId: string | null,
-  ): Promise<
-    Array<{
-      id: string;
-      name: string;
-      type: string;
-      priority: number;
-      isActive: boolean;
-      startDate?: Date;
-      endDate?: Date;
-      items: Array<{
-        id: string;
-        productVariantId?: string;
-        productId?: string;
-        categoryId?: string;
-        overrideType: "FIXED" | "PERCENTAGE";
-        overrideValue: number;
-      }>;
-    }>
-  > {
-    try {
-      if (!customerGroupId) {
-        // No customer group, return empty price lists
-        return [];
-      }
-
-      const group = await this.customerGroupService.findOne(customerGroupId);
-      const priceListIds = group.priceLists.map((pl) => pl.priceListId);
-
-      if (priceListIds.length === 0) {
-        return [];
-      }
-
-      const priceLists = await Promise.all(
-        priceListIds.map((id) => this.priceListService.findOne(id)),
-      );
-
-      // Convert to PricingEngineInput format
-      return priceLists.map((list) => ({
-        id: list.id,
-        name: list.name,
-        type: list.type,
-        priority: list.priority,
-        isActive: list.isActive,
-        startDate: list.startDate || undefined,
-        endDate: list.endDate || undefined,
-        items: list.items.map((item) => ({
-          id: item.id,
-          productVariantId: item.productVariantId || undefined,
-          productId: item.productId || undefined,
-          categoryId: item.categoryId || undefined,
-          overrideType: item.overrideType as "FIXED" | "PERCENTAGE",
-          overrideValue: item.overrideValue,
-        })),
-      }));
-    } catch (error) {
-      this.logger.error(
-        createErrorContext(
-          this.contextService,
-          "getPriceListsForCustomer",
-          error,
-          { customerGroupId },
-        ),
-        "Failed to get price lists for customer group",
-      );
-      return [];
-    }
-  }
-
-  /**
-   * Generate unique order number
-   * Format: ORD-YYYY-NNNNNN (e.g., ORD-2025-001234)
-   */
-  private async generateOrderNumber(): Promise<string> {
-    const year = new Date().getFullYear();
-    const prefix = `ORD-${year}-`;
-
-    // Get the latest order number for this year
-    const latestOrders = await db
-      .select({ orderNumber: orders.orderNumber })
-      .from(orders)
-      .where(ilike(orders.orderNumber, `${prefix}%`))
-      .orderBy(desc(orders.createdAt))
-      .limit(1);
-
-    let sequence = 1;
-    if (latestOrders.length > 0) {
-      const latestNumber = latestOrders[0].orderNumber;
-      const sequenceStr = latestNumber.replace(prefix, "");
-      const parsedSequence = parseInt(sequenceStr, 10);
-      if (!Number.isNaN(parsedSequence)) {
-        sequence = parsedSequence + 1;
-      }
-    }
-
-    // Format sequence as 6-digit number
-    const formattedSequence = sequence.toString().padStart(6, "0");
-    return `${prefix}${formattedSequence}`;
-  }
-
-  /**
-   * Get customer ID from user ID
-   */
-  private async getCustomerId(userId: string): Promise<string> {
-    const [customer] = await db
-      .select()
-      .from(customers)
-      .where(eq(customers.userId, userId))
-      .limit(1);
-
-    if (!customer) {
-      throw new NotFoundException("Customer profile not found");
-    }
-
-    return customer.id;
-  }
-
-  /**
-   * Get seller state (default to Maharashtra)
-   */
-  private getSellerState(): string {
-    return process.env.SELLER_STATE || "Maharashtra";
-  }
-
-  /**
-   * Validate that addresses belong to the customer
-   */
-  private async validateAddresses(
-    customerId: string,
-    shippingAddressId: string,
-    billingAddressId: string,
-  ) {
-    // Check shipping address
-    const [shippingAddress] = await db
-      .select()
-      .from(addresses)
-      .where(
-        and(
-          eq(addresses.id, shippingAddressId),
-          eq(addresses.customerId, customerId),
-        ),
-      )
-      .limit(1);
-
-    if (!shippingAddress) {
-      throw new NotFoundException(
-        "Shipping address not found or does not belong to customer",
-      );
-    }
-
-    // Check billing address
-    const [billingAddress] = await db
-      .select()
-      .from(addresses)
-      .where(
-        and(
-          eq(addresses.id, billingAddressId),
-          eq(addresses.customerId, customerId),
-        ),
-      )
-      .limit(1);
-
-    if (!billingAddress) {
-      throw new NotFoundException(
-        "Billing address not found or does not belong to customer",
-      );
-    }
-
-    return { shippingAddress, billingAddress };
-  }
+  // ============================================================================
+  // Public API Methods - Order Lifecycle
+  // ============================================================================
 
   /**
    * Create payment intent for checkout
@@ -331,33 +155,30 @@ export class OrdersService {
 
     try {
       // Determine if guest checkout or authenticated checkout
-      const isGuestCheckout = !userId || !!createOrderDto.email;
+      const checkoutIsGuest = isGuestCheckout(userId, createOrderDto);
 
-      if (isGuestCheckout) {
+      if (checkoutIsGuest) {
         // Guest checkout flow
-        if (
-          !createOrderDto.email ||
-          !createOrderDto.name ||
-          !createOrderDto.phone ||
-          !createOrderDto.address
-        ) {
-          throw new BadRequestException(
-            "Email, name, phone, and address are required for guest checkout",
-          );
-        }
+        // sessionId is guaranteed to be non-null after validation
+        validateGuestCheckoutRequirements(createOrderDto, sessionId ?? null);
 
-        // Session ID is required for guest checkout
-        if (!sessionId) {
+        // Extract validated values (guaranteed to exist after validation)
+        const guestEmail = createOrderDto.email;
+        const guestName = createOrderDto.name;
+        const guestPhone = createOrderDto.phone;
+        const guestAddress = createOrderDto.address;
+
+        if (!guestEmail || !guestName || !guestPhone || !guestAddress) {
           throw new BadRequestException(
-            "Session ID is required for guest checkout",
+            "Missing required guest checkout fields",
           );
         }
 
         // Create or get guest customer
         const customer = await this.customersService.createGuestCustomer(
-          createOrderDto.email,
-          createOrderDto.name,
-          createOrderDto.phone,
+          guestEmail,
+          guestName,
+          guestPhone,
           createOrderDto.password || null,
         );
         customerId = customer.id;
@@ -366,7 +187,7 @@ export class OrdersService {
         // Create addresses for guest customer
         const guestShippingAddress =
           await this.addressesService.createByCustomerId(customerId, {
-            ...createOrderDto.address,
+            ...guestAddress,
             type: "shipping",
           });
         shippingAddressId = guestShippingAddress.id;
@@ -376,38 +197,48 @@ export class OrdersService {
         const billingAddress = await this.addressesService.createByCustomerId(
           customerId,
           {
-            ...createOrderDto.address,
+            ...guestAddress,
             type: "billing",
           },
         );
         billingAddressId = billingAddress.id;
 
         // Get guest cart by sessionId
+        // SessionId is guaranteed to exist due to validation in validateGuestCheckoutRequirements
+        if (!sessionId) {
+          throw new BadRequestException(
+            "Session ID is required for guest checkout",
+          );
+        }
         const cart = await this.cartsService.getCart(null, sessionId);
         if (!cart || !cart.items || cart.items.length === 0) {
           throw new BadRequestException("Cart is empty");
         }
         cartId = cart.id;
       } else {
-        // Authenticated checkout flow (existing logic)
-        customerId = await this.getCustomerId(userId);
-
-        // Validate addresses first (before cart check to match test expectations)
-        if (
-          !createOrderDto.shippingAddressId ||
-          !createOrderDto.billingAddressId
-        ) {
+        // Authenticated checkout flow
+        // userId is guaranteed to be non-null for authenticated checkout
+        if (!userId) {
           throw new BadRequestException(
-            "Shipping and billing address IDs are required for authenticated checkout",
+            "User ID is required for authenticated checkout",
           );
         }
-        await this.validateAddresses(
-          customerId,
-          createOrderDto.shippingAddressId,
-          createOrderDto.billingAddressId,
-        );
-        shippingAddressId = createOrderDto.shippingAddressId;
-        billingAddressId = createOrderDto.billingAddressId;
+        customerId = await this.getCustomerId(userId);
+        validateAuthenticatedCheckoutRequirements(createOrderDto);
+
+        // Extract validated address IDs (guaranteed to exist due to validation)
+        const shippingAddrId = createOrderDto.shippingAddressId;
+        const billingAddrId = createOrderDto.billingAddressId;
+
+        if (!shippingAddrId || !billingAddrId) {
+          throw new BadRequestException(
+            "Shipping and billing address IDs are required",
+          );
+        }
+
+        await this.validateAddresses(customerId, shippingAddrId, billingAddrId);
+        shippingAddressId = shippingAddrId;
+        billingAddressId = billingAddrId;
 
         // Fetch shipping address for state calculation
         const [fetchedShippingAddress] = await db
@@ -434,14 +265,16 @@ export class OrdersService {
       // Get cart object for later use (discount code, items, etc.)
       const cart = await this.cartsService.getCartById(cartId);
 
-      // Create checkout session (CREATED state)
-      // Session creation failure is acceptable - we can proceed without state machine
-      // but if session exists, we MUST validate its state before proceeding
+      // Create checkout session for state machine tracking
+      // Session tracks checkout progress: CREATED -> LOCKED -> COMPLETED/FAILED
+      // If session creation fails, we continue without state tracking (graceful degradation)
+      // This allows order creation to proceed even if Redis is temporarily unavailable
       try {
         const sessionResult = await this.checkoutStore.createSession(cartId);
         checkoutSessionId = sessionResult.sessionId;
       } catch (error) {
-        // Write failure - log but continue (order creation can proceed without session)
+        // Session creation failure is non-fatal
+        // Order creation can proceed without state machine tracking
         this.logger.warn(
           createErrorContext(
             this.contextService,
@@ -451,13 +284,14 @@ export class OrdersService {
           ),
           "Failed to create checkout session, proceeding without state machine",
         );
-        // checkoutSessionId remains null - order creation will skip state validation
       }
 
-      // Acquire checkout lock to prevent concurrent checkout attempts
+      // Acquire checkout lock to prevent concurrent checkout attempts on same cart
+      // This prevents race conditions where multiple requests try to checkout simultaneously
+      // Lock is held for the duration of checkout process
       lockAcquired = await this.checkoutStore.acquireCheckoutLock(cartId);
       if (!lockAcquired) {
-        // Transition session to FAILED if lock acquisition fails
+        // Another checkout is in progress - mark session as failed if it exists
         if (checkoutSessionId) {
           try {
             await this.checkoutStore.failSession(checkoutSessionId);
@@ -468,8 +302,9 @@ export class OrdersService {
         throw new ConflictException("Cart is already being checked out");
       }
 
-      // Transition to LOCKED state (lock acquired)
-      // Write failure is acceptable - lock is already acquired, preventing duplicates
+      // Transition session to LOCKED state (lock successfully acquired)
+      // If state transition fails, we continue anyway since lock prevents duplicates
+      // The lock is the source of truth for preventing concurrent checkouts
       if (checkoutSessionId) {
         try {
           await this.checkoutStore.transitionState(
@@ -478,7 +313,7 @@ export class OrdersService {
             CheckoutState.LOCKED,
           );
         } catch (error) {
-          // Write failure - log but continue (lock is held, preventing duplicates)
+          // State transition failure is non-fatal - lock is already held
           this.logger.error(
             createErrorContext(
               this.contextService,
@@ -1368,8 +1203,8 @@ export class OrdersService {
         );
       }
 
-      // Get order items
-      const orderItemsResult = await db
+      // Get order items for GST calculation
+      const orderItemsList = await db
         .select()
         .from(orderItems)
         .where(eq(orderItems.orderId, order.id));
@@ -1388,11 +1223,11 @@ export class OrdersService {
       let totalCgst = 0;
       let totalSgst = 0;
       let totalIgst = 0;
-      for (const item of orderItemsResult) {
-        const itemSubtotal = item.price * item.quantity;
+      for (const orderItem of orderItemsList) {
+        const itemSubtotal = orderItem.price * orderItem.quantity;
         const gstBreakdown = calculateGstBreakdown(
           itemSubtotal,
-          item.gstRate,
+          orderItem.gstRate,
           sellerState,
           buyerState,
         );
@@ -1412,7 +1247,7 @@ export class OrdersService {
       return {
         ...order,
         gstBreakdown,
-        items: orderItemsResult,
+        items: orderItemsList,
       } as OrderResponseDto;
     }
 
@@ -2137,6 +1972,10 @@ export class OrdersService {
     return orderResponse;
   }
 
+  // ============================================================================
+  // Public API Methods - Order Retrieval
+  // ============================================================================
+
   /**
    * Get order by ID (for authenticated customer)
    */
@@ -2215,6 +2054,10 @@ export class OrdersService {
   /**
    * Calculate GST breakdown for an order
    */
+  /**
+   * Calculate GST breakdown for an order
+   * @deprecated Use OrderGstService.calculateOrderGstBreakdown instead
+   */
   private async calculateOrderGstBreakdown(
     orderId: string,
     shippingAddressId: string,
@@ -2225,53 +2068,10 @@ export class OrdersService {
     totalGst: number;
     isIntraState: boolean;
   }> {
-    // Get order items with GST rates
-    const items = await db
-      .select({
-        quantity: orderItems.quantity,
-        price: orderItems.price,
-        gstRate: orderItems.gstRate,
-      })
-      .from(orderItems)
-      .where(eq(orderItems.orderId, orderId));
-
-    // Get shipping address state
-    const [shippingAddress] = await db
-      .select({ state: addresses.state })
-      .from(addresses)
-      .where(eq(addresses.id, shippingAddressId))
-      .limit(1);
-
-    const sellerState = this.getSellerState();
-    const buyerState = shippingAddress?.state || "";
-
-    let totalCgst = 0;
-    let totalSgst = 0;
-    let totalIgst = 0;
-
-    // Ensure items is an array (for test compatibility)
-    const itemsArray = Array.isArray(items) ? items : [];
-
-    for (const item of itemsArray) {
-      const itemSubtotal = item.price * item.quantity;
-      const gstBreakdown = calculateGstBreakdown(
-        itemSubtotal,
-        item.gstRate,
-        sellerState,
-        buyerState,
-      );
-      totalCgst += gstBreakdown.cgst;
-      totalSgst += gstBreakdown.sgst;
-      totalIgst += gstBreakdown.igst;
-    }
-
-    return {
-      cgst: totalCgst,
-      sgst: totalSgst,
-      igst: totalIgst,
-      totalGst: totalCgst + totalSgst + totalIgst,
-      isIntraState: sellerState === buyerState,
-    };
+    return this.gstService.calculateOrderGstBreakdown(
+      orderId,
+      shippingAddressId,
+    );
   }
 
   /**
@@ -2316,33 +2116,9 @@ export class OrdersService {
     return ordersWithItems;
   }
 
-  /**
-   * Validate status transition
-   * Ensures status changes follow a valid workflow
-   */
-  private validateStatusTransition(
-    currentStatus: string,
-    newStatus: OrderStatus,
-  ): void {
-    const validTransitions: Record<string, OrderStatus[]> = {
-      pending: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
-      confirmed: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
-      processing: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
-      shipped: [OrderStatus.DELIVERED],
-      delivered: [OrderStatus.REFUNDED],
-      cancelled: [], // Cannot transition from cancelled
-      refunded: [], // Cannot transition from refunded
-    };
-
-    const allowedStatuses = validTransitions[currentStatus] || [];
-
-    if (!allowedStatuses.includes(newStatus)) {
-      throw new BadRequestException(
-        `Cannot change order status from '${currentStatus}' to '${newStatus}'. ` +
-          `Valid transitions from '${currentStatus}': ${allowedStatuses.join(", ") || "none"}`,
-      );
-    }
-  }
+  // ============================================================================
+  // Public API Methods - Order Management
+  // ============================================================================
 
   /**
    * Update order status
@@ -2353,49 +2129,12 @@ export class OrdersService {
     orderId: string,
     updateStatusDto: UpdateOrderStatusDto,
   ) {
-    const customerId = await this.getCustomerId(userId);
-
-    // Get current order
-    const [order] = await db
-      .select()
-      .from(orders)
-      .where(and(eq(orders.id, orderId), eq(orders.customerId, customerId)))
-      .limit(1);
-
-    if (!order) {
-      throw new NotFoundException("Order not found");
-    }
-
-    // Validate status transition
-    this.validateStatusTransition(order.status, updateStatusDto.status);
-
-    // Update order status
-    const [updatedOrder] = await db
-      .update(orders)
-      .set({
-        status: updateStatusDto.status,
-        updatedAt: new Date(),
-      })
-      .where(eq(orders.id, orderId))
-      .returning();
-
-    // Get order items
-    const items = await db
-      .select()
-      .from(orderItems)
-      .where(eq(orderItems.orderId, orderId));
-
-    const gstBreakdown = await this.calculateOrderGstBreakdown(
-      orderId,
-      updatedOrder.shippingAddressId,
-    );
-
-    return {
-      ...updatedOrder,
-      gstBreakdown,
-      items,
-    } as OrderResponseDto;
+    return this.statusService.updateStatus(userId, orderId, updateStatusDto);
   }
+
+  // ============================================================================
+  // Public API Methods - Order Tracking & Timeline
+  // ============================================================================
 
   /**
    * Get order tracking information
@@ -2405,44 +2144,7 @@ export class OrdersService {
     userId: string,
     orderId: string,
   ): Promise<OrderTrackingDto> {
-    const customerId = await this.getCustomerId(userId);
-
-    // Get order
-    const [order] = await db
-      .select()
-      .from(orders)
-      .where(and(eq(orders.id, orderId), eq(orders.customerId, customerId)))
-      .limit(1);
-
-    if (!order) {
-      throw new NotFoundException("Order not found");
-    }
-
-    // Get shipments for this order
-    const orderShipments = await db
-      .select()
-      .from(shipments)
-      .where(eq(shipments.orderId, orderId))
-      .orderBy(desc(shipments.createdAt));
-
-    return {
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      status: order.status,
-      shippingProvider: order.shippingProvider,
-      shipments: orderShipments.map((shipment) => ({
-        id: shipment.id,
-        provider: shipment.provider,
-        trackingNumber: shipment.trackingNumber,
-        status: shipment.status,
-        labelUrl: shipment.labelUrl,
-        awbNumber: shipment.awbNumber,
-        createdAt: shipment.createdAt,
-        updatedAt: shipment.updatedAt,
-      })),
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
-    };
+    return this.timelineService.getTracking(userId, orderId);
   }
 
   /**
@@ -2453,209 +2155,111 @@ export class OrdersService {
     userId: string,
     orderId: string,
   ): Promise<OrderTimelineDto> {
-    const customerId = await this.getCustomerId(userId);
+    return this.timelineService.getTimeline(userId, orderId);
+  }
 
-    // Get order
-    const [order] = await db
-      .select()
+  // ============================================================================
+  // Deprecated Methods (delegated to extracted services)
+  // These methods are kept for backward compatibility during refactoring
+  // ============================================================================
+
+  /**
+   * Get customer group ID for a customer
+   * @deprecated Use OrderValidationService.getCustomerGroupId instead
+   */
+  private async getCustomerGroupId(customerId: string): Promise<string | null> {
+    return this.validationService.getCustomerGroupId(customerId);
+  }
+
+  /**
+   * Get price lists for a customer (based on customer group)
+   * @deprecated Use OrderPricingService.getPriceListsForCustomer instead
+   */
+  private async getPriceListsForCustomer(
+    customerGroupId: string | null,
+  ): Promise<
+    Array<{
+      id: string;
+      name: string;
+      type: string;
+      priority: number;
+      isActive: boolean;
+      startDate?: Date;
+      endDate?: Date;
+      items: Array<{
+        id: string;
+        productVariantId?: string;
+        productId?: string;
+        categoryId?: string;
+        overrideType: "FIXED" | "PERCENTAGE";
+        overrideValue: number;
+      }>;
+    }>
+  > {
+    return this.pricingService.getPriceListsForCustomer(customerGroupId);
+  }
+
+  /**
+   * Generate unique order number
+   * Format: ORD-YYYY-NNNNNN (e.g., ORD-2025-001234)
+   * @deprecated This method will be moved to OrderValidationService
+   */
+  private async generateOrderNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `ORD-${year}-`;
+
+    // Get the latest order number for this year
+    const latestOrders = await db
+      .select({ orderNumber: orders.orderNumber })
       .from(orders)
-      .where(and(eq(orders.id, orderId), eq(orders.customerId, customerId)))
+      .where(ilike(orders.orderNumber, `${prefix}%`))
+      .orderBy(desc(orders.createdAt))
       .limit(1);
 
-    if (!order) {
-      throw new NotFoundException("Order not found");
-    }
-
-    const events: TimelineEventDto[] = [];
-
-    // Add order creation event
-    events.push({
-      type: TimelineEventType.ORDER_CREATED,
-      title: "Order Created",
-      description: `Order ${order.orderNumber} was created`,
-      timestamp: order.createdAt,
-      metadata: {
-        orderNumber: order.orderNumber,
-        total: order.total,
-      },
-    });
-
-    // Get payments for this order
-    const orderPayments = await db
-      .select()
-      .from(payments)
-      .where(eq(payments.orderId, orderId))
-      .orderBy(desc(payments.createdAt));
-
-    // Add payment events
-    for (const payment of orderPayments) {
-      events.push({
-        type: TimelineEventType.PAYMENT_INITIATED,
-        title: "Payment Initiated",
-        description: `Payment of ₹${payment.amount} initiated via ${payment.method}`,
-        timestamp: payment.createdAt,
-        metadata: {
-          paymentId: payment.id,
-          amount: payment.amount,
-          method: payment.method,
-          razorpayPaymentId: payment.razorpayPaymentId,
-        },
-      });
-
-      if (payment.status === "captured") {
-        events.push({
-          type: TimelineEventType.PAYMENT_COMPLETED,
-          title: "Payment Completed",
-          description: `Payment of ₹${payment.amount} was successfully completed`,
-          timestamp: payment.updatedAt,
-          metadata: {
-            paymentId: payment.id,
-            amount: payment.amount,
-            method: payment.method,
-          },
-        });
-      } else if (payment.status === "failed") {
-        events.push({
-          type: TimelineEventType.PAYMENT_FAILED,
-          title: "Payment Failed",
-          description: `Payment of ₹${payment.amount} failed`,
-          timestamp: payment.updatedAt,
-          metadata: {
-            paymentId: payment.id,
-            amount: payment.amount,
-            method: payment.method,
-          },
-        });
+    let sequence = 1;
+    if (latestOrders.length > 0) {
+      const latestNumber = latestOrders[0].orderNumber;
+      const sequenceStr = latestNumber.replace(prefix, "");
+      const parsedSequence = parseInt(sequenceStr, 10);
+      if (!Number.isNaN(parsedSequence)) {
+        sequence = parsedSequence + 1;
       }
     }
 
-    // Get shipments for this order
-    const orderShipments = await db
-      .select()
-      .from(shipments)
-      .where(eq(shipments.orderId, orderId))
-      .orderBy(desc(shipments.createdAt));
+    // Format sequence as 6-digit number
+    const formattedSequence = sequence.toString().padStart(6, "0");
+    return `${prefix}${formattedSequence}`;
+  }
 
-    // Add shipment events
-    for (const shipment of orderShipments) {
-      events.push({
-        type: TimelineEventType.SHIPMENT_CREATED,
-        title: "Shipment Created",
-        description: `Shipment created via ${shipment.provider}`,
-        timestamp: shipment.createdAt,
-        metadata: {
-          shipmentId: shipment.id,
-          provider: shipment.provider,
-        },
-      });
+  /**
+   * Get customer ID from user ID
+   * @deprecated Use OrderValidationService.getCustomerId instead
+   */
+  private async getCustomerId(userId: string): Promise<string> {
+    return this.validationService.getCustomerId(userId);
+  }
 
-      // Add shipment status-specific events
-      if (shipment.status === "label_generated") {
-        events.push({
-          type: TimelineEventType.SHIPMENT_LABEL_GENERATED,
-          title: "Shipping Label Generated",
-          description: `Shipping label generated${shipment.trackingNumber ? ` with tracking number ${shipment.trackingNumber}` : ""}`,
-          timestamp: shipment.updatedAt,
-          metadata: {
-            shipmentId: shipment.id,
-            trackingNumber: shipment.trackingNumber,
-            labelUrl: shipment.labelUrl,
-            awbNumber: shipment.awbNumber,
-          },
-        });
-      } else if (shipment.status === "picked_up") {
-        events.push({
-          type: TimelineEventType.SHIPMENT_PICKED_UP,
-          title: "Shipment Picked Up",
-          description: `Shipment picked up by courier${shipment.trackingNumber ? ` (Tracking: ${shipment.trackingNumber})` : ""}`,
-          timestamp: shipment.updatedAt,
-          metadata: {
-            shipmentId: shipment.id,
-            trackingNumber: shipment.trackingNumber,
-          },
-        });
-      } else if (shipment.status === "in_transit") {
-        events.push({
-          type: TimelineEventType.SHIPMENT_IN_TRANSIT,
-          title: "Shipment In Transit",
-          description: `Shipment is in transit${shipment.trackingNumber ? ` (Tracking: ${shipment.trackingNumber})` : ""}`,
-          timestamp: shipment.updatedAt,
-          metadata: {
-            shipmentId: shipment.id,
-            trackingNumber: shipment.trackingNumber,
-          },
-        });
-      } else if (shipment.status === "out_for_delivery") {
-        events.push({
-          type: TimelineEventType.SHIPMENT_OUT_FOR_DELIVERY,
-          title: "Out for Delivery",
-          description: `Shipment is out for delivery${shipment.trackingNumber ? ` (Tracking: ${shipment.trackingNumber})` : ""}`,
-          timestamp: shipment.updatedAt,
-          metadata: {
-            shipmentId: shipment.id,
-            trackingNumber: shipment.trackingNumber,
-          },
-        });
-      } else if (shipment.status === "delivered") {
-        events.push({
-          type: TimelineEventType.SHIPMENT_DELIVERED,
-          title: "Shipment Delivered",
-          description: `Shipment has been delivered${shipment.trackingNumber ? ` (Tracking: ${shipment.trackingNumber})` : ""}`,
-          timestamp: shipment.updatedAt,
-          metadata: {
-            shipmentId: shipment.id,
-            trackingNumber: shipment.trackingNumber,
-          },
-        });
-      } else if (shipment.status === "failed") {
-        events.push({
-          type: TimelineEventType.SHIPMENT_FAILED,
-          title: "Shipment Failed",
-          description: `Shipment delivery failed${shipment.trackingNumber ? ` (Tracking: ${shipment.trackingNumber})` : ""}`,
-          timestamp: shipment.updatedAt,
-          metadata: {
-            shipmentId: shipment.id,
-            trackingNumber: shipment.trackingNumber,
-          },
-        });
-      } else if (shipment.status === "returned") {
-        events.push({
-          type: TimelineEventType.SHIPMENT_RETURNED,
-          title: "Shipment Returned",
-          description: `Shipment has been returned${shipment.trackingNumber ? ` (Tracking: ${shipment.trackingNumber})` : ""}`,
-          timestamp: shipment.updatedAt,
-          metadata: {
-            shipmentId: shipment.id,
-            trackingNumber: shipment.trackingNumber,
-          },
-        });
-      }
-    }
+  /**
+   * Get seller state (default to Maharashtra)
+   * @deprecated Use OrderValidationService.getSellerState instead
+   */
+  private getSellerState(): string {
+    return this.validationService.getSellerState();
+  }
 
-    // Note: Status changes are tracked via order.updatedAt
-    // In a real system, you might want to track status changes separately
-    // For now, we'll add a status change event based on the current status
-    if (order.status !== "pending") {
-      events.push({
-        type: TimelineEventType.STATUS_CHANGED,
-        title: "Order Status Updated",
-        description: `Order status is now '${order.status}'`,
-        newValue: order.status,
-        timestamp: order.updatedAt,
-        metadata: {
-          currentStatus: order.status,
-        },
-      });
-    }
-
-    // Sort events by timestamp (newest first)
-    events.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-
-    return {
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      currentStatus: order.status,
-      events,
-    };
+  /**
+   * Validate that addresses belong to the customer
+   * @deprecated Use OrderValidationService.getAddresses instead
+   */
+  private async validateAddresses(
+    customerId: string,
+    shippingAddressId: string,
+    billingAddressId: string,
+  ) {
+    return this.validationService.getAddresses(
+      customerId,
+      shippingAddressId,
+      billingAddressId,
+    );
   }
 }

@@ -1,570 +1,384 @@
 /**
- * API client for admin dashboard
+ * API client using native fetch
+ * No Axios needed - using fetch with proper error handling
+ * Includes automatic token refresh on 401 errors
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-
-export interface AdminStats {
-  totalProducts: number;
-  activeProducts: number;
-  totalOrders: number;
-  pendingOrders: number;
-  totalCustomers: number;
-  totalRevenue: number;
-  monthlyRevenue: number;
-  averageOrderValue: number;
+export interface ApiError {
+  message: string;
+  status: number;
+  errors?: Record<string, string[]>;
 }
 
-export interface OrderItem {
-  id: string;
-  orderId: string;
-  productVariantId: string;
-  quantity: number;
-  price: number; // Effective price at order time (sale or regular)
-  wasOnSale?: boolean; // Whether item was on sale at order time
-}
+export class FetchError extends Error {
+  status: number;
+  errors?: Record<string, string[]>;
 
-export interface Order {
-  id: string;
-  customerId: string;
-  orderNumber: string;
-  status: string;
-  subtotal: number;
-  gstAmount: number;
-  shippingCost: number;
-  total: number;
-  createdAt: string;
-  updatedAt: string;
-  items?: OrderItem[];
-}
-
-export interface PaginatedOrdersResponse {
-  data: Order[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export enum OrderStatus {
-  PENDING = "pending",
-  CONFIRMED = "confirmed",
-  PROCESSING = "processing",
-  SHIPPED = "shipped",
-  DELIVERED = "delivered",
-  CANCELLED = "cancelled",
-  REFUNDED = "refunded",
-}
-
-export interface QueryOrdersParams {
-  page?: number;
-  limit?: number;
-  status?: OrderStatus;
-  startDate?: string;
-  endDate?: string;
-}
-
-export interface Sale {
-  id: string;
-  productId: string;
-  salePrice: number;
-  startDate: string | null;
-  endDate: string | null;
-  status: "scheduled" | "active" | "expired" | "disabled";
-  isActive: boolean;
-  name: string | null;
-  description: string | null;
-  priority: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateSaleDto {
-  productId: string;
-  salePrice: number;
-  startDate?: string;
-  endDate?: string;
-  name?: string;
-  description?: string;
-  priority?: number;
-  isActive?: boolean;
-}
-
-export interface UpdateSaleDto {
-  salePrice?: number;
-  startDate?: string | null;
-  endDate?: string | null;
-  name?: string;
-  description?: string;
-  priority?: number;
-  isActive?: boolean;
-}
-
-export interface EffectivePriceResponse {
-  price: number;
-  salePrice: number | null;
-  isOnSale: boolean;
-  saleId?: string;
-}
-
-export interface FileUploadResponse {
-  key: string;
-  url: string;
-  size: number;
-  contentType: string;
-  originalName?: string;
-}
-
-export interface FileMetadata {
-  key: string;
-  url: string;
-  size?: number;
-  contentType?: string;
-}
-
-export interface PresignedUrlResponse {
-  key: string;
-  url: string;
-  expiresIn: number;
-}
-
-export interface ListFilesResponse {
-  files: string[];
-  total: number;
-  prefix: string;
-}
-
-export interface BatchDeleteResponse {
-  deleted: number;
-  failed: string[];
-}
-
-export class ApiError extends Error {
   constructor(
-    public status: number,
-    public statusText: string,
-    message?: string,
+    message: string,
+    status: number,
+    errors?: Record<string, string[]>,
   ) {
-    super(message || statusText);
-    this.name = "ApiError";
+    super(message);
+    this.name = "FetchError";
+    this.status = status;
+    this.errors = errors;
   }
 }
 
-async function fetchApi<T>(
-  endpoint: string,
-  options?: RequestInit,
-): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
+export interface RequestOptions extends RequestInit {
+  params?: Record<string, string | number | boolean | undefined>;
+  skipAuthRefresh?: boolean; // Skip automatic token refresh for this request
+}
 
-  // Don't set Content-Type for FormData - browser will set it with boundary
-  const isFormData = options?.body instanceof FormData;
-  const headers: HeadersInit = isFormData
-    ? { ...options?.headers }
-    : {
-        "Content-Type": "application/json",
-        ...options?.headers,
-      };
+// Token refresh state management
+let refreshPromise: Promise<boolean> | null = null;
+let isRefreshing = false;
 
-  const response = await fetch(url, {
-    ...options,
-    credentials: "include", // Include cookies in requests
-    headers,
-  });
-
-  if (!response.ok) {
-    throw new ApiError(
-      response.status,
-      response.statusText,
-      `API request failed: ${response.status} ${response.statusText}`,
-    );
+/**
+ * Get the API base URL from environment or default to localhost
+ */
+function getApiBaseUrl(): string {
+  // Always use backend URL directly - no proxies needed
+  // Backend handles CORS and cookies directly
+  if (typeof window !== "undefined") {
+    // Client-side: use NEXT_PUBLIC_API_URL for direct backend calls
+    return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
   }
-
-  return response.json();
+  // Server-side: use env variable or default
+  return (
+    process.env.API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:3001"
+  );
 }
 
-export interface Product {
-  id: string;
-  title: string;
-  description: string | null;
-  price: number; // Effective price (sale or regular)
-  regularPrice: number;
-  salePrice: number | null;
-  isOnSale: boolean;
-  gstRate: number;
-  gstAmount: number;
-  priceExcludingGst: number;
-  priceIncludingGst: number;
-  hsnCode: string | null;
-  status: "draft" | "active" | "archived";
-  categoryId: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface PaginatedProductsResponse {
-  data: Product[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface CreateProductDto {
-  title: string;
-  description?: string;
-  price: number;
-  gstRate?: number;
-  hsnCode?: string;
-  status?: "draft" | "active" | "archived";
-  categoryId?: string;
-}
-
-export interface UpdateProductDto {
-  title?: string;
-  description?: string;
-  price?: number;
-  gstRate?: number;
-  hsnCode?: string;
-  status?: "draft" | "active" | "archived";
-  categoryId?: string;
-}
-
-export interface QueryProductsParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: "draft" | "active" | "archived";
-  categoryId?: string;
-}
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface AuthResponse {
-  access_token: string;
-  refresh_token: string;
-}
-
-export const adminApi = {
-  /**
-   * Login user (sets httpOnly cookies)
-   */
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    return fetchApi<AuthResponse>("/auth/login", {
-      method: "POST",
-      body: JSON.stringify(credentials),
-    });
-  },
-
-  /**
-   * Logout user (clears httpOnly cookies)
-   */
-  async logout(): Promise<{ message: string }> {
-    return fetchApi<{ message: string }>("/auth/logout", {
-      method: "POST",
-    });
-  },
-
-  /**
-   * Get dashboard statistics
-   */
-  async getStats(): Promise<AdminStats> {
-    return fetchApi<AdminStats>("/admin/stats");
-  },
-
-  /**
-   * Get recent orders
-   */
-  async getRecentOrders(limit = 5): Promise<PaginatedOrdersResponse> {
-    return fetchApi<PaginatedOrdersResponse>(
-      `/admin/orders?page=1&limit=${limit}`,
-    );
-  },
-
-  /**
-   * Get all orders with pagination and filters
-   */
-  async getOrders(
-    params?: QueryOrdersParams,
-  ): Promise<PaginatedOrdersResponse> {
-    const searchParams = new URLSearchParams();
-    if (params?.page) searchParams.append("page", params.page.toString());
-    if (params?.limit) searchParams.append("limit", params.limit.toString());
-    if (params?.status) searchParams.append("status", params.status);
-    if (params?.startDate) searchParams.append("startDate", params.startDate);
-    if (params?.endDate) searchParams.append("endDate", params.endDate);
-
-    const query = searchParams.toString();
-    return fetchApi<PaginatedOrdersResponse>(
-      `/admin/orders${query ? `?${query}` : ""}`,
-    );
-  },
-
-  /**
-   * Get order details by ID
-   */
-  async getOrder(id: string): Promise<Order> {
-    return fetchApi<Order>(`/orders/${id}`);
-  },
-
-  /**
-   * Update order status
-   */
-  async updateOrderStatus(
-    id: string,
-    status: OrderStatus,
-  ): Promise<{ message: string }> {
-    return fetchApi<{ message: string }>(`/orders/${id}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ status }),
-    });
-  },
-
-  /**
-   * Get all products with pagination and filters
-   */
-  async getProducts(
-    params?: QueryProductsParams,
-  ): Promise<PaginatedProductsResponse> {
-    const searchParams = new URLSearchParams();
-    if (params?.page) searchParams.append("page", params.page.toString());
-    if (params?.limit) searchParams.append("limit", params.limit.toString());
-    if (params?.search) searchParams.append("search", params.search);
-    if (params?.status) searchParams.append("status", params.status);
-    if (params?.categoryId)
-      searchParams.append("categoryId", params.categoryId);
-
-    const query = searchParams.toString();
-    return fetchApi<PaginatedProductsResponse>(
-      `/admin/products${query ? `?${query}` : ""}`,
-    );
-  },
-
-  /**
-   * Get a single product by ID
-   */
-  async getProduct(id: string): Promise<Product> {
-    return fetchApi<Product>(`/products/${id}`);
-  },
-
-  /**
-   * Create a new product
-   */
-  async createProduct(data: CreateProductDto): Promise<Product> {
-    return fetchApi<Product>("/products", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  },
-
-  /**
-   * Update a product
-   */
-  async updateProduct(id: string, data: UpdateProductDto): Promise<Product> {
-    return fetchApi<Product>(`/products/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
-  },
-
-  /**
-   * Delete a product
-   */
-  async deleteProduct(id: string): Promise<void> {
-    return fetchApi<void>(`/products/${id}`, {
-      method: "DELETE",
-    });
-  },
-
-  /**
-   * Get active sale for a product
-   */
-  async getProductSale(productId: string): Promise<EffectivePriceResponse> {
-    return fetchApi<EffectivePriceResponse>(
-      `/admin/sales/product/${productId}`,
-    );
-  },
-
-  /**
-   * Get all sales with optional filters
-   */
-  async getSales(
-    productId?: string,
-    status?: "scheduled" | "active" | "expired" | "disabled",
-  ): Promise<Sale[]> {
-    const searchParams = new URLSearchParams();
-    if (productId) searchParams.append("productId", productId);
-    if (status) searchParams.append("status", status);
-
-    const query = searchParams.toString();
-    return fetchApi<Sale[]>(`/admin/sales${query ? `?${query}` : ""}`);
-  },
-
-  /**
-   * Get sale by ID
-   */
-  async getSale(id: string): Promise<Sale> {
-    return fetchApi<Sale>(`/admin/sales/${id}`);
-  },
-
-  /**
-   * Create a new sale
-   */
-  async createSale(data: CreateSaleDto): Promise<Sale> {
-    return fetchApi<Sale>("/admin/sales", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  },
-
-  /**
-   * Update a sale
-   */
-  async updateSale(id: string, data: UpdateSaleDto): Promise<Sale> {
-    return fetchApi<Sale>(`/admin/sales/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
-  },
-
-  /**
-   * Update sale status
-   */
-  async updateSaleStatus(id: string, isActive: boolean): Promise<Sale> {
-    return fetchApi<Sale>(`/admin/sales/${id}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ isActive }),
-    });
-  },
-
-  /**
-   * Delete a sale
-   */
-  async deleteSale(id: string): Promise<{ message: string }> {
-    return fetchApi<{ message: string }>(`/admin/sales/${id}`, {
-      method: "DELETE",
-    });
-  },
-
-  /**
-   * Upload a file to storage
-   */
-  async uploadFile(
-    file: File,
-    prefix?: string,
-    compressionOptions?: {
-      quality?: number;
-      maxWidth?: number;
-      maxHeight?: number;
-      format?: "webp" | "jpeg" | "png";
-    },
-  ): Promise<FileUploadResponse> {
-    const formData = new FormData();
-    formData.append("file", file);
-    if (prefix) formData.append("prefix", prefix);
-    if (compressionOptions?.quality)
-      formData.append("quality", compressionOptions.quality.toString());
-    if (compressionOptions?.maxWidth)
-      formData.append("maxWidth", compressionOptions.maxWidth.toString());
-    if (compressionOptions?.maxHeight)
-      formData.append("maxHeight", compressionOptions.maxHeight.toString());
-    if (compressionOptions?.format)
-      formData.append("format", compressionOptions.format);
-
-    return fetchApi<FileUploadResponse>("/admin/storage/upload", {
-      method: "POST",
-      body: formData,
-    });
-  },
-
-  /**
-   * Upload multiple files to storage
-   */
-  async uploadFiles(
-    files: File[],
-    prefix?: string,
-    compressionOptions?: {
-      quality?: number;
-      maxWidth?: number;
-      maxHeight?: number;
-      format?: "webp" | "jpeg" | "png";
-    },
-  ): Promise<FileUploadResponse[]> {
-    const formData = new FormData();
-    for (const file of files) {
-      formData.append("files", file);
+/**
+ * Build query string from params object
+ */
+function buildQueryString(
+  params: Record<string, string | number | boolean | undefined>,
+): string {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      searchParams.append(key, String(value));
     }
-    if (prefix) formData.append("prefix", prefix);
-    if (compressionOptions?.quality)
-      formData.append("quality", compressionOptions.quality.toString());
-    if (compressionOptions?.maxWidth)
-      formData.append("maxWidth", compressionOptions.maxWidth.toString());
-    if (compressionOptions?.maxHeight)
-      formData.append("maxHeight", compressionOptions.maxHeight.toString());
-    if (compressionOptions?.format)
-      formData.append("format", compressionOptions.format);
+  });
+  const queryString = searchParams.toString();
+  return queryString ? `?${queryString}` : "";
+}
 
-    return fetchApi<FileUploadResponse[]>("/admin/storage/upload/batch", {
-      method: "POST",
-      body: formData,
+/**
+ * Get auth token from cookies or localStorage
+ * httpOnly cookies are sent automatically by browser
+ * This checks Authorization header as fallback
+ */
+function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  // Check localStorage as fallback (primary auth is via httpOnly cookies)
+  return localStorage.getItem("admin_access_token");
+}
+
+/**
+ * Create headers with auth token
+ * Note: httpOnly cookies are sent automatically by browser
+ * This adds Authorization header as fallback
+ */
+function createHeaders(init?: HeadersInit): Headers {
+  const headers = new Headers(init);
+
+  const token = getAuthToken();
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  // Only set Content-Type if not already set and body exists
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  return headers;
+}
+
+/**
+ * Server-side fetch with cookie forwarding
+ * Used in server components and API routes
+ */
+export async function serverApiFetch<T = unknown>(
+  endpoint: string,
+  options: RequestOptions & { cookies?: string } = {},
+): Promise<T> {
+  const { params, cookies, ...fetchOptions } = options;
+
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}${endpoint}${params ? buildQueryString(params) : ""}`;
+
+  const headers = createHeaders(fetchOptions.headers);
+
+  // Forward cookies for server-side requests
+  if (cookies) {
+    headers.set("Cookie", cookies);
+  }
+
+  try {
+    const response = await fetch(url, {
+      ...fetchOptions,
+      headers,
+      credentials: "include", // Include cookies
     });
-  },
 
-  /**
-   * Delete a file from storage
-   */
-  async deleteFile(key: string): Promise<void> {
-    return fetchApi<void>(`/admin/storage/${encodeURIComponent(key)}`, {
-      method: "DELETE",
-    });
-  },
+    if (!response.ok) {
+      const error = await parseErrorResponse(response);
+      throw new FetchError(error.message, error.status, error.errors);
+    }
 
-  /**
-   * Get file metadata
-   */
-  async getFile(key: string): Promise<FileMetadata> {
-    return fetchApi<FileMetadata>(`/admin/storage/${encodeURIComponent(key)}`);
-  },
+    const contentType = response.headers.get("content-type");
+    if (contentType?.includes("application/json")) {
+      return await response.json();
+    }
 
-  /**
-   * List files in storage
-   */
-  async listFiles(
-    prefix?: string,
-    maxKeys?: number,
-  ): Promise<ListFilesResponse> {
-    const searchParams = new URLSearchParams();
-    if (prefix) searchParams.append("prefix", prefix);
-    if (maxKeys) searchParams.append("maxKeys", maxKeys.toString());
+    return undefined as T;
+  } catch (error) {
+    if (error instanceof FetchError) {
+      throw error;
+    }
 
-    const query = searchParams.toString();
-    return fetchApi<ListFilesResponse>(
-      `/admin/storage/list${query ? `?${query}` : ""}`,
+    throw new FetchError(
+      error instanceof Error ? error.message : "Network error occurred",
+      0,
     );
-  },
+  }
+}
 
-  /**
-   * Generate presigned URL for direct upload
-   */
-  async generatePresignedUrl(
-    key: string,
-    expiresIn?: number,
-  ): Promise<PresignedUrlResponse> {
-    return fetchApi<PresignedUrlResponse>("/admin/storage/presigned-url", {
+/**
+ * Parse error response
+ */
+async function parseErrorResponse(response: Response): Promise<ApiError> {
+  let message = `Request failed with status ${response.status}`;
+  let errors: Record<string, string[]> | undefined;
+
+  try {
+    const data = await response.json();
+    message = data.message || data.error || message;
+    errors = data.errors;
+  } catch {
+    // If response is not JSON, use status text
+    message = response.statusText || message;
+  }
+
+  return {
+    message,
+    status: response.status,
+    errors,
+  };
+}
+
+/**
+ * Refresh access token using refresh token
+ * Returns true if refresh was successful, false otherwise
+ */
+async function refreshAccessToken(): Promise<boolean> {
+  // If already refreshing, wait for that promise
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  // Start refresh process
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const baseUrl = getApiBaseUrl();
+      // Use the refresh endpoint - cookies are sent automatically
+      const response = await fetch(`${baseUrl}/admin/auth/refresh`, {
+        method: "POST",
+        credentials: "include", // Include httpOnly cookies
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        // Refresh failed - user needs to login again
+        if (typeof window !== "undefined") {
+          // Clear any stored tokens
+          localStorage.removeItem("admin_access_token");
+          localStorage.removeItem("admin_refresh_token");
+
+          // Redirect to login if not already there
+          const currentPath = window.location.pathname;
+          if (!currentPath.includes("/login")) {
+            const loginUrl = new URL("/login", window.location.origin);
+            loginUrl.searchParams.set("expired", "true");
+            loginUrl.searchParams.set("redirect", currentPath);
+            window.location.href = loginUrl.toString();
+          }
+        }
+        return false;
+      }
+
+      // Refresh successful - cookies are updated automatically by browser
+      const contentType = response.headers.get("content-type");
+      if (contentType?.includes("application/json")) {
+        const data = await response.json();
+
+        // Update localStorage token if provided (fallback)
+        if (data.accessToken && typeof window !== "undefined") {
+          localStorage.setItem("admin_access_token", data.accessToken);
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Token refresh error:", error);
+      if (typeof window !== "undefined") {
+        const currentPath = window.location.pathname;
+        if (!currentPath.includes("/login")) {
+          const loginUrl = new URL("/login", window.location.origin);
+          loginUrl.searchParams.set("expired", "true");
+          loginUrl.searchParams.set("redirect", currentPath);
+          window.location.href = loginUrl.toString();
+        }
+      }
+      return false;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+/**
+ * Fetch wrapper with error handling and automatic token refresh
+ */
+export async function apiFetch<T = unknown>(
+  endpoint: string,
+  options: RequestOptions = {},
+): Promise<T> {
+  const { params, skipAuthRefresh, ...fetchOptions } = options;
+
+  const baseUrl = getApiBaseUrl();
+  // Always use backend URL directly - no Next.js API route proxies
+  const url = `${baseUrl}${endpoint}${params ? buildQueryString(params) : ""}`;
+
+  const headers = createHeaders(fetchOptions.headers);
+
+  try {
+    const response = await fetch(url, {
+      ...fetchOptions,
+      headers,
+      credentials: "include", // Include httpOnly cookies
+    });
+
+    // Handle 401 Unauthorized - try to refresh token
+    if (response.status === 401 && !skipAuthRefresh) {
+      // Don't refresh if this is already a refresh request or login request
+      if (
+        endpoint.includes("/auth/refresh") ||
+        endpoint.includes("/auth/login")
+      ) {
+        const error = await parseErrorResponse(response);
+        throw new FetchError(error.message, error.status, error.errors);
+      }
+
+      // Attempt to refresh token
+      const refreshSuccess = await refreshAccessToken();
+
+      if (refreshSuccess) {
+        // Retry original request with new token
+        const retryHeaders = createHeaders(fetchOptions.headers);
+        const retryResponse = await fetch(url, {
+          ...fetchOptions,
+          headers: retryHeaders,
+          credentials: "include",
+        });
+
+        if (!retryResponse.ok) {
+          const error = await parseErrorResponse(retryResponse);
+          throw new FetchError(error.message, error.status, error.errors);
+        }
+
+        // Handle empty responses
+        const contentType = retryResponse.headers.get("content-type");
+        if (contentType?.includes("application/json")) {
+          return await retryResponse.json();
+        }
+
+        return undefined as T;
+      } else {
+        // Refresh failed - throw original 401 error
+        const error = await parseErrorResponse(response);
+        throw new FetchError(error.message, error.status, error.errors);
+      }
+    }
+
+    if (!response.ok) {
+      const error = await parseErrorResponse(response);
+      throw new FetchError(error.message, error.status, error.errors);
+    }
+
+    // Handle empty responses
+    const contentType = response.headers.get("content-type");
+    if (contentType?.includes("application/json")) {
+      return await response.json();
+    }
+
+    return undefined as T;
+  } catch (error) {
+    if (error instanceof FetchError) {
+      throw error;
+    }
+
+    // Network or other errors
+    throw new FetchError(
+      error instanceof Error ? error.message : "Network error occurred",
+      0,
+    );
+  }
+}
+
+/**
+ * Convenience methods for HTTP verbs
+ */
+export const api = {
+  get: <T = unknown>(endpoint: string, options?: RequestOptions) =>
+    apiFetch<T>(endpoint, { ...options, method: "GET" }),
+
+  post: <T = unknown>(
+    endpoint: string,
+    data?: unknown,
+    options?: RequestOptions,
+  ) =>
+    apiFetch<T>(endpoint, {
+      ...options,
       method: "POST",
-      body: JSON.stringify({ key, expiresIn }),
-    });
-  },
+      body: data ? JSON.stringify(data) : undefined,
+    }),
 
-  /**
-   * Batch delete files
-   */
-  async batchDeleteFiles(keys: string[]): Promise<BatchDeleteResponse> {
-    return fetchApi<BatchDeleteResponse>("/admin/storage/batch", {
-      method: "DELETE",
-      body: JSON.stringify({ keys }),
-    });
-  },
+  put: <T = unknown>(
+    endpoint: string,
+    data?: unknown,
+    options?: RequestOptions,
+  ) =>
+    apiFetch<T>(endpoint, {
+      ...options,
+      method: "PUT",
+      body: data ? JSON.stringify(data) : undefined,
+    }),
+
+  patch: <T = unknown>(
+    endpoint: string,
+    data?: unknown,
+    options?: RequestOptions,
+  ) =>
+    apiFetch<T>(endpoint, {
+      ...options,
+      method: "PATCH",
+      body: data ? JSON.stringify(data) : undefined,
+    }),
+
+  delete: <T = unknown>(endpoint: string, options?: RequestOptions) =>
+    apiFetch<T>(endpoint, { ...options, method: "DELETE" }),
 };
