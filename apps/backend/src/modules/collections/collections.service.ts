@@ -14,7 +14,6 @@ import {
   lt,
   ne,
   or,
-  Product,
   productCollections,
   products,
   productTags,
