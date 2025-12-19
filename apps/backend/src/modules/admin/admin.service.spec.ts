@@ -8,9 +8,12 @@ import {
   products,
 } from "@vcecom/db";
 import { ProductsService } from "../products/products.service";
+import { CartsService } from "../carts/carts.service";
 import { AdminService } from "./admin.service";
 import { BulkProductOperation } from "./dto/bulk-operations.dto";
 import { OrderStatus } from "./dto/admin-orders.dto";
+import { CheckoutStore } from "../redis-store/stores/checkout-store";
+import { RedisStoreService } from "../redis-store/redis-store.service";
 
 // Mock database module
 jest.mock("@vcecom/db", () => ({
@@ -27,6 +30,14 @@ jest.mock("@vcecom/db", () => ({
   inArray: jest.fn(),
   or: jest.fn(),
   desc: jest.fn(),
+  sql: jest.fn((strings, ...values) => {
+    // Return a mock SQL template tag function
+    const template = Object.assign(
+      (strings: TemplateStringsArray, ...values: any[]) => strings[0],
+      { raw: strings }
+    );
+    return template;
+  }),
   customers: {},
   orders: {},
   orderItems: {},
@@ -46,12 +57,38 @@ describe("AdminService", () => {
   };
 
   beforeEach(async () => {
+    const mockCartsService = {
+      getCart: jest.fn(),
+      getCartById: jest.fn(),
+    };
+
+    const mockCheckoutStore = {
+      getSession: jest.fn(),
+      createSession: jest.fn(),
+    };
+
+    const mockRedisStoreService = {
+      getClient: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminService,
         {
           provide: ProductsService,
           useValue: mockProductsService,
+        },
+        {
+          provide: CartsService,
+          useValue: mockCartsService,
+        },
+        {
+          provide: CheckoutStore,
+          useValue: mockCheckoutStore,
+        },
+        {
+          provide: RedisStoreService,
+          useValue: mockRedisStoreService,
         },
       ],
     }).compile();
@@ -119,9 +156,12 @@ describe("AdminService", () => {
         },
       ];
 
-      // Mock count query (no where condition)
+      // Mock count query (supports where condition)
+      // The count query returns [{ count: number }]
       const mockCountChain = {
-        from: jest.fn().mockResolvedValue(mockOrders),
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue([{ count: "1" }]),
+        }),
       };
 
       // Mock orders query with pagination (no where condition)

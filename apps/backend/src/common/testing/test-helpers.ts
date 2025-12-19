@@ -1,12 +1,14 @@
 import { Provider } from "@nestjs/common";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../logging/context.service";
+import { AppConfigService } from "../config/app.config.service";
 
 /**
- * Common test providers for services that require PinoLogger and ContextService
+ * Common test providers for services that require PinoLogger, ContextService, and AppConfigService
  */
 export const getCommonTestProviders = (): Provider[] => [
   ContextService,
+  AppConfigService,
   {
     provide: PinoLogger,
     useValue: {
