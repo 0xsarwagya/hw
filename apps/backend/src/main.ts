@@ -40,6 +40,12 @@ import { BuildInfoInterceptor } from "./common/interceptors/build-info.intercept
 import { RateLimitInterceptor } from "./common/interceptors/rate-limit.interceptor";
 import { ContextService } from "./common/logging/context.service";
 import { createPinoConfig } from "./common/logging/pino.config";
+import {
+  CORS_PREFLIGHT_SUCCESS_STATUS,
+  SERVER_HEADERS_TIMEOUT_MS,
+  SERVER_KEEP_ALIVE_TIMEOUT_MS,
+  SERVER_TIMEOUT_MS,
+} from "./common/constants";
 
 // Setup unhandled rejection and exception handlers
 // These will use Pino logger once the app is bootstrapped
@@ -73,9 +79,13 @@ async function bootstrap() {
   const reflector = app.get(Reflector);
 
   // Enable CORS
-  const allowedOrigins = process.env.FRONTEND_URL
-    ? process.env.FRONTEND_URL.split(",")
-    : ["http://localhost:3000"];
+  // Support both storefront and admin frontends
+  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+  const adminUrl = process.env.ADMIN_URL || "http://localhost:3002";
+  const allowedOrigins = [
+    ...frontendUrl.split(","),
+    ...adminUrl.split(","),
+  ];
 
   // Enable cookie parser
   app.use(cookieParser());
@@ -94,7 +104,7 @@ async function bootstrap() {
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     preflightContinue: false,
-    optionsSuccessStatus: 204,
+    optionsSuccessStatus: CORS_PREFLIGHT_SUCCESS_STATUS,
   });
 
   // Enable validation globally
@@ -211,16 +221,54 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT ?? 3001;
-  await app.listen(port);
+  const server = await app.listen(port);
+
+  // Set server timeout to prevent hanging requests
+  // This ensures requests are closed after the configured timeout period
+  server.timeout = SERVER_TIMEOUT_MS;
+  server.keepAliveTimeout = SERVER_KEEP_ALIVE_TIMEOUT_MS;
+  server.headersTimeout = SERVER_HEADERS_TIMEOUT_MS;
+  
   rootLogger.info({ port }, "Server started successfully");
 
-  // Graceful shutdown
-  process.on("SIGTERM", async () => {
-    if (tracingSdk) {
-      await tracingSdk.shutdown();
+  // Graceful shutdown handlers
+  const shutdown = async (signal: string) => {
+    rootLogger.info({ signal }, "Received shutdown signal, starting graceful shutdown");
+
+    try {
+      // Close HTTP server first to stop accepting new requests
+      server.close(() => {
+        rootLogger.info({ signal }, "HTTP server closed");
+      });
+
+      // Shutdown tracing
+      if (tracingSdk) {
+        await tracingSdk.shutdown();
+        rootLogger.info({ signal }, "Tracing SDK shut down");
+      }
+
+      // Close NestJS application (this triggers OnApplicationShutdown hooks)
+      // Database cleanup will happen via DatabaseService.onApplicationShutdown
+      await app.close();
+      rootLogger.info({ signal }, "Application closed successfully");
+    } catch (error) {
+      rootLogger.error(
+        {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          signal,
+        },
+        "Error during shutdown",
+      );
+      process.exit(1);
     }
-    await app.close();
-  });
+  };
+
+  // Handle SIGTERM (used by process managers like PM2, Docker, Kubernetes)
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+
+  // Handle SIGINT (Ctrl+C)
+  process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
 bootstrap().catch((error) => {

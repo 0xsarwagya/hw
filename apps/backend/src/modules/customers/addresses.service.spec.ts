@@ -54,6 +54,7 @@ describe("AddressesService", () => {
     };
 
     it("should create address for customer", async () => {
+      // Arrange
       const mockAddress = {
         id: mockAddressId,
         customerId: mockCustomerId,
@@ -77,11 +78,13 @@ describe("AddressesService", () => {
         }),
       });
 
+      // Act
       const result = await service.createByCustomerId(
         mockCustomerId,
         createAddressDto,
       );
 
+      // Assert
       expect(result).toBeDefined();
       expect(result.customerId).toBe(mockCustomerId);
       expect(result.street).toBe(createAddressDto.street);

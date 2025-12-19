@@ -131,4 +131,14 @@ export class CreateVariantDto {
   @IsNumber({}, { message: "Weight must be a number" })
   @Min(0, { message: "Weight must be greater than or equal to 0" })
   weight?: number;
+
+  @ApiProperty({
+    description:
+      "Array of variant option value IDs (new flexible system - preferred)",
+    example: ["123e4567-e89b-12d3-a456-426614174000"],
+    required: false,
+    type: [String],
+  })
+  @IsOptional()
+  optionValueIds?: string[];
 }

@@ -11,38 +11,180 @@ import {
 
 describe("PIN Code Utils", () => {
   describe("isValidPincodeFormat", () => {
-    it("should return true for valid 6-digit PIN codes", () => {
-      expect(isValidPincodeFormat("110001")).toBe(true);
-      expect(isValidPincodeFormat("400001")).toBe(true);
-      expect(isValidPincodeFormat("560001")).toBe(true);
+    it("should return true for valid 6-digit PIN code 110001", () => {
+      // Arrange
+      const pincode = "110001";
+
+      // Act
+      const result = isValidPincodeFormat(pincode);
+
+      // Assert
+      expect(result).toBe(true);
     });
 
-    it("should return false for PIN codes with less than 6 digits", () => {
-      expect(isValidPincodeFormat("11001")).toBe(false);
-      expect(isValidPincodeFormat("1100")).toBe(false);
-      expect(isValidPincodeFormat("1")).toBe(false);
+    it("should return true for valid 6-digit PIN code 400001", () => {
+      // Arrange
+      const pincode = "400001";
+
+      // Act
+      const result = isValidPincodeFormat(pincode);
+
+      // Assert
+      expect(result).toBe(true);
     });
 
-    it("should return false for PIN codes with more than 6 digits", () => {
-      expect(isValidPincodeFormat("1100011")).toBe(false);
-      expect(isValidPincodeFormat("11000123")).toBe(false);
+    it("should return true for valid 6-digit PIN code 560001", () => {
+      // Arrange
+      const pincode = "560001";
+
+      // Act
+      const result = isValidPincodeFormat(pincode);
+
+      // Assert
+      expect(result).toBe(true);
     });
 
-    it("should return false for PIN codes with non-digit characters", () => {
-      expect(isValidPincodeFormat("11000a")).toBe(false);
-      expect(isValidPincodeFormat("11a001")).toBe(false);
-      expect(isValidPincodeFormat("abc123")).toBe(false);
+    it("should return false for PIN code with 5 digits", () => {
+      // Arrange
+      const pincode = "11001";
+
+      // Act
+      const result = isValidPincodeFormat(pincode);
+
+      // Assert
+      expect(result).toBe(false);
     });
 
-    it("should return false for empty or null values", () => {
-      expect(isValidPincodeFormat("")).toBe(false);
-      expect(isValidPincodeFormat(null as unknown as string)).toBe(false);
-      expect(isValidPincodeFormat(undefined as unknown as string)).toBe(false);
+    it("should return false for PIN code with 4 digits", () => {
+      // Arrange
+      const pincode = "1100";
+
+      // Act
+      const result = isValidPincodeFormat(pincode);
+
+      // Assert
+      expect(result).toBe(false);
     });
 
-    it("should handle PIN codes with spaces", () => {
-      expect(isValidPincodeFormat("110 001")).toBe(false);
-      expect(isValidPincodeFormat(" 110001 ")).toBe(true);
+    it("should return false for PIN code with 1 digit", () => {
+      // Arrange
+      const pincode = "1";
+
+      // Act
+      const result = isValidPincodeFormat(pincode);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it("should return false for PIN code with 7 digits", () => {
+      // Arrange
+      const pincode = "1100011";
+
+      // Act
+      const result = isValidPincodeFormat(pincode);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it("should return false for PIN code with 8 digits", () => {
+      // Arrange
+      const pincode = "11000123";
+
+      // Act
+      const result = isValidPincodeFormat(pincode);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it("should return false for PIN code with letter at end", () => {
+      // Arrange
+      const pincode = "11000a";
+
+      // Act
+      const result = isValidPincodeFormat(pincode);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it("should return false for PIN code with letter in middle", () => {
+      // Arrange
+      const pincode = "11a001";
+
+      // Act
+      const result = isValidPincodeFormat(pincode);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it("should return false for PIN code with all letters", () => {
+      // Arrange
+      const pincode = "abc123";
+
+      // Act
+      const result = isValidPincodeFormat(pincode);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it("should return false for empty string", () => {
+      // Arrange
+      const pincode = "";
+
+      // Act
+      const result = isValidPincodeFormat(pincode);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it("should return false for null value", () => {
+      // Arrange
+      const pincode = null as unknown as string;
+
+      // Act
+      const result = isValidPincodeFormat(pincode);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it("should return false for undefined value", () => {
+      // Arrange
+      const pincode = undefined as unknown as string;
+
+      // Act
+      const result = isValidPincodeFormat(pincode);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it("should return false for PIN code with space in middle", () => {
+      // Arrange
+      const pincode = "110 001";
+
+      // Act
+      const result = isValidPincodeFormat(pincode);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it("should return true for PIN code with leading and trailing spaces", () => {
+      // Arrange
+      const pincode = " 110001 ";
+
+      // Act
+      const result = isValidPincodeFormat(pincode);
+
+      // Assert
+      expect(result).toBe(true);
     });
   });
 

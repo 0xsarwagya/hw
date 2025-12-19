@@ -33,6 +33,13 @@ export class ProductResponseDto {
   gstRate: number;
 
   @ApiProperty({
+    description: "Pricing type - whether price includes or excludes GST",
+    example: "exclusive",
+    enum: ["inclusive", "exclusive"],
+  })
+  pricingType: "inclusive" | "exclusive";
+
+  @ApiProperty({
     description: "GST amount (calculated from price)",
     example: 540.0,
   })

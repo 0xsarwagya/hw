@@ -8,6 +8,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Injectable } from "@nestjs/common";
 import { PinoLogger } from "nestjs-pino";
+import { AppConfigService } from "../../../common/config/app.config.service";
 import { StorageProvider } from "../interfaces/storage-provider.interface";
 
 @Injectable()
@@ -15,25 +16,29 @@ export class AwsS3Provider implements StorageProvider {
   private client: S3Client;
   private bucket: string;
   private region: string;
+  private publicUrl: string | undefined;
 
-  constructor(private readonly logger: PinoLogger) {
-    const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-    this.region =
-      process.env.AWS_REGION || process.env.STORAGE_REGION || "us-east-1";
-    this.bucket = process.env.STORAGE_BUCKET || "vcecom";
+  constructor(
+    private readonly logger: PinoLogger,
+    private readonly appConfigService: AppConfigService,
+  ) {
+    const config = this.appConfigService.getAwsS3Config();
 
-    if (!accessKeyId || !secretAccessKey) {
+    if (!config.accessKeyId || !config.secretAccessKey) {
       throw new Error(
         "AWS S3 configuration missing: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are required",
       );
     }
 
+    this.region = config.region;
+    this.bucket = config.bucket;
+    this.publicUrl = config.publicUrl;
+
     this.client = new S3Client({
       region: this.region,
       credentials: {
-        accessKeyId,
-        secretAccessKey,
+        accessKeyId: config.accessKeyId,
+        secretAccessKey: config.secretAccessKey,
       },
     });
   }
@@ -84,9 +89,8 @@ export class AwsS3Provider implements StorageProvider {
   async getUrl(key: string): Promise<string> {
     // For public buckets, return public URL
     // For private buckets, return presigned URL (valid for 1 hour)
-    const publicUrl = process.env.AWS_S3_PUBLIC_URL;
-    if (publicUrl) {
-      return `${publicUrl}/${key}`;
+    if (this.publicUrl) {
+      return `${this.publicUrl}/${key}`;
     }
 
     // Generate presigned URL for private buckets
@@ -155,6 +159,28 @@ export class AwsS3Provider implements StorageProvider {
       );
       throw new Error(
         `Failed to list files: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  async getMetadata(key: string): Promise<{ size: number; contentType?: string }> {
+    try {
+      const command = new HeadObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      });
+
+      const response = await this.client.send(command);
+      return {
+        size: response.ContentLength || 0,
+        contentType: response.ContentType,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to get metadata for ${key}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw new Error(
+        `Failed to get file metadata: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

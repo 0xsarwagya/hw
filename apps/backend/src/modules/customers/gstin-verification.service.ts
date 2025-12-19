@@ -36,7 +36,8 @@ export class GstinVerificationService {
    * @returns Verification result
    */
   async verifyGstin(gstin: string): Promise<GstinVerificationResult> {
-    // First validate format and checksum
+    // Validate format and checksum before attempting API call
+    // This prevents unnecessary API calls for obviously invalid GSTINs
     if (!validateGstin(gstin)) {
       return {
         isValid: false,
@@ -51,34 +52,23 @@ export class GstinVerificationService {
       };
     }
 
-    // TODO: Integrate with actual GST verification API
-    // Example integration structure:
-    // try {
-    //   const response = await this.httpService.get(`https://api.gst.gov.in/taxpayer/search`, {
-    //     params: { gstin },
-    //     headers: { Authorization: `Bearer ${process.env.GST_API_TOKEN}` }
-    //   });
-    //   return this.mapApiResponseToResult(response.data);
-    // } catch (error) {
-    //   this.logger.error(`GSTIN verification failed for ${gstin}:`, error);
-    //   return { isValid: false, error: "Verification service unavailable" };
-    // }
-
-    // Placeholder: Return basic validation result
-    // In production, this should call actual GST verification API
+    // NOTE: Currently only validates format and checksum
+    // TODO: Integrate with actual GST verification API (GST Suvidha Provider or GST Portal APIs)
+    // This requires API credentials and proper error handling for rate limits
     this.logger.warn(
       `GSTIN verification API not integrated. Using format validation only for ${gstin}`,
     );
 
+    // Return format-valid result (API integration pending)
     return {
       isValid: true,
-      isActive: null, // Would be populated from API
-      legalName: null, // Would be populated from API
-      tradeName: null, // Would be populated from API
-      registrationDate: null, // Would be populated from API
-      status: null, // Would be populated from API
-      businessType: null, // Would be populated from API
-      address: null, // Would be populated from API
+      isActive: null,
+      legalName: null,
+      tradeName: null,
+      registrationDate: null,
+      status: null,
+      businessType: null,
+      address: null,
     };
   }
 

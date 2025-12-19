@@ -55,10 +55,15 @@ export class AdminLoginRateLimitGuard implements OnModuleInit {
         .exec();
 
       if (!execResult) {
-        throw new HttpException(
-          "Rate limiting service unavailable.",
-          HttpStatus.TOO_MANY_REQUESTS,
+        this.logger.error(
+          createLogContext(this.contextService, "adminLoginRateLimit", {
+            ipAddress,
+            error: "Redis transaction returned null",
+          }),
+          "Redis transaction failed - allowing request to proceed (fail-safe)",
         );
+        // Fail-safe: allow request if Redis transaction fails
+        return true;
       }
 
       const count = execResult[0]?.[1] as number | undefined;
@@ -99,17 +104,24 @@ export class AdminLoginRateLimitGuard implements OnModuleInit {
         "Error checking admin login rate limit",
       );
       // If Redis is down or an error occurs, fail safe by allowing the request
-      // or re-throw if strict security is preferred. For now, re-throwing.
+      // This prevents login from being blocked when Redis is unavailable
       if (
         error instanceof HttpException &&
         error.getStatus() === HttpStatus.TOO_MANY_REQUESTS
       ) {
         throw error;
       }
-      throw new HttpException(
-        "Rate limiting service unavailable.",
-        HttpStatus.TOO_MANY_REQUESTS,
+
+      this.logger.error(
+        createLogContext(this.contextService, "adminLoginRateLimit", {
+          ipAddress,
+          error: error.message || "Unknown Redis error",
+        }),
+        "Redis error during rate limit check - allowing request to proceed (fail-safe)",
       );
+
+      // Allow the request to proceed when Redis is unavailable
+      return true;
     }
   }
 }

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { addresses, db, eq, orderItems, orders, shipments } from "@vcecom/db";
+import { AppConfigService } from "../../common/config/app.config.service";
 import { NimbusPostConfigService } from "./nimbus-post-config.service";
 
 export interface NimbusPostAuthToken {
@@ -16,24 +17,24 @@ export class NimbusPostService implements OnModuleInit {
 
   constructor(
     private readonly nimbusPostConfigService: NimbusPostConfigService,
+    private readonly appConfigService: AppConfigService,
   ) {
     this.baseUrl = this.nimbusPostConfigService.getBaseUrl();
   }
 
   /**
    * Initialize Nimbus Post on module initialization
-   * Reads configuration from environment variables
+   * Reads configuration from AppConfigService
    */
   onModuleInit() {
     // Note: We don't authenticate here to avoid blocking module initialization
     // Authentication will happen on first use or via manual initialization
-    const apiKey = process.env.NIMBUS_POST_API_KEY;
-    const apiSecret = process.env.NIMBUS_POST_API_SECRET;
+    const config = this.appConfigService.getNimbusPostConfig();
 
-    if (apiKey && apiSecret) {
+    if (config.apiKey && config.apiSecret) {
       // Store credentials but don't authenticate yet
-      this.apiKey = apiKey;
-      this.apiSecret = apiSecret;
+      this.apiKey = config.apiKey;
+      this.apiSecret = config.apiSecret;
     }
   }
 

@@ -1,14 +1,20 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
+  IsBoolean,
   IsEnum,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
   Max,
   Min,
 } from "class-validator";
+import {
+  DEFAULT_PAGE_SIZE,
+  MAX_PAGE_SIZE,
+} from "../../../common/constants";
 import { PaginatedProductsResponseDto } from "../../products/dto/product-response.dto";
 
 export class AdminQueryProductsDto {
@@ -27,18 +33,20 @@ export class AdminQueryProductsDto {
 
   @ApiProperty({
     description: "Number of items per page",
-    example: 10,
-    default: 10,
+    example: DEFAULT_PAGE_SIZE,
+    default: DEFAULT_PAGE_SIZE,
     required: false,
     minimum: 1,
-    maximum: 100,
+    maximum: MAX_PAGE_SIZE,
   })
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: "Limit must be an integer" })
   @Min(1, { message: "Limit must be greater than or equal to 1" })
-  @Max(100, { message: "Limit must be less than or equal to 100" })
-  limit?: number = 10;
+  @Max(MAX_PAGE_SIZE, {
+    message: `Limit must be less than or equal to ${MAX_PAGE_SIZE}`,
+  })
+  limit?: number = DEFAULT_PAGE_SIZE;
 
   @ApiProperty({
     description: "Search query (searches in title, description, and SKU)",
@@ -69,6 +77,66 @@ export class AdminQueryProductsDto {
   @IsOptional()
   @IsUUID(4, { message: "Category ID must be a valid UUID" })
   categoryId?: string;
+
+  @ApiProperty({
+    description: "Minimum price filter (INR)",
+    example: 1000,
+    required: false,
+    minimum: 0,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: "Min price must be a number" })
+  @Min(0, { message: "Min price must be greater than or equal to 0" })
+  minPrice?: number;
+
+  @ApiProperty({
+    description: "Maximum price filter (INR)",
+    example: 5000,
+    required: false,
+    minimum: 0,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: "Max price must be a number" })
+  @Min(0, { message: "Max price must be greater than or equal to 0" })
+  maxPrice?: number;
+
+  @ApiProperty({
+    description: "Filter by availability (in stock/out of stock)",
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean({ message: "In stock must be a boolean" })
+  inStock?: boolean;
+
+  @ApiProperty({
+    description: "Sort field",
+    example: "price",
+    enum: ["price", "name", "date"],
+    default: "date",
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(["price", "name", "date"], {
+    message: "Sort must be one of: price, name, date",
+  })
+  sortBy?: "price" | "name" | "date" = "date";
+
+  @ApiProperty({
+    description: "Sort order",
+    example: "asc",
+    enum: ["asc", "desc"],
+    default: "desc",
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(["asc", "desc"], {
+    message: "Sort order must be one of: asc, desc",
+  })
+  sortOrder?: "asc" | "desc" = "desc";
 }
 
 export { PaginatedProductsResponseDto };

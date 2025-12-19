@@ -16,6 +16,11 @@ export const productStatusEnum = pgEnum("product_status", [
   "archived",
 ]);
 
+export const pricingTypeEnum = pgEnum("pricing_type", [
+  "inclusive",
+  "exclusive",
+]);
+
 export const products = pgTable(
   "products",
   {
@@ -24,6 +29,7 @@ export const products = pgTable(
     description: text("description"),
     price: real("price").notNull(),
     gstRate: real("gst_rate").notNull().default(0),
+    pricingType: pricingTypeEnum("pricing_type").notNull().default("exclusive"),
     hsnCode: text("hsn_code"),
     status: productStatusEnum("status").notNull().default("draft"),
     categoryId: uuid("category_id").references(() => categories.id, {

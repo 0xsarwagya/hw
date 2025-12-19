@@ -57,7 +57,20 @@
       "includes": ["apps/admin/**"],
       "linter": {
         "rules": {
-          "recommended": true
+          "recommended": true,
+          "suspicious": {
+            "noUnknownAtRules": "off"
+          }
+        },
+        "domains": {
+          "next": "recommended",
+          "react": "recommended"
+        }
+      },
+      "javascript": {
+        "formatter": {
+          "quoteStyle": "double",
+          "semicolons": "always"
         }
       }
     },

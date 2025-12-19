@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Toaster } from "sonner";
-import { QueryProvider } from "@/components/providers/query-provider";
-import { ToastProvider } from "@/components/providers/toast-provider";
 import "./globals.css";
+import { RootProviders } from "@/components/root-providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Admin Dashboard - VCEcom",
-  description: "Admin dashboard for VCEcom ecommerce platform",
+  title: "Admin Panel - VCEcom",
+  description: "E-commerce Admin Panel",
 };
 
 export default function RootLayout({
@@ -26,16 +24,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable}`}
       >
-        <QueryProvider>
-          <ToastProvider>
-            {children}
-            <Toaster />
-          </ToastProvider>
-        </QueryProvider>
+        <RootProviders>{children}</RootProviders>
       </body>
     </html>
   );

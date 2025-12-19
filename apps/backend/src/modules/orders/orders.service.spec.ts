@@ -4328,13 +4328,15 @@ describe("OrdersService", () => {
         .mockReturnValueOnce(mockPaymentsChain)
         .mockReturnValueOnce(mockShipmentsChain);
 
+      // Act
       const result = await service.getTimeline(mockUserId, mockOrderId);
 
-      // Check that events are sorted (newest first)
+      // Assert - Check that events are sorted (newest first)
+      // All consecutive events should have timestamps in descending order
       for (let i = 0; i < result.events.length - 1; i++) {
-        expect(
-          result.events[i].timestamp.getTime(),
-        ).toBeGreaterThanOrEqual(result.events[i + 1].timestamp.getTime());
+        const currentTimestamp = result.events[i].timestamp.getTime();
+        const nextTimestamp = result.events[i + 1].timestamp.getTime();
+        expect(currentTimestamp).toBeGreaterThanOrEqual(nextTimestamp);
       }
     });
 

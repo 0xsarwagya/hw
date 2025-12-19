@@ -340,14 +340,14 @@ describe("DiscountEngine", () => {
       expect(result.total).toBe(0);
     });
 
-    it("should round to 2 decimal places", () => {
+    it("should round total to 2 decimal places", () => {
+      // Arrange
       const discount = createMockDiscount({
         code: "TEST",
         value: 33.333, // Will create non-round numbers
         valueType: DiscountValueType.PERCENTAGE,
         type: DiscountType.PERCENTAGE,
       });
-
       const input: DiscountEngineInput = {
         cart: {
           items: [createMockCartItem({ price: 100, quantity: 1 })],
@@ -357,11 +357,38 @@ describe("DiscountEngine", () => {
         now: new Date(),
       };
 
+      // Act
       const result = runDiscountEngine(input);
 
-      // Check that totals are rounded to 2 decimals
-      expect(result.total.toString().split(".")[1]?.length || 0).toBeLessThanOrEqual(2);
-      expect(result.lineItems[0].lineTotal.toString().split(".")[1]?.length || 0).toBeLessThanOrEqual(2);
+      // Assert - Check that total is rounded to 2 decimals
+      const decimalPlaces = result.total.toString().split(".")[1]?.length || 0;
+      expect(decimalPlaces).toBeLessThanOrEqual(2);
+    });
+
+    it("should round line item totals to 2 decimal places", () => {
+      // Arrange
+      const discount = createMockDiscount({
+        code: "TEST",
+        value: 33.333, // Will create non-round numbers
+        valueType: DiscountValueType.PERCENTAGE,
+        type: DiscountType.PERCENTAGE,
+      });
+      const input: DiscountEngineInput = {
+        cart: {
+          items: [createMockCartItem({ price: 100, quantity: 1 })],
+        },
+        customer: null,
+        discounts: [discount],
+        now: new Date(),
+      };
+
+      // Act
+      const result = runDiscountEngine(input);
+
+      // Assert - Check that line item total is rounded to 2 decimals
+      const decimalPlaces =
+        result.lineItems[0].lineTotal.toString().split(".")[1]?.length || 0;
+      expect(decimalPlaces).toBeLessThanOrEqual(2);
     });
   });
 

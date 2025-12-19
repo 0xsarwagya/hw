@@ -272,12 +272,20 @@ export class AdminMfaService {
    * Check if 2FA is enabled for admin
    */
   async is2FAEnabled(adminId: string): Promise<boolean> {
-    const [mfaRecord] = await db
-      .select({ enabled: admin2fa.enabled })
-      .from(admin2fa)
-      .where(eq(admin2fa.adminId, adminId))
-      .limit(1);
+    try {
+      const [mfaRecord] = await db
+        .select({ enabled: admin2fa.enabled })
+        .from(admin2fa)
+        .where(eq(admin2fa.adminId, adminId))
+        .limit(1);
 
-    return mfaRecord?.enabled || false;
+      return mfaRecord?.enabled || false;
+    } catch (error) {
+      // If table doesn't exist yet, assume 2FA is not enabled
+      if (error.message?.includes('relation "admin_2fa" does not exist')) {
+        return false;
+      }
+      throw error;
+    }
   }
 }

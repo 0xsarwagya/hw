@@ -1,5 +1,7 @@
 import { Module } from "@nestjs/common";
 import { AppController } from "./app.controller";
+import { ConfigModule } from "./common/config/config.module";
+import { HealthDatabaseController } from "./common/health/health-database.controller";
 import { HealthLoggerController } from "./common/health/health-logger.controller";
 import { HealthTracingController } from "./common/health/health-tracing.controller";
 import { ContextModule } from "./common/logging/context.module";
@@ -12,7 +14,9 @@ import { AdminAuthModule } from "./modules/admin-auth/admin-auth.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { BundlesModule } from "./modules/bundles/bundles.module";
 import { CategoriesModule } from "./modules/categories/categories.module";
+import { CollectionsModule } from "./modules/collections/collections.module";
 import { CustomersModule } from "./modules/customers/customers.module";
+import { DatabaseModule } from "./modules/database/database.module";
 import { DiscountsModule } from "./modules/discounts/discounts.module";
 import { InventoryModule } from "./modules/inventory/inventory.module";
 import { InvoicesModule } from "./modules/invoices/invoices.module";
@@ -27,15 +31,20 @@ import { StorageModule } from "./modules/storage/storage.module";
 
 @Module({
   imports: [
+    // Register configuration module first (global)
+    ConfigModule,
     // Register logging and tracing modules first
     LoggerModule,
     ContextModule,
     OtelTracingModule,
     RateLimitingModule,
+    // Register DatabaseModule early for connection management
+    DatabaseModule,
     // Register StorageModule first so it's available to other modules
     StorageModule.forRootAsync(),
     AuthModule,
     CategoriesModule,
+    CollectionsModule,
     ProductsModule,
     CustomersModule,
     OrdersModule,
@@ -52,6 +61,11 @@ import { StorageModule } from "./modules/storage/storage.module";
     BundlesModule,
     ReviewsModule,
   ],
-  controllers: [AppController, HealthLoggerController, HealthTracingController],
+  controllers: [
+    AppController,
+    HealthLoggerController,
+    HealthTracingController,
+    HealthDatabaseController,
+  ],
 })
 export class AppModule {}

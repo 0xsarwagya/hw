@@ -57,6 +57,18 @@ export class UpdateProductDto {
   gstRate?: number;
 
   @ApiProperty({
+    description: "Pricing type - whether price includes or excludes GST",
+    example: "exclusive",
+    enum: ["inclusive", "exclusive"],
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(["inclusive", "exclusive"], {
+    message: "Pricing type must be either 'inclusive' or 'exclusive'",
+  })
+  pricingType?: "inclusive" | "exclusive";
+
+  @ApiProperty({
     description: "HSN (Harmonized System of Nomenclature) code",
     example: "8518.12.00",
     required: false,

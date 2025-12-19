@@ -1,0 +1,157 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { AdminPageLayout } from "@/components/layout/admin-page-layout";
+import { CollectionsFiltersBar } from "@/components/collections/collections-filters-bar";
+import { CollectionCard } from "@/components/collections/collection-card";
+import { Button } from "@/components/ui/button";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { useAdminCollections } from "@/hooks/collections/use-admin-collections";
+import { useAdminDeleteCollection } from "@/hooks/collections/use-admin-delete-collection";
+import type { CollectionQueryParams } from "@/lib/types/collections";
+import { toast } from "sonner";
+
+export default function CollectionsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const deleteCollection = useAdminDeleteCollection();
+
+  const [filters, setFilters] = useState<CollectionQueryParams>({
+    page: parseInt(searchParams.get("page") || "1"),
+    limit: parseInt(searchParams.get("limit") || "12"),
+    search: searchParams.get("search") || undefined,
+  });
+
+  const { data, isLoading, error } = useAdminCollections(filters);
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (filters.page && filters.page > 1) params.set("page", filters.page.toString());
+    if (filters.limit && filters.limit !== 12) params.set("limit", filters.limit.toString());
+    if (filters.search) params.set("search", filters.search);
+
+    router.replace(`/products/collections?${params.toString()}`, { scroll: false });
+  }, [filters, router]);
+
+  const handleDelete = async (collectionId: string) => {
+    if (confirm("Are you sure you want to delete this collection? Products will remain but will be removed from this collection.")) {
+      await deleteCollection.mutateAsync(collectionId);
+    }
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      page: 1,
+      limit: 12,
+    });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setFilters((prev) => ({ ...prev, page: newPage }));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  if (isLoading) {
+    return (
+      <AdminPageLayout title="Collections" description="Manage product collections">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
+          ))}
+        </div>
+      </AdminPageLayout>
+    );
+  }
+
+  if (error) {
+    toast.error(error.message || "Failed to load collections");
+    return (
+      <AdminPageLayout title="Collections" description="Manage product collections">
+        <div className="text-center py-8 text-destructive">
+          Error loading collections: {error.message}
+        </div>
+      </AdminPageLayout>
+    );
+  }
+
+  return (
+    <AdminPageLayout
+      title="Collections"
+      description="Manage product collections"
+      actions={
+        <Button asChild>
+          <Link href="/products/collections/create">
+            <Plus className="mr-2 h-4 w-4" />
+            Create Collection
+          </Link>
+        </Button>
+      }
+      filters={
+        <CollectionsFiltersBar
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+        />
+      }
+      pagination={
+        data && data.pagination.totalPages > 1 ? (
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              Showing {((data.pagination.page - 1) * data.pagination.limit + 1).toLocaleString()} to{" "}
+              {Math.min(data.pagination.page * data.pagination.limit, data.pagination.total).toLocaleString()} of{" "}
+              {data.pagination.total.toLocaleString()} collections
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handlePageChange(data.pagination.page - 1)}
+                disabled={!data.pagination.hasPreviousPage}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handlePageChange(data.pagination.page + 1)}
+                disabled={!data.pagination.hasNextPage}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        ) : null
+      }
+    >
+      {data && data.data.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {data.data.map((collection) => (
+            <CollectionCard
+              key={collection.id}
+              collection={collection}
+              onDelete={handleDelete}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <p className="text-lg font-medium mb-2">No collections found</p>
+          <p className="text-sm text-muted-foreground mb-4">
+            {filters.search ? "Try adjusting your search" : "Create your first collection to get started"}
+          </p>
+          {!filters.search && (
+            <Button asChild>
+              <Link href="/products/collections/create">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Collection
+              </Link>
+            </Button>
+          )}
+        </div>
+      )}
+    </AdminPageLayout>
+  );
+}
