@@ -42,9 +42,13 @@ export function PriceListsPageClient() {
 
   const handleDeleteConfirm = async () => {
     if (priceListToDelete) {
-      await deletePriceList.mutateAsync(priceListToDelete);
-      setDeleteDialogOpen(false);
-      setPriceListToDelete(null);
+      try {
+        await deletePriceList.mutateAsync(priceListToDelete);
+        setDeleteDialogOpen(false);
+        setPriceListToDelete(null);
+      } catch (_error) {
+        // Error handled by hook
+      }
     }
   };
 

@@ -13,3 +13,18 @@ export function useAdminDiscounts(params?: DiscountQueryParams) {
     enabled: true,
   });
 }
+
+// Note: Preview endpoint may need to be added to backend if not exists
+// For now, we'll create a placeholder hook
+export function useAdminDiscountPreview() {
+  // This would call a preview/simulate endpoint if it exists
+  // For now, return a placeholder
+  return {
+    data: undefined,
+    isLoading: false,
+    error: null,
+    mutate: async () => {
+      throw new Error("Preview endpoint not yet implemented");
+    },
+  };
+}

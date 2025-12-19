@@ -8,19 +8,34 @@ import {
   collections,
   db,
   eq,
+  gt,
   ilike,
   inArray,
+  lt,
+  ne,
   or,
   productCollections,
   products,
+  productTags,
+  productVariants,
   sql,
+  tags,
 } from "@vcecom/db";
 import {
   generatePaginationMetadata,
   normalizePaginationParams,
 } from "../../common/utils/pagination.utils";
 import { AddProductsDto } from "./dto/add-products.dto";
-import { CreateCollectionDto } from "./dto/create-collection.dto";
+import {
+  CollectionRuleDto,
+  CollectionRuleField,
+  CollectionRuleOperator,
+} from "./dto/collection-rule.dto";
+import {
+  CollectionMatchType,
+  CollectionType,
+  CreateCollectionDto,
+} from "./dto/create-collection.dto";
 import { QueryCollectionsDto } from "./dto/query-collections.dto";
 import { UpdateCollectionDto } from "./dto/update-collection.dto";
 
@@ -77,6 +92,16 @@ export class CollectionsService {
           this.generateSlug(createCollectionDto.name),
         );
 
+    // Validate rules for automatic collections
+    if (
+      createCollectionDto.type === "automatic" &&
+      (!createCollectionDto.rules || createCollectionDto.rules.length === 0)
+    ) {
+      throw new BadRequestException(
+        "Automatic collections must have at least one rule",
+      );
+    }
+
     // Create collection
     const [newCollection] = await db
       .insert(collections)
@@ -85,10 +110,32 @@ export class CollectionsService {
         slug,
         description: createCollectionDto.description || null,
         imageUrl: createCollectionDto.imageUrl || null,
+        type: createCollectionDto.type || "manual",
+        rules: createCollectionDto.rules || null,
+        matchType: createCollectionDto.matchType || "all",
+        position: createCollectionDto.position || 0,
       })
-      .returning();
+      .returning({
+        id: collections.id,
+        name: collections.name,
+        slug: collections.slug,
+        description: collections.description,
+        imageUrl: collections.imageUrl,
+        type: collections.type,
+        rules: collections.rules,
+        matchType: collections.matchType,
+        position: collections.position,
+        createdAt: collections.createdAt,
+        updatedAt: collections.updatedAt,
+      });
 
-    return newCollection;
+    return {
+      ...newCollection,
+      type: newCollection.type as CollectionType,
+      matchType: newCollection.matchType as CollectionMatchType | null,
+      rules: newCollection.rules as CollectionRuleDto[] | null,
+      position: newCollection.position ?? undefined,
+    };
   }
 
   /**
@@ -139,6 +186,10 @@ export class CollectionsService {
         slug: collections.slug,
         description: collections.description,
         imageUrl: collections.imageUrl,
+        type: collections.type,
+        rules: collections.rules,
+        matchType: collections.matchType,
+        position: collections.position,
         createdAt: collections.createdAt,
         updatedAt: collections.updatedAt,
         productCount: sql<number>`count(${productCollections.id})`.as(
@@ -152,7 +203,7 @@ export class CollectionsService {
       )
       .where(whereCondition)
       .groupBy(collections.id)
-      .orderBy(collections.createdAt)
+      .orderBy(collections.position, collections.createdAt)
       .limit(limit)
       .offset(offset);
 
@@ -172,7 +223,19 @@ export class CollectionsService {
    */
   async findOne(id: string) {
     const [collection] = await db
-      .select()
+      .select({
+        id: collections.id,
+        name: collections.name,
+        slug: collections.slug,
+        description: collections.description,
+        imageUrl: collections.imageUrl,
+        type: collections.type,
+        rules: collections.rules,
+        matchType: collections.matchType,
+        position: collections.position,
+        createdAt: collections.createdAt,
+        updatedAt: collections.updatedAt,
+      })
       .from(collections)
       .where(eq(collections.id, id))
       .limit(1);
@@ -191,6 +254,10 @@ export class CollectionsService {
 
     return {
       ...collection,
+      type: collection.type as CollectionType,
+      matchType: collection.matchType as CollectionMatchType | null,
+      rules: collection.rules as CollectionRuleDto[] | null,
+      position: collection.position ?? undefined,
       productCount,
     };
   }
@@ -249,8 +316,31 @@ export class CollectionsService {
       slug = await this.ensureUniqueSlug(slug, id);
     }
 
+    // Validate rules for automatic collections
+    if (
+      updateCollectionDto.type === "automatic" &&
+      (!updateCollectionDto.rules || updateCollectionDto.rules.length === 0)
+    ) {
+      throw new BadRequestException(
+        "Automatic collections must have at least one rule",
+      );
+    }
+
     // Update collection
-    const updateData: Partial<typeof collections.$inferInsert> = {};
+    const updateData: {
+      name?: string;
+      slug?: string;
+      description?: string | null;
+      imageUrl?: string | null;
+      type?: "manual" | "automatic";
+      rules?: Array<{
+        field: string;
+        operator: string;
+        value: string | number;
+      }> | null;
+      matchType?: "all" | "any";
+      position?: number;
+    } = {};
     if (updateCollectionDto.name !== undefined)
       updateData.name = updateCollectionDto.name;
     if (slug !== undefined) updateData.slug = slug;
@@ -258,14 +348,40 @@ export class CollectionsService {
       updateData.description = updateCollectionDto.description || null;
     if (updateCollectionDto.imageUrl !== undefined)
       updateData.imageUrl = updateCollectionDto.imageUrl || null;
+    if (updateCollectionDto.type !== undefined)
+      updateData.type = updateCollectionDto.type;
+    if (updateCollectionDto.rules !== undefined)
+      updateData.rules = updateCollectionDto.rules || null;
+    if (updateCollectionDto.matchType !== undefined)
+      updateData.matchType = updateCollectionDto.matchType;
+    if (updateCollectionDto.position !== undefined)
+      updateData.position = updateCollectionDto.position;
 
     const [updated] = await db
       .update(collections)
       .set(updateData)
       .where(eq(collections.id, id))
-      .returning();
+      .returning({
+        id: collections.id,
+        name: collections.name,
+        slug: collections.slug,
+        description: collections.description,
+        imageUrl: collections.imageUrl,
+        type: collections.type,
+        rules: collections.rules,
+        matchType: collections.matchType,
+        position: collections.position,
+        createdAt: collections.createdAt,
+        updatedAt: collections.updatedAt,
+      });
 
-    return updated;
+    return {
+      ...updated,
+      type: updated.type as CollectionType,
+      matchType: updated.matchType as CollectionMatchType | null,
+      rules: updated.rules as CollectionRuleDto[] | null,
+      position: updated.position ?? undefined,
+    };
   }
 
   /**
@@ -290,12 +406,223 @@ export class CollectionsService {
   }
 
   /**
-   * Get products in a collection
+   * Evaluate rules and get matching product IDs for automatic collections
+   */
+  private async evaluateRules(
+    rules: CollectionRuleDto[],
+    matchType: "all" | "any",
+  ): Promise<string[]> {
+    if (!rules || rules.length === 0) {
+      return [];
+    }
+
+    // Build conditions for each rule
+    const ruleConditions: ReturnType<typeof and | typeof or>[] = [];
+
+    for (const rule of rules) {
+      let condition: ReturnType<typeof and | typeof or> | null = null;
+
+      switch (rule.field) {
+        case CollectionRuleField.PRICE:
+          switch (rule.operator) {
+            case CollectionRuleOperator.EQUALS:
+              condition = eq(products.price, Number(rule.value));
+              break;
+            case CollectionRuleOperator.NOT_EQUALS:
+              condition = ne(products.price, Number(rule.value));
+              break;
+            case CollectionRuleOperator.LESS_THAN:
+              condition = lt(products.price, Number(rule.value));
+              break;
+            case CollectionRuleOperator.GREATER_THAN:
+              condition = gt(products.price, Number(rule.value));
+              break;
+            default:
+              throw new BadRequestException(
+                `Invalid operator ${rule.operator} for price field`,
+              );
+          }
+          break;
+
+        case CollectionRuleField.TITLE:
+          switch (rule.operator) {
+            case CollectionRuleOperator.EQUALS:
+              condition = eq(products.title, String(rule.value));
+              break;
+            case CollectionRuleOperator.NOT_EQUALS:
+              condition = ne(products.title, String(rule.value));
+              break;
+            case CollectionRuleOperator.CONTAINS:
+              condition = ilike(products.title, `%${String(rule.value)}%`);
+              break;
+            default:
+              throw new BadRequestException(
+                `Invalid operator ${rule.operator} for title field`,
+              );
+          }
+          break;
+
+        case CollectionRuleField.STATUS: {
+          const statusValue = String(rule.value) as
+            | "draft"
+            | "active"
+            | "archived";
+          if (!["draft", "active", "archived"].includes(statusValue)) {
+            throw new BadRequestException(
+              `Invalid status value: ${rule.value}. Must be one of: draft, active, archived`,
+            );
+          }
+          switch (rule.operator) {
+            case CollectionRuleOperator.EQUALS:
+              condition = eq(products.status, statusValue);
+              break;
+            case CollectionRuleOperator.NOT_EQUALS:
+              condition = ne(products.status, statusValue);
+              break;
+            default:
+              throw new BadRequestException(
+                `Invalid operator ${rule.operator} for status field`,
+              );
+          }
+          break;
+        }
+
+        case CollectionRuleField.CATEGORY:
+          switch (rule.operator) {
+            case CollectionRuleOperator.EQUALS:
+              condition = eq(products.categoryId, String(rule.value));
+              break;
+            case CollectionRuleOperator.NOT_EQUALS:
+              condition = ne(products.categoryId, String(rule.value));
+              break;
+            default:
+              throw new BadRequestException(
+                `Invalid operator ${rule.operator} for category field`,
+              );
+          }
+          break;
+
+        case CollectionRuleField.TAGS: {
+          // For tags, we need to check productTags junction table
+          const tagProducts = await db
+            .select({ productId: productTags.productId })
+            .from(productTags)
+            .innerJoin(tags, eq(productTags.tagId, tags.id))
+            .where(
+              rule.operator === CollectionRuleOperator.EQUALS
+                ? eq(tags.name, String(rule.value))
+                : ne(tags.name, String(rule.value)),
+            );
+          const tagProductIds = tagProducts.map((tp) => tp.productId);
+          if (tagProductIds.length === 0) {
+            return [];
+          }
+          condition = inArray(products.id, tagProductIds);
+          break;
+        }
+
+        case CollectionRuleField.INVENTORY: {
+          // For inventory, sum up variant inventories per product
+          const inventoryValue = Number(rule.value);
+          let inventoryProducts: typeof products = [];
+
+          if (rule.operator === CollectionRuleOperator.EQUALS) {
+            inventoryProducts = await db
+              .select({ productId: productVariants.productId })
+              .from(productVariants)
+              .groupBy(productVariants.productId)
+              .having(
+                sql`sum(${productVariants.inventory}) = ${inventoryValue}`,
+              );
+          } else if (rule.operator === CollectionRuleOperator.NOT_EQUALS) {
+            inventoryProducts = await db
+              .select({ productId: productVariants.productId })
+              .from(productVariants)
+              .groupBy(productVariants.productId)
+              .having(
+                sql`sum(${productVariants.inventory}) != ${inventoryValue}`,
+              );
+          } else if (rule.operator === CollectionRuleOperator.GREATER_THAN) {
+            inventoryProducts = await db
+              .select({ productId: productVariants.productId })
+              .from(productVariants)
+              .groupBy(productVariants.productId)
+              .having(
+                sql`sum(${productVariants.inventory}) > ${inventoryValue}`,
+              );
+          } else if (rule.operator === CollectionRuleOperator.LESS_THAN) {
+            inventoryProducts = await db
+              .select({ productId: productVariants.productId })
+              .from(productVariants)
+              .groupBy(productVariants.productId)
+              .having(
+                sql`sum(${productVariants.inventory}) < ${inventoryValue}`,
+              );
+          } else {
+            throw new BadRequestException(
+              `Invalid operator ${rule.operator} for inventory field`,
+            );
+          }
+
+          const inventoryProductIds = inventoryProducts.map(
+            (ip) => ip.productId,
+          );
+          if (inventoryProductIds.length === 0) {
+            return [];
+          }
+          condition = inArray(products.id, inventoryProductIds);
+          break;
+        }
+
+        default:
+          throw new BadRequestException(`Invalid field: ${rule.field}`);
+      }
+
+      if (condition) {
+        ruleConditions.push(condition);
+      }
+    }
+
+    if (ruleConditions.length === 0) {
+      return [];
+    }
+
+    // Combine conditions based on matchType
+    const whereCondition =
+      matchType === "all" ? and(...ruleConditions) : or(...ruleConditions);
+
+    if (!whereCondition) {
+      return [];
+    }
+
+    // Get matching products
+    const matchingProducts = await db
+      .select({ id: products.id })
+      .from(products)
+      .where(whereCondition);
+
+    return matchingProducts.map((p) => p.id);
+  }
+
+  /**
+   * Get products in a collection (handles both manual and automatic)
    */
   async getProducts(collectionId: string) {
     // Check if collection exists
     const [collection] = await db
-      .select()
+      .select({
+        id: collections.id,
+        name: collections.name,
+        slug: collections.slug,
+        description: collections.description,
+        imageUrl: collections.imageUrl,
+        type: collections.type,
+        rules: collections.rules,
+        matchType: collections.matchType,
+        position: collections.position,
+        createdAt: collections.createdAt,
+        updatedAt: collections.updatedAt,
+      })
       .from(collections)
       .where(eq(collections.id, collectionId))
       .limit(1);
@@ -306,7 +633,34 @@ export class CollectionsService {
       );
     }
 
-    // Get products in collection
+    // For automatic collections, evaluate rules
+    if (collection.type === "automatic" && collection.rules) {
+      const matchingProductIds = await this.evaluateRules(
+        collection.rules as CollectionRuleDto[],
+        (collection.matchType as "all" | "any") || "all",
+      );
+
+      if (matchingProductIds.length === 0) {
+        return [];
+      }
+
+      const collectionProducts = await db
+        .select({
+          id: products.id,
+          title: products.title,
+          price: products.price,
+          status: products.status,
+          createdAt: products.createdAt,
+          updatedAt: products.updatedAt,
+        })
+        .from(products)
+        .where(inArray(products.id, matchingProductIds))
+        .orderBy(products.createdAt);
+
+      return collectionProducts;
+    }
+
+    // For manual collections, get products from productCollections
     const collectionProducts = await db
       .select({
         id: products.id,
@@ -322,6 +676,50 @@ export class CollectionsService {
       .orderBy(products.createdAt);
 
     return collectionProducts;
+  }
+
+  /**
+   * Preview automatic collection (get count of matching products)
+   */
+  async preview(id: string) {
+    const [collection] = await db
+      .select({
+        id: collections.id,
+        name: collections.name,
+        slug: collections.slug,
+        description: collections.description,
+        imageUrl: collections.imageUrl,
+        type: collections.type,
+        rules: collections.rules,
+        matchType: collections.matchType,
+        position: collections.position,
+        createdAt: collections.createdAt,
+        updatedAt: collections.updatedAt,
+      })
+      .from(collections)
+      .where(eq(collections.id, id))
+      .limit(1);
+
+    if (!collection) {
+      throw new NotFoundException(`Collection with ID ${id} not found`);
+    }
+
+    if (collection.type !== "automatic") {
+      throw new BadRequestException(
+        "Preview is only available for automatic collections",
+      );
+    }
+
+    if (!collection.rules || collection.rules.length === 0) {
+      return { count: 0 };
+    }
+
+    const matchingProductIds = await this.evaluateRules(
+      collection.rules as CollectionRuleDto[],
+      (collection.matchType as "all" | "any") || "all",
+    );
+
+    return { count: matchingProductIds.length };
   }
 
   /**

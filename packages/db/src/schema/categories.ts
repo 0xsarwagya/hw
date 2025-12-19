@@ -1,5 +1,12 @@
 import { relations } from "drizzle-orm";
-import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 export const categories = pgTable(
   "categories",
@@ -10,12 +17,14 @@ export const categories = pgTable(
     parentId: uuid("parent_id"),
     description: text("description"),
     imageUrl: text("image_url"),
+    position: integer("position").default(0),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => ({
     slugIdx: index("categories_slug_idx").on(table.slug),
     parentIdIdx: index("categories_parent_id_idx").on(table.parentId),
+    positionIdx: index("categories_position_idx").on(table.position),
   }),
 );
 

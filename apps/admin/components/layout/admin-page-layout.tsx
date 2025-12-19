@@ -8,7 +8,7 @@ interface BreadcrumbItem {
 }
 
 interface AdminPageLayoutProps {
-  title: string;
+  title: string | ReactNode;
   description?: string;
   breadcrumbs?: BreadcrumbItem[];
   actions?: ReactNode;

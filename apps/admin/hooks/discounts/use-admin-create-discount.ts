@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -24,7 +22,6 @@ export function useAdminCreateDiscount() {
       router.push(`/discounts/${data.id}`);
     },
     onError: (error) => {
-      // Show field-level errors if available
       if (error.errors && Object.keys(error.errors).length > 0) {
         const fieldErrors = Object.entries(error.errors)
           .map(([field, messages]) => `${field}: ${messages.join(", ")}`)
@@ -33,7 +30,6 @@ export function useAdminCreateDiscount() {
       } else {
         toast.error(error.message || "Failed to create discount");
       }
-      // Re-throw to allow form to handle it
       throw error;
     },
   });

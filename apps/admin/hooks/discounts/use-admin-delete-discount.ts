@@ -7,15 +7,13 @@ import { api, type FetchError } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
 import { useApiMutation } from "../use-api-mutation";
 
-export function useAdminDeleteDiscount() {
+export function useAdminDeleteDiscount(id: string) {
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  return useApiMutation<{ message: string }, string, FetchError>({
-    mutationFn: async (discountId: string) => {
-      return api.delete<{ message: string }>(
-        endpoints.discounts.delete(discountId),
-      );
+  return useApiMutation<void, void, FetchError>({
+    mutationFn: async () => {
+      return api.delete<void>(endpoints.discounts.delete(id));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoints.discounts.list] });

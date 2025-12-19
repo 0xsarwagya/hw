@@ -7,21 +7,16 @@ import { api, type FetchError } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
 import { useApiMutation } from "../use-api-mutation";
 
-export function useAdminDeletePriceList() {
+export function useAdminDeletePriceList(id: string) {
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  return useApiMutation<{ message: string }, string, FetchError>({
-    mutationFn: async (priceListId: string) => {
-      return api.delete<{ message: string }>(
-        endpoints.priceLists.delete(priceListId),
-      );
+  return useApiMutation<void, void, FetchError>({
+    mutationFn: async () => {
+      return api.delete<void>(endpoints.priceLists.delete(id));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoints.priceLists.list] });
-      queryClient.invalidateQueries({
-        queryKey: [endpoints.priceLists.active],
-      });
       toast.success("Price list deleted successfully");
       router.push("/price-lists");
     },

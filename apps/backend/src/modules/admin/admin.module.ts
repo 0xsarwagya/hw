@@ -4,11 +4,13 @@ import { ProductsModule } from "../products/products.module";
 import { RedisStoreModule } from "../redis-store/redis-store.module";
 import { AdminController } from "./admin.controller";
 import { AdminService } from "./admin.service";
+import { AdminActivityLogsController } from "./admin-activity-logs.controller";
+import { AdminActivityLogsService } from "./admin-activity-logs.service";
 
 @Module({
   imports: [ProductsModule, CartsModule, RedisStoreModule],
-  controllers: [AdminController],
-  providers: [AdminService],
+  controllers: [AdminController, AdminActivityLogsController],
+  providers: [AdminService, AdminActivityLogsService],
   exports: [AdminService],
 })
 export class AdminModule {}

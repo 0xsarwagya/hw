@@ -1,5 +1,17 @@
 import * as z from "zod";
 
+export const collectionRuleSchema = z.object({
+  field: z.enum(["price", "title", "tags", "category", "status", "inventory"]),
+  operator: z.enum([
+    "equals",
+    "not_equals",
+    "less_than",
+    "greater_than",
+    "contains",
+  ]),
+  value: z.union([z.string(), z.number()]),
+});
+
 export const createCollectionSchema = z.object({
   name: z
     .string()
@@ -14,6 +26,10 @@ export const createCollectionSchema = z.object({
     .string()
     .max(500, "Image URL must not exceed 500 characters")
     .optional(),
+  type: z.enum(["manual", "automatic"]).optional(),
+  rules: z.array(collectionRuleSchema).optional(),
+  matchType: z.enum(["all", "any"]).optional(),
+  position: z.number().int().optional(),
 });
 
 export const updateCollectionSchema = z.object({
@@ -31,6 +47,10 @@ export const updateCollectionSchema = z.object({
     .string()
     .max(500, "Image URL must not exceed 500 characters")
     .optional(),
+  type: z.enum(["manual", "automatic"]).optional(),
+  rules: z.array(collectionRuleSchema).optional(),
+  matchType: z.enum(["all", "any"]).optional(),
+  position: z.number().int().optional(),
 });
 
 export const addProductsToCollectionSchema = z.object({

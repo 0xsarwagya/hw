@@ -48,6 +48,7 @@ export function CategoryForm({
           parentId: category.parentId || undefined,
           description: category.description || undefined,
           imageUrl: category.imageUrl || undefined,
+          position: category.position,
         }
       : {
           name: "",
@@ -55,6 +56,7 @@ export function CategoryForm({
           parentId: undefined,
           description: "",
           imageUrl: undefined,
+          position: undefined,
         },
   });
 

@@ -6,13 +6,16 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { AdminPageLayout } from "@/components/layout/admin-page-layout";
+import { PriceListItemTable } from "@/components/pricing/price-list-item-table";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAdminDeletePriceList } from "@/hooks/pricing/use-admin-delete-price-list";
 import { useAdminPriceList } from "@/hooks/pricing/use-admin-price-list";
@@ -143,46 +146,76 @@ export default function PriceListDetailPage() {
         <ErrorDisplay error={apiError} onRetry={() => setApiError(null)} />
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">Name *</Label>
-            <Input
-              id="name"
-              {...register("name", { required: "Name is required" })}
-              aria-invalid={errors.name ? "true" : "false"}
-            />
-            <FieldError error={errors.name?.message} />
-          </div>
+      <Tabs defaultValue="details" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="items">Items</TabsTrigger>
+        </TabsList>
 
-          <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              {...register("description")}
-              aria-invalid={errors.description ? "true" : "false"}
-            />
-            <FieldError error={errors.description?.message} />
-          </div>
-        </div>
+        <TabsContent value="details" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Price List Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Name *</Label>
+                    <Input
+                      id="name"
+                      {...register("name", { required: "Name is required" })}
+                      aria-invalid={errors.name ? "true" : "false"}
+                    />
+                    <FieldError error={errors.name?.message} />
+                  </div>
 
-        <div className="flex gap-4">
-          <LoadingButton
-            type="submit"
-            isLoading={updatePriceList.isPending}
-            loadingText="Saving..."
-          >
-            <Save className="mr-2 h-4 w-4" />
-            Save Changes
-          </LoadingButton>
-          <Button type="button" variant="outline" asChild>
-            <Link href="/price-lists">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Cancel
-            </Link>
-          </Button>
-        </div>
-      </form>
+                  <div className="grid gap-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      {...register("description")}
+                      aria-invalid={errors.description ? "true" : "false"}
+                    />
+                    <FieldError error={errors.description?.message} />
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <LoadingButton
+                    type="submit"
+                    isLoading={updatePriceList.isPending}
+                    loadingText="Saving..."
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Changes
+                  </LoadingButton>
+                  <Button type="button" variant="outline" asChild>
+                    <Link href="/price-lists">
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Cancel
+                    </Link>
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="items" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Price List Items</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PriceListItemTable
+                priceListId={priceListId}
+                items={priceList.items || []}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </AdminPageLayout>
   );
 }

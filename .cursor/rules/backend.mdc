@@ -1,0 +1,170 @@
+---
+globs: apps/backend/**
+alwaysApply: false
+---
+# **Backend Code Implementation Guidelines**
+
+## **1. Magic Numbers**
+
+* Never use raw numeric literals in business logic.
+* Extract all values into named constants.
+* Constants must live inside `apps/backend/src/common/constants/*`.
+* Required constant files:
+
+  * `server.constants.ts`
+  * `shipping.constants.ts`
+* Every constant must have a JSDoc explaining “why” it exists.
+
+---
+
+## **2. Large Service Refactoring**
+
+Whenever you encounter oversized files, you must split them into focused modules.
+
+### **Orders Module**
+
+You MUST decompose:
+
+* `OrderCreationService`
+* `OrderPricingService`
+* `OrderValidationService`
+* `OrderStatusService`
+* `OrderTimelineService`
+* `OrdersService` becomes orchestrator only.
+
+### **Carts Module**
+
+You MUST extract:
+
+* `CartCalculationService`
+* `CartValidationService`
+* `CartBundleService`
+
+### **Discounts Module**
+
+* Ensure engine separation stays intact.
+* Extract complex queries into repositories.
+
+**Hard rule:**
+*No service file may exceed 500 lines.*
+
+---
+
+## **3. Function Rules**
+
+* Max function size: 50 lines (ideal < 20).
+* One responsibility per function.
+* Prefer early returns over nesting.
+* Avoid side effects unless documented.
+* If a function has 3+ arguments → use an object parameter.
+* Extract loops and conditionals into named helpers.
+* Never use flag arguments.
+
+---
+
+## **4. Naming Rules**
+
+* Variables must be descriptive. Never use single letters except trivial loop counters.
+* Functions must be verb phrases.
+* Classes must be nouns.
+* Constants in `UPPER_SNAKE_CASE`.
+* DTOs/interfaces must use clear domain nouns.
+* File names must match exported class names.
+
+---
+
+## **5. Comment Rules**
+
+* Comments must explain “why”, not “what”.
+* Remove redundant comments that restate code.
+* Document business rules and decisions.
+* Document side effects and performance concerns.
+* Remove all commented-out code.
+
+---
+
+## **6. Code Structure Rules**
+
+* Keep related logic vertically close.
+* Group private methods together.
+* High-level public methods at top; helpers below.
+* Imports ordered: external → internal → relative.
+* Declare variables close to where they’re used.
+
+---
+
+## **7. Test Rules**
+
+All tests must follow:
+
+* One logical assert per test.
+* Arrange → Act → Assert format.
+* No shared state.
+* Split unrelated assertions.
+* Test names must be explicit.
+* Shared setup must be extracted into helpers.
+
+---
+
+## **8. Dependency Injection & Coupling Rules**
+
+* Never instantiate dependencies manually; always rely on DI.
+* No deep chaining (Law of Demeter).
+* Extract chained calls into service methods.
+* All configuration must come from constants or env.
+
+---
+
+## **9. Polymorphism Rules**
+
+Use strategy/polymorphism instead of large conditional blocks when it improves clarity.
+
+Applies to:
+
+* Discount types
+* Pricing override types
+* Shipping provider selection
+
+Do NOT use polymorphism if it creates unnecessary abstraction.
+
+---
+
+## **10. Documentation Requirements**
+
+Cursor must ensure:
+
+* `apps/backend/CLEAN_CODE_GUIDELINES.md` exists and documents:
+
+  * Clean code rules
+  * Service decomposition rules
+  * Magic number rules
+  * Architecture boundaries
+* README references the guidelines.
+* Complex functions include JSDoc examples.
+
+---
+
+## **Success Conditions**
+
+Cursor must enforce:
+
+* No service > 500 lines
+* No function > 50 lines
+* Zero magic numbers
+* Tests follow clean test structure
+* Services decomposed per module rules
+* Code is understandable by a new developer in <10 minutes
+
+---
+
+## **Allowed Automation**
+
+Cursor is allowed to:
+
+* Auto-extract constants
+* Auto-refactor large services
+* Auto-rename unclear variables
+* Auto-restructure directories
+* Auto-split oversized functions
+* Auto-fix import ordering
+* Auto-improve and reorganize tests

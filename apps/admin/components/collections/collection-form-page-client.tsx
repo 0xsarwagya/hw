@@ -11,7 +11,7 @@ import type {
   CreateCollectionInput,
   UpdateCollectionInput,
 } from "@/lib/types/collections";
-import { CollectionForm } from "./collection-form";
+import { CollectionFormWizard } from "./collection-form-wizard";
 
 export function CollectionFormPageClient() {
   const router = useRouter();
@@ -48,7 +48,7 @@ export function CollectionFormPageClient() {
         </Button>
       }
     >
-      <CollectionForm
+      <CollectionFormWizard
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         isLoading={createCollection.isPending}
