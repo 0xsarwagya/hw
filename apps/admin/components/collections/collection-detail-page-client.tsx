@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { AdminPageLayout } from "@/components/layout/admin-page-layout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,7 +23,8 @@ import { useAdminUpdateCollection } from "@/hooks/collections/use-admin-update-c
 import { BREADCRUMB_LABELS, ROUTES } from "@/lib/constants/routes.constants";
 import type { UpdateCollectionInput } from "@/lib/types/collections";
 import { AddProductsDialog } from "./add-products-dialog";
-import { CollectionForm } from "./collection-form";
+import { CollectionFormWizard } from "./collection-form-wizard";
+import { CollectionPreviewPanel } from "./collection-preview-panel";
 import { CollectionProductsTable } from "./collection-products-table";
 
 export function CollectionDetailPageClient() {
@@ -88,7 +90,20 @@ export function CollectionDetailPageClient() {
 
   return (
     <AdminPageLayout
-      title={collection.name}
+      title={
+        <div className="flex items-center gap-2">
+          {collection.name}
+          {collection.type && (
+            <Badge
+              variant={
+                collection.type === "automatic" ? "default" : "secondary"
+              }
+            >
+              {collection.type === "automatic" ? "Automatic" : "Manual"}
+            </Badge>
+          )}
+        </div>
+      }
       description="Edit collection details and manage products"
       breadcrumbs={[
         { label: BREADCRUMB_LABELS.PRODUCTS, href: ROUTES.PRODUCTS.LIST },
@@ -115,8 +130,43 @@ export function CollectionDetailPageClient() {
           <TabsTrigger value="products">Products</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="details">
-          <CollectionForm
+        <TabsContent value="details" className="space-y-6">
+          {collection.type === "automatic" && collection.rules && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Collection Rules</CardTitle>
+                <CardDescription>
+                  Products matching{" "}
+                  {collection.matchType === "all" ? "all" : "any"} rules
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {collection.rules.map((rule, index) => (
+                    <div
+                      key={`rule-${rule.field}-${rule.operator}-${index}`}
+                      className="flex items-center gap-2 p-2 border rounded text-sm"
+                    >
+                      <span className="font-medium">{rule.field}</span>
+                      <span className="text-muted-foreground">
+                        {rule.operator}
+                      </span>
+                      <span>{String(rule.value)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4">
+                  <CollectionPreviewPanel
+                    collectionId={collection.id}
+                    rules={collection.rules}
+                    matchType={collection.matchType || "all"}
+                    enabled={true}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          <CollectionFormWizard
             collection={collection}
             onSubmit={handleSubmit}
             isLoading={updateCollection.isPending}

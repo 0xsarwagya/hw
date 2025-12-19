@@ -321,4 +321,46 @@ export class CollectionsController {
   ) {
     return this.collectionsService.removeProduct(id, productId);
   }
+
+  @Get(":id/preview")
+  @Roles("admin")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_GET)
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({
+    summary: "Preview automatic collection",
+    description:
+      "Get count of products that would match an automatic collection's rules (admin only)",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Collection ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiOkResponse({
+    description: "Preview count retrieved successfully",
+    schema: {
+      type: "object",
+      properties: {
+        count: {
+          type: "number",
+          example: 42,
+        },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: "Collection not found",
+  })
+  @ApiBadRequestResponse({
+    description: "Collection is not automatic or has no rules",
+  })
+  @ApiUnauthorizedResponse({
+    description: "Authentication required",
+  })
+  @ApiForbiddenResponse({
+    description: "Access denied. Admin role required.",
+  })
+  async preview(@Param("id") id: string) {
+    return this.collectionsService.preview(id);
+  }
 }

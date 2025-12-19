@@ -132,6 +132,7 @@ export const endpoints = {
     create: "/admin/collections",
     update: (id: string) => `/admin/collections/${id}`,
     delete: (id: string) => `/admin/collections/${id}`,
+    preview: (id: string) => `/admin/collections/${id}/preview`,
     products: {
       list: (id: string) => `/admin/collections/${id}/products`,
       add: (id: string) => `/admin/collections/${id}/products`,
@@ -164,5 +165,22 @@ export const endpoints = {
           `/products/${productId}/variant-option-types/${optionTypeId}/values/${valueId}`,
       },
     },
+  },
+  activityLogs: {
+    list: "/admin/activity-logs",
+    detail: (id: string) => `/admin/activity-logs/${id}`,
+  },
+  customerGroups: {
+    list: "/admin/customer-groups",
+    active: "/admin/customer-groups/active",
+    detail: (id: string) => `/admin/customer-groups/${id}`,
+    create: "/admin/customer-groups",
+    update: (id: string) => `/admin/customer-groups/${id}`,
+    delete: (id: string) => `/admin/customer-groups/${id}`,
+    assignPriceList: (id: string) =>
+      `/admin/customer-groups/${id}/assign-price-list`,
+    removePriceList: (id: string, priceListId: string) =>
+      `/admin/customer-groups/${id}/price-lists/${priceListId}`,
+    members: (id: string) => `/admin/customer-groups/${id}/members`,
   },
 } as const;

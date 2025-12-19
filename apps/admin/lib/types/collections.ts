@@ -1,9 +1,19 @@
+export interface CollectionRule {
+  field: "price" | "title" | "tags" | "category" | "status" | "inventory";
+  operator: "equals" | "not_equals" | "less_than" | "greater_than" | "contains";
+  value: string | number;
+}
+
 export interface Collection {
   id: string;
   name: string;
   slug: string;
   description?: string | null;
   imageUrl?: string | null;
+  type?: "manual" | "automatic";
+  rules?: CollectionRule[];
+  matchType?: "all" | "any";
+  position?: number;
   createdAt: string;
   updatedAt: string;
   productCount?: number;
@@ -23,6 +33,10 @@ export interface CreateCollectionInput {
   slug?: string;
   description?: string;
   imageUrl?: string;
+  type?: "manual" | "automatic";
+  rules?: CollectionRule[];
+  matchType?: "all" | "any";
+  position?: number;
 }
 
 export interface UpdateCollectionInput {
@@ -30,6 +44,10 @@ export interface UpdateCollectionInput {
   slug?: string;
   description?: string;
   imageUrl?: string;
+  type?: "manual" | "automatic";
+  rules?: CollectionRule[];
+  matchType?: "all" | "any";
+  position?: number;
 }
 
 export interface CollectionQueryParams {
@@ -58,4 +76,8 @@ export interface AddProductsToCollectionResponse {
   message: string;
   added: number;
   skipped: number;
+}
+
+export interface CollectionPreviewResponse {
+  count: number;
 }

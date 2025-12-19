@@ -8,11 +8,13 @@ import { toast } from "sonner";
 import { AdminPageLayout } from "@/components/layout/admin-page-layout";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminCategories } from "@/hooks/categories/use-admin-categories";
 import { useAdminDeleteCategory } from "@/hooks/categories/use-admin-delete-category";
 import type { CategoryQueryParams } from "@/lib/types/categories";
 import { CategoriesFiltersBar } from "./categories-filters-bar";
 import { CategoryCard } from "./category-card";
+import { CategoryTreeView } from "./category-tree-view";
 
 export function CategoriesPageClient() {
   const router = useRouter();
@@ -20,6 +22,7 @@ export function CategoriesPageClient() {
   const deleteCategory = useAdminDeleteCategory();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "tree">("grid");
 
   const [filters, setFilters] = useState<CategoryQueryParams>({
     search: searchParams.get("search") || undefined,
@@ -112,34 +115,52 @@ export function CategoriesPageClient() {
           />
         }
       >
-        {categories.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {categories.map((category) => (
-              <CategoryCard
-                key={category.id}
-                category={category}
-                onDelete={handleDeleteClick}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-lg font-medium mb-2">No categories found</p>
-            <p className="text-sm text-muted-foreground mb-4">
-              {filters.search
-                ? "Try adjusting your search"
-                : "Create your first category to get started"}
-            </p>
-            {!filters.search && (
-              <Button asChild>
-                <Link href="/products/categories/create">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Category
-                </Link>
-              </Button>
+        <Tabs
+          value={viewMode}
+          onValueChange={(value) => setViewMode(value as "grid" | "tree")}
+          className="w-full"
+        >
+          <TabsList className="mb-4">
+            <TabsTrigger value="grid">Grid View</TabsTrigger>
+            <TabsTrigger value="tree">Tree View</TabsTrigger>
+          </TabsList>
+          <TabsContent value="grid">
+            {categories.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {categories.map((category) => (
+                  <CategoryCard
+                    key={category.id}
+                    category={category}
+                    onDelete={handleDeleteClick}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-lg font-medium mb-2">No categories found</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {filters.search
+                    ? "Try adjusting your search"
+                    : "Create your first category to get started"}
+                </p>
+                {!filters.search && (
+                  <Button asChild>
+                    <Link href="/products/categories/create">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create Category
+                    </Link>
+                  </Button>
+                )}
+              </div>
             )}
-          </div>
-        )}
+          </TabsContent>
+          <TabsContent value="tree">
+            <CategoryTreeView
+              categories={categories}
+              onDelete={handleDeleteClick}
+            />
+          </TabsContent>
+        </Tabs>
       </AdminPageLayout>
 
       <ConfirmDialog

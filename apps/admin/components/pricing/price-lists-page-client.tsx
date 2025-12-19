@@ -28,12 +28,13 @@ import { useAdminPriceLists } from "@/hooks/pricing/use-admin-price-lists";
 import type { FetchError } from "@/lib/api";
 
 export function PriceListsPageClient() {
-  const deletePriceList = useAdminDeletePriceList();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [priceListToDelete, setPriceListToDelete] = useState<string | null>(
     null,
   );
   const { data: priceLists, isLoading, error, refetch } = useAdminPriceLists();
+
+  const deletePriceList = useAdminDeletePriceList(priceListToDelete || "");
 
   const handleDeleteClick = (priceListId: string) => {
     setPriceListToDelete(priceListId);
@@ -42,9 +43,13 @@ export function PriceListsPageClient() {
 
   const handleDeleteConfirm = async () => {
     if (priceListToDelete) {
-      await deletePriceList.mutateAsync(priceListToDelete);
-      setDeleteDialogOpen(false);
-      setPriceListToDelete(null);
+      try {
+        await deletePriceList.mutateAsync();
+        setDeleteDialogOpen(false);
+        setPriceListToDelete(null);
+      } catch (_error) {
+        // Error handled by hook
+      }
     }
   };
 

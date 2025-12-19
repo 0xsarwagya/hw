@@ -1,4 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { CollectionRuleDto } from "./collection-rule.dto";
+import { CollectionMatchType, CollectionType } from "./create-collection.dto";
 
 export class CollectionResponseDto {
   @ApiProperty({
@@ -32,6 +34,37 @@ export class CollectionResponseDto {
     nullable: true,
   })
   imageUrl: string | null;
+
+  @ApiProperty({
+    description: "Collection type",
+    enum: CollectionType,
+    example: CollectionType.MANUAL,
+  })
+  type: CollectionType;
+
+  @ApiProperty({
+    description: "Rules for automatic collections",
+    type: [CollectionRuleDto],
+    nullable: true,
+    required: false,
+  })
+  rules?: CollectionRuleDto[] | null;
+
+  @ApiProperty({
+    description: "Match type for automatic collections",
+    enum: CollectionMatchType,
+    example: CollectionMatchType.ALL,
+    nullable: true,
+    required: false,
+  })
+  matchType?: CollectionMatchType | null;
+
+  @ApiProperty({
+    description: "Position for ordering",
+    example: 0,
+    required: false,
+  })
+  position?: number;
 
   @ApiProperty({
     description: "Creation timestamp",

@@ -5,6 +5,7 @@
 
 import type { LucideIcon } from "lucide-react";
 import {
+  BookOpen,
   Boxes,
   DollarSign,
   FolderOpen,
@@ -18,6 +19,7 @@ import {
   ShoppingCart,
   Star,
   Tag,
+  UserCog,
   Users,
 } from "lucide-react";
 
@@ -53,6 +55,7 @@ export const navigation: NavSection[] = [
     ],
   },
   {
+    label: "Catalog",
     items: [
       {
         label: "Products",
@@ -70,25 +73,26 @@ export const navigation: NavSection[] = [
             icon: Plus,
           },
           {
-            label: "Collections",
-            href: "/products/collections",
-            icon: FolderOpen,
-          },
-          {
-            label: "Categories",
-            href: "/products/categories",
-            icon: FolderTree,
-          },
-          {
             label: "Inventory",
             href: "/products/inventory",
             icon: Boxes,
           },
         ],
       },
+      {
+        label: "Categories",
+        href: "/products/categories",
+        icon: FolderTree,
+      },
+      {
+        label: "Collections",
+        href: "/products/collections",
+        icon: FolderOpen,
+      },
     ],
   },
   {
+    label: "Sales",
     items: [
       {
         label: "Orders",
@@ -119,20 +123,22 @@ export const navigation: NavSection[] = [
     ],
   },
   {
+    label: "Marketing",
     items: [
       {
         label: "Discounts",
         href: "/discounts",
         icon: Tag,
       },
-    ],
-  },
-  {
-    items: [
       {
         label: "Price Lists",
         href: "/price-lists",
         icon: DollarSign,
+      },
+      {
+        label: "Customer Groups",
+        href: "/customer-groups",
+        icon: UserCog,
       },
     ],
   },
@@ -164,7 +170,13 @@ export const navigation: NavSection[] = [
     ],
   },
   {
+    label: "Settings",
     items: [
+      {
+        label: "Activity Logs",
+        href: "/activity-logs",
+        icon: BookOpen,
+      },
       {
         label: "Settings",
         href: "/settings",

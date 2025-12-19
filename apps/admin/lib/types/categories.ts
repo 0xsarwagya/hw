@@ -5,6 +5,7 @@ export interface Category {
   parentId: string | null;
   description?: string | null;
   imageUrl?: string | null;
+  position?: number;
   createdAt: string;
   updatedAt: string;
   children?: Category[];
@@ -21,6 +22,7 @@ export interface CreateCategoryInput {
   parentId?: string;
   description?: string;
   imageUrl?: string;
+  position?: number;
 }
 
 export interface UpdateCategoryInput {
@@ -29,6 +31,7 @@ export interface UpdateCategoryInput {
   parentId?: string | null;
   description?: string;
   imageUrl?: string;
+  position?: number;
 }
 
 export interface CategoryQueryParams {

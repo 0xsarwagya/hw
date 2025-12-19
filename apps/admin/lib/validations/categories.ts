@@ -15,6 +15,7 @@ export const createCategorySchema = z.object({
     .string()
     .max(500, "Image URL must not exceed 500 characters")
     .optional(),
+  position: z.number().int().optional(),
 });
 
 export const updateCategorySchema = z.object({
@@ -37,6 +38,7 @@ export const updateCategorySchema = z.object({
     .string()
     .max(500, "Image URL must not exceed 500 characters")
     .optional(),
+  position: z.number().int().optional(),
 });
 
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;

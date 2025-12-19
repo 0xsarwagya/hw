@@ -142,6 +142,35 @@ export function CategoryBasicFields({
           </FormItem>
         )}
       />
+
+      <FormField
+        control={form.control}
+        name="position"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Position</FormLabel>
+            <FormControl>
+              <Input
+                type="number"
+                placeholder="0"
+                {...field}
+                value={field.value ?? ""}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value === ""
+                      ? undefined
+                      : parseInt(e.target.value, 10),
+                  )
+                }
+              />
+            </FormControl>
+            <FormMessage />
+            <p className="text-xs text-muted-foreground">
+              Lower numbers appear first. Default is 0.
+            </p>
+          </FormItem>
+        )}
+      />
     </FormSection>
   );
 }

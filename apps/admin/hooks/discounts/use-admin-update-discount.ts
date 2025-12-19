@@ -7,17 +7,17 @@ import { endpoints } from "@/lib/endpoints";
 import type { Discount, UpdateDiscountInput } from "@/lib/types/discounts";
 import { useApiMutation } from "../use-api-mutation";
 
-export function useAdminUpdateDiscount(discountId: string) {
+export function useAdminUpdateDiscount(id: string) {
   const queryClient = useQueryClient();
 
   return useApiMutation<Discount, UpdateDiscountInput, FetchError>({
     mutationFn: async (data) => {
-      return api.put<Discount>(endpoints.discounts.update(discountId), data);
+      return api.put<Discount>(endpoints.discounts.update(id), data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoints.discounts.list] });
       queryClient.invalidateQueries({
-        queryKey: [endpoints.discounts.detail(discountId)],
+        queryKey: [endpoints.discounts.detail(id)],
       });
       toast.success("Discount updated successfully");
     },

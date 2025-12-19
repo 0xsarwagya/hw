@@ -1,9 +1,11 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { Edit, MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { AdminPageLayout } from "@/components/layout/admin-page-layout";
 import { DateTime } from "@/components/orders/date-time";
 import { Money } from "@/components/orders/money";
@@ -25,17 +27,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAdminDeleteDiscount } from "@/hooks/discounts/use-admin-delete-discount";
 import { useAdminDiscounts } from "@/hooks/discounts/use-admin-discounts";
 import type { FetchError } from "@/lib/api";
+import { api } from "@/lib/api";
+import { endpoints } from "@/lib/endpoints";
 import type { DiscountQueryParams } from "@/lib/types/discounts";
 
 export function DiscountsPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const deleteDiscount = useAdminDeleteDiscount();
+  const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [discountToDelete, setDiscountToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [filters, setFilters] = useState<DiscountQueryParams>({
     page: parseInt(searchParams.get("page") || "1", 10),
@@ -60,10 +64,19 @@ export function DiscountsPageClient() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (discountToDelete) {
-      await deleteDiscount.mutateAsync(discountToDelete);
+    if (!discountToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await api.delete<void>(endpoints.discounts.delete(discountToDelete));
+      queryClient.invalidateQueries({ queryKey: [endpoints.discounts.list] });
+      toast.success("Discount deleted successfully");
       setDeleteDialogOpen(false);
       setDiscountToDelete(null);
+    } catch (_error) {
+      toast.error("Failed to delete discount");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -128,7 +141,7 @@ export function DiscountsPageClient() {
         cancelText="Cancel"
         variant="destructive"
         onConfirm={handleDeleteConfirm}
-        isLoading={deleteDiscount.isPending}
+        isLoading={isDeleting}
       />
 
       {error && (
@@ -201,7 +214,7 @@ export function DiscountsPageClient() {
                     <Badge variant="outline">{discount.type}</Badge>
                   </TableCell>
                   <TableCell>
-                    {discount.valueType === "percentage" ? (
+                    {discount.valueType === "PERCENTAGE" ? (
                       `${discount.value}%`
                     ) : (
                       <Money amount={discount.value} />
@@ -215,9 +228,9 @@ export function DiscountsPageClient() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {discount.maxUses
-                      ? `${discount.usedCount}/${discount.maxUses}`
-                      : discount.usedCount}
+                    {discount.usageLimit
+                      ? `${discount.usageCount}/${discount.usageLimit}`
+                      : discount.usageCount}
                   </TableCell>
                   <TableCell>
                     <DateTime date={discount.createdAt} />

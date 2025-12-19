@@ -18,9 +18,6 @@ export function useAdminCreatePriceList() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [endpoints.priceLists.list] });
-      queryClient.invalidateQueries({
-        queryKey: [endpoints.priceLists.active],
-      });
       toast.success("Price list created successfully");
       router.push(`/price-lists/${data.id}`);
     },

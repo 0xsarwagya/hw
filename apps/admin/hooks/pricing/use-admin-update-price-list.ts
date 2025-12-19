@@ -7,20 +7,17 @@ import { endpoints } from "@/lib/endpoints";
 import type { PriceList, UpdatePriceListInput } from "@/lib/types/price-lists";
 import { useApiMutation } from "../use-api-mutation";
 
-export function useAdminUpdatePriceList(priceListId: string) {
+export function useAdminUpdatePriceList(id: string) {
   const queryClient = useQueryClient();
 
   return useApiMutation<PriceList, UpdatePriceListInput, FetchError>({
     mutationFn: async (data) => {
-      return api.put<PriceList>(endpoints.priceLists.update(priceListId), data);
+      return api.put<PriceList>(endpoints.priceLists.update(id), data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoints.priceLists.list] });
       queryClient.invalidateQueries({
-        queryKey: [endpoints.priceLists.active],
-      });
-      queryClient.invalidateQueries({
-        queryKey: [endpoints.priceLists.detail(priceListId)],
+        queryKey: [endpoints.priceLists.detail(id)],
       });
       toast.success("Price list updated successfully");
     },
