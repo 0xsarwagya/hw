@@ -1,12 +1,21 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { VariantOptionTypeManager } from "../variant-option-type-manager";
-import { VariantCreator, type PendingVariant as CreatorPendingVariant } from "../variant-creator";
-import type { ProductVariantOptionType } from "@/lib/types/products";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { WIZARD_STEPS } from "@/lib/constants/wizard.constants";
+import type { ProductVariantOptionType } from "@/lib/types/products";
+import {
+  type PendingVariant as CreatorPendingVariant,
+  VariantCreator,
+} from "../variant-creator";
+import { VariantOptionTypeManager } from "../variant-option-type-manager";
 
 export type VariantMode = "none" | "hasVariants";
 
@@ -69,7 +78,10 @@ interface VariantModeSelectorProps {
 /**
  * Radio group for selecting variant mode
  */
-function VariantModeSelector({ value, onValueChange }: VariantModeSelectorProps) {
+function VariantModeSelector({
+  value,
+  onValueChange,
+}: VariantModeSelectorProps) {
   return (
     <RadioGroup value={value} onValueChange={onValueChange}>
       <div className="flex items-center space-x-2">
@@ -108,8 +120,8 @@ function VariantCreationSection({
     return (
       <div className="mt-6 p-4 bg-muted rounded-md">
         <p className="text-sm text-muted-foreground">
-          Variant option types can be managed after product creation. Continue to
-          the next step to create the product first.
+          Variant option types can be managed after product creation. Continue
+          to the next step to create the product first.
         </p>
       </div>
     );
@@ -128,4 +140,3 @@ function VariantCreationSection({
     </div>
   );
 }
-

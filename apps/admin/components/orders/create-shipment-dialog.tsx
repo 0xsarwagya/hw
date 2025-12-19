@@ -1,5 +1,6 @@
 "use client";
 
+import { Package } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateShipment } from "@/hooks/shipping/use-create-shipment";
-import { Package } from "lucide-react";
 
 interface CreateShipmentDialogProps {
   orderId: string;
@@ -32,7 +32,7 @@ export function CreateShipmentDialog({ orderId }: CreateShipmentDialogProps) {
     e.preventDefault();
     await createShipment.mutateAsync({
       orderId,
-      courierId: parseInt(courierId),
+      courierId: parseInt(courierId, 10),
       pickupPincode: pickupPincode || undefined,
       weight: weight ? parseFloat(weight) : undefined,
     });
@@ -106,4 +106,3 @@ export function CreateShipmentDialog({ orderId }: CreateShipmentDialogProps) {
     </Dialog>
   );
 }
-

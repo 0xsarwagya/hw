@@ -3,25 +3,30 @@
  * Route definitions and icon mappings
  */
 
+import type { LucideIcon } from "lucide-react";
 import {
+  Boxes,
+  DollarSign,
+  FolderOpen,
+  FolderTree,
+  HardDrive,
   LayoutDashboard,
   Package,
-  ShoppingCart,
-  Users,
-  Tag,
-  DollarSign,
-  Boxes,
-  Star,
-  HardDrive,
-  Settings,
-  FolderOpen,
-  ShoppingBag,
   Plus,
-  FolderTree,
+  Settings,
+  ShoppingBag,
+  ShoppingCart,
+  Star,
+  Tag,
+  Users,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 
-export type AdminRole = "admin" | "customer" | "support" | "reviewer" | "marketing";
+export type AdminRole =
+  | "admin"
+  | "customer"
+  | "support"
+  | "reviewer"
+  | "marketing";
 
 export interface NavItem {
   label: string;
@@ -202,4 +207,3 @@ export function findNavItemByHref(href: string): NavItem | undefined {
   }
   return undefined;
 }
-

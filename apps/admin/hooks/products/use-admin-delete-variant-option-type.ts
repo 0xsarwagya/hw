@@ -1,10 +1,10 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useApiMutation } from "../use-api-mutation";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
-import { toast } from "sonner";
+import { useApiMutation } from "../use-api-mutation";
 
 export function useAdminDeleteVariantOptionType(productId: string) {
   const queryClient = useQueryClient();
@@ -29,4 +29,3 @@ export function useAdminDeleteVariantOptionType(productId: string) {
     },
   });
 }
-

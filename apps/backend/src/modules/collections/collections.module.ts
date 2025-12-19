@@ -8,4 +8,3 @@ import { CollectionsService } from "./collections.service";
   exports: [CollectionsService],
 })
 export class CollectionsModule {}
-

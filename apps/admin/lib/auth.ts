@@ -3,8 +3,8 @@
  * Token management, cookie helpers, session validation
  */
 
-import { endpoints } from "./endpoints";
 import { api } from "./api";
+import { endpoints } from "./endpoints";
 
 export interface AdminSession {
   id: string;
@@ -24,7 +24,7 @@ export function getAuthToken(): string | null {
     // Server-side: tokens come from cookies via middleware
     return null;
   }
-  
+
   // Client-side: check localStorage as fallback
   // Primary auth is via httpOnly cookies
   return localStorage.getItem("admin_access_token");
@@ -58,7 +58,7 @@ export async function getAdminSession(): Promise<AdminSession | null> {
     // Call backend directly - cookies sent automatically
     const session = await api.get<AdminSession>(endpoints.auth.me);
     return session;
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
@@ -84,9 +84,9 @@ export async function refreshToken(): Promise<boolean> {
 
     // Refresh successful - cookies are updated automatically by browser
     const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
+    if (contentType?.includes("application/json")) {
       const data = await response.json();
-      
+
       // Update localStorage token if provided (fallback)
       if (data.accessToken && typeof window !== "undefined") {
         setAuthToken(data.accessToken);
@@ -124,4 +124,3 @@ export function isAuthenticated(): boolean {
   if (typeof window === "undefined") return false;
   return !!getAuthToken() || document.cookie.includes("admin_access_token");
 }
-

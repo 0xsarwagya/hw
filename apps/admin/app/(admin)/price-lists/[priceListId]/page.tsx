@@ -1,28 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { AdminPageLayout } from "@/components/layout/admin-page-layout";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ErrorDisplay } from "@/components/ui/error-display";
+import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save } from "lucide-react";
+import { useAdminDeletePriceList } from "@/hooks/pricing/use-admin-delete-price-list";
 import { useAdminPriceList } from "@/hooks/pricing/use-admin-price-list";
 import { useAdminUpdatePriceList } from "@/hooks/pricing/use-admin-update-price-list";
-import { useAdminDeletePriceList } from "@/hooks/pricing/use-admin-delete-price-list";
-import { useForm } from "react-hook-form";
-import type { UpdatePriceListInput } from "@/lib/types/price-lists";
-import { FieldError } from "@/components/ui/field-error";
-import { ErrorDisplay } from "@/components/ui/error-display";
-import { LoadingButton } from "@/components/ui/loading-button";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { FetchError } from "@/lib/api";
+import type { UpdatePriceListInput } from "@/lib/types/price-lists";
 
 export default function PriceListDetailPage() {
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const priceListId = params.priceListId as string;
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [apiError, setApiError] = useState<FetchError | null>(null);
@@ -31,7 +31,13 @@ export default function PriceListDetailPage() {
   const updatePriceList = useAdminUpdatePriceList(priceListId);
   const deletePriceList = useAdminDeletePriceList();
 
-  const { register, handleSubmit, reset, formState: { errors }, setError } = useForm<UpdatePriceListInput>();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+    setError,
+  } = useForm<UpdatePriceListInput>();
 
   useEffect(() => {
     if (priceList) {
@@ -51,7 +57,7 @@ export default function PriceListDetailPage() {
       if (error instanceof Error && "errors" in error) {
         const fetchError = error as FetchError;
         setApiError(fetchError);
-        
+
         if (fetchError.errors) {
           Object.entries(fetchError.errors).forEach(([field, messages]) => {
             setError(field as keyof UpdatePriceListInput, {
@@ -136,7 +142,7 @@ export default function PriceListDetailPage() {
       {apiError && (
         <ErrorDisplay error={apiError} onRetry={() => setApiError(null)} />
       )}
-      
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid gap-4">
           <div className="grid gap-2">
@@ -180,4 +186,3 @@ export default function PriceListDetailPage() {
     </AdminPageLayout>
   );
 }
-

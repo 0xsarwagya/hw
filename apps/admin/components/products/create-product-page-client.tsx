@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { ProductFormSkeleton } from "@/components/skeletons/product-form-skeleton";
 
 // Lazy load the heavy CreateProductWizard component
@@ -12,7 +12,7 @@ const CreateProductWizard = dynamic(
     })),
   {
     loading: () => <ProductFormSkeleton />,
-  }
+  },
 );
 
 /**
@@ -28,4 +28,3 @@ export function CreateProductPageClient() {
 
   return <CreateProductWizard onComplete={handleComplete} />;
 }
-

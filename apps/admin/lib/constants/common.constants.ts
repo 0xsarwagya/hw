@@ -12,4 +12,3 @@ export const DEBOUNCE_DELAY_MS = 300;
 export const SKELETON_ROW_COUNT = 5;
 
 export const URL_TRUNCATE_LENGTH = 50;
-

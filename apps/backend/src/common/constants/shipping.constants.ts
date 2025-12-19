@@ -37,4 +37,3 @@ export const GRAMS_PER_KILOGRAM = 1000;
  * Used in zone-based rate calculations
  */
 export const DEFAULT_WEIGHT_INCREMENT_GRAMS = 500;
-

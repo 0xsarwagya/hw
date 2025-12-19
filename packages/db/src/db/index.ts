@@ -33,16 +33,16 @@ function createPool(): Pool {
     // Allow pool to wait for connections when max is reached
     allowExitOnIdle: false,
   });
-  
+
   // Increase max listeners to prevent EventEmitter warnings
   // This is needed when multiple modules access the pool
   pool.setMaxListeners(20);
-  
+
   // Handle pool errors to prevent unhandled rejections
   pool.on("error", (err) => {
     console.error("Unexpected error on idle client", err);
   });
-  
+
   // Set statement timeout on each new connection as a fallback
   pool.on("connect", async (client) => {
     try {
@@ -52,7 +52,7 @@ function createPool(): Pool {
       console.warn("Failed to set statement_timeout on connection", err);
     }
   });
-  
+
   return pool;
 }
 
@@ -107,7 +107,9 @@ export function getDatabasePool(): Pool | null {
  * @param timeout - Maximum time to wait for connections to close (default: 10 seconds)
  * @returns Promise that resolves when pool is closed
  */
-export async function closeDatabasePool(timeout: number = 10000): Promise<void> {
+export async function closeDatabasePool(
+  timeout: number = 10000,
+): Promise<void> {
   if (!poolInstance) {
     return;
   }
@@ -121,14 +123,16 @@ export async function closeDatabasePool(timeout: number = 10000): Promise<void> 
     await Promise.race([
       pool.end(),
       new Promise<void>((_, reject) =>
-        setTimeout(() => reject(new Error("Pool close timeout")), timeout)
+        setTimeout(() => reject(new Error("Pool close timeout")), timeout),
       ),
     ]);
   } catch (error) {
     // If timeout occurs, pool.end() is still running in the background
     // The pool will eventually close, but we don't wait for it
     if (error instanceof Error && error.message === "Pool close timeout") {
-      console.warn("Database pool close timeout, pool will close in background");
+      console.warn(
+        "Database pool close timeout, pool will close in background",
+      );
       // Don't call end() again - it's already called and will complete eventually
     } else {
       // Re-throw unexpected errors
@@ -166,7 +170,11 @@ export function isPoolHealthy(): boolean {
     return false;
   }
   // Check if pool is ending (being closed)
-  return !(poolInstance as any)._ending;
+  // _ending is an internal property of pg.Pool that indicates the pool is closing
+  interface PoolWithEnding extends Pool {
+    _ending?: boolean;
+  }
+  return !(poolInstance as PoolWithEnding)._ending;
 }
 
 // Re-export commonly used drizzle functions

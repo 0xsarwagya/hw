@@ -2,10 +2,10 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useApiMutation } from "../use-api-mutation";
+import { toast } from "sonner";
 import { api, type FetchError } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
-import { toast } from "sonner";
+import { useApiMutation } from "../use-api-mutation";
 
 export function useAdminDeleteDiscount() {
   const queryClient = useQueryClient();
@@ -13,7 +13,9 @@ export function useAdminDeleteDiscount() {
 
   return useApiMutation<{ message: string }, string, FetchError>({
     mutationFn: async (discountId: string) => {
-      return api.delete<{ message: string }>(endpoints.discounts.delete(discountId));
+      return api.delete<{ message: string }>(
+        endpoints.discounts.delete(discountId),
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoints.discounts.list] });
@@ -26,4 +28,3 @@ export function useAdminDeleteDiscount() {
     },
   });
 }
-

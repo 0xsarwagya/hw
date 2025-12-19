@@ -51,6 +51,12 @@ import { IdempotencyStore } from "../redis-store/stores/idempotency-store";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
 import { OrderStatus } from "./dto/update-order-status.dto";
 import { OrdersService } from "./orders.service";
+import { OrderValidationService } from "./services/order-validation.service";
+import { OrderPricingService } from "./services/order-pricing.service";
+import { OrderStatusService } from "./services/order-status.service";
+import { OrderGstService } from "./services/order-gst.service";
+import { OrderTimelineService } from "./services/order-timeline.service";
+import { getCommonTestProviders } from "../../common/testing/test-helpers";
 
 // Helper function to create properly chained db.select mocks
 function createSelectMock(returnValue: any) {
@@ -280,30 +286,12 @@ describe("OrdersService", () => {
         BundlePricingService,
         CustomersService,
         AddressesService,
-        {
-          provide: PinoLogger,
-          useValue: {
-            info: jest.fn(),
-            error: jest.fn(),
-            warn: jest.fn(),
-            debug: jest.fn(),
-            logger: {
-              child: jest.fn().mockReturnThis(),
-            },
-          },
-        },
-        {
-          provide: ContextService,
-          useValue: {
-            run: jest.fn((context, fn) => fn()),
-            get: jest.fn(),
-            getValue: jest.fn(),
-            setValue: jest.fn(),
-            getRequestId: jest.fn(),
-            getTraceId: jest.fn(),
-            getSpanId: jest.fn(),
-          },
-        },
+        OrderValidationService,
+        OrderPricingService,
+        OrderGstService,
+        OrderStatusService,
+        OrderTimelineService,
+        ...getCommonTestProviders(),
       ],
     })
       .overrideProvider(CartsService)

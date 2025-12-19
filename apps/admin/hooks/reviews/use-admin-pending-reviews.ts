@@ -1,8 +1,8 @@
 "use client";
 
-import { useApiQuery } from "../use-api-query";
 import { endpoints } from "@/lib/endpoints";
 import type { Review } from "@/lib/types/reviews";
+import { useApiQuery } from "../use-api-query";
 
 export interface PendingReviewsResponse {
   data: Review[];
@@ -21,4 +21,3 @@ export function useAdminPendingReviews(page?: number, limit?: number) {
     enabled: true,
   });
 }
-

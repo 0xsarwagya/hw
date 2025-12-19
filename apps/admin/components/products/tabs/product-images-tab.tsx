@@ -1,15 +1,21 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { ProductImage } from "@/lib/types/products";
 import dynamic from "next/dynamic";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import type { ProductImage } from "@/lib/types/products";
 
 const ImageManager = dynamic(
   () =>
     import("@/components/products/image-manager").then((mod) => ({
       default: mod.ImageManager,
     })),
-  { loading: () => <div className="h-32 animate-pulse bg-muted rounded" /> }
+  { loading: () => <div className="h-32 animate-pulse bg-muted rounded" /> },
 );
 
 interface ProductImagesTabProps {
@@ -38,4 +44,3 @@ export function ProductImagesTab({ productId, images }: ProductImagesTabProps) {
     </Card>
   );
 }
-

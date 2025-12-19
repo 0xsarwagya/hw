@@ -1,8 +1,8 @@
 "use client";
 
-import { useApiQuery } from "../use-api-query";
 import { endpoints } from "@/lib/endpoints";
 import type { Review, ReviewQueryParams } from "@/lib/types/reviews";
+import { useApiQuery } from "../use-api-query";
 
 export interface SearchReviewsResponse {
   data: Review[];
@@ -18,4 +18,3 @@ export function useAdminSearchReviews(params?: ReviewQueryParams) {
     enabled: true,
   });
 }
-

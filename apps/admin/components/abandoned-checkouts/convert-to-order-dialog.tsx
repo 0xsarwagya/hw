@@ -1,5 +1,6 @@
 "use client";
 
+import { ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,13 +13,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useAdminPaymentReconcile } from "@/hooks/orders/use-admin-payment-reconcile";
-import { ShoppingCart } from "lucide-react";
 
 interface ConvertToOrderDialogProps {
   paymentIntentId: string;
 }
 
-export function ConvertToOrderDialog({ paymentIntentId }: ConvertToOrderDialogProps) {
+export function ConvertToOrderDialog({
+  paymentIntentId,
+}: ConvertToOrderDialogProps) {
   const [open, setOpen] = useState(false);
   const reconcile = useAdminPaymentReconcile();
 
@@ -39,8 +41,8 @@ export function ConvertToOrderDialog({ paymentIntentId }: ConvertToOrderDialogPr
         <DialogHeader>
           <DialogTitle>Convert to Order</DialogTitle>
           <DialogDescription>
-            This will reconcile the payment intent and create an order. This action
-            cannot be undone.
+            This will reconcile the payment intent and create an order. This
+            action cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -55,4 +57,3 @@ export function ConvertToOrderDialog({ paymentIntentId }: ConvertToOrderDialogPr
     </Dialog>
   );
 }
-

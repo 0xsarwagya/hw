@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Get cookies from Next.js
     const cookieStore = await cookies();
@@ -22,7 +22,9 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: "Unauthorized" }));
+      const error = await response
+        .json()
+        .catch(() => ({ message: "Unauthorized" }));
       return NextResponse.json(error, { status: response.status });
     }
 
@@ -32,8 +34,7 @@ export async function GET(request: NextRequest) {
     console.error("Session check proxy error:", error);
     return NextResponse.json(
       { message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

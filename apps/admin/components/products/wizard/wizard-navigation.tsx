@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { WIZARD_BUTTON_LABELS } from "@/lib/constants/wizard.constants";
 
 interface WizardNavigationProps {
@@ -37,10 +37,12 @@ export function WizardNavigation({
 }: WizardNavigationProps) {
   const isLastStep = currentStep === totalSteps;
   const needsVariantCreation = Boolean(
-    tempProductId && variantMode === "hasVariants" && pendingVariantsCount === 0
+    tempProductId &&
+      variantMode === "hasVariants" &&
+      pendingVariantsCount === 0,
   );
   const canCompleteVariants = Boolean(
-    tempProductId && variantMode === "hasVariants" && pendingVariantsCount > 0
+    tempProductId && variantMode === "hasVariants" && pendingVariantsCount > 0,
   );
 
   return (
@@ -125,4 +127,3 @@ function LastStepActions({
     </Button>
   );
 }
-

@@ -11,7 +11,10 @@ interface FulfillmentStatusBadgeProps {
 
 const statusConfig: Record<
   FulfillmentStatus,
-  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+  {
+    label: string;
+    variant: "default" | "secondary" | "destructive" | "outline";
+  }
 > = {
   unfulfilled: { label: "Unfulfilled", variant: "outline" },
   partially_fulfilled: { label: "Partially Fulfilled", variant: "secondary" },
@@ -32,4 +35,3 @@ export function FulfillmentStatusBadge({
     </Badge>
   );
 }
-

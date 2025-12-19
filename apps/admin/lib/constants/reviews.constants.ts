@@ -7,7 +7,8 @@ export const REVIEWS_DEFAULT_PAGE = 1;
 export const REVIEWS_DEFAULT_LIMIT = 20;
 
 export const REVIEWS_EMPTY_STATE_TITLE = "No pending reviews";
-export const REVIEWS_EMPTY_STATE_DESCRIPTION = "All reviews have been moderated";
+export const REVIEWS_EMPTY_STATE_DESCRIPTION =
+  "All reviews have been moderated";
 
 export const REVIEWS_DELETE_DIALOG_TITLE = "Delete Review";
 export const REVIEWS_DELETE_DIALOG_DESCRIPTION =

@@ -1,12 +1,15 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useApiMutation } from "../use-api-mutation";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
-import type { CreateCollectionInput, Collection } from "@/lib/types/collections";
-import { toast } from "sonner";
+import type {
+  Collection,
+  CreateCollectionInput,
+} from "@/lib/types/collections";
+import { useApiMutation } from "../use-api-mutation";
 
 export function useAdminCreateCollection() {
   const queryClient = useQueryClient();
@@ -26,4 +29,3 @@ export function useAdminCreateCollection() {
     },
   });
 }
-

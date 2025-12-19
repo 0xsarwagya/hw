@@ -1,19 +1,19 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 /**
  * Hook for managing sidebar navigation state
- * 
+ *
  * Persists collapsed/expanded state in localStorage.
  * Returns the current state and a function to toggle it.
- * 
+ *
  * @returns Object with isCollapsed state and toggleCollapse function
- * 
+ *
  * @example
  * ```tsx
  * const { isCollapsed, toggleCollapse } = useNavState();
- * 
+ *
  * <Button onClick={() => toggleCollapse()}>Toggle Sidebar</Button>
  * ```
  */
@@ -45,4 +45,3 @@ export function useNavState() {
     toggleCollapse,
   };
 }
-

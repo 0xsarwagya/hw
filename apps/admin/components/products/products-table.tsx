@@ -7,8 +7,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ProductTableRow } from "./product-table-row";
 import type { Product } from "@/lib/types/products";
+import { ProductTableRow } from "./product-table-row";
 
 interface ProductsTableProps {
   products: Product[];
@@ -19,7 +19,10 @@ interface ProductsTableProps {
  * Table component for displaying products list
  * Renders table structure with product rows
  */
-export function ProductsTable({ products, onDeleteProduct }: ProductsTableProps) {
+export function ProductsTable({
+  products,
+  onDeleteProduct,
+}: ProductsTableProps) {
   return (
     <div className="rounded-md border">
       <Table>
@@ -48,4 +51,3 @@ export function ProductsTable({ products, onDeleteProduct }: ProductsTableProps)
     </div>
   );
 }
-

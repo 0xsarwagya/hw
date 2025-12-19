@@ -3,12 +3,8 @@ import {
   OnApplicationShutdown,
   OnModuleInit,
 } from "@nestjs/common";
+import { closeDatabasePool, getPoolStats, isPoolHealthy } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
-import {
-  closeDatabasePool,
-  getPoolStats,
-  isPoolHealthy,
-} from "@vcecom/db";
 import { ContextService } from "../../common/logging/context.service";
 import {
   createErrorContext,
@@ -66,11 +62,7 @@ export class DatabaseService implements OnModuleInit, OnApplicationShutdown {
       );
     } catch (error) {
       this.logger.error(
-        createErrorContext(
-          this.contextService,
-          "databaseShutdownError",
-          error,
-        ),
+        createErrorContext(this.contextService, "databaseShutdownError", error),
         "Error closing database connection pool",
       );
       // Don't throw - allow application to continue shutdown
@@ -94,4 +86,3 @@ export class DatabaseService implements OnModuleInit, OnApplicationShutdown {
     };
   }
 }
-

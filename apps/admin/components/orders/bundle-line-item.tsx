@@ -1,8 +1,8 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Money } from "./money";
 import type { OrderItem } from "@/lib/types/orders";
+import { Money } from "./money";
 
 interface BundleLineItemProps {
   item: OrderItem;
@@ -18,13 +18,15 @@ export function BundleLineItem({ item }: BundleLineItemProps) {
       <CardContent className="pt-4">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">{item.bundleTitle || "Bundle"}</span>
+            <span className="text-sm font-medium">
+              {item.bundleTitle || "Bundle"}
+            </span>
             <Money amount={item.price * item.quantity} />
           </div>
           <div className="ml-4 space-y-1">
             {item.bundleVariantBreakdown.map((variant, idx) => (
               <div
-                key={idx}
+                key={`bundle-variant-${String(idx)}`}
                 className="flex items-center justify-between text-sm text-muted-foreground"
               >
                 <span>
@@ -39,4 +41,3 @@ export function BundleLineItem({ item }: BundleLineItemProps) {
     </Card>
   );
 }
-

@@ -1,12 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import {
-  IsBoolean,
-  IsInt,
-  IsOptional,
-  Max,
-  Min,
-} from "class-validator";
+import { IsBoolean, IsInt, IsOptional, Max, Min } from "class-validator";
 import { CartResponseDto } from "../../carts/dto/cart-response.dto";
 
 export class AdminQueryAbandonedCheckoutsDto {
@@ -123,4 +117,3 @@ export class PaginatedAbandonedCheckoutsResponseDto {
   })
   totalPages: number;
 }
-

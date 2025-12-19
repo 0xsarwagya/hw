@@ -1,45 +1,39 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { AdminPageLayout } from "@/components/layout/admin-page-layout";
 import { ProductDetailSkeleton } from "@/components/skeletons/product-detail-skeleton";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save, Eye, MoreVertical, Archive, Trash2 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useAdminProduct } from "@/hooks/products/use-admin-product";
-import { useAdminUpdateProduct } from "@/hooks/products/use-admin-update-product";
-import { useAdminDeleteProduct } from "@/hooks/products/use-admin-delete-product";
-import { useAdminVariants } from "@/hooks/products/use-admin-variants";
-import { useAdminDeleteVariant } from "@/hooks/products/use-admin-delete-variant";
-import { useAdminProductImages } from "@/hooks/products/use-admin-product-images";
-import { useAdminProductCollections } from "@/hooks/products/use-admin-product-collections";
+import { useAdminCategories } from "@/hooks/categories/use-admin-categories";
 import { useAdminCollections } from "@/hooks/collections/use-admin-collections";
 import { useAdminToggleProductCollection } from "@/hooks/collections/use-admin-toggle-product-collection";
-import { useAdminCategories } from "@/hooks/categories/use-admin-categories";
+import { useAdminDeleteProduct } from "@/hooks/products/use-admin-delete-product";
+import { useAdminDeleteVariant } from "@/hooks/products/use-admin-delete-variant";
+import { useAdminProduct } from "@/hooks/products/use-admin-product";
+import { useAdminProductCollections } from "@/hooks/products/use-admin-product-collections";
+import { useAdminProductImages } from "@/hooks/products/use-admin-product-images";
+import { useAdminUpdateProduct } from "@/hooks/products/use-admin-update-product";
+import { useAdminVariants } from "@/hooks/products/use-admin-variants";
+import type {
+  UpdateProductFormValues,
+  UpdateProductInput,
+} from "@/lib/validations/products";
 import { updateProductFormSchema } from "@/lib/validations/products";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import type { UpdateProductInput, UpdateProductFormValues } from "@/lib/validations/products";
-import { ProductDetailTabs } from "./product-detail-tabs";
-import { ProductDetailSummary } from "./product-detail-summary";
 import { ProductDetailActions } from "./product-detail-actions";
 import { ProductDetailDialogs } from "./product-detail-dialogs";
+import { ProductDetailSummary } from "./product-detail-summary";
+import { ProductDetailTabs } from "./product-detail-tabs";
 import { ProductNotFoundState } from "./product-not-found-state";
-import dynamic from "next/dynamic";
 
 const ProductPreviewModal = dynamic(
   () =>
     import("@/components/products/product-preview-modal").then((mod) => ({
       default: mod.ProductPreviewModal,
     })),
-  { loading: () => null }
+  { loading: () => null },
 );
 
 interface ProductDetailClientProps {
@@ -51,9 +45,10 @@ interface ProductDetailClientProps {
  * Handles all client-side logic including form management, state, and interactions
  */
 export function ProductDetailClient({ productId }: ProductDetailClientProps) {
-  const router = useRouter();
+  const _router = useRouter();
 
-  const { data: product, isLoading: isLoadingProduct } = useAdminProduct(productId);
+  const { data: product, isLoading: isLoadingProduct } =
+    useAdminProduct(productId);
   const { data: variants } = useAdminVariants(productId);
   const { data: images } = useAdminProductImages(productId);
   const { data: productCollections } = useAdminProductCollections(productId);
@@ -62,9 +57,12 @@ export function ProductDetailClient({ productId }: ProductDetailClientProps) {
   const updateProduct = useAdminUpdateProduct(productId);
   const deleteProduct = useAdminDeleteProduct();
   const deleteVariant = useAdminDeleteVariant(productId);
-  const { addToCollection, removeFromCollection } = useAdminToggleProductCollection(productId);
+  const { addToCollection, removeFromCollection } =
+    useAdminToggleProductCollection(productId);
 
-  const [selectedCollectionIds, setSelectedCollectionIds] = useState<Set<string>>(new Set());
+  const [selectedCollectionIds, setSelectedCollectionIds] = useState<
+    Set<string>
+  >(new Set());
   const [previewOpen, setPreviewOpen] = useState(false);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [deleteProductDialogOpen, setDeleteProductDialogOpen] = useState(false);
@@ -84,7 +82,13 @@ export function ProductDetailClient({ productId }: ProductDetailClientProps) {
           title: product.title,
           description: product.description || undefined,
           price: product.price,
-          gstRate: product.gstRate.toString() as "0" | "5" | "12" | "18" | "28" | undefined,
+          gstRate: product.gstRate.toString() as
+            | "0"
+            | "5"
+            | "12"
+            | "18"
+            | "28"
+            | undefined,
           hsnCode: product.hsnCode || undefined,
           status: product.status,
           categoryId: product.categoryId || null,
@@ -101,12 +105,15 @@ export function ProductDetailClient({ productId }: ProductDetailClientProps) {
     await updateProduct.mutateAsync(apiData);
   };
 
-  const handleCollectionToggle = async (collectionId: string, checked: boolean) => {
+  const handleCollectionToggle = async (
+    collectionId: string,
+    checked: boolean,
+  ) => {
     if (checked) {
       try {
         await addToCollection.mutateAsync({ collectionId });
         setSelectedCollectionIds((prev) => new Set([...prev, collectionId]));
-      } catch (error) {
+      } catch (_error) {
         // Error handled by hook
       }
     } else {
@@ -117,7 +124,7 @@ export function ProductDetailClient({ productId }: ProductDetailClientProps) {
           next.delete(collectionId);
           return next;
         });
-      } catch (error) {
+      } catch (_error) {
         // Error handled by hook
       }
     }
@@ -191,10 +198,7 @@ export function ProductDetailClient({ productId }: ProductDetailClientProps) {
           />
         </div>
 
-        <ProductDetailSummary
-          product={product}
-          variants={variants || []}
-        />
+        <ProductDetailSummary product={product} variants={variants || []} />
       </div>
 
       <ProductPreviewModal
@@ -223,4 +227,3 @@ export function ProductDetailClient({ productId }: ProductDetailClientProps) {
     </AdminPageLayout>
   );
 }
-

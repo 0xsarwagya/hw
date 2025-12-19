@@ -1,8 +1,8 @@
 "use client";
 
-import { useApiQuery } from "../use-api-query";
 import { endpoints } from "@/lib/endpoints";
 import type { Category, CategoryQueryParams } from "@/lib/types/categories";
+import { useApiQuery } from "../use-api-query";
 
 export function useAdminCategories(params?: CategoryQueryParams) {
   return useApiQuery<Category[]>(endpoints.categories.list, {
@@ -22,4 +22,3 @@ export function useAdminCategory(id: string) {
     enabled: !!id,
   });
 }
-

@@ -1,11 +1,21 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { AdminSession } from "@/lib/auth";
-import { getAdminSession, logout as authLogout, refreshToken } from "@/lib/auth";
-import { endpoints } from "@/lib/endpoints";
 import { useRouter } from "next/navigation";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import type { AdminSession } from "@/lib/auth";
+import {
+  logout as authLogout,
+  getAdminSession,
+  refreshToken,
+} from "@/lib/auth";
 
 interface SessionContextValue {
   session: AdminSession | null;
@@ -15,7 +25,9 @@ interface SessionContextValue {
   refreshSession: () => Promise<void>;
 }
 
-const SessionContext = createContext<SessionContextValue | undefined>(undefined);
+const SessionContext = createContext<SessionContextValue | undefined>(
+  undefined,
+);
 
 interface SessionProviderProps {
   children: React.ReactNode;
@@ -25,10 +37,15 @@ interface SessionProviderProps {
 // Token refresh interval: refresh every 14 minutes (tokens typically expire in 15 minutes)
 const TOKEN_REFRESH_INTERVAL = 14 * 60 * 1000; // 14 minutes
 
-export function SessionProvider({ children, initialSession }: SessionProviderProps) {
+export function SessionProvider({
+  children,
+  initialSession,
+}: SessionProviderProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [session, setSession] = useState<AdminSession | null>(initialSession || null);
+  const [session, setSession] = useState<AdminSession | null>(
+    initialSession || null,
+  );
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const {
@@ -42,7 +59,12 @@ export function SessionProvider({ children, initialSession }: SessionProviderPro
     enabled: !initialSession, // Only fetch if no initial session provided
     retry: (failureCount, error) => {
       // Don't retry on 401 errors (unauthorized)
-      if (error && typeof error === "object" && "status" in error && error.status === 401) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "status" in error &&
+        error.status === 401
+      ) {
         return false;
       }
       return failureCount < 2;
@@ -50,6 +72,24 @@ export function SessionProvider({ children, initialSession }: SessionProviderPro
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchInterval: false, // We'll handle refresh manually
   });
+
+  const handleLogout = useCallback(async () => {
+    // Clear refresh interval
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+      refreshIntervalRef.current = null;
+    }
+
+    try {
+      await authLogout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setSession(null);
+      queryClient.clear();
+      router.push("/login");
+    }
+  }, [router, queryClient]);
 
   useEffect(() => {
     if (sessionData) {
@@ -62,7 +102,11 @@ export function SessionProvider({ children, initialSession }: SessionProviderPro
 
   // Handle session errors (like 401)
   useEffect(() => {
-    if (sessionError && typeof sessionError === "object" && "status" in sessionError) {
+    if (
+      sessionError &&
+      typeof sessionError === "object" &&
+      "status" in sessionError
+    ) {
       if (sessionError.status === 401) {
         // Token expired - try to refresh
         refreshToken().then((success) => {
@@ -76,7 +120,11 @@ export function SessionProvider({ children, initialSession }: SessionProviderPro
         });
       }
     }
-  }, [sessionError, refetch]);
+  }, [
+    sessionError,
+    refetch, // Refresh failed - logout
+    handleLogout,
+  ]);
 
   // Set up proactive token refresh
   useEffect(() => {
@@ -112,25 +160,11 @@ export function SessionProvider({ children, initialSession }: SessionProviderPro
         refreshIntervalRef.current = null;
       }
     };
-  }, [session, refetch]);
-
-  const handleLogout = useCallback(async () => {
-    // Clear refresh interval
-    if (refreshIntervalRef.current) {
-      clearInterval(refreshIntervalRef.current);
-      refreshIntervalRef.current = null;
-    }
-
-    try {
-      await authLogout();
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      setSession(null);
-      queryClient.clear();
-      router.push("/login");
-    }
-  }, [router, queryClient]);
+  }, [
+    session,
+    refetch, // Refresh failed - logout
+    handleLogout,
+  ]);
 
   const refreshSession = useCallback(async () => {
     try {
@@ -158,7 +192,9 @@ export function SessionProvider({ children, initialSession }: SessionProviderPro
     refreshSession,
   };
 
-  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
+  return (
+    <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
+  );
 }
 
 export function useAdminSession() {
@@ -168,4 +204,3 @@ export function useAdminSession() {
   }
   return context;
 }
-

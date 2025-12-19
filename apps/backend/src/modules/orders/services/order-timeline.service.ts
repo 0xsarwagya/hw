@@ -1,7 +1,11 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { and, db, desc, eq, orders, payments, shipments } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
-import { OrderTimelineDto, TimelineEventDto, TimelineEventType } from "../dto/order-timeline.dto";
+import {
+  OrderTimelineDto,
+  TimelineEventDto,
+  TimelineEventType,
+} from "../dto/order-timeline.dto";
 import { OrderTrackingDto } from "../dto/order-tracking.dto";
 import { OrderValidationService } from "./order-validation.service";
 
@@ -12,7 +16,7 @@ import { OrderValidationService } from "./order-validation.service";
 @Injectable()
 export class OrderTimelineService {
   constructor(
-    private readonly logger: PinoLogger,
+    readonly _logger: PinoLogger,
     private readonly validationService: OrderValidationService,
   ) {}
 
@@ -275,4 +279,3 @@ export class OrderTimelineService {
     };
   }
 }
-

@@ -32,4 +32,3 @@ export interface BatchDeleteResponse {
   deleted: number;
   failed: string[];
 }
-

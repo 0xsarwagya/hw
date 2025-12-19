@@ -1,13 +1,12 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DateTime } from "./date-time";
-import type { OrderTimeline } from "@/lib/types/orders";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { OrderTimeline as OrderTimelineType } from "@/lib/types/orders";
+import { DateTime } from "./date-time";
 
 interface OrderTimelineProps {
-  timeline: OrderTimeline;
+  timeline: OrderTimelineType;
 }
 
 const getEventIcon = (type: string) => {
@@ -32,7 +31,10 @@ export function OrderTimeline({ timeline }: OrderTimelineProps) {
             <p className="text-sm text-muted-foreground">No events yet</p>
           ) : (
             timeline.events.map((event, index) => (
-              <div key={index} className="flex gap-4">
+              <div
+                key={`timeline-event-${index}-${event.type}`}
+                className="flex gap-4"
+              >
                 <div className="flex flex-col items-center">
                   {getEventIcon(event.type)}
                   {index < timeline.events.length - 1 && (
@@ -63,4 +65,3 @@ export function OrderTimeline({ timeline }: OrderTimelineProps) {
     </Card>
   );
 }
-

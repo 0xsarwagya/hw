@@ -3,8 +3,8 @@
  * Extracted to improve readability and maintainability
  */
 
-import { PriceListOverride } from "./pricing-engine.types";
 import { calculatePriceAfterOverride as calculatePriceWithStrategy } from "./override-strategies/price-override.strategy";
+import { PriceListOverride } from "./pricing-engine.types";
 
 /**
  * Calculate price after applying price list override
@@ -54,4 +54,3 @@ export function calculateEffectivePrice(
 function roundToTwoDecimals(value: number): number {
   return Math.round(value * 100) / 100;
 }
-

@@ -1,10 +1,10 @@
-import { Suspense } from "react";
-import { AdminPageLayout } from "@/components/layout/admin-page-layout";
-import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { ProductFormSkeleton } from "@/components/skeletons/product-form-skeleton";
+import { Suspense } from "react";
+import { AdminPageLayout } from "@/components/layout/admin-page-layout";
 import { CreateProductPageClient } from "@/components/products/create-product-page-client";
+import { ProductFormSkeleton } from "@/components/skeletons/product-form-skeleton";
+import { Button } from "@/components/ui/button";
 
 /**
  * Create product page - Server component
@@ -34,4 +34,3 @@ export default function CreateProductPage() {
     </AdminPageLayout>
   );
 }
-

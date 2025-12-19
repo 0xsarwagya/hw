@@ -336,7 +336,9 @@ export class StorageController {
         try {
           const [url, metadata] = await Promise.all([
             this.storageService.getUrl(key),
-            this.storageService.getMetadata(key).catch(() => ({ size: undefined, contentType: undefined })),
+            this.storageService
+              .getMetadata(key)
+              .catch(() => ({ size: undefined, contentType: undefined })),
           ]);
           return {
             key,
@@ -344,7 +346,7 @@ export class StorageController {
             size: metadata.size,
             contentType: metadata.contentType,
           };
-        } catch (error) {
+        } catch (_error) {
           // If metadata fetch fails, still return the file with URL
           const url = await this.storageService.getUrl(key);
           return {

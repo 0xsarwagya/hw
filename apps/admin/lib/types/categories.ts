@@ -26,7 +26,7 @@ export interface CreateCategoryInput {
 export interface UpdateCategoryInput {
   name?: string;
   slug?: string;
-  parentId?: string;
+  parentId?: string | null;
   description?: string;
   imageUrl?: string;
 }
@@ -48,4 +48,3 @@ export interface PaginatedCategoriesResponse {
     hasPreviousPage: boolean;
   };
 }
-

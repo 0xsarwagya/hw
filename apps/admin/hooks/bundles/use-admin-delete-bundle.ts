@@ -2,10 +2,10 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useApiMutation } from "../use-api-mutation";
+import { toast } from "sonner";
 import { api, type FetchError } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
-import { toast } from "sonner";
+import { useApiMutation } from "../use-api-mutation";
 
 export function useAdminDeleteBundle() {
   const queryClient = useQueryClient();
@@ -13,7 +13,9 @@ export function useAdminDeleteBundle() {
 
   return useApiMutation<{ message: string }, string, FetchError>({
     mutationFn: async (bundleId: string) => {
-      return api.delete<{ message: string }>(endpoints.bundles.delete(bundleId));
+      return api.delete<{ message: string }>(
+        endpoints.bundles.delete(bundleId),
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoints.bundles.list] });
@@ -26,4 +28,3 @@ export function useAdminDeleteBundle() {
     },
   });
 }
-

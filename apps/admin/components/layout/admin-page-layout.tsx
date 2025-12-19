@@ -1,8 +1,6 @@
 "use client";
 
 import { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
-import type { LucideIcon } from "lucide-react";
 
 interface BreadcrumbItem {
   label: string;
@@ -21,10 +19,10 @@ interface AdminPageLayoutProps {
 
 /**
  * Layout component for admin pages
- * 
+ *
  * Provides consistent page structure with header, breadcrumbs, actions, filters,
  * content area, and pagination. Used as a wrapper for all admin pages.
- * 
+ *
  * @param title - Page title displayed in the header
  * @param description - Optional description text below the title
  * @param breadcrumbs - Optional breadcrumb navigation items
@@ -32,7 +30,7 @@ interface AdminPageLayoutProps {
  * @param filters - Optional filter bar component
  * @param children - Page content to render
  * @param pagination - Optional pagination component
- * 
+ *
  * @example
  * ```tsx
  * <AdminPageLayout
@@ -62,7 +60,10 @@ export function AdminPageLayout({
         {breadcrumbs && breadcrumbs.length > 0 && (
           <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
             {breadcrumbs.map((crumb, index) => (
-              <div key={index} className="flex items-center">
+              <div
+                key={`breadcrumb-${index}-${crumb.label}`}
+                className="flex items-center"
+              >
                 {index > 0 && <span className="mx-2">/</span>}
                 {crumb.href ? (
                   <a href={crumb.href} className="hover:text-foreground">
@@ -99,4 +100,3 @@ export function AdminPageLayout({
     </div>
   );
 }
-

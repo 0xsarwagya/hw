@@ -11,4 +11,3 @@ export interface AdminStats {
   pendingOrders: number;
   activeProducts: number;
 }
-

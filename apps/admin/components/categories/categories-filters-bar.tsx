@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Search, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { CategoryQueryParams } from "@/lib/types/categories";
 
 interface CategoriesFiltersBarProps {
@@ -22,7 +22,11 @@ export function CategoriesFiltersBar({
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      onFiltersChange({ ...filters, search: searchValue || undefined, page: 1 });
+      onFiltersChange({
+        ...filters,
+        search: searchValue || undefined,
+        page: 1,
+      });
     }, 300);
 
     return () => clearTimeout(timer);
@@ -51,4 +55,3 @@ export function CategoriesFiltersBar({
     </div>
   );
 }
-

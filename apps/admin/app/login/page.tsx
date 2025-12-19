@@ -1,12 +1,19 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useMutation } from "@tanstack/react-query";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -16,10 +23,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api";
-import { endpoints } from "@/lib/endpoints";
 import { setAuthToken } from "@/lib/auth";
+import { endpoints } from "@/lib/endpoints";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -33,7 +39,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
-  
+
   // Check if redirected due to expired token
   useEffect(() => {
     if (searchParams.get("expired") === "true") {
@@ -76,7 +82,9 @@ function LoginForm() {
     onSuccess: (data) => {
       if (data.requires2fa) {
         // Handle 2FA flow (to be implemented)
-        setError("2FA verification required. This feature is not yet implemented.");
+        setError(
+          "2FA verification required. This feature is not yet implemented.",
+        );
         return;
       }
 
@@ -109,7 +117,9 @@ function LoginForm() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
-          <CardDescription>Enter your credentials to access the admin panel</CardDescription>
+          <CardDescription>
+            Enter your credentials to access the admin panel
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -121,7 +131,11 @@ function LoginForm() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="admin@example.com" {...field} />
+                      <Input
+                        type="email"
+                        placeholder="admin@example.com"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -148,7 +162,11 @@ function LoginForm() {
                 </div>
               )}
 
-              <Button type="submit" className="w-full" disabled={mutation.isPending}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={mutation.isPending}
+              >
                 {mutation.isPending ? "Logging in..." : "Login"}
               </Button>
             </form>
@@ -166,4 +184,3 @@ export default function LoginPage() {
     </Suspense>
   );
 }
-

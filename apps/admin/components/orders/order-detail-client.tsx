@@ -1,32 +1,30 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { Suspense, useCallback } from "react";
+import { toast } from "sonner";
 import { AdminPageLayout } from "@/components/layout/admin-page-layout";
-import { OrderHeader } from "./order-header";
-import { OrderLineItems } from "./order-line-items";
-import { OrderSummary } from "./order-summary";
-import { OrderShippingSection } from "./order-shipping-section";
-import { OrderPaymentSection } from "./order-payment-section";
-import { FulfillmentControls } from "./fulfillment-controls";
-import { NotesCard } from "./notes-card";
 import { OrderDetailSkeleton } from "@/components/skeletons/order-detail-skeleton";
 import { useAdminOrder } from "@/hooks/orders/use-admin-order";
 import { useAdminOrderTimeline } from "@/hooks/orders/use-admin-order-timeline";
 import { useUpdateOrderStatus } from "@/hooks/orders/use-update-order-status";
 import type { OrderStatus } from "@/lib/types/orders";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import dynamic from "next/dynamic";
+import { FulfillmentControls } from "./fulfillment-controls";
+import { NotesCard } from "./notes-card";
 import { OrderErrorState } from "./order-error-state";
+import { OrderHeader } from "./order-header";
+import { OrderLineItems } from "./order-line-items";
+import { OrderPaymentSection } from "./order-payment-section";
+import { OrderShippingSection } from "./order-shipping-section";
+import { OrderSummary } from "./order-summary";
 import { OrderTimelineLoadingSkeleton } from "./order-timeline-loading-skeleton";
 
 // Lazy load heavy components
 const OrderTimeline = dynamic(
-  () => import("./order-timeline").then((mod) => ({ default: mod.OrderTimeline })),
-  { loading: () => <OrderTimelineLoadingSkeleton /> }
+  () =>
+    import("./order-timeline").then((mod) => ({ default: mod.OrderTimeline })),
+  { loading: () => <OrderTimelineLoadingSkeleton /> },
 );
 
 const OrderActionsDropdown = dynamic(
@@ -34,7 +32,7 @@ const OrderActionsDropdown = dynamic(
     import("./order-actions-dropdown").then((mod) => ({
       default: mod.OrderActionsDropdown,
     })),
-  { loading: () => null }
+  { loading: () => null },
 );
 
 interface OrderDetailClientProps {
@@ -46,12 +44,30 @@ interface OrderDetailClientProps {
  * Handles all client-side logic including data fetching and interactions
  */
 export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
-  const router = useRouter();
-  const { data: order, isLoading: orderLoading, error: orderError } =
-    useAdminOrder(orderId);
+  const _router = useRouter();
+  const {
+    data: order,
+    isLoading: orderLoading,
+    error: orderError,
+  } = useAdminOrder(orderId);
   const { data: timeline, isLoading: timelineLoading } =
     useAdminOrderTimeline(orderId);
   const updateStatusMutation = useUpdateOrderStatus();
+
+  const handleStatusChange = useCallback(
+    async (status: OrderStatus) => {
+      if (!order) return;
+      try {
+        await updateStatusMutation.mutateAsync({
+          orderId: order.id,
+          status,
+        });
+      } catch (_error) {
+        // Error handled by mutation hook
+      }
+    },
+    [order, updateStatusMutation],
+  );
 
   if (orderLoading) {
     return <OrderDetailSkeleton />;
@@ -63,20 +79,6 @@ export function OrderDetailClient({ orderId }: OrderDetailClientProps) {
     }
     return <OrderErrorState error={orderError} />;
   }
-
-  const handleStatusChange = useCallback(
-    async (status: typeof order.status) => {
-      try {
-        await updateStatusMutation.mutateAsync({
-          orderId: order.id,
-          status,
-        });
-      } catch (error) {
-        // Error handled by mutation hook
-      }
-    },
-    [order.id, updateStatusMutation]
-  );
 
   return (
     <AdminPageLayout
@@ -171,4 +173,3 @@ function OrderTimelineSection({
     </Suspense>
   );
 }
-

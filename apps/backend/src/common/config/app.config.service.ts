@@ -84,7 +84,8 @@ export class AppConfigService {
       useSSL: process.env.MINIO_USE_SSL === "true",
       bucket: this.getStorageBucket(),
       publicUrl:
-        process.env.MINIO_PUBLIC_URL || `http://${endpoint}/${this.getStorageBucket()}`,
+        process.env.MINIO_PUBLIC_URL ||
+        `http://${endpoint}/${this.getStorageBucket()}`,
     };
   }
 
@@ -134,4 +135,3 @@ export class AppConfigService {
     return process.env.NODE_ENV === "test";
   }
 }
-

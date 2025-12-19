@@ -27,4 +27,3 @@ export interface CustomerQueryParams {
   limit?: number;
   search?: string;
 }
-

@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useCallback } from "react";
 import { Upload, X } from "lucide-react";
+import Image from "next/image";
+import { useCallback, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useAdminUploadProductImage } from "@/hooks/products/use-admin-upload-product-image";
 import { useAdminDeleteProductImage } from "@/hooks/products/use-admin-delete-product-image";
+import { useAdminUploadProductImage } from "@/hooks/products/use-admin-upload-product-image";
 import { endpoints } from "@/lib/endpoints";
 import type { ProductImage } from "@/lib/types/products";
-import { toast } from "sonner";
 
 interface ImageManagerProps {
   productId: string;
@@ -41,12 +42,16 @@ export function ImageManager({
           formData.append("prefix", variantId ? "variants" : "products");
 
           // Upload directly to backend - cookies sent automatically
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-          const uploadResponse = await fetch(`${API_URL}${endpoints.storage.upload}`, {
-            method: "POST",
-            body: formData,
-            credentials: "include",
-          });
+          const API_URL =
+            process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+          const uploadResponse = await fetch(
+            `${API_URL}${endpoints.storage.upload}`,
+            {
+              method: "POST",
+              body: formData,
+              credentials: "include",
+            },
+          );
 
           if (!uploadResponse.ok) {
             const errorData = await uploadResponse.json().catch(() => ({}));
@@ -62,12 +67,12 @@ export function ImageManager({
           });
 
           onImagesChange?.();
-        } catch (error) {
+        } catch (_error) {
           toast.error(`Failed to upload ${file.name}`);
         }
       }
     },
-    [productId, variantId, uploadImage, onImagesChange]
+    [productId, variantId, uploadImage, onImagesChange, disabled],
   );
 
   const handleDrop = useCallback(
@@ -76,7 +81,7 @@ export function ImageManager({
       setIsDragging(false);
       handleFileSelect(e.dataTransfer.files);
     },
-    [handleFileSelect]
+    [handleFileSelect],
   );
 
   const handleDelete = useCallback(
@@ -86,16 +91,19 @@ export function ImageManager({
         onImagesChange?.();
       }
     },
-    [deleteImage, onImagesChange]
+    [deleteImage, onImagesChange],
   );
 
   const sortedImages = [...images].sort((a, b) => a.order - b.order);
 
   return (
     <div className="space-y-4">
-      <div
+      <section
+        aria-label="Image drop zone"
         className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-          isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25"
+          isDragging
+            ? "border-primary bg-primary/5"
+            : "border-muted-foreground/25"
         }`}
         onDrop={handleDrop}
         onDragOver={(e) => {
@@ -123,7 +131,7 @@ export function ImageManager({
         >
           Select Images
         </Button>
-      </div>
+      </section>
 
       {sortedImages.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -131,10 +139,12 @@ export function ImageManager({
             <Card key={image.id} className="relative group">
               <CardContent className="p-0">
                 <div className="relative aspect-square">
-                  <img
+                  <Image
                     src={image.url}
                     alt={image.altText || `Product image ${index + 1}`}
-                    className="w-full h-full object-cover rounded-t-lg"
+                    fill
+                    className="object-cover rounded-t-lg"
+                    unoptimized
                   />
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
@@ -160,4 +170,3 @@ export function ImageManager({
     </div>
   );
 }
-

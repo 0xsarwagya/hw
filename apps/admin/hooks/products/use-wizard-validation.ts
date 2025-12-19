@@ -2,10 +2,10 @@
 
 import { useCallback } from "react";
 import type { UseFormReturn } from "react-hook-form";
-import type { CreateProductFormValues } from "@/lib/validations/products";
-import type { ProductVariantOptionType } from "@/lib/types/products";
 import { toast } from "sonner";
 import { WIZARD_MESSAGES } from "@/lib/constants/wizard.constants";
+import type { ProductVariantOptionType } from "@/lib/types/products";
+import type { CreateProductFormValues } from "@/lib/validations/products";
 
 interface PendingVariant {
   id: string;
@@ -41,7 +41,7 @@ export function useWizardValidation({
         }
 
         const hasEmptyOptionTypes = optionTypes.some(
-          (ot) => !ot.values || ot.values.length === 0
+          (ot) => !ot.values || ot.values.length === 0,
         );
         if (hasEmptyOptionTypes) {
           toast.error(WIZARD_MESSAGES.VALIDATION_OPTION_VALUES_REQUIRED);
@@ -100,9 +100,8 @@ export function useWizardValidation({
           return true;
       }
     },
-    [form, validateVariantStep, validateReviewStep]
+    [form, validateVariantStep, validateReviewStep],
   );
 
   return { validateStep };
 }
-

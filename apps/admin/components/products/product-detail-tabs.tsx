@@ -1,16 +1,16 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { UseFormReturn } from "react-hook-form";
-import type { UpdateProductFormValues } from "@/lib/validations/products";
-import type { Variant, ProductImage } from "@/lib/types/products";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Category } from "@/lib/types/categories";
 import type { Collection } from "@/lib/types/collections";
+import type { ProductImage, Variant } from "@/lib/types/products";
+import type { UpdateProductFormValues } from "@/lib/validations/products";
+import { ProductCategoriesTab } from "./tabs/product-categories-tab";
+import { ProductCollectionsTab } from "./tabs/product-collections-tab";
 import { ProductDetailsTab } from "./tabs/product-details-tab";
 import { ProductImagesTab } from "./tabs/product-images-tab";
 import { ProductVariantsTab } from "./tabs/product-variants-tab";
-import { ProductCategoriesTab } from "./tabs/product-categories-tab";
-import { ProductCollectionsTab } from "./tabs/product-collections-tab";
 
 interface ProductDetailTabsProps {
   productId: string;
@@ -79,4 +79,3 @@ export function ProductDetailTabs({
     </Tabs>
   );
 }
-

@@ -1,14 +1,14 @@
 "use client";
 
-import { use } from "react";
-import { AdminPageLayout } from "@/components/layout/admin-page-layout";
-import { AbandonedCheckoutDetail } from "@/components/abandoned-checkouts/abandoned-checkout-detail";
-import { OrderDetailSkeleton } from "@/components/skeletons/order-detail-skeleton";
-import { useAbandonedCheckout } from "@/hooks/abandoned-checkouts/use-abandoned-checkout";
-import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { use } from "react";
 import { toast } from "sonner";
+import { AbandonedCheckoutDetail } from "@/components/abandoned-checkouts/abandoned-checkout-detail";
+import { AdminPageLayout } from "@/components/layout/admin-page-layout";
+import { OrderDetailSkeleton } from "@/components/skeletons/order-detail-skeleton";
+import { Button } from "@/components/ui/button";
+import { useAbandonedCheckout } from "@/hooks/abandoned-checkouts/use-abandoned-checkout";
 
 interface AbandonedCheckoutDetailPageProps {
   params: Promise<{ cartId: string }>;
@@ -35,7 +35,10 @@ export default function AbandonedCheckoutDetailPage({
           <p className="text-destructive mb-4">
             {error?.message || "Checkout not found"}
           </p>
-          <Button onClick={() => router.push("/orders/abandoned")} className="mt-4">
+          <Button
+            onClick={() => router.push("/orders/abandoned")}
+            className="mt-4"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Abandoned Checkouts
           </Button>
@@ -57,4 +60,3 @@ export default function AbandonedCheckoutDetailPage({
     </AdminPageLayout>
   );
 }
-

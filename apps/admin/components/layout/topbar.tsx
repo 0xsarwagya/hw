@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Search, Bell, LogOut, Settings, User } from "lucide-react";
-import { useAdminSession } from "@/providers/session-provider";
+import { Bell, LogOut, Search, Settings, User } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,9 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { useCommandK } from "@/hooks/use-command-k";
+import { useAdminSession } from "@/providers/session-provider";
 
 interface TopbarProps {
   onSearchClick?: () => void;
@@ -33,10 +32,7 @@ export function Topbar({ onSearchClick }: TopbarProps) {
   };
 
   const getInitials = (email: string) => {
-    return email
-      .split("@")[0]
-      .slice(0, 2)
-      .toUpperCase();
+    return email.split("@")[0].slice(0, 2).toUpperCase();
   };
 
   const getEnvironmentBadge = () => {
@@ -130,4 +126,3 @@ export function Topbar({ onSearchClick }: TopbarProps) {
     </header>
   );
 }
-

@@ -18,4 +18,3 @@ export function AdminShell({ children }: AdminShellProps) {
     </div>
   );
 }
-

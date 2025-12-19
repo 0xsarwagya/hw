@@ -1,11 +1,11 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useApiMutation } from "../use-api-mutation";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
-import { toast } from "sonner";
 import type { Order, OrderStatus } from "@/lib/types/orders";
+import { useApiMutation } from "../use-api-mutation";
 
 interface UpdateOrderStatusParams {
   orderId: string;
@@ -22,8 +22,12 @@ export function useUpdateOrderStatus() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [endpoints.orders.list] });
-      queryClient.invalidateQueries({ queryKey: [endpoints.orders.detail(data.id)] });
-      queryClient.invalidateQueries({ queryKey: [endpoints.orders.timeline(data.id)] });
+      queryClient.invalidateQueries({
+        queryKey: [endpoints.orders.detail(data.id)],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [endpoints.orders.timeline(data.id)],
+      });
       toast.success(`Order status updated to ${data.status}`);
     },
     onError: (error) => {
@@ -31,4 +35,3 @@ export function useUpdateOrderStatus() {
     },
   });
 }
-

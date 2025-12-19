@@ -2,12 +2,12 @@
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import type { AdminSession } from "@/lib/auth";
 import { queryClient } from "@/lib/react-query";
-import { ThemeProvider } from "@/providers/theme-provider";
-import { ToastProvider } from "@/providers/toast-provider";
 import { ErrorBoundary } from "@/providers/error-boundary";
 import { SessionProvider } from "@/providers/session-provider";
-import type { AdminSession } from "@/lib/auth";
+import { ThemeProvider } from "@/providers/theme-provider";
+import { ToastProvider } from "@/providers/toast-provider";
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -34,4 +34,3 @@ export function Providers({ children, initialSession }: ProvidersProps) {
     </ErrorBoundary>
   );
 }
-

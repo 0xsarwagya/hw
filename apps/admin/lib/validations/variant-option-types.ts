@@ -12,7 +12,10 @@ export const createVariantOptionTypeSchema = z.object({
 });
 
 export const createProductVariantOptionTypeSchema = z.object({
-  optionTypeId: z.string().uuid("Option type ID must be a valid UUID").optional(),
+  optionTypeId: z
+    .string()
+    .uuid("Option type ID must be a valid UUID")
+    .optional(),
   name: z
     .string()
     .min(1, "Name is required")
@@ -37,4 +40,3 @@ export type CreateProductVariantOptionTypeInput = z.infer<
 export type CreateVariantOptionValueInput = z.infer<
   typeof createVariantOptionValueSchema
 >;
-

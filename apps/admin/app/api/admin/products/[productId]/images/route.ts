@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ productId: string }> }
+  _request: NextRequest,
+  { params }: { params: Promise<{ productId: string }> },
 ) {
   try {
     const { productId } = await params;
@@ -39,16 +39,17 @@ export async function GET(
     console.error("Get product images proxy error:", error);
     return NextResponse.json(
       {
-        message: error instanceof Error ? error.message : "Internal server error",
+        message:
+          error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ productId: string }> }
+  { params }: { params: Promise<{ productId: string }> },
 ) {
   try {
     const { productId } = await params;
@@ -84,10 +85,10 @@ export async function POST(
     console.error("Add product image proxy error:", error);
     return NextResponse.json(
       {
-        message: error instanceof Error ? error.message : "Internal server error",
+        message:
+          error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

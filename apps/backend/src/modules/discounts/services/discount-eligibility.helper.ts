@@ -1,4 +1,4 @@
-import { db, and, eq, discountUsages } from "@vcecom/db";
+import { and, db, discountUsages, eq } from "@vcecom/db";
 import { DiscountResponseDto } from "../dto/discount-response.dto";
 
 /**
@@ -9,9 +9,7 @@ import { DiscountResponseDto } from "../dto/discount-response.dto";
 /**
  * Check if discount has reached its usage limit
  */
-export function hasReachedUsageLimit(
-  discount: DiscountResponseDto,
-): boolean {
+export function hasReachedUsageLimit(discount: DiscountResponseDto): boolean {
   if (!discount.usageLimit) {
     return false;
   }
@@ -100,4 +98,3 @@ export function isDiscountAlreadyInList(
 ): boolean {
   return eligibleList.some((d) => d.id === discountId);
 }
-

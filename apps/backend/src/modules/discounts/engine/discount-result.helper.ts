@@ -1,4 +1,4 @@
-import { DiscountStep, DiscountedLineItem } from "./discount-engine.types";
+import { DiscountedLineItem, DiscountStep } from "./discount-engine.types";
 import { roundToTwoDecimals } from "./rounding.utils";
 
 /**
@@ -76,4 +76,3 @@ export function createConflictResolutionStep(
     subtotalAfter,
   };
 }
-

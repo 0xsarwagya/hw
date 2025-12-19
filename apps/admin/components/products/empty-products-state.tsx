@@ -1,9 +1,9 @@
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import {
-  PRODUCT_EMPTY_STATE_TITLE,
   PRODUCT_EMPTY_STATE_DESCRIPTION,
+  PRODUCT_EMPTY_STATE_TITLE,
 } from "@/lib/constants/products.constants";
 
 /**
@@ -24,4 +24,3 @@ export function EmptyProductsState() {
     </div>
   );
 }
-

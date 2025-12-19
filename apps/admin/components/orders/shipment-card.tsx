@@ -1,11 +1,11 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Download, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Download } from "lucide-react";
-import { DateTime } from "./date-time";
+import { Card, CardContent } from "@/components/ui/card";
 import type { ShipmentTracking } from "@/lib/types/shipping";
+import { DateTime } from "./date-time";
 
 interface ShipmentCardProps {
   shipment: ShipmentTracking;
@@ -28,7 +28,8 @@ export function ShipmentCard({ shipment }: ShipmentCardProps) {
             )}
             {shipment.trackingNumber && (
               <p className="text-sm text-muted-foreground">
-                Tracking: <span className="font-mono">{shipment.trackingNumber}</span>
+                Tracking:{" "}
+                <span className="font-mono">{shipment.trackingNumber}</span>
               </p>
             )}
             <DateTime date={shipment.createdAt} format="short" />
@@ -36,7 +37,11 @@ export function ShipmentCard({ shipment }: ShipmentCardProps) {
           <div className="flex gap-2">
             {shipment.labelUrl && (
               <Button variant="outline" size="sm" asChild>
-                <a href={shipment.labelUrl} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={shipment.labelUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Download className="h-4 w-4 mr-1" />
                   Label
                 </a>
@@ -60,4 +65,3 @@ export function ShipmentCard({ shipment }: ShipmentCardProps) {
     </Card>
   );
 }
-

@@ -1,8 +1,8 @@
 "use client";
 
-import * as React from "react";
-import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import * as React from "react";
 import type { DateRange as DateRangeType } from "react-day-picker";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -27,7 +27,7 @@ export function DateRangePicker({
   const [date, setDate] = React.useState<DateRangeType | undefined>(
     dateRange?.from && dateRange?.to
       ? { from: dateRange.from, to: dateRange.to }
-      : undefined
+      : undefined,
   );
 
   React.useEffect(() => {
@@ -35,7 +35,7 @@ export function DateRangePicker({
       setDate(
         dateRange.from && dateRange.to
           ? { from: dateRange.from, to: dateRange.to }
-          : undefined
+          : undefined,
       );
     }
   }, [dateRange]);
@@ -49,7 +49,7 @@ export function DateRangePicker({
               from: range.from,
               to: range.to,
             }
-          : undefined
+          : undefined,
       );
     }
   };
@@ -63,7 +63,7 @@ export function DateRangePicker({
             variant={"outline"}
             className={cn(
               "w-[260px] justify-start text-left font-normal",
-              !date && "text-muted-foreground"
+              !date && "text-muted-foreground",
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
@@ -95,4 +95,3 @@ export function DateRangePicker({
     </div>
   );
 }
-

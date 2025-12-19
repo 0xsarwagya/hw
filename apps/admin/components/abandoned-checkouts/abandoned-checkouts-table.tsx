@@ -1,6 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { DateTime } from "@/components/orders/date-time";
+import { Money } from "@/components/orders/money";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -9,10 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Money } from "@/components/orders/money";
-import { DateTime } from "@/components/orders/date-time";
-import { Badge } from "@/components/ui/badge";
 import type { AbandonedCheckout } from "@/lib/types/abandoned-checkouts";
 
 interface AbandonedCheckoutsTableProps {
@@ -61,9 +61,13 @@ export function AbandonedCheckoutsTable({
             <TableRow
               key={checkout.id}
               className="cursor-pointer"
-              onClick={() => router.push(`/orders/abandoned/${checkout.cartId}`)}
+              onClick={() =>
+                router.push(`/orders/abandoned/${checkout.cartId}`)
+              }
             >
-              <TableCell className="font-mono text-sm">{checkout.cartId.slice(0, 8)}...</TableCell>
+              <TableCell className="font-mono text-sm">
+                {checkout.cartId.slice(0, 8)}...
+              </TableCell>
               <TableCell>
                 {checkout.customerId ? "Customer" : "Guest"}
               </TableCell>
@@ -100,4 +104,3 @@ export function AbandonedCheckoutsTable({
     </div>
   );
 }
-

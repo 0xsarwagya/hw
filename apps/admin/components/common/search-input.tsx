@@ -1,7 +1,7 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 interface SearchInputProps {
@@ -31,7 +31,9 @@ export function SearchInput({
   maxWidth = "sm",
 }: SearchInputProps) {
   return (
-    <div className={cn("relative flex-1", maxWidthClasses[maxWidth], className)}>
+    <div
+      className={cn("relative flex-1", maxWidthClasses[maxWidth], className)}
+    >
       <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
       <Input
         placeholder={placeholder}
@@ -42,4 +44,3 @@ export function SearchInput({
     </div>
   );
 }
-

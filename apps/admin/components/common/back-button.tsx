@@ -1,14 +1,20 @@
 "use client";
 
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BackButtonProps {
   href: string;
   label?: string;
-  variant?: "default" | "outline" | "ghost" | "link" | "secondary" | "destructive";
+  variant?:
+    | "default"
+    | "outline"
+    | "ghost"
+    | "link"
+    | "secondary"
+    | "destructive";
   className?: string;
 }
 
@@ -31,4 +37,3 @@ export function BackButton({
     </Button>
   );
 }
-

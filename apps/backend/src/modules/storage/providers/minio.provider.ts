@@ -151,12 +151,15 @@ export class MinioProvider implements StorageProvider {
     }
   }
 
-  async getMetadata(key: string): Promise<{ size: number; contentType?: string }> {
+  async getMetadata(
+    key: string,
+  ): Promise<{ size: number; contentType?: string }> {
     try {
       const stat = await this.client.statObject(this.bucket, key);
       return {
         size: stat.size,
-        contentType: stat.metaData?.["content-type"] || stat.metaData?.["Content-Type"],
+        contentType:
+          stat.metaData?.["content-type"] || stat.metaData?.["Content-Type"],
       };
     } catch (error) {
       this.logger.error(

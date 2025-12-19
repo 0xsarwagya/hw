@@ -172,4 +172,3 @@ export interface ProductWithVariants extends Product {
   variants?: Variant[];
   images?: ProductImage[];
 }
-

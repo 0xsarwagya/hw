@@ -122,4 +122,3 @@ export class VariantOptionValueResponseDto {
   })
   updatedAt: Date;
 }
-

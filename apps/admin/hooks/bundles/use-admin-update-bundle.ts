@@ -1,11 +1,11 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useApiMutation } from "../use-api-mutation";
+import { toast } from "sonner";
 import { api, type FetchError } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
 import type { Bundle, UpdateBundleInput } from "@/lib/types/bundles";
-import { toast } from "sonner";
+import { useApiMutation } from "../use-api-mutation";
 
 export function useAdminUpdateBundle(bundleId: string) {
   const queryClient = useQueryClient();
@@ -16,7 +16,9 @@ export function useAdminUpdateBundle(bundleId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoints.bundles.list] });
-      queryClient.invalidateQueries({ queryKey: [endpoints.bundles.detail(bundleId)] });
+      queryClient.invalidateQueries({
+        queryKey: [endpoints.bundles.detail(bundleId)],
+      });
       toast.success("Bundle updated successfully");
     },
     onError: (error) => {
@@ -32,4 +34,3 @@ export function useAdminUpdateBundle(bundleId: string) {
     },
   });
 }
-

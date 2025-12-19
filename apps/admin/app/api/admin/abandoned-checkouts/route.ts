@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 const REQUEST_TIMEOUT = 30000; // 30 seconds
@@ -44,11 +44,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(data, { status: 200 });
     } catch (fetchError) {
       clearTimeout(timeoutId);
-      
+
       if (fetchError instanceof Error && fetchError.name === "AbortError") {
         return NextResponse.json(
           { message: "Request timeout - the server took too long to respond" },
-          { status: 504 }
+          { status: 504 },
         );
       }
       throw fetchError;
@@ -56,11 +56,11 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Abandoned checkouts list proxy error:", error);
     return NextResponse.json(
-      { 
-        message: error instanceof Error ? error.message : "Internal server error" 
+      {
+        message:
+          error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

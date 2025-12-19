@@ -1,11 +1,11 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useApiMutation } from "../use-api-mutation";
+import { toast } from "sonner";
 import { api, type FetchError } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
 import type { Discount, UpdateDiscountInput } from "@/lib/types/discounts";
-import { toast } from "sonner";
+import { useApiMutation } from "../use-api-mutation";
 
 export function useAdminUpdateDiscount(discountId: string) {
   const queryClient = useQueryClient();
@@ -16,7 +16,9 @@ export function useAdminUpdateDiscount(discountId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoints.discounts.list] });
-      queryClient.invalidateQueries({ queryKey: [endpoints.discounts.detail(discountId)] });
+      queryClient.invalidateQueries({
+        queryKey: [endpoints.discounts.detail(discountId)],
+      });
       toast.success("Discount updated successfully");
     },
     onError: (error) => {
@@ -32,4 +34,3 @@ export function useAdminUpdateDiscount(discountId: string) {
     },
   });
 }
-

@@ -25,12 +25,12 @@ import {
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
+import { CollectionsService } from "./collections.service";
 import { AddProductsDto } from "./dto/add-products.dto";
 import { CollectionResponseDto } from "./dto/collection-response.dto";
 import { CreateCollectionDto } from "./dto/create-collection.dto";
 import { QueryCollectionsDto } from "./dto/query-collections.dto";
 import { UpdateCollectionDto } from "./dto/update-collection.dto";
-import { CollectionsService } from "./collections.service";
 
 @ApiTags("collections")
 @Controller("admin/collections")
@@ -43,7 +43,8 @@ export class CollectionsController {
   @ApiBearerAuth("JWT-auth")
   @ApiOperation({
     summary: "Get all collections",
-    description: "Retrieve a paginated list of collections with search (admin only)",
+    description:
+      "Retrieve a paginated list of collections with search (admin only)",
   })
   @ApiQuery({
     name: "page",
@@ -321,4 +322,3 @@ export class CollectionsController {
     return this.collectionsService.removeProduct(id, productId);
   }
 }
-

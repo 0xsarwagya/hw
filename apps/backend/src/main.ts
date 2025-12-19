@@ -8,7 +8,7 @@ const rootEnvPath = resolve(__dirname, "../../../.env");
 config({ path: rootEnvPath });
 
 // Also try loading from apps/backend/.env as fallback
-const envResult = config({ path: resolve(__dirname, "../.env") });
+const _envResult = config({ path: resolve(__dirname, "../.env") });
 
 // Initialize OpenTelemetry BEFORE any other imports
 import { initializeTracing } from "./common/tracing/tracing.config";
@@ -31,6 +31,12 @@ import { NestFactory, Reflector } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import cookieParser from "cookie-parser";
 import { AppModule } from "./app.module";
+import {
+  CORS_PREFLIGHT_SUCCESS_STATUS,
+  SERVER_HEADERS_TIMEOUT_MS,
+  SERVER_KEEP_ALIVE_TIMEOUT_MS,
+  SERVER_TIMEOUT_MS,
+} from "./common/constants";
 import { IS_PUBLIC_KEY } from "./common/decorators/public.decorator";
 import { GlobalExceptionFilter } from "./common/filters/global-exception.filter";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
@@ -40,12 +46,6 @@ import { BuildInfoInterceptor } from "./common/interceptors/build-info.intercept
 import { RateLimitInterceptor } from "./common/interceptors/rate-limit.interceptor";
 import { ContextService } from "./common/logging/context.service";
 import { createPinoConfig } from "./common/logging/pino.config";
-import {
-  CORS_PREFLIGHT_SUCCESS_STATUS,
-  SERVER_HEADERS_TIMEOUT_MS,
-  SERVER_KEEP_ALIVE_TIMEOUT_MS,
-  SERVER_TIMEOUT_MS,
-} from "./common/constants";
 
 // Setup unhandled rejection and exception handlers
 // These will use Pino logger once the app is bootstrapped
@@ -82,10 +82,7 @@ async function bootstrap() {
   // Support both storefront and admin frontends
   const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
   const adminUrl = process.env.ADMIN_URL || "http://localhost:3002";
-  const allowedOrigins = [
-    ...frontendUrl.split(","),
-    ...adminUrl.split(","),
-  ];
+  const allowedOrigins = [...frontendUrl.split(","), ...adminUrl.split(",")];
 
   // Enable cookie parser
   app.use(cookieParser());
@@ -228,12 +225,15 @@ async function bootstrap() {
   server.timeout = SERVER_TIMEOUT_MS;
   server.keepAliveTimeout = SERVER_KEEP_ALIVE_TIMEOUT_MS;
   server.headersTimeout = SERVER_HEADERS_TIMEOUT_MS;
-  
+
   rootLogger.info({ port }, "Server started successfully");
 
   // Graceful shutdown handlers
   const shutdown = async (signal: string) => {
-    rootLogger.info({ signal }, "Received shutdown signal, starting graceful shutdown");
+    rootLogger.info(
+      { signal },
+      "Received shutdown signal, starting graceful shutdown",
+    );
 
     try {
       // Close HTTP server first to stop accepting new requests

@@ -1,10 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { ProductStatusBadge } from "./product-status-badge";
-import { Money } from "../orders/money";
 import type { Product } from "@/lib/types/products";
+import { Money } from "../orders/money";
+import { ProductStatusBadge } from "./product-status-badge";
 
 interface ProductCardProps {
   product: Product;
@@ -19,10 +20,12 @@ export function ProductCard({ product, thumbnail }: ProductCardProps) {
           <div className="flex gap-4">
             {thumbnail && (
               <div className="relative w-16 h-16 rounded-md overflow-hidden flex-shrink-0 bg-muted">
-                <img
+                <Image
                   src={thumbnail}
                   alt={product.title}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  unoptimized
                 />
               </div>
             )}
@@ -39,4 +42,3 @@ export function ProductCard({ product, thumbnail }: ProductCardProps) {
     </Link>
   );
 }
-

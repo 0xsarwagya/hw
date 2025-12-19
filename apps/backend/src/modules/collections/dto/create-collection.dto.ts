@@ -1,10 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import {
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  MaxLength,
-} from "class-validator";
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
 
 export class CreateCollectionDto {
   @ApiProperty({
@@ -47,4 +42,3 @@ export class CreateCollectionDto {
   @MaxLength(500, { message: "Image URL must not exceed 500 characters" })
   imageUrl?: string;
 }
-

@@ -163,7 +163,9 @@ export class AwsS3Provider implements StorageProvider {
     }
   }
 
-  async getMetadata(key: string): Promise<{ size: number; contentType?: string }> {
+  async getMetadata(
+    key: string,
+  ): Promise<{ size: number; contentType?: string }> {
     try {
       const command = new HeadObjectCommand({
         Bucket: this.bucket,

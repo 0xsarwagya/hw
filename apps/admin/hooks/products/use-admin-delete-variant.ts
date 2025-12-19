@@ -1,21 +1,27 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useApiMutation } from "../use-api-mutation";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
-import { toast } from "sonner";
+import { useApiMutation } from "../use-api-mutation";
 
 export function useAdminDeleteVariant(productId: string) {
   const queryClient = useQueryClient();
 
   return useApiMutation<{ message: string }, string>({
     mutationFn: async (variantId: string) => {
-      return api.delete<{ message: string }>(endpoints.products.variants.delete(productId, variantId));
+      return api.delete<{ message: string }>(
+        endpoints.products.variants.delete(productId, variantId),
+      );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endpoints.products.variants.list(productId)] });
-      queryClient.invalidateQueries({ queryKey: [endpoints.products.detail(productId)] });
+      queryClient.invalidateQueries({
+        queryKey: [endpoints.products.variants.list(productId)],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [endpoints.products.detail(productId)],
+      });
       toast.success("Variant deleted successfully");
     },
     onError: (error) => {
@@ -23,4 +29,3 @@ export function useAdminDeleteVariant(productId: string) {
     },
   });
 }
-

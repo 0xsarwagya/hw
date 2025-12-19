@@ -40,4 +40,3 @@ export class CreateProductVariantOptionTypeDto {
   @Min(0, { message: "Display order must be greater than or equal to 0" })
   displayOrder?: number;
 }
-

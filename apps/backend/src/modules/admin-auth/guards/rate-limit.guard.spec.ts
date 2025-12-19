@@ -137,7 +137,9 @@ describe("AdminLoginRateLimitGuard", () => {
 
       mockRedisClient.multi = jest.fn().mockReturnValue(mockMulti);
 
-      await expect(guard.canActivate(mockContext)).rejects.toThrow(HttpException);
+      // Guard should fail-safe and allow request when Redis errors occur
+      const result = await guard.canActivate(mockContext);
+      expect(result).toBe(true);
     });
   });
 });

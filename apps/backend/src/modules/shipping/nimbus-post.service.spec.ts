@@ -2,6 +2,8 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { NimbusPostService } from "./nimbus-post.service";
 import { NimbusPostConfigService } from "./nimbus-post-config.service";
 import { db, eq, orders, addresses, orderItems, shipments } from "@vcecom/db";
+import { getCommonTestProviders } from "../../common/testing/test-helpers";
+import { AppConfigService } from "../../common/config/app.config.service";
 
 // Mock fetch globally
 global.fetch = jest.fn();
@@ -23,6 +25,7 @@ jest.mock("@vcecom/db", () => ({
 describe("NimbusPostService", () => {
   let service: NimbusPostService;
   let configService: NimbusPostConfigService;
+  let appConfigService: AppConfigService;
 
   const mockConfigService = {
     getBaseUrl: jest.fn(),
@@ -37,12 +40,14 @@ describe("NimbusPostService", () => {
           provide: NimbusPostConfigService,
           useValue: mockConfigService,
         },
+        ...getCommonTestProviders(),
       ],
     }).compile();
 
     service = module.get<NimbusPostService>(NimbusPostService);
     configService =
       module.get<NimbusPostConfigService>(NimbusPostConfigService);
+    appConfigService = module.get<AppConfigService>(AppConfigService);
 
     jest.clearAllMocks();
     mockConfigService.getBaseUrl.mockReturnValue(
@@ -55,7 +60,7 @@ describe("NimbusPostService", () => {
       process.env.NIMBUS_POST_API_KEY = "test-api-key";
       process.env.NIMBUS_POST_API_SECRET = "test-api-secret";
 
-      const newService = new NimbusPostService(configService);
+      const newService = new NimbusPostService(configService, appConfigService);
       newService.onModuleInit();
 
       expect(newService.isInitialized()).toBe(true);
@@ -65,7 +70,7 @@ describe("NimbusPostService", () => {
       delete process.env.NIMBUS_POST_API_KEY;
       process.env.NIMBUS_POST_API_SECRET = "test-api-secret";
 
-      const newService = new NimbusPostService(configService);
+      const newService = new NimbusPostService(configService, appConfigService);
       newService.onModuleInit();
 
       expect(newService.isInitialized()).toBe(false);
@@ -75,7 +80,7 @@ describe("NimbusPostService", () => {
       process.env.NIMBUS_POST_API_KEY = "test-api-key";
       delete process.env.NIMBUS_POST_API_SECRET;
 
-      const newService = new NimbusPostService(configService);
+      const newService = new NimbusPostService(configService, appConfigService);
       newService.onModuleInit();
 
       expect(newService.isInitialized()).toBe(false);

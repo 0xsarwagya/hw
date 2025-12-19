@@ -8,7 +8,10 @@ interface DateTimeProps {
   format?: "short" | "long" | "date" | "time";
 }
 
-const formatDate = (date: Date | string, format: DateTimeProps["format"] = "short") => {
+const formatDate = (
+  date: Date | string,
+  format: DateTimeProps["format"] = "short",
+) => {
   const d = typeof date === "string" ? new Date(date) : date;
 
   switch (format) {
@@ -28,7 +31,6 @@ const formatDate = (date: Date | string, format: DateTimeProps["format"] = "shor
         hour: "2-digit",
         minute: "2-digit",
       });
-    case "short":
     default:
       return d.toLocaleString("en-IN", {
         year: "numeric",
@@ -41,6 +43,7 @@ const formatDate = (date: Date | string, format: DateTimeProps["format"] = "shor
 };
 
 export function DateTime({ date, className, format = "short" }: DateTimeProps) {
-  return <span className={cn("text-sm", className)}>{formatDate(date, format)}</span>;
+  return (
+    <span className={cn("text-sm", className)}>{formatDate(date, format)}</span>
+  );
 }
-

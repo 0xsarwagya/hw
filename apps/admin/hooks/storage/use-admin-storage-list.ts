@@ -1,8 +1,8 @@
 "use client";
 
-import { useApiQuery } from "../use-api-query";
 import { endpoints } from "@/lib/endpoints";
-import type { ListFilesResponse, ListFilesParams } from "@/lib/types/storage";
+import type { ListFilesParams, ListFilesResponse } from "@/lib/types/storage";
+import { useApiQuery } from "../use-api-query";
 
 export function useAdminStorageList(params?: ListFilesParams) {
   return useApiQuery<ListFilesResponse>(endpoints.storage.list, {
@@ -10,4 +10,3 @@ export function useAdminStorageList(params?: ListFilesParams) {
     enabled: true,
   });
 }
-

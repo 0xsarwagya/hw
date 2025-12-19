@@ -1,13 +1,12 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AddressCard } from "./address-card";
-import { ShipmentCard } from "./shipment-card";
-import { CreateShipmentDialog } from "./create-shipment-dialog";
-import { Button } from "@/components/ui/button";
 import { Package } from "lucide-react";
-import type { Order } from "@/lib/types/orders";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useShipments } from "@/hooks/shipping/use-shipments";
+import type { Order } from "@/lib/types/orders";
+import { AddressCard } from "./address-card";
+import { CreateShipmentDialog } from "./create-shipment-dialog";
+import { ShipmentCard } from "./shipment-card";
 
 interface OrderShippingSectionProps {
   order: Order;
@@ -26,11 +25,18 @@ export function OrderShippingSection({ order }: OrderShippingSectionProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         {order.shippingAddress && (
-          <AddressCard address={order.shippingAddress} title="Shipping Address" />
+          <AddressCard
+            address={order.shippingAddress}
+            title="Shipping Address"
+          />
         )}
-        {order.billingAddress && order.billingAddress.id !== order.shippingAddress?.id && (
-          <AddressCard address={order.billingAddress} title="Billing Address" />
-        )}
+        {order.billingAddress &&
+          order.billingAddress.id !== order.shippingAddress?.id && (
+            <AddressCard
+              address={order.billingAddress}
+              title="Billing Address"
+            />
+          )}
         {shipments && shipments.length > 0 ? (
           <div className="space-y-2">
             <h4 className="text-sm font-medium">Shipments</h4>
@@ -48,4 +54,3 @@ export function OrderShippingSection({ order }: OrderShippingSectionProps) {
     </Card>
   );
 }
-

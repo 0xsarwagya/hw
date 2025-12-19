@@ -11,7 +11,7 @@ import { OrderValidationService } from "./order-validation.service";
 @Injectable()
 export class OrderGstService {
   constructor(
-    private readonly logger: PinoLogger,
+    readonly _logger: PinoLogger,
     private readonly validationService: OrderValidationService,
   ) {}
 
@@ -106,4 +106,3 @@ export class OrderGstService {
     };
   }
 }
-

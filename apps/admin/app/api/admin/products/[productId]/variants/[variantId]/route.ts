@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ productId: string; variantId: string }> }
+  _request: NextRequest,
+  { params }: { params: Promise<{ productId: string; variantId: string }> },
 ) {
   try {
     const { productId, variantId } = await params;
@@ -39,16 +39,17 @@ export async function GET(
     console.error("Get variant proxy error:", error);
     return NextResponse.json(
       {
-        message: error instanceof Error ? error.message : "Internal server error",
+        message:
+          error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ productId: string; variantId: string }> }
+  { params }: { params: Promise<{ productId: string; variantId: string }> },
 ) {
   try {
     const { productId, variantId } = await params;
@@ -84,16 +85,17 @@ export async function PUT(
     console.error("Update variant proxy error:", error);
     return NextResponse.json(
       {
-        message: error instanceof Error ? error.message : "Internal server error",
+        message:
+          error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ productId: string; variantId: string }> }
+  _request: NextRequest,
+  { params }: { params: Promise<{ productId: string; variantId: string }> },
 ) {
   try {
     const { productId, variantId } = await params;
@@ -127,10 +129,10 @@ export async function DELETE(
     console.error("Delete variant proxy error:", error);
     return NextResponse.json(
       {
-        message: error instanceof Error ? error.message : "Internal server error",
+        message:
+          error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

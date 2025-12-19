@@ -1,6 +1,14 @@
 "use client";
 
+import { Edit, MoreHorizontal, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -9,16 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
-import { Money } from "../orders/money";
 import type { Variant } from "@/lib/types/products";
+import { Money } from "../orders/money";
 
 interface VariantTableProps {
   variants: Variant[];
@@ -78,18 +78,23 @@ export function VariantTable({
                 <div className="font-medium">{getVariantName(variant)}</div>
               </TableCell>
               <TableCell>
-                <code className="text-xs bg-muted px-2 py-1 rounded">{variant.sku}</code>
+                <code className="text-xs bg-muted px-2 py-1 rounded">
+                  {variant.sku}
+                </code>
               </TableCell>
               <TableCell>
                 <Money amount={variant.salePrice || variant.price} />
-                {variant.compareAtPrice && variant.compareAtPrice > variant.price && (
-                  <div className="text-xs text-muted-foreground line-through">
-                    <Money amount={variant.compareAtPrice} />
-                  </div>
-                )}
+                {variant.compareAtPrice &&
+                  variant.compareAtPrice > variant.price && (
+                    <div className="text-xs text-muted-foreground line-through">
+                      <Money amount={variant.compareAtPrice} />
+                    </div>
+                  )}
               </TableCell>
               <TableCell>
-                <div className={variant.inventory <= 0 ? "text-destructive" : ""}>
+                <div
+                  className={variant.inventory <= 0 ? "text-destructive" : ""}
+                >
                   {variant.inventory}
                 </div>
               </TableCell>
@@ -102,7 +107,9 @@ export function VariantTable({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
-                      <Link href={`/products/${productId}/variants/${variant.id}`}>
+                      <Link
+                        href={`/products/${productId}/variants/${variant.id}`}
+                      >
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </Link>
@@ -126,4 +133,3 @@ export function VariantTable({
     </div>
   );
 }
-

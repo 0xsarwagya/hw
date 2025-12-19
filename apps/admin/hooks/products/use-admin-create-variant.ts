@@ -1,11 +1,11 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useApiMutation } from "../use-api-mutation";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
-import type { Variant, CreateVariantInput } from "@/lib/types/products";
-import { toast } from "sonner";
+import type { CreateVariantInput, Variant } from "@/lib/types/products";
+import { useApiMutation } from "../use-api-mutation";
 
 export function useAdminCreateVariant(productId: string) {
   const queryClient = useQueryClient();
@@ -18,8 +18,12 @@ export function useAdminCreateVariant(productId: string) {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endpoints.products.variants.list(productId)] });
-      queryClient.invalidateQueries({ queryKey: [endpoints.products.detail(productId)] });
+      queryClient.invalidateQueries({
+        queryKey: [endpoints.products.variants.list(productId)],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [endpoints.products.detail(productId)],
+      });
       toast.success("Variant created successfully");
     },
     onError: (error) => {
@@ -27,4 +31,3 @@ export function useAdminCreateVariant(productId: string) {
     },
   });
 }
-

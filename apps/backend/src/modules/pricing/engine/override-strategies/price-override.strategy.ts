@@ -111,4 +111,3 @@ export function calculatePriceAfterOverride(
   const strategy = getOverrideStrategy(override.overrideType);
   return strategy.calculate(basePrice, override.overrideValue);
 }
-

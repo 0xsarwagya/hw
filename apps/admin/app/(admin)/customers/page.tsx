@@ -7,4 +7,3 @@ import { CustomersPageClient } from "@/components/customers/customers-page-clien
 export default function CustomersPage() {
   return <CustomersPageClient />;
 }
-

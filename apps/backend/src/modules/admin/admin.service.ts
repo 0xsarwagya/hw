@@ -21,10 +21,10 @@ import {
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { UserBundleSelection } from "../bundles/services/bundle-eligibility.service";
 import { CartsService } from "../carts/carts.service";
-import { CheckoutState } from "../redis-store/constants/checkout-states";
-import { CheckoutStore } from "../redis-store/stores/checkout-store";
-import { RedisStoreService } from "../redis-store/redis-store.service";
 import { ProductsService } from "../products/products.service";
+import { CheckoutState } from "../redis-store/constants/checkout-states";
+import { RedisStoreService } from "../redis-store/redis-store.service";
+import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import {
   AbandonedCheckoutResponse,
   AdminQueryAbandonedCheckoutsDto,
@@ -43,7 +43,7 @@ import {
 export class AdminService {
   constructor(
     private readonly productsService: ProductsService,
-    private readonly cartsService: CartsService,
+    readonly _cartsService: CartsService,
     private readonly checkoutStore: CheckoutStore,
     private readonly redisStoreService: RedisStoreService,
   ) {}
@@ -340,11 +340,11 @@ export class AdminService {
 
     // Get Redis client to scan for checkout sessions
     const redisClient = await this.redisStoreService.getClient();
-    
+
     // Scan for all checkout session keys
     const sessionKeys: string[] = [];
     let cursor = "0";
-    
+
     do {
       const result = await redisClient.scan(
         cursor,
@@ -383,16 +383,11 @@ export class AdminService {
             checkoutState: session.state,
           });
         }
-      } catch (error) {
-        // Skip invalid sessions
-        continue;
-      }
+      } catch (_error) {}
     }
 
     // Get unique cart IDs
-    const cartIds = Array.from(
-      new Set(abandonedSessions.map((s) => s.cartId)),
-    );
+    const cartIds = Array.from(new Set(abandonedSessions.map((s) => s.cartId)));
 
     if (cartIds.length === 0) {
       return {
@@ -569,9 +564,7 @@ export class AdminService {
           };
           break;
         }
-      } catch (error) {
-        continue;
-      }
+      } catch (_error) {}
     }
 
     if (!sessionData) {

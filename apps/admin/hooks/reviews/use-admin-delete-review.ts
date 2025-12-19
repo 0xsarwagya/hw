@@ -1,10 +1,10 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useApiMutation } from "../use-api-mutation";
+import { toast } from "sonner";
 import { api, type FetchError } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
-import { toast } from "sonner";
+import { useApiMutation } from "../use-api-mutation";
 
 export function useAdminDeleteReview() {
   const queryClient = useQueryClient();
@@ -24,4 +24,3 @@ export function useAdminDeleteReview() {
     },
   });
 }
-

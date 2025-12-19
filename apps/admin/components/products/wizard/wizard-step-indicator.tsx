@@ -29,9 +29,7 @@ export function WizardStepIndicator({
             <StepTitle step={step} currentStep={currentStep} />
           </div>
           {index < steps.length - 1 && (
-            <StepConnector
-              isCompleted={currentStep > step.id}
-            />
+            <StepConnector isCompleted={currentStep > step.id} />
           )}
         </div>
       ))}
@@ -50,7 +48,7 @@ interface StepCircleProps {
  */
 function StepCircle({ stepId, currentStep, isCompleted }: StepCircleProps) {
   const isActive = currentStep === stepId;
-  
+
   const circleClasses = `w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
     isCompleted
       ? "bg-primary text-primary-foreground border-primary"
@@ -80,7 +78,7 @@ interface StepTitleProps {
  */
 function StepTitle({ step, currentStep }: StepTitleProps) {
   const isActiveOrCompleted = currentStep >= step.id;
-  
+
   return (
     <div className="mt-2 text-center">
       <div
@@ -104,10 +102,7 @@ interface StepConnectorProps {
 function StepConnector({ isCompleted }: StepConnectorProps) {
   return (
     <div
-      className={`h-0.5 flex-1 mx-2 ${
-        isCompleted ? "bg-primary" : "bg-muted"
-      }`}
+      className={`h-0.5 flex-1 mx-2 ${isCompleted ? "bg-primary" : "bg-muted"}`}
     />
   );
 }
-

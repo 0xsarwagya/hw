@@ -1,9 +1,15 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { CreateProductFormValues } from "@/lib/validations/products";
-import type { ProductVariantOptionType } from "@/lib/types/products";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { WIZARD_STEPS } from "@/lib/constants/wizard.constants";
+import type { ProductVariantOptionType } from "@/lib/types/products";
+import type { CreateProductFormValues } from "@/lib/validations/products";
 
 interface PendingVariant {
   id: string;
@@ -42,7 +48,9 @@ export function ReviewStep({
       <CardContent className="space-y-4">
         <BasicInformationReview formValues={formValues} />
         <PricingReview formValues={formValues} />
-        {pendingImages.length > 0 && <ImagesReview imageCount={pendingImages.length} />}
+        {pendingImages.length > 0 && (
+          <ImagesReview imageCount={pendingImages.length} />
+        )}
         <VariantsReview
           variantMode={variantMode}
           tempProductId={tempProductId}
@@ -67,7 +75,8 @@ function BasicInformationReview({ formValues }: BasicInformationReviewProps) {
       <h3 className="font-medium">Basic Information</h3>
       <div className="pl-4 space-y-1 text-sm">
         <div>
-          <span className="text-muted-foreground">Title:</span> {formValues.title}
+          <span className="text-muted-foreground">Title:</span>{" "}
+          {formValues.title}
         </div>
         {formValues.description && (
           <div>
@@ -76,7 +85,8 @@ function BasicInformationReview({ formValues }: BasicInformationReviewProps) {
           </div>
         )}
         <div>
-          <span className="text-muted-foreground">Status:</span> {formValues.status}
+          <span className="text-muted-foreground">Status:</span>{" "}
+          {formValues.status}
         </div>
       </div>
     </div>
@@ -96,7 +106,8 @@ function PricingReview({ formValues }: PricingReviewProps) {
       <h3 className="font-medium">Pricing</h3>
       <div className="pl-4 space-y-1 text-sm">
         <div>
-          <span className="text-muted-foreground">Price:</span> ₹{formValues.price}
+          <span className="text-muted-foreground">Price:</span> ₹
+          {formValues.price}
         </div>
         <div>
           <span className="text-muted-foreground">GST Rate:</span>{" "}
@@ -104,11 +115,14 @@ function PricingReview({ formValues }: PricingReviewProps) {
         </div>
         <div>
           <span className="text-muted-foreground">Pricing Type:</span>{" "}
-          {formValues.pricingType === "inclusive" ? "Tax Inclusive" : "Tax Exclusive"}
+          {formValues.pricingType === "inclusive"
+            ? "Tax Inclusive"
+            : "Tax Exclusive"}
         </div>
         {formValues.hsnCode && (
           <div>
-            <span className="text-muted-foreground">HSN Code:</span> {formValues.hsnCode}
+            <span className="text-muted-foreground">HSN Code:</span>{" "}
+            {formValues.hsnCode}
           </div>
         )}
       </div>
@@ -230,4 +244,3 @@ function VariantsList({ variants, optionTypes }: VariantsListProps) {
     </>
   );
 }
-

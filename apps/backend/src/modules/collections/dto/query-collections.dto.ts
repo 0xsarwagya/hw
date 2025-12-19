@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsOptional, IsInt, Min, Max, IsString } from "class-validator";
+import { IsInt, IsOptional, IsString, Max, Min } from "class-validator";
 
 export class QueryCollectionsDto {
   @ApiProperty({
@@ -37,4 +37,3 @@ export class QueryCollectionsDto {
   @IsString({ message: "Search must be a string" })
   search?: string;
 }
-

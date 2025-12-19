@@ -5,6 +5,7 @@ import { db, eq, orders, payments } from "@vcecom/db";
 import Razorpay from "razorpay";
 import { ContextService } from "../../common/logging/context.service";
 import { getCommonTestProviders } from "../../common/testing/test-helpers";
+import { AppConfigService } from "../../common/config/app.config.service";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
 import {
   PaymentIntent,
@@ -59,6 +60,9 @@ describe("PaymentsService", () => {
   let mockCheckoutStore: jest.Mocked<CheckoutStore>;
   let mockOrdersService: jest.Mocked<OrdersService>;
   let mockRazorpayInstance: any;
+  let appConfigService: AppConfigService;
+  let pinoLogger: PinoLogger;
+  let contextService: ContextService;
 
   beforeEach(async () => {
     // Clear environment variables
@@ -115,6 +119,9 @@ describe("PaymentsService", () => {
       module.get<RazorpayConfigService>(RazorpayConfigService);
     mockCheckoutStore = module.get<CheckoutStore>(CheckoutStore);
     mockOrdersService = module.get<OrdersService>(OrdersService);
+    appConfigService = module.get<AppConfigService>(AppConfigService);
+    pinoLogger = module.get<PinoLogger>(PinoLogger);
+    contextService = module.get<ContextService>(ContextService);
 
     // Mock initialize method
     jest
@@ -145,6 +152,9 @@ describe("PaymentsService", () => {
       razorpayConfigService,
       mockCheckoutStore,
       mockOrdersService as any,
+      pinoLogger,
+      contextService,
+      appConfigService,
     );
       newService.onModuleInit();
 
@@ -166,6 +176,9 @@ describe("PaymentsService", () => {
       razorpayConfigService,
       mockCheckoutStore,
       mockOrdersService as any,
+      pinoLogger,
+      contextService,
+      appConfigService,
     );
       newService.onModuleInit();
 
@@ -184,6 +197,9 @@ describe("PaymentsService", () => {
       razorpayConfigService,
       mockCheckoutStore,
       mockOrdersService as any,
+      pinoLogger,
+      contextService,
+      appConfigService,
     );
       newService.onModuleInit();
 

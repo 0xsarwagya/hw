@@ -1,5 +1,11 @@
 import { AdminPageLayout } from "@/components/layout/admin-page-layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 /**
  * Inventory page - Server component
@@ -15,12 +21,18 @@ export default function InventoryPage() {
         <Card>
           <CardHeader>
             <CardTitle>Inventory Overview</CardTitle>
-            <CardDescription>View and manage inventory across all products</CardDescription>
+            <CardDescription>
+              View and manage inventory across all products
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-center py-8 text-muted-foreground">
-              <p className="text-lg font-medium mb-2">Inventory management coming soon</p>
-              <p className="text-sm">Advanced inventory features will be available here</p>
+              <p className="text-lg font-medium mb-2">
+                Inventory management coming soon
+              </p>
+              <p className="text-sm">
+                Advanced inventory features will be available here
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -28,4 +40,3 @@ export default function InventoryPage() {
     </AdminPageLayout>
   );
 }
-

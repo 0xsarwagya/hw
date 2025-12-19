@@ -1,8 +1,15 @@
 "use client";
 
+import {
+  Archive,
+  ArrowLeft,
+  Eye,
+  MoreVertical,
+  Save,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save, Eye, MoreVertical, Archive, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,4 +71,3 @@ export function ProductDetailActions({
     </div>
   );
 }
-

@@ -43,4 +43,3 @@ export class UpdateCollectionDto {
   @MaxLength(500, { message: "Image URL must not exceed 500 characters" })
   imageUrl?: string;
 }
-

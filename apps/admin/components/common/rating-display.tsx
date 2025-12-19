@@ -28,20 +28,20 @@ export function RatingDisplay({
 
   return (
     <div className={cn("flex items-center gap-1", className)}>
-      {Array.from({ length: maxRating }).map((_, index) => {
+      {Array.from({ length: maxRating }, (_, index) => {
         const isFull = index < fullStars;
         const isHalf = index === fullStars && hasHalfStar;
         const isEmpty = !isFull && !isHalf;
 
         return (
           <span
-            key={index}
+            key={`star-${String(index)}`}
             className={cn(
               "text-lg",
               isFull && "text-yellow-500",
               isHalf && "text-yellow-500 opacity-50",
               isEmpty && "text-gray-300",
-              starClassName
+              starClassName,
             )}
           >
             ★
@@ -54,4 +54,3 @@ export function RatingDisplay({
     </div>
   );
 }
-

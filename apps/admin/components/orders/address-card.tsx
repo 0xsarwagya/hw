@@ -1,8 +1,8 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Address } from "@/lib/types/orders";
 
 interface AddressCardProps {
@@ -37,10 +37,11 @@ export function AddressCard({
             {address.city}, {address.state} {address.pincode}
           </p>
           <p>{address.country}</p>
-          {address.phone && <p className="text-muted-foreground">Phone: {address.phone}</p>}
+          {address.phone && (
+            <p className="text-muted-foreground">Phone: {address.phone}</p>
+          )}
         </div>
       </CardContent>
     </Card>
   );
 }
-

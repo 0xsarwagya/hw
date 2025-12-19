@@ -28,19 +28,26 @@ export async function verifyPassword(
   }
 
   // Check if it's an Argon2 hash (starts with $argon2id$)
-  const isArgon2 = hash.startsWith("$argon2id$") || hash.startsWith("$argon2i$") || hash.startsWith("$argon2$");
+  const isArgon2 =
+    hash.startsWith("$argon2id$") ||
+    hash.startsWith("$argon2i$") ||
+    hash.startsWith("$argon2$");
 
   if (isArgon2) {
     try {
       return await argon2.verify(hash, password);
     } catch (error) {
       // If argon2 verification fails, throw a more descriptive error
-      throw new Error(`Argon2 verification failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      throw new Error(
+        `Argon2 verification failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
   // If hash doesn't match any known format, throw error
-  throw new Error(`Invalid password hash format. Hash must start with $2a$, $2b$, $2y$ (bcrypt) or $argon2 (argon2)`);
+  throw new Error(
+    `Invalid password hash format. Hash must start with $2a$, $2b$, $2y$ (bcrypt) or $argon2 (argon2)`,
+  );
 }
 
 /**

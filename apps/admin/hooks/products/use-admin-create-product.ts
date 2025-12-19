@@ -1,25 +1,25 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useApiMutation } from "../use-api-mutation";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
-import type { Product, CreateProductInput } from "@/lib/types/products";
-import { toast } from "sonner";
+import type { CreateProductInput, Product } from "@/lib/types/products";
+import { useApiMutation } from "../use-api-mutation";
 
 /**
  * Hook for creating a new product
- * 
+ *
  * Handles product creation, cache invalidation, and navigation.
  * Shows success/error toasts and redirects to the new product page on success.
- * 
+ *
  * @returns Mutation object with mutate and mutateAsync functions
- * 
+ *
  * @example
  * ```tsx
  * const createProduct = useAdminCreateProduct();
- * 
+ *
  * await createProduct.mutateAsync({
  *   title: "New Product",
  *   price: 99.99,
@@ -45,4 +45,3 @@ export function useAdminCreateProduct() {
     },
   });
 }
-

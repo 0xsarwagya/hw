@@ -1,8 +1,11 @@
 "use client";
 
-import { useApiQuery } from "../use-api-query";
 import { endpoints } from "@/lib/endpoints";
-import type { PaginatedCollectionsResponse, CollectionQueryParams } from "@/lib/types/collections";
+import type {
+  CollectionQueryParams,
+  PaginatedCollectionsResponse,
+} from "@/lib/types/collections";
+import { useApiQuery } from "../use-api-query";
 
 export function useAdminCollections(params?: CollectionQueryParams) {
   return useApiQuery<PaginatedCollectionsResponse>(endpoints.collections.list, {
@@ -10,4 +13,3 @@ export function useAdminCollections(params?: CollectionQueryParams) {
     enabled: true,
   });
 }
-

@@ -1,12 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { AdminPageLayout } from "@/components/layout/admin-page-layout";
 import { Button } from "@/components/ui/button";
+import { ErrorDisplay } from "@/components/ui/error-display";
+import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { LoadingButton } from "@/components/ui/loading-button";
 import {
   Select,
   SelectContent,
@@ -14,22 +19,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { Textarea } from "@/components/ui/textarea";
 import { useAdminCreateDiscount } from "@/hooks/discounts/use-admin-create-discount";
-import { useForm } from "react-hook-form";
-import type { CreateDiscountInput } from "@/lib/types/discounts";
-import { FieldError } from "@/components/ui/field-error";
-import { ErrorDisplay } from "@/components/ui/error-display";
-import { LoadingButton } from "@/components/ui/loading-button";
 import type { FetchError } from "@/lib/api";
+import type { CreateDiscountInput } from "@/lib/types/discounts";
 
 export default function CreateDiscountPage() {
-  const router = useRouter();
+  const _router = useRouter();
   const createDiscount = useAdminCreateDiscount();
   const [apiError, setApiError] = useState<FetchError | null>(null);
 
-  const { register, handleSubmit, watch, setValue, formState: { errors }, setError } = useForm<CreateDiscountInput>({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+    setError,
+  } = useForm<CreateDiscountInput>({
     defaultValues: {
       type: "STANDARD",
       valueType: "percentage",
@@ -37,7 +44,7 @@ export default function CreateDiscountPage() {
     },
   });
 
-  const valueType = watch("valueType");
+  const _valueType = watch("valueType");
 
   const onSubmit = async (data: CreateDiscountInput) => {
     setApiError(null);
@@ -47,7 +54,7 @@ export default function CreateDiscountPage() {
       if (error instanceof Error && "errors" in error) {
         const fetchError = error as FetchError;
         setApiError(fetchError);
-        
+
         // Set field-level errors
         if (fetchError.errors) {
           Object.entries(fetchError.errors).forEach(([field, messages]) => {
@@ -73,7 +80,7 @@ export default function CreateDiscountPage() {
       {apiError && (
         <ErrorDisplay error={apiError} onRetry={() => setApiError(null)} />
       )}
-      
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid gap-4">
           <div className="grid gap-2">
@@ -90,7 +97,11 @@ export default function CreateDiscountPage() {
           <div className="grid gap-2">
             <Label htmlFor="type">Type *</Label>
             <Select
-              onValueChange={(value) => setValue("type", value as "STANDARD" | "BUY_GET", { shouldValidate: true })}
+              onValueChange={(value) =>
+                setValue("type", value as "STANDARD" | "BUY_GET", {
+                  shouldValidate: true,
+                })
+              }
               defaultValue="STANDARD"
             >
               <SelectTrigger aria-invalid={errors.type ? "true" : "false"}>
@@ -120,7 +131,10 @@ export default function CreateDiscountPage() {
                 id="value"
                 type="number"
                 step="0.01"
-                {...register("value", { required: "Value is required", valueAsNumber: true })}
+                {...register("value", {
+                  required: "Value is required",
+                  valueAsNumber: true,
+                })}
                 placeholder="10"
                 aria-invalid={errors.value ? "true" : "false"}
               />
@@ -130,10 +144,16 @@ export default function CreateDiscountPage() {
             <div className="grid gap-2">
               <Label htmlFor="valueType">Value Type *</Label>
               <Select
-                onValueChange={(value) => setValue("valueType", value as "percentage" | "fixed", { shouldValidate: true })}
+                onValueChange={(value) =>
+                  setValue("valueType", value as "percentage" | "fixed", {
+                    shouldValidate: true,
+                  })
+                }
                 defaultValue="percentage"
               >
-                <SelectTrigger aria-invalid={errors.valueType ? "true" : "false"}>
+                <SelectTrigger
+                  aria-invalid={errors.valueType ? "true" : "false"}
+                >
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -152,38 +172,38 @@ export default function CreateDiscountPage() {
                 id="minOrderAmount"
                 type="number"
                 step="0.01"
-              {...register("minOrderAmount", { valueAsNumber: true })}
-              placeholder="0"
-              aria-invalid={errors.minOrderAmount ? "true" : "false"}
-            />
-            <FieldError error={errors.minOrderAmount?.message} />
+                {...register("minOrderAmount", { valueAsNumber: true })}
+                placeholder="0"
+                aria-invalid={errors.minOrderAmount ? "true" : "false"}
+              />
+              <FieldError error={errors.minOrderAmount?.message} />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="maxDiscountAmount">Max Discount Amount</Label>
+              <Input
+                id="maxDiscountAmount"
+                type="number"
+                step="0.01"
+                {...register("maxDiscountAmount", { valueAsNumber: true })}
+                placeholder="Unlimited"
+                aria-invalid={errors.maxDiscountAmount ? "true" : "false"}
+              />
+              <FieldError error={errors.maxDiscountAmount?.message} />
+            </div>
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="maxDiscountAmount">Max Discount Amount</Label>
+            <Label htmlFor="maxUses">Max Uses</Label>
             <Input
-              id="maxDiscountAmount"
+              id="maxUses"
               type="number"
-              step="0.01"
-              {...register("maxDiscountAmount", { valueAsNumber: true })}
+              {...register("maxUses", { valueAsNumber: true })}
               placeholder="Unlimited"
-              aria-invalid={errors.maxDiscountAmount ? "true" : "false"}
+              aria-invalid={errors.maxUses ? "true" : "false"}
             />
-            <FieldError error={errors.maxDiscountAmount?.message} />
+            <FieldError error={errors.maxUses?.message} />
           </div>
-        </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="maxUses">Max Uses</Label>
-          <Input
-            id="maxUses"
-            type="number"
-            {...register("maxUses", { valueAsNumber: true })}
-            placeholder="Unlimited"
-            aria-invalid={errors.maxUses ? "true" : "false"}
-          />
-          <FieldError error={errors.maxUses?.message} />
-        </div>
         </div>
 
         <div className="flex gap-4">
@@ -205,4 +225,3 @@ export default function CreateDiscountPage() {
     </AdminPageLayout>
   );
 }
-

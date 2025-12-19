@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     // Forward Set-Cookie headers from backend
     const setCookieHeaders = response.headers.getSetCookie();
-    
+
     if (setCookieHeaders && setCookieHeaders.length > 0) {
       setCookieHeaders.forEach((cookieString) => {
         // Parse cookie string (format: "name=value; Path=/; HttpOnly; Max-Age=900")
@@ -55,8 +55,15 @@ export async function POST(request: NextRequest) {
             cookieOptions.path = part.split("=")[1];
           } else if (lowerPart.startsWith("samesite=")) {
             const sameSiteValue = part.split("=")[1].toLowerCase();
-            if (sameSiteValue === "lax" || sameSiteValue === "strict" || sameSiteValue === "none") {
-              cookieOptions.sameSite = sameSiteValue as "lax" | "strict" | "none";
+            if (
+              sameSiteValue === "lax" ||
+              sameSiteValue === "strict" ||
+              sameSiteValue === "none"
+            ) {
+              cookieOptions.sameSite = sameSiteValue as
+                | "lax"
+                | "strict"
+                | "none";
             }
           } else if (lowerPart.startsWith("max-age=")) {
             cookieOptions.maxAge = parseInt(part.split("=")[1], 10);
@@ -80,8 +87,7 @@ export async function POST(request: NextRequest) {
     console.error("Login proxy error:", error);
     return NextResponse.json(
       { message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

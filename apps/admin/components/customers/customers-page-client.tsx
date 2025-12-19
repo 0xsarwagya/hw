@@ -1,24 +1,23 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { AdminPageLayout } from "@/components/layout/admin-page-layout";
-import { Button } from "@/components/ui/button";
-import { SearchInput } from "../common/search-input";
-import { useAdminCustomers } from "@/hooks/customers/use-admin-customers";
-import type { CustomerQueryParams } from "@/lib/types/customers";
 import { ErrorDisplay } from "@/components/ui/error-display";
+import { useAdminCustomers } from "@/hooks/customers/use-admin-customers";
+import type { PaginationData } from "@/hooks/use-pagination";
 import type { FetchError } from "@/lib/api";
+import {
+  CUSTOMER_DEFAULT_LIMIT,
+  CUSTOMER_DEFAULT_PAGE,
+} from "@/lib/constants/customers.constants";
+import type { CustomerQueryParams } from "@/lib/types/customers";
+import { PaginationControls } from "../common/pagination-controls";
+import { QueryState } from "../common/query-state";
+import { SearchInput } from "../common/search-input";
 import { CustomersTable } from "./customers-table";
 import { CustomersTableSkeleton } from "./customers-table-skeleton";
 import { EmptyCustomersState } from "./empty-customers-state";
-import { PaginationControls } from "../common/pagination-controls";
-import { QueryState } from "../common/query-state";
-import {
-  CUSTOMER_DEFAULT_PAGE,
-  CUSTOMER_DEFAULT_LIMIT,
-} from "@/lib/constants/customers.constants";
-import type { PaginationData } from "@/hooks/use-pagination";
 
 /**
  * Client component for customers page
@@ -29,10 +28,18 @@ export function CustomersPageClient() {
   const searchParams = useSearchParams();
 
   const initialFilters = parseFiltersFromSearchParams(searchParams);
-  const [customerFilters, setCustomerFilters] = useState<CustomerQueryParams>(initialFilters);
-  const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
+  const [customerFilters, setCustomerFilters] =
+    useState<CustomerQueryParams>(initialFilters);
+  const [searchInput, setSearchInput] = useState(
+    searchParams.get("search") || "",
+  );
 
-  const { data: customersData, isLoading, error, refetch } = useAdminCustomers(customerFilters);
+  const {
+    data: customersData,
+    isLoading,
+    error,
+    refetch,
+  } = useAdminCustomers(customerFilters);
 
   useSyncFiltersToUrl(customerFilters, router);
 
@@ -52,13 +59,13 @@ export function CustomersPageClient() {
     : undefined;
 
   const handlePreviousPage = useCallback(() => {
-    if (paginationData && paginationData.hasPreviousPage) {
+    if (paginationData?.hasPreviousPage) {
       handlePageChange(paginationData.page - 1);
     }
   }, [paginationData, handlePageChange]);
 
   const handleNextPage = useCallback(() => {
-    if (paginationData && paginationData.hasNextPage) {
+    if (paginationData?.hasNextPage) {
       handlePageChange(paginationData.page + 1);
     }
   }, [paginationData, handlePageChange]);
@@ -66,7 +73,10 @@ export function CustomersPageClient() {
   const paginationInfo = paginationData
     ? {
         startItem: (paginationData.page - 1) * paginationData.limit + 1,
-        endItem: Math.min(paginationData.page * paginationData.limit, paginationData.total),
+        endItem: Math.min(
+          paginationData.page * paginationData.limit,
+          paginationData.total,
+        ),
         total: paginationData.total,
         currentPage: paginationData.page,
         totalPages: paginationData.totalPages,
@@ -134,11 +144,17 @@ export function CustomersPageClient() {
  * Parses search parameters from URL into CustomerQueryParams
  */
 function parseFiltersFromSearchParams(
-  searchParams: URLSearchParams
+  searchParams: URLSearchParams,
 ): CustomerQueryParams {
   return {
-    page: parseInt(searchParams.get("page") || String(CUSTOMER_DEFAULT_PAGE)),
-    limit: parseInt(searchParams.get("limit") || String(CUSTOMER_DEFAULT_LIMIT)),
+    page: parseInt(
+      searchParams.get("page") || String(CUSTOMER_DEFAULT_PAGE),
+      10,
+    ),
+    limit: parseInt(
+      searchParams.get("limit") || String(CUSTOMER_DEFAULT_LIMIT),
+      10,
+    ),
     search: searchParams.get("search") || undefined,
   };
 }
@@ -148,7 +164,7 @@ function parseFiltersFromSearchParams(
  */
 function useSyncFiltersToUrl(
   filters: CustomerQueryParams,
-  router: ReturnType<typeof useRouter>
+  router: ReturnType<typeof useRouter>,
 ) {
   useEffect(() => {
     const urlParams = new URLSearchParams();
@@ -164,4 +180,3 @@ function useSyncFiltersToUrl(
     router.replace(`/customers?${urlParams.toString()}`, { scroll: false });
   }, [filters, router]);
 }
-

@@ -75,4 +75,3 @@ export interface AbandonedCheckoutQueryParams {
   maxValue?: number;
   state?: CheckoutState;
 }
-

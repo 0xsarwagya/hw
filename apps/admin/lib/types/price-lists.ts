@@ -44,4 +44,3 @@ export interface CreatePriceListItemInput {
   productVariantId: string;
   price: number;
 }
-

@@ -59,4 +59,3 @@ export interface AddProductsToCollectionResponse {
   added: number;
   skipped: number;
 }
-

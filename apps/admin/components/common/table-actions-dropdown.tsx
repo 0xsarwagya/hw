@@ -1,5 +1,7 @@
 "use client";
 
+import { Edit, MoreHorizontal, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -7,8 +9,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
-import Link from "next/link";
 
 interface TableActionsDropdownProps {
   editHref?: string;
@@ -66,4 +66,3 @@ export function TableActionsDropdown({
     </DropdownMenu>
   );
 }
-

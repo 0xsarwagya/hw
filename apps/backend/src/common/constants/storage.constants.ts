@@ -17,4 +17,3 @@ export const MIN_IMAGE_QUALITY = 0;
  * Maximum image quality value
  */
 export const MAX_IMAGE_QUALITY = 100;
-

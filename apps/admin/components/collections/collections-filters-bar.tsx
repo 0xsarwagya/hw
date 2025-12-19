@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Search, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { CollectionQueryParams } from "@/lib/types/collections";
-import { cn } from "@/lib/utils";
 
 interface CollectionsFiltersBarProps {
   filters: CollectionQueryParams;
@@ -23,7 +22,11 @@ export function CollectionsFiltersBar({
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      onFiltersChange({ ...filters, search: searchValue || undefined, page: 1 });
+      onFiltersChange({
+        ...filters,
+        search: searchValue || undefined,
+        page: 1,
+      });
     }, 300);
 
     return () => clearTimeout(timer);
@@ -52,4 +55,3 @@ export function CollectionsFiltersBar({
     </div>
   );
 }
-

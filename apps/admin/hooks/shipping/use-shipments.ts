@@ -1,8 +1,7 @@
 "use client";
 
-import { useApiQuery } from "../use-api-query";
-import { endpoints } from "@/lib/endpoints";
 import type { Shipment } from "@/lib/types/shipping";
+import { useApiQuery } from "../use-api-query";
 
 export function useShipments(orderId?: string) {
   const params = orderId ? { orderId } : undefined;
@@ -11,4 +10,3 @@ export function useShipments(orderId?: string) {
     params: params as Record<string, string | number | boolean | undefined>,
   });
 }
-

@@ -84,4 +84,3 @@ export interface Shipment {
   createdAt: Date;
   updatedAt: Date;
 }
-

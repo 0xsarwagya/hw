@@ -11,7 +11,10 @@ interface PaymentStatusBadgeProps {
 
 const statusConfig: Record<
   PaymentStatus,
-  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+  {
+    label: string;
+    variant: "default" | "secondary" | "destructive" | "outline";
+  }
 > = {
   pending: { label: "Pending", variant: "outline" },
   initiated: { label: "Initiated", variant: "default" },
@@ -20,7 +23,10 @@ const statusConfig: Record<
   refunded: { label: "Refunded", variant: "destructive" },
 };
 
-export function PaymentStatusBadge({ status, className }: PaymentStatusBadgeProps) {
+export function PaymentStatusBadge({
+  status,
+  className,
+}: PaymentStatusBadgeProps) {
   const config = statusConfig[status];
 
   return (
@@ -29,4 +35,3 @@ export function PaymentStatusBadge({ status, className }: PaymentStatusBadgeProp
     </Badge>
   );
 }
-

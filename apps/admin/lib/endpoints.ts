@@ -26,10 +26,13 @@ export const endpoints = {
     },
     variants: {
       list: (productId: string) => `/products/${productId}/variants`,
-      detail: (productId: string, variantId: string) => `/products/${productId}/variants/${variantId}`,
+      detail: (productId: string, variantId: string) =>
+        `/products/${productId}/variants/${variantId}`,
       create: (productId: string) => `/products/${productId}/variants`,
-      update: (productId: string, variantId: string) => `/products/${productId}/variants/${variantId}`,
-      delete: (productId: string, variantId: string) => `/products/${productId}/variants/${variantId}`,
+      update: (productId: string, variantId: string) =>
+        `/products/${productId}/variants/${variantId}`,
+      delete: (productId: string, variantId: string) =>
+        `/products/${productId}/variants/${variantId}`,
     },
   },
   storage: {
@@ -52,7 +55,8 @@ export const endpoints = {
     detail: (id: string) => `/orders/${id}`, // Use regular orders endpoint with admin auth
     timeline: (id: string) => `/orders/${id}/timeline`,
     tracking: (id: string) => `/orders/${id}/tracking`,
-    reconcile: (paymentIntentId: string) => `/orders/reconcile/${paymentIntentId}`,
+    reconcile: (paymentIntentId: string) =>
+      `/orders/reconcile/${paymentIntentId}`,
   },
   shipping: {
     shiprocketStatus: "/shipping/shiprocket/status",
@@ -90,11 +94,15 @@ export const endpoints = {
     delete: (id: string) => `/admin/bundles/${id}`,
     sets: {
       create: (bundleId: string) => `/admin/bundles/${bundleId}/sets`,
-      update: (bundleId: string, setId: string) => `/admin/bundles/${bundleId}/sets/${setId}`,
-      delete: (bundleId: string, setId: string) => `/admin/bundles/${bundleId}/sets/${setId}`,
+      update: (bundleId: string, setId: string) =>
+        `/admin/bundles/${bundleId}/sets/${setId}`,
+      delete: (bundleId: string, setId: string) =>
+        `/admin/bundles/${bundleId}/sets/${setId}`,
       items: {
-        add: (bundleId: string, setId: string) => `/admin/bundles/${bundleId}/sets/${setId}/items`,
-        remove: (bundleId: string, setId: string, itemId: string) => `/admin/bundles/${bundleId}/sets/${setId}/items/${itemId}`,
+        add: (bundleId: string, setId: string) =>
+          `/admin/bundles/${bundleId}/sets/${setId}/items`,
+        remove: (bundleId: string, setId: string, itemId: string) =>
+          `/admin/bundles/${bundleId}/sets/${setId}/items/${itemId}`,
       },
     },
   },
@@ -106,7 +114,8 @@ export const endpoints = {
     update: (id: string) => `/admin/price-lists/${id}`,
     delete: (id: string) => `/admin/price-lists/${id}`,
     addItem: (id: string) => `/admin/price-lists/${id}/items`,
-    removeItem: (id: string, itemId: string) => `/admin/price-lists/${id}/items/${itemId}`,
+    removeItem: (id: string, itemId: string) =>
+      `/admin/price-lists/${id}/items/${itemId}`,
     driftReport: "/admin/price-lists/drift-report",
   },
   reviews: {
@@ -126,7 +135,8 @@ export const endpoints = {
     products: {
       list: (id: string) => `/admin/collections/${id}/products`,
       add: (id: string) => `/admin/collections/${id}/products`,
-      remove: (id: string, productId: string) => `/admin/collections/${id}/products/${productId}`,
+      remove: (id: string, productId: string) =>
+        `/admin/collections/${id}/products/${productId}`,
     },
   },
   categories: {
@@ -141,8 +151,10 @@ export const endpoints = {
     list: "/products/variant-option-types",
     create: "/products/variant-option-types",
     product: {
-      list: (productId: string) => `/products/${productId}/variant-option-types`,
-      create: (productId: string) => `/products/${productId}/variant-option-types`,
+      list: (productId: string) =>
+        `/products/${productId}/variant-option-types`,
+      create: (productId: string) =>
+        `/products/${productId}/variant-option-types`,
       delete: (productId: string, optionTypeId: string) =>
         `/products/${productId}/variant-option-types/${optionTypeId}`,
       values: {
@@ -154,4 +166,3 @@ export const endpoints = {
     },
   },
 } as const;
-

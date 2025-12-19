@@ -1,5 +1,6 @@
 "use client";
 
+import { CheckCircle, Package, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -8,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Package, Truck, CheckCircle } from "lucide-react";
 import type { OrderStatus } from "@/lib/types/orders";
 
 interface FulfillmentControlsProps {
@@ -61,7 +61,12 @@ export function FulfillmentControls({
     }
   };
 
-  if (nextStatus && currentStatus !== "delivered" && currentStatus !== "cancelled" && currentStatus !== "refunded") {
+  if (
+    nextStatus &&
+    currentStatus !== "delivered" &&
+    currentStatus !== "cancelled" &&
+    currentStatus !== "refunded"
+  ) {
     return (
       <Button
         onClick={() => onStatusChange(nextStatus)}
@@ -95,4 +100,3 @@ export function FulfillmentControls({
     </Select>
   );
 }
-

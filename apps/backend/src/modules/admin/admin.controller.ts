@@ -15,10 +15,7 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import {
-  DEFAULT_PAGE_SIZE,
-  MAX_PAGE_SIZE,
-} from "../../common/constants";
+import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "../../common/constants";
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
@@ -108,7 +105,8 @@ export class AdminController {
     name: "inStock",
     required: false,
     type: Boolean,
-    description: "Filter by availability (true = in stock, false = out of stock)",
+    description:
+      "Filter by availability (true = in stock, false = out of stock)",
   })
   @ApiQuery({
     name: "sortBy",
@@ -383,9 +381,8 @@ export class AdminController {
     description: "Forbidden - Admin access required",
   })
   async getAbandonedCheckoutByCartId(@Param("cartId") cartId: string) {
-    const checkout = await this.adminService.getAbandonedCheckoutByCartId(
-      cartId,
-    );
+    const checkout =
+      await this.adminService.getAbandonedCheckoutByCartId(cartId);
     if (!checkout) {
       throw new NotFoundException("Abandoned checkout not found");
     }

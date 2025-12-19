@@ -3,10 +3,7 @@ import { addresses, and, customers, db, eq } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { AppConfigService } from "../../../common/config/app.config.service";
 import { ContextService } from "../../../common/logging/context.service";
-import {
-  createErrorContext,
-  createLogContext,
-} from "../../../common/logging/logging.helper";
+import { createErrorContext } from "../../../common/logging/logging.helper";
 import { AddressesService } from "../../customers/addresses.service";
 import { CustomersService } from "../../customers/customers.service";
 
@@ -19,8 +16,8 @@ export class OrderValidationService {
   constructor(
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
-    private readonly customersService: CustomersService,
-    private readonly addressesService: AddressesService,
+    readonly _customersService: CustomersService,
+    readonly _addressesService: AddressesService,
     private readonly appConfigService: AppConfigService,
   ) {}
 
@@ -142,4 +139,3 @@ export class OrderValidationService {
     return this.appConfigService.getSellerState();
   }
 }
-

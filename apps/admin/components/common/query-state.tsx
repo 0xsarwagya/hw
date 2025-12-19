@@ -12,42 +12,42 @@ export interface QueryStateProps<T> {
    * Loading state
    */
   isLoading: boolean;
-  
+
   /**
    * Error state
    */
   error: FetchError | null;
-  
+
   /**
    * Data to check for empty state
    */
   data: T | undefined;
-  
+
   /**
    * Loading component/skeleton to show
    */
   loadingComponent?: ReactNode;
-  
+
   /**
    * Error component to show (optional, uses default if not provided)
    */
   errorComponent?: ReactNode;
-  
+
   /**
    * Empty state component to show when data is empty
    */
   emptyComponent?: ReactNode;
-  
+
   /**
    * Function to check if data is empty (default: checks array length or falsy)
    */
   isEmpty?: (data: T) => boolean;
-  
+
   /**
    * Content to render when data is available
    */
   children: ReactNode;
-  
+
   /**
    * Callback for retry button in error state
    */
@@ -56,14 +56,14 @@ export interface QueryStateProps<T> {
 
 /**
  * Reusable component for handling query states (loading, error, empty, success)
- * 
+ *
  * Simplifies conditional rendering by handling all query states in one component.
  * Uses early return pattern internally for better readability.
- * 
+ *
  * @example
  * ```tsx
  * const { data, isLoading, error } = useAdminProducts(filters);
- * 
+ *
  * return (
  *   <QueryState
  *     isLoading={isLoading}
@@ -109,7 +109,9 @@ export function QueryState<T>({
       <div className="text-center py-8">
         <div className="text-destructive mb-2">
           <p className="font-medium">Error loading data</p>
-          <p className="text-sm mt-1">{error.message || "Unknown error occurred"}</p>
+          <p className="text-sm mt-1">
+            {error.message || "Unknown error occurred"}
+          </p>
         </div>
         {onRetry && (
           <Button variant="outline" onClick={onRetry} className="mt-4">
@@ -128,4 +130,3 @@ export function QueryState<T>({
   // Success state - render children
   return <>{children}</>;
 }
-

@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Get cookies from Next.js
     const cookieStore = await cookies();
@@ -22,7 +22,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: "Unauthorized" }));
+      const error = await response
+        .json()
+        .catch(() => ({ message: "Unauthorized" }));
       return NextResponse.json(error, { status: response.status });
     }
 
@@ -33,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     // Forward Set-Cookie headers from backend (new tokens with rotation)
     const setCookieHeaders = response.headers.getSetCookie();
-    
+
     if (setCookieHeaders && setCookieHeaders.length > 0) {
       setCookieHeaders.forEach((cookieString) => {
         const parts = cookieString.split(";").map((p) => p.trim());
@@ -59,8 +61,15 @@ export async function POST(request: NextRequest) {
             cookieOptions.path = part.split("=")[1];
           } else if (lowerPart.startsWith("samesite=")) {
             const sameSiteValue = part.split("=")[1].toLowerCase();
-            if (sameSiteValue === "lax" || sameSiteValue === "strict" || sameSiteValue === "none") {
-              cookieOptions.sameSite = sameSiteValue as "lax" | "strict" | "none";
+            if (
+              sameSiteValue === "lax" ||
+              sameSiteValue === "strict" ||
+              sameSiteValue === "none"
+            ) {
+              cookieOptions.sameSite = sameSiteValue as
+                | "lax"
+                | "strict"
+                | "none";
             }
           } else if (lowerPart.startsWith("max-age=")) {
             cookieOptions.maxAge = parseInt(part.split("=")[1], 10);
@@ -82,8 +91,7 @@ export async function POST(request: NextRequest) {
     console.error("Refresh proxy error:", error);
     return NextResponse.json(
       { message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

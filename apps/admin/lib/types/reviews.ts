@@ -34,4 +34,3 @@ export interface ReviewQueryParams {
   minRating?: number;
   maxRating?: number;
 }
-

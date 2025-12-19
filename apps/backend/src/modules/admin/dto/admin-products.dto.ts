@@ -11,10 +11,7 @@ import {
   Max,
   Min,
 } from "class-validator";
-import {
-  DEFAULT_PAGE_SIZE,
-  MAX_PAGE_SIZE,
-} from "../../../common/constants";
+import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "../../../common/constants";
 import { PaginatedProductsResponseDto } from "../../products/dto/product-response.dto";
 
 export class AdminQueryProductsDto {

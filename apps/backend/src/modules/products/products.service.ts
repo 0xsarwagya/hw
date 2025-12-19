@@ -19,12 +19,11 @@ import {
   productCollections,
   productImages,
   products,
-  productVariants,
   productVariantOptionTypes,
+  productVariants,
+  sql,
   variantOptionTypes,
   variantOptionValues,
-  variantOptionValueAssignments,
-  sql,
 } from "@vcecom/db";
 import Fuse from "fuse.js";
 import {
@@ -855,7 +854,7 @@ export class ProductsService {
    */
   private enrichProductWithGst(product: typeof products.$inferSelect) {
     const pricingType = product.pricingType || "exclusive";
-    
+
     let gstAmount: number;
     let priceExcludingGst: number;
     let priceIncludingGst: number;
@@ -864,14 +863,14 @@ export class ProductsService {
       // Price already includes GST
       priceIncludingGst = product.price;
       priceExcludingGst = calculateBasePrice(product.price, product.gstRate);
-      gstAmount = calculateGstFromInclusivePrice(product.price, product.gstRate);
-    } else {
-      // Price excludes GST (default/exclusive)
-      priceExcludingGst = product.price;
-      priceIncludingGst = calculatePriceWithGst(
+      gstAmount = calculateGstFromInclusivePrice(
         product.price,
         product.gstRate,
       );
+    } else {
+      // Price excludes GST (default/exclusive)
+      priceExcludingGst = product.price;
+      priceIncludingGst = calculatePriceWithGst(product.price, product.gstRate);
       gstAmount = calculateGstAmount(product.price, product.gstRate);
     }
 
@@ -1053,7 +1052,10 @@ export class ProductsService {
         updatedAt: collections.updatedAt,
       })
       .from(productCollections)
-      .innerJoin(collections, eq(productCollections.collectionId, collections.id))
+      .innerJoin(
+        collections,
+        eq(productCollections.collectionId, collections.id),
+      )
       .where(eq(productCollections.productId, productId))
       .orderBy(collections.name);
 
@@ -1114,7 +1116,10 @@ export class ProductsService {
    * Get all global variant option type templates
    */
   async getVariantOptionTypes() {
-    return db.select().from(variantOptionTypes).orderBy(asc(variantOptionTypes.name));
+    return db
+      .select()
+      .from(variantOptionTypes)
+      .orderBy(asc(variantOptionTypes.name));
   }
 
   /**
@@ -1293,10 +1298,7 @@ export class ProductsService {
           .select()
           .from(variantOptionValues)
           .where(
-            eq(
-              variantOptionValues.productVariantOptionTypeId,
-              optionType.id,
-            ),
+            eq(variantOptionValues.productVariantOptionTypeId, optionType.id),
           )
           .orderBy(asc(variantOptionValues.displayOrder));
 

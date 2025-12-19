@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Search, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -10,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import type { ProductQueryParams, ProductStatus } from "@/lib/types/products";
 
 interface ProductFiltersBarProps {
@@ -29,11 +29,15 @@ export function ProductFiltersBar({
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      onFiltersChange({ ...filters, search: searchValue || undefined, page: 1 });
+      onFiltersChange({
+        ...filters,
+        search: searchValue || undefined,
+        page: 1,
+      });
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchValue]);
+  }, [searchValue, filters, onFiltersChange]);
 
   const hasFilters =
     filters.status ||
@@ -78,7 +82,13 @@ export function ProductFiltersBar({
       </Select>
 
       <Select
-        value={filters.inStock === undefined ? "all" : filters.inStock ? "true" : "false"}
+        value={
+          filters.inStock === undefined
+            ? "all"
+            : filters.inStock
+              ? "true"
+              : "false"
+        }
         onValueChange={(value) =>
           onFiltersChange({
             ...filters,
@@ -173,4 +183,3 @@ export function ProductFiltersBar({
     </div>
   );
 }
-

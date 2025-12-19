@@ -17,4 +17,3 @@ export const PRODUCT_DELETE_CONFIRMATION_MESSAGE =
 export const PRODUCT_EMPTY_STATE_TITLE = "No products found";
 export const PRODUCT_EMPTY_STATE_DESCRIPTION =
   "Get started by creating your first product";
-

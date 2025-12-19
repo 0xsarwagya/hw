@@ -1,22 +1,30 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useApiMutation } from "../use-api-mutation";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
-import type { Collection, UpdateCollectionInput } from "@/lib/types/collections";
-import { toast } from "sonner";
+import type {
+  Collection,
+  UpdateCollectionInput,
+} from "@/lib/types/collections";
+import { useApiMutation } from "../use-api-mutation";
 
 export function useAdminUpdateCollection(collectionId: string) {
   const queryClient = useQueryClient();
 
   return useApiMutation<Collection, UpdateCollectionInput>({
     mutationFn: async (data) => {
-      return api.put<Collection>(endpoints.collections.update(collectionId), data);
+      return api.put<Collection>(
+        endpoints.collections.update(collectionId),
+        data,
+      );
     },
-    onSuccess: (data) => {
+    onSuccess: (_data) => {
       queryClient.invalidateQueries({ queryKey: [endpoints.collections.list] });
-      queryClient.invalidateQueries({ queryKey: [endpoints.collections.detail(collectionId)] });
+      queryClient.invalidateQueries({
+        queryKey: [endpoints.collections.detail(collectionId)],
+      });
       toast.success("Collection updated successfully");
     },
     onError: (error) => {
@@ -24,4 +32,3 @@ export function useAdminUpdateCollection(collectionId: string) {
     },
   });
 }
-

@@ -1,9 +1,16 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { and, db, eq, orderItems, orders } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import { OrderResponseDto } from "../dto/order-response.dto";
-import { OrderStatus, UpdateOrderStatusDto } from "../dto/update-order-status.dto";
+import {
+  OrderStatus,
+  UpdateOrderStatusDto,
+} from "../dto/update-order-status.dto";
 import { OrderGstService } from "./order-gst.service";
 import { OrderValidationService } from "./order-validation.service";
 
@@ -14,8 +21,8 @@ import { OrderValidationService } from "./order-validation.service";
 @Injectable()
 export class OrderStatusService {
   constructor(
-    private readonly logger: PinoLogger,
-    private readonly contextService: ContextService,
+    readonly _logger: PinoLogger,
+    readonly _contextService: ContextService,
     private readonly validationService: OrderValidationService,
     private readonly gstService: OrderGstService,
   ) {}
@@ -110,4 +117,3 @@ export class OrderStatusService {
     } as OrderResponseDto;
   }
 }
-

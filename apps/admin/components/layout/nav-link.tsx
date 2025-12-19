@@ -1,10 +1,10 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface NavLinkProps {
   href: string;
@@ -14,9 +14,16 @@ interface NavLinkProps {
   isChild?: boolean;
 }
 
-export function NavLink({ href, icon: Icon, label, badge, isChild = false }: NavLinkProps) {
+export function NavLink({
+  href,
+  icon: Icon,
+  label,
+  badge,
+  isChild = false,
+}: NavLinkProps) {
   const pathname = usePathname();
-  const isActive = pathname === href || (href !== "/" && pathname.startsWith(href));
+  const isActive =
+    pathname === href || (href !== "/" && pathname.startsWith(href));
 
   return (
     <Link
@@ -26,7 +33,7 @@ export function NavLink({ href, icon: Icon, label, badge, isChild = false }: Nav
         isChild && "ml-6",
         isActive
           ? "bg-primary text-primary-foreground"
-          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
       )}
     >
       <Icon className="h-4 w-4" />
@@ -39,4 +46,3 @@ export function NavLink({ href, icon: Icon, label, badge, isChild = false }: Nav
     </Link>
   );
 }
-

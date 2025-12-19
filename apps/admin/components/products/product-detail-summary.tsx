@@ -1,9 +1,9 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Money } from "@/components/orders/money";
-import { ProductStatusBadge } from "./product-status-badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Product, Variant } from "@/lib/types/products";
+import { ProductStatusBadge } from "./product-status-badge";
 
 interface ProductDetailSummaryProps {
   product: Product;
@@ -14,7 +14,10 @@ interface ProductDetailSummaryProps {
  * Summary sidebar component for product detail page
  * Displays key product information and statistics
  */
-export function ProductDetailSummary({ product, variants }: ProductDetailSummaryProps) {
+export function ProductDetailSummary({
+  product,
+  variants,
+}: ProductDetailSummaryProps) {
   const minPrice =
     variants.length > 0
       ? Math.min(...variants.map((v) => v.salePrice || v.price))
@@ -69,7 +72,10 @@ export function ProductDetailSummary({ product, variants }: ProductDetailSummary
           </CardHeader>
           <CardContent className="space-y-4">
             {variants.slice(0, 3).map((variant) => (
-              <div key={variant.id} className="flex justify-between items-center">
+              <div
+                key={variant.id}
+                className="flex justify-between items-center"
+              >
                 <div className="text-sm">
                   {variant.size || variant.color || "Default"}
                 </div>
@@ -93,4 +99,3 @@ export function ProductDetailSummary({ product, variants }: ProductDetailSummary
     </div>
   );
 }
-

@@ -1,30 +1,41 @@
 "use client";
 
-import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import type { NavItem } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { NavLink } from "./nav-link";
-import type { NavItem } from "@/lib/navigation";
 
 interface SidebarSectionProps {
   item: NavItem;
   defaultOpen?: boolean;
 }
 
-export function SidebarSection({ item, defaultOpen = false }: SidebarSectionProps) {
+export function SidebarSection({
+  item,
+  defaultOpen = false,
+}: SidebarSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   if (!item.children || item.children.length === 0) {
-    return <NavLink href={item.href} icon={item.icon} label={item.label} badge={item.badge} />;
+    return (
+      <NavLink
+        href={item.href}
+        icon={item.icon}
+        label={item.label}
+        badge={item.badge}
+      />
+    );
   }
 
   return (
     <div>
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-          "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
         )}
       >
         <item.icon className="h-4 w-4" />
@@ -55,4 +66,3 @@ export function SidebarSection({ item, defaultOpen = false }: SidebarSectionProp
     </div>
   );
 }
-

@@ -57,7 +57,11 @@ export function parseReservationKey(key: string): {
   variantId: string;
 } | null {
   const parts = key.split(":");
-  if (parts.length !== 4 || parts[0] !== "inventory" || parts[1] !== "reservation") {
+  if (
+    parts.length !== 4 ||
+    parts[0] !== "inventory" ||
+    parts[1] !== "reservation"
+  ) {
     return null;
   }
 
@@ -73,7 +77,11 @@ export function parseReservationKey(key: string): {
  */
 export function parseReservedKey(key: string): string | null {
   const parts = key.split(":");
-  if (parts.length !== 3 || parts[0] !== "inventory" || parts[1] !== "reserved") {
+  if (
+    parts.length !== 3 ||
+    parts[0] !== "inventory" ||
+    parts[1] !== "reserved"
+  ) {
     return null;
   }
 
@@ -171,7 +179,10 @@ export async function groupReservationsByVariant(
 export function calculateTotalReservedFromReservations(
   reservations: ReservationInfo[],
 ): number {
-  return reservations.reduce((sum, reservation) => sum + reservation.quantity, 0);
+  return reservations.reduce(
+    (sum, reservation) => sum + reservation.quantity,
+    0,
+  );
 }
 
 /**
@@ -204,7 +215,8 @@ export async function reconcileVariantReservations(
   let inconsistencies = 0;
   let negativeCorrections = 0;
 
-  const totalFromReservations = calculateTotalReservedFromReservations(reservations);
+  const totalFromReservations =
+    calculateTotalReservedFromReservations(reservations);
   const reservationDifference = aggregatedReserved - totalFromReservations;
 
   if (reservationDifference > 0) {
@@ -225,7 +237,10 @@ export async function reconcileVariantReservations(
 
     // Decrement aggregated count to match actual reservations
     // This releases inventory that was incorrectly reserved
-    await client.decrby(`inventory:reserved:${variantId}`, reservationDifference);
+    await client.decrby(
+      `inventory:reserved:${variantId}`,
+      reservationDifference,
+    );
     released += reservationDifference;
   } else if (reservationDifference < 0) {
     // Aggregated count is lower than sum of reservations
@@ -294,7 +309,10 @@ export async function fixImpossibleReservedState(
   }
 
   const after = totalInventory;
-  await client.set(KEY_PATTERNS.INVENTORY_RESERVED(variantId), after.toString());
+  await client.set(
+    KEY_PATTERNS.INVENTORY_RESERVED(variantId),
+    after.toString(),
+  );
   logger.warn(
     `Fixed impossible state for variant ${variantId}: reserved ${actualReserved} > total ${totalInventory}, set to ${after}`,
     {
@@ -383,4 +401,3 @@ export async function releaseOrphanedReservations(
 
   return orphanedQuantity;
 }
-

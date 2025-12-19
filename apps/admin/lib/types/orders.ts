@@ -151,4 +151,3 @@ export interface OrderTimeline {
   currentStatus: OrderStatus;
   events: TimelineEvent[];
 }
-

@@ -1,5 +1,7 @@
 "use client";
 
+import { Copy, Download, MoreHorizontal, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -9,8 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Copy, Download, Trash2 } from "lucide-react";
-import { toast } from "sonner";
 import type { Order } from "@/lib/types/orders";
 
 interface OrderActionsDropdownProps {
@@ -63,4 +63,3 @@ export function OrderActionsDropdown({ order }: OrderActionsDropdownProps) {
     </DropdownMenu>
   );
 }
-

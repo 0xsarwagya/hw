@@ -1,28 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { AdminPageLayout } from "@/components/layout/admin-page-layout";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ErrorDisplay } from "@/components/ui/error-display";
+import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save } from "lucide-react";
-import { useAdminBundle } from "@/hooks/bundles/use-admin-bundle";
-import { useAdminUpdateBundle } from "@/hooks/bundles/use-admin-update-bundle";
-import { useAdminDeleteBundle } from "@/hooks/bundles/use-admin-delete-bundle";
-import { useForm } from "react-hook-form";
-import type { UpdateBundleInput } from "@/lib/types/bundles";
-import { FieldError } from "@/components/ui/field-error";
-import { ErrorDisplay } from "@/components/ui/error-display";
 import { LoadingButton } from "@/components/ui/loading-button";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useAdminBundle } from "@/hooks/bundles/use-admin-bundle";
+import { useAdminDeleteBundle } from "@/hooks/bundles/use-admin-delete-bundle";
+import { useAdminUpdateBundle } from "@/hooks/bundles/use-admin-update-bundle";
 import type { FetchError } from "@/lib/api";
+import type { UpdateBundleInput } from "@/lib/types/bundles";
 
 export default function BundleDetailPage() {
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const bundleId = params.bundleId as string;
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [apiError, setApiError] = useState<FetchError | null>(null);
@@ -31,7 +31,13 @@ export default function BundleDetailPage() {
   const updateBundle = useAdminUpdateBundle(bundleId);
   const deleteBundle = useAdminDeleteBundle();
 
-  const { register, handleSubmit, reset, formState: { errors }, setError } = useForm<UpdateBundleInput>();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+    setError,
+  } = useForm<UpdateBundleInput>();
 
   useEffect(() => {
     if (bundle) {
@@ -51,7 +57,7 @@ export default function BundleDetailPage() {
       if (error instanceof Error && "errors" in error) {
         const fetchError = error as FetchError;
         setApiError(fetchError);
-        
+
         if (fetchError.errors) {
           Object.entries(fetchError.errors).forEach(([field, messages]) => {
             setError(field as keyof UpdateBundleInput, {
@@ -136,7 +142,7 @@ export default function BundleDetailPage() {
       {apiError && (
         <ErrorDisplay error={apiError} onRetry={() => setApiError(null)} />
       )}
-      
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid gap-4">
           <div className="grid gap-2">
@@ -180,4 +186,3 @@ export default function BundleDetailPage() {
     </AdminPageLayout>
   );
 }
-

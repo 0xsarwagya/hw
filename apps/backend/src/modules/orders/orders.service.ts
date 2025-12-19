@@ -11,7 +11,6 @@ import {
   addresses,
   and,
   cartItems,
-  customers,
   db,
   desc,
   eq,
@@ -19,12 +18,10 @@ import {
   inArray,
   orderItems,
   orders,
-  payments,
   productCollections,
   products,
   productTags,
   productVariants,
-  shipments,
 } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 
@@ -78,11 +75,7 @@ import { InventoryStore } from "../redis-store/stores/inventory-store";
 // Relative imports - DTOs
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { OrderResponseDto } from "./dto/order-response.dto";
-import {
-  OrderTimelineDto,
-  TimelineEventDto,
-  TimelineEventType,
-} from "./dto/order-timeline.dto";
+import { OrderTimelineDto } from "./dto/order-timeline.dto";
 import { OrderTrackingDto } from "./dto/order-tracking.dto";
 import { PaymentIntentResponseDto } from "./dto/payment-intent-response.dto";
 import {
@@ -119,8 +112,8 @@ export class OrdersService {
     private readonly bundleService: RulesetBundleService,
     private readonly discountProfiler: DiscountProfiler,
     private readonly pricingHotReloadWatcher: PricingHotReloadWatcher,
-    private readonly priceListService: PriceListService,
-    private readonly customerGroupService: CustomerGroupService,
+    readonly _priceListService: PriceListService,
+    readonly _customerGroupService: CustomerGroupService,
     private readonly pricingSnapshotValidator: PricingSnapshotValidator,
     private readonly pricingAuditService: PricingAuditService,
     private readonly pricingDriftDetector: PricingDriftDetectorService,
@@ -169,22 +162,32 @@ export class OrdersService {
         // sessionId is guaranteed to be non-null after validation
         validateGuestCheckoutRequirements(createOrderDto, sessionId ?? null);
 
+        // Extract validated values (guaranteed to exist after validation)
+        const guestEmail = createOrderDto.email;
+        const guestName = createOrderDto.name;
+        const guestPhone = createOrderDto.phone;
+        const guestAddress = createOrderDto.address;
+
+        if (!guestEmail || !guestName || !guestPhone || !guestAddress) {
+          throw new BadRequestException(
+            "Missing required guest checkout fields",
+          );
+        }
+
         // Create or get guest customer
-        // Email, name, and phone are guaranteed to exist after validation
         const customer = await this.customersService.createGuestCustomer(
-          createOrderDto.email!,
-          createOrderDto.name!,
-          createOrderDto.phone!,
+          guestEmail,
+          guestName,
+          guestPhone,
           createOrderDto.password || null,
         );
         customerId = customer.id;
         actualUserId = customer.userId;
 
         // Create addresses for guest customer
-        // Address is guaranteed to exist due to validation in validateGuestCheckoutRequirements
         const guestShippingAddress =
           await this.addressesService.createByCustomerId(customerId, {
-            ...createOrderDto.address!,
+            ...guestAddress,
             type: "shipping",
           });
         shippingAddressId = guestShippingAddress.id;
@@ -194,7 +197,7 @@ export class OrdersService {
         const billingAddress = await this.addressesService.createByCustomerId(
           customerId,
           {
-            ...createOrderDto.address!,
+            ...guestAddress,
             type: "billing",
           },
         );
@@ -202,7 +205,12 @@ export class OrdersService {
 
         // Get guest cart by sessionId
         // SessionId is guaranteed to exist due to validation in validateGuestCheckoutRequirements
-        const cart = await this.cartsService.getCart(null, sessionId!);
+        if (!sessionId) {
+          throw new BadRequestException(
+            "Session ID is required for guest checkout",
+          );
+        }
+        const cart = await this.cartsService.getCart(null, sessionId);
         if (!cart || !cart.items || cart.items.length === 0) {
           throw new BadRequestException("Cart is empty");
         }
@@ -210,16 +218,27 @@ export class OrdersService {
       } else {
         // Authenticated checkout flow
         // userId is guaranteed to be non-null for authenticated checkout
-        customerId = await this.getCustomerId(userId!);
+        if (!userId) {
+          throw new BadRequestException(
+            "User ID is required for authenticated checkout",
+          );
+        }
+        customerId = await this.getCustomerId(userId);
         validateAuthenticatedCheckoutRequirements(createOrderDto);
-        // Address IDs are guaranteed to exist due to validation
-        await this.validateAddresses(
-          customerId,
-          createOrderDto.shippingAddressId!,
-          createOrderDto.billingAddressId!,
-        );
-        shippingAddressId = createOrderDto.shippingAddressId!;
-        billingAddressId = createOrderDto.billingAddressId!;
+
+        // Extract validated address IDs (guaranteed to exist due to validation)
+        const shippingAddrId = createOrderDto.shippingAddressId;
+        const billingAddrId = createOrderDto.billingAddressId;
+
+        if (!shippingAddrId || !billingAddrId) {
+          throw new BadRequestException(
+            "Shipping and billing address IDs are required",
+          );
+        }
+
+        await this.validateAddresses(customerId, shippingAddrId, billingAddrId);
+        shippingAddressId = shippingAddrId;
+        billingAddressId = billingAddrId;
 
         // Fetch shipping address for state calculation
         const [fetchedShippingAddress] = await db

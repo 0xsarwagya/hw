@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 
 interface UseDeleteConfirmationReturn {
   deleteDialogOpen: boolean;
@@ -12,10 +12,10 @@ interface UseDeleteConfirmationReturn {
 /**
  * Hook for managing delete confirmation dialog state
  * Provides consistent delete confirmation pattern across the application
- * 
+ *
  * @param onDelete - Callback function to execute when delete is confirmed
  * @returns Object with dialog state and handlers
- * 
+ *
  * @example
  * ```tsx
  * const deleteMutation = useAdminDeleteProduct();
@@ -28,7 +28,7 @@ interface UseDeleteConfirmationReturn {
  * } = useDeleteConfirmation(async (id) => {
  *   await deleteMutation.mutateAsync(id);
  * });
- * 
+ *
  * <ConfirmDialog
  *   open={deleteDialogOpen}
  *   onOpenChange={handleDeleteCancel}
@@ -38,7 +38,7 @@ interface UseDeleteConfirmationReturn {
  * ```
  */
 export function useDeleteConfirmation(
-  onDelete: (id: string) => Promise<void>
+  onDelete: (id: string) => Promise<void>,
 ): UseDeleteConfirmationReturn {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
@@ -70,4 +70,3 @@ export function useDeleteConfirmation(
     setDeleteDialogOpen,
   };
 }
-

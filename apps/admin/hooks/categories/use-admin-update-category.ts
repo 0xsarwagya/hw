@@ -1,11 +1,11 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useApiMutation } from "../use-api-mutation";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
 import type { Category, UpdateCategoryInput } from "@/lib/types/categories";
-import { toast } from "sonner";
+import { useApiMutation } from "../use-api-mutation";
 
 export function useAdminUpdateCategory(id: string) {
   const queryClient = useQueryClient();
@@ -17,7 +17,9 @@ export function useAdminUpdateCategory(id: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoints.categories.list] });
       queryClient.invalidateQueries({ queryKey: [endpoints.categories.tree] });
-      queryClient.invalidateQueries({ queryKey: [endpoints.categories.detail(id)] });
+      queryClient.invalidateQueries({
+        queryKey: [endpoints.categories.detail(id)],
+      });
       toast.success("Category updated successfully");
     },
     onError: (error) => {
@@ -25,4 +27,3 @@ export function useAdminUpdateCategory(id: string) {
     },
   });
 }
-

@@ -1,7 +1,15 @@
 "use client";
 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -9,8 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Money } from "../orders/money";
 
 interface PricingEditorProps {
@@ -59,7 +65,9 @@ export function PricingEditor({
         <Label>Pricing Type</Label>
         <RadioGroup
           value={pricingType}
-          onValueChange={(value) => onPricingTypeChange?.(value as "inclusive" | "exclusive")}
+          onValueChange={(value) =>
+            onPricingTypeChange?.(value as "inclusive" | "exclusive")
+          }
         >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="exclusive" id="exclusive" />
@@ -78,7 +86,9 @@ export function PricingEditor({
 
       <div className="space-y-2">
         <Label htmlFor="price">
-          {pricingType === "inclusive" ? "Price (INR) - Includes GST" : "Base Price (INR) - Excludes GST"}
+          {pricingType === "inclusive"
+            ? "Price (INR) - Includes GST"
+            : "Base Price (INR) - Excludes GST"}
         </Label>
         <Input
           id="price"
@@ -95,7 +105,9 @@ export function PricingEditor({
         <Label htmlFor="gstRate">GST Rate (%)</Label>
         <Select
           value={gstRate?.toString() || "0"}
-          onValueChange={(value) => onGstRateChange(value === "0" ? undefined : parseInt(value, 10))}
+          onValueChange={(value) =>
+            onGstRateChange(value === "0" ? undefined : parseInt(value, 10))
+          }
         >
           <SelectTrigger id="gstRate">
             <SelectValue placeholder="Select GST rate" />
@@ -153,4 +165,3 @@ export function PricingEditor({
     </div>
   );
 }
-

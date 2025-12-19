@@ -189,7 +189,9 @@ export class SupabaseProvider implements StorageProvider {
     }
   }
 
-  async getMetadata(key: string): Promise<{ size: number; contentType?: string }> {
+  async getMetadata(
+    key: string,
+  ): Promise<{ size: number; contentType?: string }> {
     try {
       const pathParts = key.split("/");
       const fileName = pathParts.pop() || "";
@@ -210,8 +212,15 @@ export class SupabaseProvider implements StorageProvider {
 
       // Supabase file objects have metadata property with size and mimetype
       // The structure may vary, so we check multiple possible locations
-      const size = (file as any).metadata?.size || (file as any).size || 0;
-      const contentType = (file as any).metadata?.mimetype || (file as any).mimetype || undefined;
+      interface SupabaseFile {
+        metadata?: { size?: number; mimetype?: string };
+        size?: number;
+        mimetype?: string;
+      }
+      const typedFile = file as SupabaseFile;
+      const size = typedFile.metadata?.size || typedFile.size || 0;
+      const contentType =
+        typedFile.metadata?.mimetype || typedFile.mimetype || undefined;
 
       return {
         size: typeof size === "number" ? size : 0,

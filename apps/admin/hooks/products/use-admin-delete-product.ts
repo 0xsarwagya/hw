@@ -1,24 +1,24 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useApiMutation } from "../use-api-mutation";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
-import { toast } from "sonner";
+import { useApiMutation } from "../use-api-mutation";
 
 /**
  * Hook for deleting a product
- * 
+ *
  * Handles product deletion, cache invalidation, and navigation.
  * Shows success/error toasts and redirects to products list on success.
- * 
+ *
  * @returns Mutation object with mutate and mutateAsync functions
- * 
+ *
  * @example
  * ```tsx
  * const deleteProduct = useAdminDeleteProduct();
- * 
+ *
  * await deleteProduct.mutateAsync(productId);
  * ```
  */
@@ -28,7 +28,9 @@ export function useAdminDeleteProduct() {
 
   return useApiMutation<{ message: string }, string>({
     mutationFn: async (productId: string) => {
-      return api.delete<{ message: string }>(endpoints.products.delete(productId));
+      return api.delete<{ message: string }>(
+        endpoints.products.delete(productId),
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoints.products.list] });
@@ -40,4 +42,3 @@ export function useAdminDeleteProduct() {
     },
   });
 }
-

@@ -1,18 +1,20 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { QueryState } from "@/components/common/query-state";
 import { AdminPageLayout } from "@/components/layout/admin-page-layout";
-import { OrderFiltersBar } from "./order-filters-bar";
-import { OrdersTable } from "./orders-table";
 import { OrdersTableSkeleton } from "@/components/skeletons/orders-table-skeleton";
 import { useAdminOrders } from "@/hooks/orders/use-admin-orders";
-import type { OrderStatus, OrderQueryParams } from "@/lib/types/orders";
-import { usePagination } from "@/hooks/use-pagination";
-import { QueryState } from "@/components/common/query-state";
-import { PaginationControls } from "../common/pagination-controls";
-import { ORDER_DEFAULT_PAGE, ORDER_DEFAULT_LIMIT } from "@/lib/constants/orders.constants";
 import type { PaginationData } from "@/hooks/use-pagination";
+import {
+  ORDER_DEFAULT_LIMIT,
+  ORDER_DEFAULT_PAGE,
+} from "@/lib/constants/orders.constants";
+import type { OrderQueryParams, OrderStatus } from "@/lib/types/orders";
+import { PaginationControls } from "../common/pagination-controls";
+import { OrderFiltersBar } from "./order-filters-bar";
+import { OrdersTable } from "./orders-table";
 
 /**
  * Client component for orders page
@@ -23,7 +25,8 @@ export function OrdersPageClient() {
   const searchParams = useSearchParams();
 
   const initialFilters = parseFiltersFromSearchParams(searchParams);
-  const [orderFilters, setOrderFilters] = useState<OrderQueryParams>(initialFilters);
+  const [orderFilters, setOrderFilters] =
+    useState<OrderQueryParams>(initialFilters);
 
   const { data: ordersData, isLoading, error } = useAdminOrders(orderFilters);
 
@@ -45,13 +48,13 @@ export function OrdersPageClient() {
     : undefined;
 
   const handlePreviousPage = useCallback(() => {
-    if (paginationData && paginationData.hasPreviousPage) {
+    if (paginationData?.hasPreviousPage) {
       handlePageChange(paginationData.page - 1);
     }
   }, [paginationData, handlePageChange]);
 
   const handleNextPage = useCallback(() => {
-    if (paginationData && paginationData.hasNextPage) {
+    if (paginationData?.hasNextPage) {
       handlePageChange(paginationData.page + 1);
     }
   }, [paginationData, handlePageChange]);
@@ -59,7 +62,10 @@ export function OrdersPageClient() {
   const paginationInfo = paginationData
     ? {
         startItem: (paginationData.page - 1) * paginationData.limit + 1,
-        endItem: Math.min(paginationData.page * paginationData.limit, paginationData.total),
+        endItem: Math.min(
+          paginationData.page * paginationData.limit,
+          paginationData.total,
+        ),
         total: paginationData.total,
         currentPage: paginationData.page,
         totalPages: paginationData.totalPages,
@@ -87,7 +93,7 @@ export function OrdersPageClient() {
         page: ORDER_DEFAULT_PAGE,
       }));
     },
-    []
+    [],
   );
 
   const handleClearFilters = useCallback(() => {
@@ -99,7 +105,7 @@ export function OrdersPageClient() {
 
   const dateRange = convertDateStringsToDateRange(
     orderFilters.startDate,
-    orderFilters.endDate
+    orderFilters.endDate,
   );
 
   return (
@@ -146,11 +152,14 @@ export function OrdersPageClient() {
  * Parses search parameters from URL into OrderQueryParams
  */
 function parseFiltersFromSearchParams(
-  searchParams: URLSearchParams
+  searchParams: URLSearchParams,
 ): OrderQueryParams {
   return {
-    page: parseInt(searchParams.get("page") || String(ORDER_DEFAULT_PAGE)),
-    limit: parseInt(searchParams.get("limit") || String(ORDER_DEFAULT_LIMIT)),
+    page: parseInt(searchParams.get("page") || String(ORDER_DEFAULT_PAGE), 10),
+    limit: parseInt(
+      searchParams.get("limit") || String(ORDER_DEFAULT_LIMIT),
+      10,
+    ),
     status: (searchParams.get("status") as OrderStatus) || undefined,
     search: searchParams.get("search") || undefined,
     startDate: searchParams.get("startDate") || undefined,
@@ -164,7 +173,7 @@ function parseFiltersFromSearchParams(
  */
 function useSyncFiltersToUrl(
   filters: OrderQueryParams,
-  router: ReturnType<typeof useRouter>
+  router: ReturnType<typeof useRouter>,
 ) {
   useEffect(() => {
     const urlParams = new URLSearchParams();
@@ -189,7 +198,7 @@ function useSyncFiltersToUrl(
  */
 function convertDateStringsToDateRange(
   startDate?: string,
-  endDate?: string
+  endDate?: string,
 ): { from: Date; to: Date } | undefined {
   if (startDate && endDate) {
     return {
@@ -199,4 +208,3 @@ function convertDateStringsToDateRange(
   }
   return undefined;
 }
-

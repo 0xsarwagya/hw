@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback } from "react";
-import { api } from "@/lib/api";
-import { endpoints } from "@/lib/endpoints";
 import { toast } from "sonner";
+import { api } from "@/lib/api";
 import { WIZARD_MESSAGES } from "@/lib/constants/wizard.constants";
+import { endpoints } from "@/lib/endpoints";
 
 interface PendingVariant {
   id: string;
@@ -29,11 +29,11 @@ export function useProductVariantCreation() {
           inventory: 0,
         });
         toast.success(WIZARD_MESSAGES.DEFAULT_VARIANT_SUCCESS);
-      } catch (error) {
+      } catch (_error) {
         toast.error(WIZARD_MESSAGES.DEFAULT_VARIANT_ERROR);
       }
     },
-    []
+    [],
   );
 
   const createVariants = useCallback(
@@ -42,20 +42,19 @@ export function useProductVariantCreation() {
 
       try {
         for (const variant of variants) {
-          const { id, ...variantData } = variant;
+          const { id: _id, ...variantData } = variant;
           await api.post(endpoints.products.variants.create(productId), {
             productId,
             ...variantData,
           });
         }
         toast.success(WIZARD_MESSAGES.VARIANTS_CREATE_SUCCESS(variants.length));
-      } catch (error) {
+      } catch (_error) {
         toast.error(WIZARD_MESSAGES.VARIANTS_CREATE_ERROR);
       }
     },
-    []
+    [],
   );
 
   return { createDefaultVariant, createVariants };
 }
-

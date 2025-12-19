@@ -8,8 +8,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DateTime } from "../orders/date-time";
 import type { Customer } from "@/lib/types/customers";
+import { DateTime } from "../orders/date-time";
 
 interface CustomersTableProps {
   customers: Customer[];
@@ -61,4 +61,3 @@ function CustomerTableRow({ customer }: CustomerTableRowProps) {
     </TableRow>
   );
 }
-

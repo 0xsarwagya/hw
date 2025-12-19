@@ -1,7 +1,7 @@
+import { Plus } from "lucide-react";
 import { AdminPageLayout } from "@/components/layout/admin-page-layout";
 import { CardSkeleton } from "@/components/skeletons/card-skeleton";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 
 export default function DashboardPage() {
   return (
@@ -24,4 +24,3 @@ export default function DashboardPage() {
     </AdminPageLayout>
   );
 }
-

@@ -1,11 +1,11 @@
 "use client";
 
-import { useApiQuery } from "../use-api-query";
 import { endpoints } from "@/lib/endpoints";
 import type {
-  PaginatedAbandonedCheckoutsResponse,
   AbandonedCheckoutQueryParams,
+  PaginatedAbandonedCheckoutsResponse,
 } from "@/lib/types/abandoned-checkouts";
+import { useApiQuery } from "../use-api-query";
 
 export function useAbandonedCheckouts(params?: AbandonedCheckoutQueryParams) {
   return useApiQuery<PaginatedAbandonedCheckoutsResponse>(
@@ -15,7 +15,6 @@ export function useAbandonedCheckouts(params?: AbandonedCheckoutQueryParams) {
       enabled: true,
       retry: 1,
       refetchOnWindowFocus: false,
-    }
+    },
   );
 }
-

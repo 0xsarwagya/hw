@@ -1,27 +1,36 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form } from "@/components/ui/form";
-import { PricingEditor } from "./pricing-editor";
-import { createProductFormSchema } from "@/lib/validations/products";
-import type { CreateProductInput, CreateProductFormValues } from "@/lib/validations/products";
+import { useCallback, useState } from "react";
+import type { FieldValues, UseFormReturn } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { Form } from "@/components/ui/form";
 import { useAdminCreateProduct } from "@/hooks/products/use-admin-create-product";
 import { useAdminProductVariantOptionTypes } from "@/hooks/products/use-admin-product-variant-option-types";
-import { VariantCreator, type PendingVariant as CreatorPendingVariant } from "./variant-creator";
-import { WizardStepIndicator } from "./wizard/wizard-step-indicator";
-import { BasicInformationStep } from "./wizard/basic-information-step";
-import { ImageUploadStep } from "./wizard/image-upload-step";
-import { VariantSelectionStep, type VariantMode } from "./wizard/variant-selection-step";
-import { ReviewStep } from "./wizard/review-step";
-import { WizardNavigation } from "./wizard/wizard-navigation";
 import { useProductImageUpload } from "@/hooks/products/use-product-image-upload";
 import { useProductVariantCreation } from "@/hooks/products/use-product-variant-creation";
 import { useWizardValidation } from "@/hooks/products/use-wizard-validation";
-import { WIZARD_STEPS, WIZARD_MESSAGES } from "@/lib/constants/wizard.constants";
-import type { UseFormReturn, FieldValues } from "react-hook-form";
+import {
+  WIZARD_MESSAGES,
+  WIZARD_STEPS,
+} from "@/lib/constants/wizard.constants";
+import type {
+  CreateProductFormValues,
+  CreateProductInput,
+} from "@/lib/validations/products";
+import { createProductFormSchema } from "@/lib/validations/products";
+import { PricingEditor } from "./pricing-editor";
+import { type PendingVariant as CreatorPendingVariant } from "./variant-creator";
+import { BasicInformationStep } from "./wizard/basic-information-step";
+import { ImageUploadStep } from "./wizard/image-upload-step";
+import { ReviewStep } from "./wizard/review-step";
+import {
+  type VariantMode,
+  VariantSelectionStep,
+} from "./wizard/variant-selection-step";
+import { WizardNavigation } from "./wizard/wizard-navigation";
+import { WizardStepIndicator } from "./wizard/wizard-step-indicator";
 
 interface PendingVariant {
   id: string;
@@ -38,12 +47,12 @@ interface CreateProductWizardProps {
 
 /**
  * Multi-step wizard component for creating a new product
- * 
+ *
  * Guides users through the product creation process with validation at each step.
  * Handles product creation, image uploads, and variant management.
- * 
+ *
  * @param onComplete - Callback function called with the created product ID when wizard completes
- * 
+ *
  * @example
  * ```tsx
  * <CreateProductWizard
@@ -66,7 +75,7 @@ export function CreateProductWizard({ onComplete }: CreateProductWizardProps) {
   const [tempProductId, setTempProductId] = useState<string | null>(null);
 
   const { data: optionTypes = [] } = useAdminProductVariantOptionTypes(
-    tempProductId || ""
+    tempProductId || "",
   );
 
   const form = useForm({
@@ -101,17 +110,20 @@ export function CreateProductWizard({ onComplete }: CreateProductWizardProps) {
     setPendingImages((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  const handleVariantsFromCreator = useCallback((variants: CreatorPendingVariant[]) => {
-    const converted: PendingVariant[] = variants.map((v) => ({
-      id: v.id,
-      price: v.price,
-      inventory: v.inventory,
-      sku: v.sku,
-      compareAtPrice: v.compareAtPrice,
-      optionValueIds: v.optionValueIds,
-    }));
-    setPendingVariants(converted);
-  }, []);
+  const handleVariantsFromCreator = useCallback(
+    (variants: CreatorPendingVariant[]) => {
+      const converted: PendingVariant[] = variants.map((v) => ({
+        id: v.id,
+        price: v.price,
+        inventory: v.inventory,
+        sku: v.sku,
+        compareAtPrice: v.compareAtPrice,
+        optionValueIds: v.optionValueIds,
+      }));
+      setPendingVariants(converted);
+    },
+    [],
+  );
 
   const handleVariantModeChange = useCallback((mode: VariantMode) => {
     setVariantMode(mode);
@@ -136,7 +148,7 @@ export function CreateProductWizard({ onComplete }: CreateProductWizardProps) {
       setIsSubmitting(true);
       try {
         const product = await createProductMutation.mutateAsync(
-          data as CreateProductInput
+          data as CreateProductInput,
         );
 
         if (!product.id) {
@@ -167,7 +179,7 @@ export function CreateProductWizard({ onComplete }: CreateProductWizardProps) {
           toast.success(WIZARD_MESSAGES.PRODUCT_CREATE_SUCCESS);
           onComplete(product.id);
         }
-      } catch (error) {
+      } catch (_error) {
         toast.error(WIZARD_MESSAGES.PRODUCT_CREATE_ERROR);
       } finally {
         setIsSubmitting(false);
@@ -182,7 +194,7 @@ export function CreateProductWizard({ onComplete }: CreateProductWizardProps) {
       createDefaultVariant,
       createVariants,
       onComplete,
-    ]
+    ],
   );
 
   const handleCompleteVariants = useCallback(async () => {
@@ -193,7 +205,7 @@ export function CreateProductWizard({ onComplete }: CreateProductWizardProps) {
       await createVariants(tempProductId, pendingVariants);
       toast.success(WIZARD_MESSAGES.PRODUCT_VARIANTS_COMPLETE_SUCCESS);
       onComplete(tempProductId);
-    } catch (error) {
+    } catch (_error) {
       toast.error(WIZARD_MESSAGES.VARIANTS_COMPLETE_ERROR);
     } finally {
       setIsSubmitting(false);
@@ -213,12 +225,18 @@ export function CreateProductWizard({ onComplete }: CreateProductWizardProps) {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           {currentStep === 1 && (
-            <BasicInformationStep form={form as unknown as UseFormReturn<FieldValues>} />
+            <BasicInformationStep
+              form={form as unknown as UseFormReturn<FieldValues>}
+            />
           )}
 
           {currentStep === 2 && (
             <PricingStep
-              formValues={formValues as CreateProductFormValues & { pricingType: "exclusive" | "inclusive" }}
+              formValues={
+                formValues as CreateProductFormValues & {
+                  pricingType: "exclusive" | "inclusive";
+                }
+              }
               form={form as unknown as UseFormReturn<FieldValues>}
             />
           )}
@@ -244,10 +262,14 @@ export function CreateProductWizard({ onComplete }: CreateProductWizardProps) {
 
           {currentStep === 5 && (
             <ReviewStep
-              formValues={{
-                ...formValues,
-                pricingType: (formValues.pricingType || "exclusive") as "exclusive" | "inclusive",
-              } as CreateProductFormValues}
+              formValues={
+                {
+                  ...formValues,
+                  pricingType: (formValues.pricingType || "exclusive") as
+                    | "exclusive"
+                    | "inclusive",
+                } as CreateProductFormValues
+              }
               pendingImages={pendingImages}
               variantMode={variantMode}
               tempProductId={tempProductId}
@@ -286,13 +308,15 @@ interface PricingStepProps {
  */
 function PricingStep({ formValues, form }: PricingStepProps) {
   const pricingType = formValues.pricingType || "exclusive";
-  
+
   return (
     <div className="rounded-lg border bg-card">
       <div className="p-6 space-y-4">
         <div>
           <h3 className="text-lg font-semibold">{WIZARD_STEPS[1].title}</h3>
-          <p className="text-sm text-muted-foreground">{WIZARD_STEPS[1].description}</p>
+          <p className="text-sm text-muted-foreground">
+            {WIZARD_STEPS[1].description}
+          </p>
         </div>
         <PricingEditor
           price={formValues.price || 0}
@@ -303,7 +327,9 @@ function PricingStep({ formValues, form }: PricingStepProps) {
           onGstRateChange={(rate) =>
             form.setValue(
               "gstRate",
-              rate ? (rate.toString() as "0" | "5" | "12" | "18" | "28") : undefined
+              rate
+                ? (rate.toString() as "0" | "5" | "12" | "18" | "28")
+                : undefined,
             )
           }
           onPricingTypeChange={(type) => form.setValue("pricingType", type)}

@@ -27,4 +27,3 @@ export const SERVER_HEADERS_TIMEOUT_MS = 66000; // 66 seconds
  * Default HTTP status code for successful OPTIONS requests (CORS preflight)
  */
 export const CORS_PREFLIGHT_SUCCESS_STATUS = 204;
-

@@ -1,28 +1,28 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { AdminPageLayout } from "@/components/layout/admin-page-layout";
-import { ProductsTableSkeleton } from "@/components/skeletons/products-table-skeleton";
-import { ProductFiltersBar } from "./product-filters-bar";
-import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { useAdminProducts } from "@/hooks/products/use-admin-products";
-import { useAdminDeleteProduct } from "@/hooks/products/use-admin-delete-product";
-import type { ProductQueryParams } from "@/lib/types/products";
-import { usePagination } from "@/hooks/use-pagination";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { QueryState } from "@/components/common/query-state";
-import { ProductsTable } from "./products-table";
-import { EmptyProductsState } from "./empty-products-state";
-import { PaginationControls } from "../common/pagination-controls";
+import { AdminPageLayout } from "@/components/layout/admin-page-layout";
+import { ProductsTableSkeleton } from "@/components/skeletons/products-table-skeleton";
+import { Button } from "@/components/ui/button";
+import { useAdminDeleteProduct } from "@/hooks/products/use-admin-delete-product";
+import { useAdminProducts } from "@/hooks/products/use-admin-products";
+import { usePagination } from "@/hooks/use-pagination";
 import {
-  PRODUCT_DEFAULT_PAGE,
   PRODUCT_DEFAULT_LIMIT,
+  PRODUCT_DEFAULT_PAGE,
   PRODUCT_DEFAULT_SORT_BY,
   PRODUCT_DEFAULT_SORT_ORDER,
   PRODUCT_DELETE_CONFIRMATION_MESSAGE,
 } from "@/lib/constants/products.constants";
+import type { ProductQueryParams } from "@/lib/types/products";
+import { PaginationControls } from "../common/pagination-controls";
+import { EmptyProductsState } from "./empty-products-state";
+import { ProductFiltersBar } from "./product-filters-bar";
+import { ProductsTable } from "./products-table";
 
 /**
  * Client component for products page
@@ -34,9 +34,14 @@ export function ProductsPageClient() {
   const deleteProductMutation = useAdminDeleteProduct();
 
   const initialFilters = parseFiltersFromSearchParams(searchParams);
-  const [productFilters, setProductFilters] = useState<ProductQueryParams>(initialFilters);
+  const [productFilters, setProductFilters] =
+    useState<ProductQueryParams>(initialFilters);
 
-  const { data: productsData, isLoading, error } = useAdminProducts(productFilters);
+  const {
+    data: productsData,
+    isLoading,
+    error,
+  } = useAdminProducts(productFilters);
 
   useSyncFiltersToUrl(productFilters, router);
 
@@ -52,7 +57,7 @@ export function ProductsPageClient() {
         await deleteProductMutation.mutateAsync(productId);
       }
     },
-    [deleteProductMutation]
+    [deleteProductMutation],
   );
 
   const handleClearFilters = useCallback(() => {
@@ -116,20 +121,29 @@ export function ProductsPageClient() {
  * Parses search parameters from URL into ProductQueryParams
  */
 function parseFiltersFromSearchParams(
-  searchParams: URLSearchParams
+  searchParams: URLSearchParams,
 ): ProductQueryParams {
   return {
-    page: parseInt(searchParams.get("page") || String(PRODUCT_DEFAULT_PAGE)),
-    limit: parseInt(searchParams.get("limit") || String(PRODUCT_DEFAULT_LIMIT)),
-    status: (searchParams.get("status") as ProductQueryParams["status"]) || undefined,
+    page: parseInt(
+      searchParams.get("page") || String(PRODUCT_DEFAULT_PAGE),
+      10,
+    ),
+    limit: parseInt(
+      searchParams.get("limit") || String(PRODUCT_DEFAULT_LIMIT),
+      10,
+    ),
+    status:
+      (searchParams.get("status") as ProductQueryParams["status"]) || undefined,
     search: searchParams.get("search") || undefined,
     categoryId: searchParams.get("categoryId") || undefined,
-    minPrice: searchParams.get("minPrice")
-      ? parseFloat(searchParams.get("minPrice")!)
-      : undefined,
-    maxPrice: searchParams.get("maxPrice")
-      ? parseFloat(searchParams.get("maxPrice")!)
-      : undefined,
+    minPrice: (() => {
+      const minPriceParam = searchParams.get("minPrice");
+      return minPriceParam ? parseFloat(minPriceParam) : undefined;
+    })(),
+    maxPrice: (() => {
+      const maxPriceParam = searchParams.get("maxPrice");
+      return maxPriceParam ? parseFloat(maxPriceParam) : undefined;
+    })(),
     inStock:
       searchParams.get("inStock") === "true"
         ? true
@@ -151,7 +165,7 @@ function parseFiltersFromSearchParams(
  */
 function useSyncFiltersToUrl(
   filters: ProductQueryParams,
-  router: ReturnType<typeof useRouter>
+  router: ReturnType<typeof useRouter>,
 ) {
   useEffect(() => {
     const urlParams = new URLSearchParams();
@@ -180,4 +194,3 @@ function useSyncFiltersToUrl(
     router.replace(`/products?${urlParams.toString()}`, { scroll: false });
   }, [filters, router]);
 }
-

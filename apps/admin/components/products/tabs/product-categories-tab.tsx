@@ -1,8 +1,17 @@
 "use client";
 
+import { Plus } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -10,10 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
-import type { UseFormReturn } from "react-hook-form";
-import type { UpdateProductFormValues } from "@/lib/validations/products";
 import type { Category } from "@/lib/types/categories";
+import type { UpdateProductFormValues } from "@/lib/validations/products";
 
 interface ProductCategoriesTabProps {
   form: UseFormReturn<UpdateProductFormValues>;
@@ -35,7 +42,9 @@ export function ProductCategoriesTab({
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Categories</CardTitle>
-              <CardDescription>Assign this product to a category</CardDescription>
+              <CardDescription>
+                Assign this product to a category
+              </CardDescription>
             </div>
             <Button asChild variant="outline">
               <Link href="/products/categories/create">
@@ -58,7 +67,7 @@ export function ProductCategoriesTab({
   }
 
   const selectedCategory = allCategories.find(
-    (c) => c.id === form.watch("categoryId")
+    (c) => c.id === form.watch("categoryId"),
   );
 
   return (
@@ -80,14 +89,16 @@ export function ProductCategoriesTab({
       <CardContent>
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Select Category</label>
+            <label htmlFor="product-category" className="text-sm font-medium">
+              Select Category
+            </label>
             <Select
               value={form.watch("categoryId") || "none"}
               onValueChange={(value: string) =>
                 form.setValue("categoryId", value === "none" ? null : value)
               }
             >
-              <SelectTrigger>
+              <SelectTrigger id="product-category">
                 <SelectValue placeholder="No category" />
               </SelectTrigger>
               <SelectContent>
@@ -133,11 +144,13 @@ export function ProductCategoriesTab({
                   {selectedCategory.imageUrl && (
                     <div>
                       <span className="text-sm font-medium">Image:</span>
-                      <div className="mt-2">
-                        <img
+                      <div className="mt-2 relative w-16 h-16">
+                        <Image
                           src={selectedCategory.imageUrl}
                           alt={selectedCategory.name}
-                          className="w-16 h-16 object-cover rounded border"
+                          fill
+                          className="object-cover rounded border"
+                          unoptimized
                         />
                       </div>
                     </div>
@@ -151,4 +164,3 @@ export function ProductCategoriesTab({
     </Card>
   );
 }
-

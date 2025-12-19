@@ -1,8 +1,8 @@
 "use client";
 
+import { AdminPageLayout } from "@/components/layout/admin-page-layout";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AdminPageLayout } from "@/components/layout/admin-page-layout";
 
 export function OrderDetailSkeleton() {
   return (
@@ -35,8 +35,11 @@ export function OrderDetailSkeleton() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="flex items-start justify-between border-b pb-4">
+                  {Array.from({ length: 3 }, (_, i) => (
+                    <div
+                      key={`order-item-skeleton-${String(i)}`}
+                      className="flex items-start justify-between border-b pb-4"
+                    >
                       <div className="flex-1">
                         <Skeleton className="h-5 w-48 mb-2" />
                         <Skeleton className="h-4 w-32" />
@@ -63,8 +66,11 @@ export function OrderDetailSkeleton() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="flex justify-between">
+                  {Array.from({ length: 4 }, (_, i) => (
+                    <div
+                      key={`summary-item-skeleton-${String(i)}`}
+                      className="flex justify-between"
+                    >
                       <Skeleton className="h-4 w-24" />
                       <Skeleton className="h-4 w-20" />
                     </div>
@@ -78,4 +84,3 @@ export function OrderDetailSkeleton() {
     </AdminPageLayout>
   );
 }
-

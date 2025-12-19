@@ -26,8 +26,8 @@ export function CustomersTableSkeleton() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {Array.from({ length: SKELETON_ROW_COUNT }).map((_, index) => (
-            <TableRow key={index}>
+          {Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => (
+            <TableRow key={`customer-skeleton-row-${String(index)}`}>
               <TableCell className="h-12 animate-pulse bg-muted" />
               <TableCell className="h-12 animate-pulse bg-muted" />
               <TableCell className="h-12 animate-pulse bg-muted" />
@@ -40,4 +40,3 @@ export function CustomersTableSkeleton() {
     </div>
   );
 }
-

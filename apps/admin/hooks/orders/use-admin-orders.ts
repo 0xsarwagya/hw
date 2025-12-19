@@ -1,15 +1,18 @@
 "use client";
 
-import { useApiQuery } from "../use-api-query";
 import { endpoints } from "@/lib/endpoints";
-import type { PaginatedOrdersResponse, OrderQueryParams } from "@/lib/types/orders";
+import type {
+  OrderQueryParams,
+  PaginatedOrdersResponse,
+} from "@/lib/types/orders";
+import { useApiQuery } from "../use-api-query";
 
 /**
  * Hook for fetching paginated list of orders
- * 
+ *
  * @param params - Optional query parameters for filtering and pagination
  * @returns Query result with orders data, loading state, and error state
- * 
+ *
  * @example
  * ```tsx
  * const { data, isLoading, error } = useAdminOrders({
@@ -26,4 +29,3 @@ export function useAdminOrders(params?: OrderQueryParams) {
     enabled: true,
   });
 }
-

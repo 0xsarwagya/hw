@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   CommandDialog,
   CommandEmpty,
@@ -10,8 +10,8 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { getAllNavItems } from "@/lib/navigation";
 import { useCommandK } from "@/hooks/use-command-k";
+import { getAllNavItems } from "@/lib/navigation";
 
 export function CommandPalette() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export function CommandPalette() {
 
   // Filter items based on search
   const filteredItems = navItems.filter((item) =>
-    item.label.toLowerCase().includes(search.toLowerCase())
+    item.label.toLowerCase().includes(search.toLowerCase()),
   );
 
   // Group items by section
@@ -34,7 +34,7 @@ export function CommandPalette() {
       acc[section].push(item);
       return acc;
     },
-    {} as Record<string, typeof navItems>
+    {} as Record<string, typeof navItems>,
   );
 
   const handleSelect = (href: string) => {
@@ -53,7 +53,10 @@ export function CommandPalette() {
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         {Object.entries(groupedItems).map(([section, items]) => (
-          <CommandGroup key={section} heading={section.charAt(0).toUpperCase() + section.slice(1)}>
+          <CommandGroup
+            key={section}
+            heading={section.charAt(0).toUpperCase() + section.slice(1)}
+          >
             {items.map((item) => (
               <CommandItem
                 key={item.href}
@@ -70,4 +73,3 @@ export function CommandPalette() {
     </CommandDialog>
   );
 }
-

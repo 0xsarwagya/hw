@@ -1,11 +1,19 @@
-import { db, and, eq, desc, gte, shippingZoneRates, stateShippingRules } from "@vcecom/db";
+import {
+  and,
+  db,
+  desc,
+  eq,
+  gte,
+  shippingZoneRates,
+  stateShippingRules,
+} from "@vcecom/db";
 import {
   DEFAULT_FALLBACK_SHIPPING_RATE_INR,
   DEFAULT_SHIPPING_ZONE,
   ESTIMATED_DELIVERY_DAYS_BY_ZONE,
   GRAMS_PER_KILOGRAM,
 } from "../../../common/constants";
-import { getShippingRateByZone, ServiceabilityResult } from "../../../common/utils/pincode.utils";
+import { getShippingRateByZone } from "../../../common/utils/pincode.utils";
 
 export interface ZoneRateData {
   baseRate: number;
@@ -68,7 +76,10 @@ export async function getZoneRatesFromDatabase(
  * Falls back to hardcoded rates in pincode.utils.ts
  * This ensures shipping calculation never fails due to missing configuration
  */
-export function getFallbackZoneRates(zone: string, weight: number): ZoneRateData {
+export function getFallbackZoneRates(
+  zone: string,
+  weight: number,
+): ZoneRateData {
   const defaultZone = zone || DEFAULT_SHIPPING_ZONE;
   const baseRate =
     getShippingRateByZone(defaultZone, weight) ||
@@ -160,4 +171,3 @@ export function calculateFinalShippingRate(
     totalRate,
   };
 }
-

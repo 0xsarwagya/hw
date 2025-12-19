@@ -1,9 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Money } from "./money";
-import { BundleLineItem } from "./bundle-line-item";
 import type { Order } from "@/lib/types/orders";
+import { BundleLineItem } from "./bundle-line-item";
+import { Money } from "./money";
 
 interface OrderLineItemsProps {
   order: Order;
@@ -18,14 +19,20 @@ export function OrderLineItems({ order }: OrderLineItemsProps) {
       <CardContent>
         <div className="space-y-4">
           {order.items.map((item) => (
-            <div key={item.id} className="flex items-start justify-between border-b pb-4 last:border-0">
+            <div
+              key={item.id}
+              className="flex items-start justify-between border-b pb-4 last:border-0"
+            >
               <div className="flex-1">
                 <div className="flex items-start gap-4">
                   {item.thumbnail && (
-                    <img
+                    <Image
                       src={item.thumbnail}
                       alt={item.productTitle || "Product"}
-                      className="h-16 w-16 rounded-md object-cover"
+                      width={64}
+                      height={64}
+                      className="rounded-md object-cover"
+                      unoptimized
                     />
                   )}
                   <div className="flex-1">
@@ -45,9 +52,7 @@ export function OrderLineItems({ order }: OrderLineItemsProps) {
                     <p className="text-sm text-muted-foreground mt-1">
                       Quantity: {item.quantity}
                     </p>
-                    {item.bundleId && (
-                      <BundleLineItem item={item} />
-                    )}
+                    {item.bundleId && <BundleLineItem item={item} />}
                   </div>
                 </div>
               </div>
@@ -64,4 +69,3 @@ export function OrderLineItems({ order }: OrderLineItemsProps) {
     </Card>
   );
 }
-

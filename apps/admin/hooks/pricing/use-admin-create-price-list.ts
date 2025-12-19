@@ -2,11 +2,11 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useApiMutation } from "../use-api-mutation";
+import { toast } from "sonner";
 import { api, type FetchError } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
-import type { PriceList, CreatePriceListInput } from "@/lib/types/price-lists";
-import { toast } from "sonner";
+import type { CreatePriceListInput, PriceList } from "@/lib/types/price-lists";
+import { useApiMutation } from "../use-api-mutation";
 
 export function useAdminCreatePriceList() {
   const queryClient = useQueryClient();
@@ -18,7 +18,9 @@ export function useAdminCreatePriceList() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [endpoints.priceLists.list] });
-      queryClient.invalidateQueries({ queryKey: [endpoints.priceLists.active] });
+      queryClient.invalidateQueries({
+        queryKey: [endpoints.priceLists.active],
+      });
       toast.success("Price list created successfully");
       router.push(`/price-lists/${data.id}`);
     },
@@ -35,4 +37,3 @@ export function useAdminCreatePriceList() {
     },
   });
 }
-

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Search, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -10,9 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { DateRangePicker } from "./date-range-picker";
 import type { OrderStatus } from "@/lib/types/orders";
+import { DateRangePicker } from "./date-range-picker";
 
 interface OrderFiltersBarProps {
   status?: OrderStatus;
@@ -58,7 +58,12 @@ export function OrderFiltersBar({
         />
       </div>
 
-      <Select value={status || "all"} onValueChange={(value) => onStatusChange(value === "all" ? undefined : (value as OrderStatus))}>
+      <Select
+        value={status || "all"}
+        onValueChange={(value) =>
+          onStatusChange(value === "all" ? undefined : (value as OrderStatus))
+        }
+      >
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="All Statuses" />
         </SelectTrigger>
@@ -74,7 +79,10 @@ export function OrderFiltersBar({
         </SelectContent>
       </Select>
 
-      <DateRangePicker dateRange={dateRange} onDateRangeChange={onDateRangeChange} />
+      <DateRangePicker
+        dateRange={dateRange}
+        onDateRangeChange={onDateRangeChange}
+      />
 
       {hasFilters && (
         <Button variant="ghost" size="sm" onClick={onClear}>
@@ -85,4 +93,3 @@ export function OrderFiltersBar({
     </div>
   );
 }
-

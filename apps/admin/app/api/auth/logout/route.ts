@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Get cookies from Next.js
     const cookieStore = await cookies();
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     // Create response
     const nextResponse = NextResponse.json(
       { message: "Logged out successfully" },
-      { status: response.ok ? 200 : response.status }
+      { status: response.ok ? 200 : response.status },
     );
 
     // Clear cookies on frontend as well
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         const parts = cookieString.split(";").map((p) => p.trim());
         const [nameValue] = parts;
         const [name] = nameValue.split("=");
-        
+
         // Delete the cookie
         nextResponse.cookies.delete(name);
       });
@@ -50,11 +50,10 @@ export async function POST(request: NextRequest) {
     // Even on error, clear cookies
     const nextResponse = NextResponse.json(
       { message: "Logged out" },
-      { status: 200 }
+      { status: 200 },
     );
     nextResponse.cookies.delete("admin_access_token");
     nextResponse.cookies.delete("admin_refresh_token");
     return nextResponse;
   }
 }
-

@@ -1,10 +1,17 @@
 "use client";
 
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -22,7 +29,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api";
 
 // Example schema using Zod
@@ -76,7 +82,8 @@ export function ExampleForm() {
       <CardHeader>
         <CardTitle>Example Form</CardTitle>
         <CardDescription>
-          This form demonstrates React Hook Form + Zod validation with React Query mutations.
+          This form demonstrates React Hook Form + Zod validation with React
+          Query mutations.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -104,7 +111,11 @@ export function ExampleForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="john@example.com" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="john@example.com"
+                      {...field}
+                    />
                   </FormControl>
                   <FormDescription>Your email address.</FormDescription>
                   <FormMessage />
@@ -142,12 +153,17 @@ export function ExampleForm() {
 
             {mutation.isError && (
               <div className="text-sm text-destructive">
-                Error: {mutation.error instanceof Error ? mutation.error.message : "An error occurred"}
+                Error:{" "}
+                {mutation.error instanceof Error
+                  ? mutation.error.message
+                  : "An error occurred"}
               </div>
             )}
 
             {mutation.isSuccess && (
-              <div className="text-sm text-green-600">Form submitted successfully!</div>
+              <div className="text-sm text-green-600">
+                Form submitted successfully!
+              </div>
             )}
           </form>
         </Form>
@@ -155,4 +171,3 @@ export function ExampleForm() {
     </Card>
   );
 }
-

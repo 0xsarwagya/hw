@@ -1,7 +1,7 @@
 "use client";
 
-import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function ProductDetailSkeleton() {
   return (
@@ -19,8 +19,11 @@ export function ProductDetailSkeleton() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="aspect-square rounded-md" />
+                {Array.from({ length: 4 }, (_, i) => (
+                  <Skeleton
+                    key={`image-skeleton-${String(i)}`}
+                    className="aspect-square rounded-md"
+                  />
                 ))}
               </div>
             </CardContent>
@@ -52,4 +55,3 @@ export function ProductDetailSkeleton() {
     </div>
   );
 }
-

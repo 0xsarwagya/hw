@@ -1,8 +1,8 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Money } from "./money";
 import type { Order } from "@/lib/types/orders";
+import { Money } from "./money";
 
 interface OrderSummaryProps {
   order: Order;
@@ -41,13 +41,19 @@ export function OrderSummary({ order }: OrderSummaryProps) {
           <div className="pt-4 border-t space-y-1 text-xs text-muted-foreground">
             <p>GST Breakdown:</p>
             {order.gstBreakdown.cgst > 0 && (
-              <p>CGST: <Money amount={order.gstBreakdown.cgst} /></p>
+              <p>
+                CGST: <Money amount={order.gstBreakdown.cgst} />
+              </p>
             )}
             {order.gstBreakdown.sgst > 0 && (
-              <p>SGST: <Money amount={order.gstBreakdown.sgst} /></p>
+              <p>
+                SGST: <Money amount={order.gstBreakdown.sgst} />
+              </p>
             )}
             {order.gstBreakdown.igst > 0 && (
-              <p>IGST: <Money amount={order.gstBreakdown.igst} /></p>
+              <p>
+                IGST: <Money amount={order.gstBreakdown.igst} />
+              </p>
             )}
           </div>
         )}
@@ -55,4 +61,3 @@ export function OrderSummary({ order }: OrderSummaryProps) {
     </Card>
   );
 }
-

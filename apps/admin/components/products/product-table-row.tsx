@@ -1,18 +1,19 @@
 "use client";
 
+import { Copy, Edit, Trash2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
-import { Edit, Trash2, Copy } from "lucide-react";
-import { ProductStatusBadge } from "./product-status-badge";
-import { Money } from "../orders/money";
-import { DateTime } from "../orders/date-time";
-import { TableRowActions, type TableRowAction } from "../common/table-row-actions";
-import type { Product } from "@/lib/types/products";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { PRODUCT_PLACEHOLDER_IMAGE_URL } from "@/lib/constants/products.constants";
+import type { Product } from "@/lib/types/products";
+import {
+  type TableRowAction,
+  TableRowActions,
+} from "../common/table-row-actions";
+import { DateTime } from "../orders/date-time";
+import { Money } from "../orders/money";
+import { ProductStatusBadge } from "./product-status-badge";
 
 interface ProductTableRowProps {
   product: Product;
@@ -28,8 +29,9 @@ export function ProductTableRow({ product, onDelete }: ProductTableRowProps) {
 
   const handleRowClick = (event: React.MouseEvent<HTMLTableRowElement>) => {
     const target = event.target as HTMLElement;
-    const isMenuOrButton = target.closest('[role="menu"]') || target.closest("button");
-    
+    const isMenuOrButton =
+      target.closest('[role="menu"]') || target.closest("button");
+
     if (!isMenuOrButton) {
       router.push(`/products/${product.id}`);
     }
@@ -115,19 +117,23 @@ function ProductThumbnail({ thumbnailUrl, alt }: ProductThumbnailProps) {
   return (
     <div className="relative w-12 h-12 rounded-md overflow-hidden bg-muted flex items-center justify-center">
       {thumbnailUrl ? (
-        <img
+        <Image
           src={thumbnailUrl}
           alt={alt}
-          className="w-full h-full object-cover"
+          fill
+          className="object-cover"
+          unoptimized
         />
       ) : (
-        <img
+        <Image
           src={PRODUCT_PLACEHOLDER_IMAGE_URL}
           alt="Placeholder"
-          className="w-8 h-8 opacity-50"
+          width={32}
+          height={32}
+          className="opacity-50"
+          unoptimized
         />
       )}
     </div>
   );
 }
-

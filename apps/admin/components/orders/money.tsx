@@ -25,4 +25,3 @@ export function Money({ amount, className, showCurrency = true }: MoneyProps) {
 
   return <span className={cn("font-medium", className)}>{formatted}</span>;
 }
-

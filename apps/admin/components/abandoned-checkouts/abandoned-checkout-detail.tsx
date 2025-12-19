@@ -1,17 +1,18 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Money } from "@/components/orders/money";
-import { DateTime } from "@/components/orders/date-time";
-import { ConvertToOrderDialog } from "./convert-to-order-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AbandonedCheckout } from "@/lib/types/abandoned-checkouts";
+import { ConvertToOrderDialog } from "./convert-to-order-dialog";
 
 interface AbandonedCheckoutDetailProps {
   checkout: AbandonedCheckout;
 }
 
-export function AbandonedCheckoutDetail({ checkout }: AbandonedCheckoutDetailProps) {
+export function AbandonedCheckoutDetail({
+  checkout,
+}: AbandonedCheckoutDetailProps) {
   return (
     <div className="space-y-6">
       <Card>
@@ -41,7 +42,9 @@ export function AbandonedCheckoutDetail({ checkout }: AbandonedCheckoutDetailPro
             )}
             {checkout.paymentIntentId && (
               <div>
-                <p className="text-sm text-muted-foreground">Payment Intent ID</p>
+                <p className="text-sm text-muted-foreground">
+                  Payment Intent ID
+                </p>
                 <p className="font-mono text-sm">{checkout.paymentIntentId}</p>
               </div>
             )}
@@ -101,4 +104,3 @@ export function AbandonedCheckoutDetail({ checkout }: AbandonedCheckoutDetailPro
     </div>
   );
 }
-

@@ -3,8 +3,8 @@
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import type { FetchError } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 interface ErrorDisplayProps {
   error: FetchError | Error | null;
@@ -13,12 +13,20 @@ interface ErrorDisplayProps {
   className?: string;
 }
 
-export function ErrorDisplay({ error, title, onRetry, className }: ErrorDisplayProps) {
+export function ErrorDisplay({
+  error,
+  title,
+  onRetry,
+  className,
+}: ErrorDisplayProps) {
   if (!error) return null;
 
-  const isNetworkError = error instanceof Error && "status" in error && error.status === 0;
-  const fetchError = error instanceof Error && "status" in error ? error as FetchError : null;
-  const hasFieldErrors = fetchError?.errors && Object.keys(fetchError.errors).length > 0;
+  const isNetworkError =
+    error instanceof Error && "status" in error && error.status === 0;
+  const fetchError =
+    error instanceof Error && "status" in error ? (error as FetchError) : null;
+  const hasFieldErrors =
+    fetchError?.errors && Object.keys(fetchError.errors).length > 0;
 
   return (
     <Card className={cn(isNetworkError && "border-destructive", className)}>
@@ -37,13 +45,18 @@ export function ErrorDisplay({ error, title, onRetry, className }: ErrorDisplayP
 
             {hasFieldErrors && fetchError.errors && (
               <div className="mt-3 space-y-1">
-                <p className="text-xs font-medium text-muted-foreground">Field Errors:</p>
+                <p className="text-xs font-medium text-muted-foreground">
+                  Field Errors:
+                </p>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                  {Object.entries(fetchError.errors).map(([field, messages]) => (
-                    <li key={field} className="text-destructive">
-                      <span className="font-medium">{field}:</span> {messages.join(", ")}
-                    </li>
-                  ))}
+                  {Object.entries(fetchError.errors).map(
+                    ([field, messages]) => (
+                      <li key={field} className="text-destructive">
+                        <span className="font-medium">{field}:</span>{" "}
+                        {messages.join(", ")}
+                      </li>
+                    ),
+                  )}
                 </ul>
               </div>
             )}
@@ -65,4 +78,3 @@ export function ErrorDisplay({ error, title, onRetry, className }: ErrorDisplayP
     </Card>
   );
 }
-

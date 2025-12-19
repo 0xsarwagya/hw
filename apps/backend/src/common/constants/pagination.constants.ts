@@ -22,4 +22,3 @@ export const MAX_LIST_KEYS = 1000;
  * Default number of keys/files returned in list operations
  */
 export const DEFAULT_LIST_KEYS = 100;
-

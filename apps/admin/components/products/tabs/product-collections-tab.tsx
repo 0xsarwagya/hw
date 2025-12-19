@@ -1,12 +1,18 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus } from "lucide-react";
 import type { Collection } from "@/lib/types/collections";
 
 interface ProductCollectionsTabProps {
@@ -31,7 +37,9 @@ export function ProductCollectionsTab({
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Collections</CardTitle>
-              <CardDescription>Assign this product to collections</CardDescription>
+              <CardDescription>
+                Assign this product to collections
+              </CardDescription>
             </div>
             <Button asChild variant="outline">
               <Link href="/products/collections/create">
@@ -59,7 +67,9 @@ export function ProductCollectionsTab({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>Collections</CardTitle>
-            <CardDescription>Assign this product to collections</CardDescription>
+            <CardDescription>
+              Assign this product to collections
+            </CardDescription>
           </div>
           <Button asChild variant="outline">
             <Link href="/products/collections/create">
@@ -113,4 +123,3 @@ export function ProductCollectionsTab({
     </Card>
   );
 }
-

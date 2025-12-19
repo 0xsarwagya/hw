@@ -1,18 +1,24 @@
 "use client";
 
-import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import type { Variant } from "@/lib/types/products";
 import dynamic from "next/dynamic";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import type { Variant } from "@/lib/types/products";
 
 const VariantTable = dynamic(
   () =>
     import("@/components/products/variant-table").then((mod) => ({
       default: mod.VariantTable,
     })),
-  { loading: () => <div className="h-64 animate-pulse bg-muted rounded" /> }
+  { loading: () => <div className="h-64 animate-pulse bg-muted rounded" /> },
 );
 
 interface ProductVariantsTabProps {
@@ -56,4 +62,3 @@ export function ProductVariantsTab({
     </Card>
   );
 }
-

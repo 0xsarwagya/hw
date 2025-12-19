@@ -8,7 +8,13 @@ interface ProductStatusBadgeProps {
 }
 
 export function ProductStatusBadge({ status }: ProductStatusBadgeProps) {
-  const variants: Record<ProductStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  const variants: Record<
+    ProductStatus,
+    {
+      label: string;
+      variant: "default" | "secondary" | "destructive" | "outline";
+    }
+  > = {
     draft: {
       label: "Draft",
       variant: "outline",
@@ -27,4 +33,3 @@ export function ProductStatusBadge({ status }: ProductStatusBadgeProps) {
 
   return <Badge variant={variant}>{label}</Badge>;
 }
-

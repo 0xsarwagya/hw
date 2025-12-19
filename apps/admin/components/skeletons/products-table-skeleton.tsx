@@ -1,5 +1,6 @@
 "use client";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -8,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export function ProductsTableSkeleton() {
   return (
@@ -27,8 +27,8 @@ export function ProductsTableSkeleton() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {Array.from({ length: 10 }).map((_, i) => (
-            <TableRow key={i}>
+          {Array.from({ length: 10 }, (_, i) => (
+            <TableRow key={`product-skeleton-row-${String(i)}`}>
               <TableCell>
                 <Skeleton className="h-12 w-12 rounded-md" />
               </TableCell>
@@ -60,4 +60,3 @@ export function ProductsTableSkeleton() {
     </div>
   );
 }
-

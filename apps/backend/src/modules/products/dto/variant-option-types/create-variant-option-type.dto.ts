@@ -3,7 +3,8 @@ import { IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
 
 export class CreateVariantOptionTypeDto {
   @ApiProperty({
-    description: "Name of the variant option type (e.g., 'Size', 'Color', 'Fabric')",
+    description:
+      "Name of the variant option type (e.g., 'Size', 'Color', 'Fabric')",
     example: "Size",
     maxLength: 100,
   })
@@ -23,4 +24,3 @@ export class CreateVariantOptionTypeDto {
   @MaxLength(500, { message: "Description must not exceed 500 characters" })
   description?: string;
 }
-

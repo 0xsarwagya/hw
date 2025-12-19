@@ -1,6 +1,16 @@
 "use client";
 
+import { ExternalLink, MoreHorizontal, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Money } from "@/components/orders/money";
+import { ProductStatusBadge } from "@/components/products/product-status-badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -9,17 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Trash2, ExternalLink } from "lucide-react";
-import Link from "next/link";
 import type { CollectionProduct } from "@/lib/types/collections";
-import { Money } from "@/components/orders/money";
-import { ProductStatusBadge } from "@/components/products/product-status-badge";
 
 interface CollectionProductsTableProps {
   products: CollectionProduct[];
@@ -29,7 +29,7 @@ interface CollectionProductsTableProps {
 
 export function CollectionProductsTable({
   products,
-  collectionId,
+  collectionId: _collectionId,
   onRemove,
 }: CollectionProductsTableProps) {
   if (products.length === 0) {
@@ -54,7 +54,10 @@ export function CollectionProductsTable({
         {products.map((product) => (
           <TableRow key={product.id}>
             <TableCell className="font-medium">
-              <Link href={`/products/${product.id}`} className="hover:underline">
+              <Link
+                href={`/products/${product.id}`}
+                className="hover:underline"
+              >
                 {product.title}
               </Link>
             </TableCell>
@@ -97,4 +100,3 @@ export function CollectionProductsTable({
     </Table>
   );
 }
-

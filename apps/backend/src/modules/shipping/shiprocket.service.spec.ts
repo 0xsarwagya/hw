@@ -2,6 +2,8 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { ShiprocketService } from "./shiprocket.service";
 import { ShiprocketConfigService } from "./shiprocket-config.service";
 import { db, eq, orders, addresses, orderItems, shipments } from "@vcecom/db";
+import { getCommonTestProviders } from "../../common/testing/test-helpers";
+import { AppConfigService } from "../../common/config/app.config.service";
 
 // Mock fetch globally
 global.fetch = jest.fn();
@@ -23,6 +25,7 @@ jest.mock("@vcecom/db", () => ({
 describe("ShiprocketService", () => {
   let service: ShiprocketService;
   let configService: ShiprocketConfigService;
+  let appConfigService: AppConfigService;
 
   const mockConfigService = {
     getBaseUrl: jest.fn(),
@@ -37,12 +40,14 @@ describe("ShiprocketService", () => {
           provide: ShiprocketConfigService,
           useValue: mockConfigService,
         },
+        ...getCommonTestProviders(),
       ],
     }).compile();
 
     service = module.get<ShiprocketService>(ShiprocketService);
     configService =
       module.get<ShiprocketConfigService>(ShiprocketConfigService);
+    appConfigService = module.get<AppConfigService>(AppConfigService);
 
     jest.clearAllMocks();
     mockConfigService.getBaseUrl.mockReturnValue(
@@ -60,7 +65,7 @@ describe("ShiprocketService", () => {
       process.env.SHIPROCKET_EMAIL = "env@example.com";
       process.env.SHIPROCKET_PASSWORD = "env-password";
 
-      const newService = new ShiprocketService(configService);
+      const newService = new ShiprocketService(configService, appConfigService);
       newService.onModuleInit();
 
       expect(newService.isInitialized()).toBe(true);
@@ -70,7 +75,7 @@ describe("ShiprocketService", () => {
       delete process.env.SHIPROCKET_EMAIL;
       process.env.SHIPROCKET_PASSWORD = "env-password";
 
-      const newService = new ShiprocketService(configService);
+      const newService = new ShiprocketService(configService, appConfigService);
       newService.onModuleInit();
 
       expect(newService.isInitialized()).toBe(false);
@@ -80,7 +85,7 @@ describe("ShiprocketService", () => {
       process.env.SHIPROCKET_EMAIL = "env@example.com";
       delete process.env.SHIPROCKET_PASSWORD;
 
-      const newService = new ShiprocketService(configService);
+      const newService = new ShiprocketService(configService, appConfigService);
       newService.onModuleInit();
 
       expect(newService.isInitialized()).toBe(false);

@@ -10,4 +10,3 @@ export interface InventoryMetrics {
   expiredReservationsCount: number;
   failedReservationsCount: number;
 }
-

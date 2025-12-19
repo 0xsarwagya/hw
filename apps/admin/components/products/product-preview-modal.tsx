@@ -1,9 +1,15 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ProductStatusBadge } from "./product-status-badge";
-import { Money } from "../orders/money";
+import Image from "next/image";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { Product, ProductImage, Variant } from "@/lib/types/products";
+import { Money } from "../orders/money";
+import { ProductStatusBadge } from "./product-status-badge";
 
 interface ProductPreviewModalProps {
   open: boolean;
@@ -37,10 +43,12 @@ export function ProductPreviewModal({
           {/* Product Image */}
           {firstImage && (
             <div className="relative w-full h-64 rounded-lg overflow-hidden bg-muted">
-              <img
+              <Image
                 src={firstImage.url}
                 alt={firstImage.altText || product.title}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                unoptimized
               />
             </div>
           )}
@@ -56,7 +64,9 @@ export function ProductPreviewModal({
 
             {product.description && (
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">Description</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                  Description
+                </h3>
                 <p className="text-sm">{product.description}</p>
               </div>
             )}
@@ -64,7 +74,9 @@ export function ProductPreviewModal({
             {/* Pricing */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">Price</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                  Price
+                </h3>
                 <div className="text-lg font-semibold">
                   <Money amount={product.priceIncludingGst} />
                 </div>
@@ -79,7 +91,9 @@ export function ProductPreviewModal({
                 )}
               </div>
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">GST Amount</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                  GST Amount
+                </h3>
                 <div className="text-lg font-semibold">
                   <Money amount={product.gstAmount} />
                 </div>
@@ -90,13 +104,17 @@ export function ProductPreviewModal({
             <div className="grid grid-cols-2 gap-4">
               {product.hsnCode && (
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">HSN Code</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                    HSN Code
+                  </h3>
                   <p className="text-sm">{product.hsnCode}</p>
                 </div>
               )}
               {product.gstRate > 0 && (
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">GST Rate</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                    GST Rate
+                  </h3>
                   <p className="text-sm">{product.gstRate}%</p>
                 </div>
               )}
@@ -105,7 +123,9 @@ export function ProductPreviewModal({
             {/* Variants */}
             {variants.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">Variants</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                  Variants
+                </h3>
                 <div className="space-y-2">
                   {variants.map((variant) => (
                     <div
@@ -116,7 +136,9 @@ export function ProductPreviewModal({
                         <div className="font-medium text-sm">
                           {variant.size || variant.color || "Default"}
                         </div>
-                        <div className="text-xs text-muted-foreground">{variant.sku}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {variant.sku}
+                        </div>
                       </div>
                       <div className="text-right">
                         <div className="font-medium text-sm">
@@ -135,7 +157,9 @@ export function ProductPreviewModal({
             {/* Collections */}
             {collections.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">Collections</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                  Collections
+                </h3>
                 <div className="flex flex-wrap gap-2">
                   {collections.map((collection) => (
                     <span
@@ -152,17 +176,21 @@ export function ProductPreviewModal({
             {/* Images */}
             {productImages.length > 1 && (
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">Images</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                  Images
+                </h3>
                 <div className="grid grid-cols-4 gap-2">
                   {productImages.slice(1).map((image) => (
                     <div
                       key={image.id}
                       className="relative aspect-square rounded-md overflow-hidden bg-muted"
                     >
-                      <img
+                      <Image
                         src={image.url}
                         alt={image.altText || `Product image ${image.order}`}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        unoptimized
                       />
                     </div>
                   ))}
@@ -175,4 +203,3 @@ export function ProductPreviewModal({
     </Dialog>
   );
 }
-

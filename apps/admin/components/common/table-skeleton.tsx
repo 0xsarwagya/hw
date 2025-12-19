@@ -26,7 +26,7 @@ export function TableSkeleton({
   headers,
   showActions = false,
 }: TableSkeletonProps) {
-  const totalColumns = showActions ? columns + 1 : columns;
+  const _totalColumns = showActions ? columns + 1 : columns;
 
   return (
     <div className="rounded-md border">
@@ -35,17 +35,20 @@ export function TableSkeleton({
           <TableHeader>
             <TableRow>
               {headers.map((header, index) => (
-                <TableHead key={index}>{header}</TableHead>
+                <TableHead key={`header-${String(index)}`}>{header}</TableHead>
               ))}
               {showActions && <TableHead className="w-[50px]"></TableHead>}
             </TableRow>
           </TableHeader>
         )}
         <TableBody>
-          {Array.from({ length: rows }).map((_, rowIndex) => (
-            <TableRow key={rowIndex}>
-              {Array.from({ length: columns }).map((_, colIndex) => (
-                <TableCell key={colIndex} className="h-12 animate-pulse bg-muted" />
+          {Array.from({ length: rows }, (_, rowIndex) => (
+            <TableRow key={`skeleton-row-${String(rowIndex)}`}>
+              {Array.from({ length: columns }, (_, colIndex) => (
+                <TableCell
+                  key={`skeleton-cell-${String(rowIndex)}-${String(colIndex)}`}
+                  className="h-12 animate-pulse bg-muted"
+                />
               ))}
               {showActions && (
                 <TableCell className="h-12 animate-pulse bg-muted" />
@@ -57,4 +60,3 @@ export function TableSkeleton({
     </div>
   );
 }
-

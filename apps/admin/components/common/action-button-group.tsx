@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface ActionButton {
@@ -10,7 +10,13 @@ interface ActionButton {
   onClick: () => void;
   disabled?: boolean;
   isLoading?: boolean;
-  variant?: "default" | "outline" | "destructive" | "ghost" | "link" | "secondary";
+  variant?:
+    | "default"
+    | "outline"
+    | "destructive"
+    | "ghost"
+    | "link"
+    | "secondary";
   size?: "default" | "sm" | "lg" | "icon";
   title?: string;
 }
@@ -24,12 +30,15 @@ interface ActionButtonGroupProps {
  * Reusable action button group component
  * Provides consistent styling for groups of action buttons (e.g., Approve/Reject/Delete)
  */
-export function ActionButtonGroup({ actions, className }: ActionButtonGroupProps) {
+export function ActionButtonGroup({
+  actions,
+  className,
+}: ActionButtonGroupProps) {
   return (
     <div className={cn("flex gap-2", className)}>
       {actions.map((action, index) => (
         <Button
-          key={index}
+          key={`action-${index}-${action.label || action.title || ""}`}
           size={action.size || "sm"}
           variant={action.variant || "outline"}
           onClick={action.onClick}
@@ -41,10 +50,11 @@ export function ActionButtonGroup({ actions, className }: ActionButtonGroupProps
           ) : (
             action.icon
           )}
-          {action.label && <span className={action.icon ? "ml-2" : ""}>{action.label}</span>}
+          {action.label && (
+            <span className={action.icon ? "ml-2" : ""}>{action.label}</span>
+          )}
         </Button>
       ))}
     </div>
   );
 }
-

@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsArray, IsUUID, ArrayMinSize } from "class-validator";
+import { ArrayMinSize, IsArray, IsUUID } from "class-validator";
 
 export class AddProductsDto {
   @ApiProperty({
@@ -15,4 +15,3 @@ export class AddProductsDto {
   @IsUUID(4, { each: true, message: "Each product ID must be a valid UUID" })
   productIds: string[];
 }
-

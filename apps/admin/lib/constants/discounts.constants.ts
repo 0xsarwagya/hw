@@ -13,4 +13,3 @@ export const DISCOUNTS_EMPTY_STATE_DESCRIPTION =
 export const DISCOUNTS_DELETE_DIALOG_TITLE = "Delete Discount";
 export const DISCOUNTS_DELETE_DIALOG_DESCRIPTION =
   "Are you sure you want to delete this discount? This action cannot be undone.";
-

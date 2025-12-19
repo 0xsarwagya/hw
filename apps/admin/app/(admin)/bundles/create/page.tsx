@@ -1,28 +1,33 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { AdminPageLayout } from "@/components/layout/admin-page-layout";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useAdminCreateBundle } from "@/hooks/bundles/use-admin-create-bundle";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import type { CreateBundleInput } from "@/lib/types/bundles";
-import { FieldError } from "@/components/ui/field-error";
+import { AdminPageLayout } from "@/components/layout/admin-page-layout";
+import { Button } from "@/components/ui/button";
 import { ErrorDisplay } from "@/components/ui/error-display";
+import { FieldError } from "@/components/ui/field-error";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { Textarea } from "@/components/ui/textarea";
+import { useAdminCreateBundle } from "@/hooks/bundles/use-admin-create-bundle";
 import type { FetchError } from "@/lib/api";
+import type { CreateBundleInput } from "@/lib/types/bundles";
 
 export default function CreateBundlePage() {
-  const router = useRouter();
+  const _router = useRouter();
   const createBundle = useAdminCreateBundle();
   const [apiError, setApiError] = useState<FetchError | null>(null);
 
-  const { register, handleSubmit, formState: { errors }, setError } = useForm<CreateBundleInput>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setError,
+  } = useForm<CreateBundleInput>({
     defaultValues: {
       isActive: true,
     },
@@ -36,7 +41,7 @@ export default function CreateBundlePage() {
       if (error instanceof Error && "errors" in error) {
         const fetchError = error as FetchError;
         setApiError(fetchError);
-        
+
         if (fetchError.errors) {
           Object.entries(fetchError.errors).forEach(([field, messages]) => {
             setError(field as keyof CreateBundleInput, {
@@ -61,7 +66,7 @@ export default function CreateBundlePage() {
       {apiError && (
         <ErrorDisplay error={apiError} onRetry={() => setApiError(null)} />
       )}
-      
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid gap-4">
           <div className="grid gap-2">
@@ -106,4 +111,3 @@ export default function CreateBundlePage() {
     </AdminPageLayout>
   );
 }
-

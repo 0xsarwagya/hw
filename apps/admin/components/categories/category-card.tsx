@@ -1,15 +1,16 @@
 "use client";
 
+import { Edit, Folder, MoreHorizontal, Trash2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Edit, Trash2, Folder } from "lucide-react";
 import type { Category } from "@/lib/types/categories";
 
 interface CategoryCardProps {
@@ -23,10 +24,12 @@ export function CategoryCard({ category, onDelete }: CategoryCardProps) {
       <Link href={`/products/categories/${category.id}`}>
         <div className="relative aspect-video w-full overflow-hidden rounded-t-lg bg-muted">
           {category.imageUrl ? (
-            <img
+            <Image
               src={category.imageUrl}
               alt={category.name}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              unoptimized
             />
           ) : (
             <div className="flex items-center justify-center h-full">
@@ -47,13 +50,12 @@ export function CategoryCard({ category, onDelete }: CategoryCardProps) {
               </p>
             )}
             {category.parentId && (
-              <p className="text-xs text-muted-foreground mt-2">
-                Subcategory
-              </p>
+              <p className="text-xs text-muted-foreground mt-2">Subcategory</p>
             )}
             {category.productCount !== undefined && (
               <p className="text-xs text-muted-foreground mt-1">
-                {category.productCount} product{category.productCount !== 1 ? "s" : ""}
+                {category.productCount} product
+                {category.productCount !== 1 ? "s" : ""}
               </p>
             )}
           </div>
@@ -87,4 +89,3 @@ export function CategoryCard({ category, onDelete }: CategoryCardProps) {
     </Card>
   );
 }
-

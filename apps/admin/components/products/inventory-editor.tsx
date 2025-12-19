@@ -1,11 +1,17 @@
 "use client";
 
+import { Minus, Package, Plus } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Minus, Package } from "lucide-react";
 
 interface InventoryEditorProps {
   currentQuantity: number;
@@ -47,7 +53,9 @@ export function InventoryEditor({
           </div>
           <div>
             <div className="text-muted-foreground">Available</div>
-            <div className={`text-lg font-semibold ${availableQuantity <= 0 ? "text-destructive" : ""}`}>
+            <div
+              className={`text-lg font-semibold ${availableQuantity <= 0 ? "text-destructive" : ""}`}
+            >
               {availableQuantity}
             </div>
           </div>
@@ -68,7 +76,7 @@ export function InventoryEditor({
               size="icon"
               onClick={() => {
                 const amount = parseInt(adjustAmount, 10);
-                if (!isNaN(amount) && amount !== 0) {
+                if (!Number.isNaN(amount) && amount !== 0) {
                   onAdjust(amount);
                   setAdjustAmount("");
                 }
@@ -82,7 +90,7 @@ export function InventoryEditor({
               size="icon"
               onClick={() => {
                 const amount = parseInt(adjustAmount, 10);
-                if (!isNaN(amount) && amount !== 0) {
+                if (!Number.isNaN(amount) && amount !== 0) {
                   onAdjust(-amount);
                   setAdjustAmount("");
                 }
@@ -108,7 +116,7 @@ export function InventoryEditor({
               variant="outline"
               onClick={() => {
                 const quantity = parseInt(exactQuantity, 10);
-                if (!isNaN(quantity) && quantity >= 0) {
+                if (!Number.isNaN(quantity) && quantity >= 0) {
                   onSetExact(quantity);
                   setExactQuantity("");
                 }
@@ -133,4 +141,3 @@ export function InventoryEditor({
     </Card>
   );
 }
-

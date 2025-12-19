@@ -1,8 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import type { UseFormReturn } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -10,16 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { UseFormReturn } from "react-hook-form";
+import { Textarea } from "@/components/ui/textarea";
 import type { UpdateProductFormValues } from "@/lib/validations/products";
-import dynamic from "next/dynamic";
 
 const PricingEditor = dynamic(
   () =>
     import("@/components/products/pricing-editor").then((mod) => ({
       default: mod.PricingEditor,
     })),
-  { loading: () => <div className="h-48 animate-pulse bg-muted rounded" /> }
+  { loading: () => <div className="h-48 animate-pulse bg-muted rounded" /> },
 );
 
 interface ProductDetailsTabProps {
@@ -38,13 +38,22 @@ export function ProductDetailsTab({ form }: ProductDetailsTabProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Title</label>
-          <Input {...form.register("title")} placeholder="Product title" />
+          <label htmlFor="product-title" className="text-sm font-medium">
+            Title
+          </label>
+          <Input
+            id="product-title"
+            {...form.register("title")}
+            placeholder="Product title"
+          />
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Description</label>
+          <label htmlFor="product-description" className="text-sm font-medium">
+            Description
+          </label>
           <Textarea
+            id="product-description"
             {...form.register("description")}
             placeholder="Product description"
             rows={6}
@@ -52,12 +61,19 @@ export function ProductDetailsTab({ form }: ProductDetailsTabProps) {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Status</label>
+          <label htmlFor="product-status" className="text-sm font-medium">
+            Status
+          </label>
           <Select
             value={form.watch("status")}
-            onValueChange={(value) => form.setValue("status", value as any)}
+            onValueChange={(value) =>
+              form.setValue(
+                "status",
+                value as "draft" | "active" | "archived" | undefined,
+              )
+            }
           >
-            <SelectTrigger>
+            <SelectTrigger id="product-status">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -70,14 +86,18 @@ export function ProductDetailsTab({ form }: ProductDetailsTabProps) {
 
         <PricingEditor
           price={form.watch("price") || 0}
-          gstRate={form.watch("gstRate") ? Number(form.watch("gstRate")) : undefined}
+          gstRate={
+            form.watch("gstRate") ? Number(form.watch("gstRate")) : undefined
+          }
           pricingType={form.watch("pricingType") || "exclusive"}
           hsnCode={form.watch("hsnCode")}
           onPriceChange={(price) => form.setValue("price", price)}
           onGstRateChange={(rate) =>
             form.setValue(
               "gstRate",
-              rate ? (rate.toString() as "0" | "5" | "12" | "18" | "28") : undefined
+              rate
+                ? (rate.toString() as "0" | "5" | "12" | "18" | "28")
+                : undefined,
             )
           }
           onPricingTypeChange={(type) => form.setValue("pricingType", type)}
@@ -87,4 +107,3 @@ export function ProductDetailsTab({ form }: ProductDetailsTabProps) {
     </Card>
   );
 }
-

@@ -1,8 +1,8 @@
 import { Controller, Get } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { Public } from "../decorators/public.decorator";
-import { DatabaseService } from "../../modules/database/database.service";
 import { db, sql } from "@vcecom/db";
+import { DatabaseService } from "../../modules/database/database.service";
+import { Public } from "../decorators/public.decorator";
 
 @ApiTags("health")
 @Controller("_health")
@@ -32,7 +32,7 @@ export class HealthDatabaseController {
         await db.execute(sql`SELECT 1`);
         queryLatency = Date.now() - startTime;
         connectivityStatus = "OK";
-      } catch (error) {
+      } catch (_error) {
         connectivityStatus = "ERROR";
       }
     } else {
@@ -41,9 +41,7 @@ export class HealthDatabaseController {
 
     return {
       status:
-        healthStatus.healthy && connectivityStatus === "OK"
-          ? "OK"
-          : "ERROR",
+        healthStatus.healthy && connectivityStatus === "OK" ? "OK" : "ERROR",
       pool: {
         healthy: healthStatus.healthy,
         stats: healthStatus.stats
@@ -62,4 +60,3 @@ export class HealthDatabaseController {
     };
   }
 }
-

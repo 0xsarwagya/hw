@@ -1,13 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { AdminPageLayout } from "@/components/layout/admin-page-layout";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ErrorDisplay } from "@/components/ui/error-display";
+import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { LoadingButton } from "@/components/ui/loading-button";
 import {
   Select,
   SelectContent,
@@ -15,21 +20,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Save } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { useAdminDeleteDiscount } from "@/hooks/discounts/use-admin-delete-discount";
 import { useAdminDiscount } from "@/hooks/discounts/use-admin-discount";
 import { useAdminUpdateDiscount } from "@/hooks/discounts/use-admin-update-discount";
-import { useAdminDeleteDiscount } from "@/hooks/discounts/use-admin-delete-discount";
-import { useForm } from "react-hook-form";
-import type { UpdateDiscountInput } from "@/lib/types/discounts";
-import { FieldError } from "@/components/ui/field-error";
-import { ErrorDisplay } from "@/components/ui/error-display";
-import { LoadingButton } from "@/components/ui/loading-button";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { FetchError } from "@/lib/api";
+import type { UpdateDiscountInput } from "@/lib/types/discounts";
 
 export default function DiscountDetailPage() {
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const discountId = params.discountId as string;
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [apiError, setApiError] = useState<FetchError | null>(null);
@@ -38,7 +38,15 @@ export default function DiscountDetailPage() {
   const updateDiscount = useAdminUpdateDiscount(discountId);
   const deleteDiscount = useAdminDeleteDiscount();
 
-  const { register, handleSubmit, watch, setValue, reset, formState: { errors }, setError } = useForm<UpdateDiscountInput>();
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    reset,
+    formState: { errors },
+    setError,
+  } = useForm<UpdateDiscountInput>();
 
   useEffect(() => {
     if (discount) {
@@ -64,7 +72,7 @@ export default function DiscountDetailPage() {
       if (error instanceof Error && "errors" in error) {
         const fetchError = error as FetchError;
         setApiError(fetchError);
-        
+
         if (fetchError.errors) {
           Object.entries(fetchError.errors).forEach(([field, messages]) => {
             setError(field as keyof UpdateDiscountInput, {
@@ -149,7 +157,7 @@ export default function DiscountDetailPage() {
       {apiError && (
         <ErrorDisplay error={apiError} onRetry={() => setApiError(null)} />
       )}
-      
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid gap-4">
           <div className="grid gap-2">
@@ -166,7 +174,11 @@ export default function DiscountDetailPage() {
             <Label htmlFor="type">Type *</Label>
             <Select
               value={watch("type") || discount.type}
-              onValueChange={(value) => setValue("type", value as "STANDARD" | "BUY_GET", { shouldValidate: true })}
+              onValueChange={(value) =>
+                setValue("type", value as "STANDARD" | "BUY_GET", {
+                  shouldValidate: true,
+                })
+              }
             >
               <SelectTrigger aria-invalid={errors.type ? "true" : "false"}>
                 <SelectValue placeholder="Select type" />
@@ -196,7 +208,10 @@ export default function DiscountDetailPage() {
                 id="value"
                 type="number"
                 step="0.01"
-                {...register("value", { required: "Value is required", valueAsNumber: true })}
+                {...register("value", {
+                  required: "Value is required",
+                  valueAsNumber: true,
+                })}
                 aria-invalid={errors.value ? "true" : "false"}
               />
               <FieldError error={errors.value?.message} />
@@ -206,9 +221,15 @@ export default function DiscountDetailPage() {
               <Label htmlFor="valueType">Value Type *</Label>
               <Select
                 value={watch("valueType") || discount.valueType}
-                onValueChange={(value) => setValue("valueType", value as "percentage" | "fixed", { shouldValidate: true })}
+                onValueChange={(value) =>
+                  setValue("valueType", value as "percentage" | "fixed", {
+                    shouldValidate: true,
+                  })
+                }
               >
-                <SelectTrigger aria-invalid={errors.valueType ? "true" : "false"}>
+                <SelectTrigger
+                  aria-invalid={errors.valueType ? "true" : "false"}
+                >
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -241,4 +262,3 @@ export default function DiscountDetailPage() {
     </AdminPageLayout>
   );
 }
-

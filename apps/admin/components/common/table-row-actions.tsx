@@ -1,5 +1,6 @@
 "use client";
 
+import { LucideIcon, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,8 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Edit, Trash2, Copy, Eye } from "lucide-react";
-import { LucideIcon } from "lucide-react";
 
 /**
  * Action item configuration
@@ -20,32 +19,32 @@ export interface TableRowAction {
    * Label to display
    */
   label: string;
-  
+
   /**
    * Icon to display (optional)
    */
   icon?: LucideIcon;
-  
+
   /**
    * Action type determines behavior
    */
   type: "link" | "button" | "separator";
-  
+
   /**
    * For link type: href to navigate to
    */
   href?: string;
-  
+
   /**
    * For button type: onClick handler
    */
   onClick?: () => void;
-  
+
   /**
    * Whether this action is destructive (red text)
    */
   destructive?: boolean;
-  
+
   /**
    * Whether the action is disabled
    */
@@ -60,7 +59,7 @@ export interface TableRowActionsProps {
    * Array of actions to display
    */
   actions: TableRowAction[];
-  
+
   /**
    * Callback to stop event propagation (useful when row is clickable)
    */
@@ -69,9 +68,9 @@ export interface TableRowActionsProps {
 
 /**
  * Reusable component for table row action dropdown menus
- * 
+ *
  * Provides a consistent UI for actions like Edit, Delete, Duplicate, etc.
- * 
+ *
  * @example
  * ```tsx
  * <TableRowActions
@@ -84,7 +83,10 @@ export interface TableRowActionsProps {
  * />
  * ```
  */
-export function TableRowActions({ actions, onActionClick }: TableRowActionsProps) {
+export function TableRowActions({
+  actions,
+  onActionClick,
+}: TableRowActionsProps) {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onActionClick?.(e);
@@ -100,7 +102,7 @@ export function TableRowActions({ actions, onActionClick }: TableRowActionsProps
       <DropdownMenuContent align="end">
         {actions.map((action, index) => {
           if (action.type === "separator") {
-            return <DropdownMenuSeparator key={`separator-${index}`} />;
+            return <DropdownMenuSeparator key={`separator-${String(index)}`} />;
           }
 
           if (action.type === "link" && action.href) {
@@ -141,4 +143,3 @@ export function TableRowActions({ actions, onActionClick }: TableRowActionsProps
     </DropdownMenu>
   );
 }
-

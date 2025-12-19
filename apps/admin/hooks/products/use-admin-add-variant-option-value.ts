@@ -1,12 +1,12 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useApiMutation } from "../use-api-mutation";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
 import type { VariantOptionValue } from "@/lib/types/products";
 import type { CreateVariantOptionValueInput } from "@/lib/validations/variant-option-types";
-import { toast } from "sonner";
+import { useApiMutation } from "../use-api-mutation";
 
 export function useAdminAddVariantOptionValue(
   productId: string,
@@ -17,7 +17,10 @@ export function useAdminAddVariantOptionValue(
   return useApiMutation<VariantOptionValue, CreateVariantOptionValueInput>({
     mutationFn: async (data) => {
       return api.post<VariantOptionValue>(
-        endpoints.variantOptionTypes.product.values.create(productId, optionTypeId),
+        endpoints.variantOptionTypes.product.values.create(
+          productId,
+          optionTypeId,
+        ),
         data,
       );
     },
@@ -32,4 +35,3 @@ export function useAdminAddVariantOptionValue(
     },
   });
 }
-

@@ -51,4 +51,3 @@ export interface CreateDiscountInput {
 }
 
 export type UpdateDiscountInput = Partial<CreateDiscountInput>;
-

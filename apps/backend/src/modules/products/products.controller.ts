@@ -37,8 +37,8 @@ import {
 import { QueryProductsDto } from "./dto/query-products.dto";
 import { SearchProductsDto, SearchResponseDto } from "./dto/search.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
-import { CreateVariantOptionTypeDto } from "./dto/variant-option-types/create-variant-option-type.dto";
 import { CreateProductVariantOptionTypeDto } from "./dto/variant-option-types/create-product-variant-option-type.dto";
+import { CreateVariantOptionTypeDto } from "./dto/variant-option-types/create-variant-option-type.dto";
 import { CreateVariantOptionValueDto } from "./dto/variant-option-types/create-variant-option-value.dto";
 import {
   ProductVariantOptionTypeResponseDto,
@@ -358,9 +358,7 @@ export class ProductsController {
   @ApiForbiddenResponse({
     description: "Access denied. Admin role required.",
   })
-  async createVariantOptionType(
-    @Body() createDto: CreateVariantOptionTypeDto,
-  ) {
+  async createVariantOptionType(@Body() createDto: CreateVariantOptionTypeDto) {
     return this.productsService.createVariantOptionType(
       createDto.name,
       createDto.description,
@@ -499,7 +497,8 @@ export class ProductsController {
   @ApiBearerAuth("JWT-auth")
   @ApiOperation({
     summary: "Remove value from variant option type",
-    description: "Remove a value from a product variant option type (admin only)",
+    description:
+      "Remove a value from a product variant option type (admin only)",
   })
   @ApiParam({
     name: "id",

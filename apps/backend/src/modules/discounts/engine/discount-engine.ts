@@ -139,7 +139,9 @@ export function runDiscountEngine(
   steps.push({
     step: "4",
     description: "Applied product-level discounts",
-    discountsApplied: resolved.productDiscounts.map((discount) => discount.code),
+    discountsApplied: resolved.productDiscounts.map(
+      (discount) => discount.code,
+    ),
     subtotalAfter: subtotalAfterProduct,
   });
 
@@ -180,7 +182,9 @@ export function runDiscountEngine(
   steps.push({
     step: "6",
     description: "Applied cart-level discounts",
-    discountsApplied: cartDiscounts.map((cartDiscount) => cartDiscount.discountCode),
+    discountsApplied: cartDiscounts.map(
+      (cartDiscount) => cartDiscount.discountCode,
+    ),
     subtotalAfter: subtotalAfterCartDiscounts,
   });
 

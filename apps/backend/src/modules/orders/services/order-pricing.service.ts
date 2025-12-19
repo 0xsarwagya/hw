@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { db, eq } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import { createErrorContext } from "../../../common/logging/logging.helper";
@@ -10,8 +9,8 @@ import {
   PricingSnapshot,
 } from "../../pricing/engine/pricing-engine.types";
 import { createPricingSnapshot } from "../../pricing/engine/pricing-snapshot.utils";
-import { PriceListService } from "../../pricing/services/price-list.service";
 import { CustomerGroupService } from "../../pricing/services/customer-group.service";
+import { PriceListService } from "../../pricing/services/price-list.service";
 import { PricingSnapshotValidator } from "../../pricing/services/pricing-snapshot-validator.service";
 
 /**
@@ -33,9 +32,7 @@ export class OrderPricingService {
    * @param customerGroupId - Customer group ID (can be null)
    * @returns Array of active price lists applicable to the customer group
    */
-  async getPriceListsForCustomer(
-    customerGroupId: string | null,
-  ): Promise<
+  async getPriceListsForCustomer(customerGroupId: string | null): Promise<
     Array<{
       id: string;
       name: string;
@@ -161,4 +158,3 @@ export class OrderPricingService {
     this.pricingSnapshotValidator.validate(snapshot);
   }
 }
-

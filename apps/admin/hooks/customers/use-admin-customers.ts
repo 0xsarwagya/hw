@@ -1,8 +1,11 @@
 "use client";
 
-import { useApiQuery } from "../use-api-query";
 import { endpoints } from "@/lib/endpoints";
-import type { PaginatedCustomersResponse, CustomerQueryParams } from "@/lib/types/customers";
+import type {
+  CustomerQueryParams,
+  PaginatedCustomersResponse,
+} from "@/lib/types/customers";
+import { useApiQuery } from "../use-api-query";
 
 export function useAdminCustomers(params?: CustomerQueryParams) {
   return useApiQuery<PaginatedCustomersResponse>(endpoints.customers.list, {
@@ -10,4 +13,3 @@ export function useAdminCustomers(params?: CustomerQueryParams) {
     enabled: true,
   });
 }
-

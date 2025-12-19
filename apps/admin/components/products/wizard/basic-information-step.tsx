@@ -1,5 +1,13 @@
 "use client";
 
+import type { FieldValues, UseFormReturn } from "react-hook-form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   FormControl,
   FormField,
@@ -8,7 +16,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -16,8 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { UseFormReturn, FieldValues } from "react-hook-form";
+import { Textarea } from "@/components/ui/textarea";
 import { WIZARD_STEPS } from "@/lib/constants/wizard.constants";
 
 interface BasicInformationStepProps {
@@ -57,7 +63,11 @@ export function BasicInformationStep({ form }: BasicInformationStepProps) {
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea placeholder="Product description" rows={6} {...field} />
+                <Textarea
+                  placeholder="Product description"
+                  rows={6}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -118,4 +128,3 @@ export function BasicInformationStep({ form }: BasicInformationStepProps) {
     </Card>
   );
 }
-

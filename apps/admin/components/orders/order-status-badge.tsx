@@ -11,7 +11,10 @@ interface OrderStatusBadgeProps {
 
 const statusConfig: Record<
   OrderStatus,
-  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+  {
+    label: string;
+    variant: "default" | "secondary" | "destructive" | "outline";
+  }
 > = {
   pending: { label: "Pending", variant: "outline" },
   confirmed: { label: "Confirmed", variant: "default" },
@@ -31,4 +34,3 @@ export function OrderStatusBadge({ status, className }: OrderStatusBadgeProps) {
     </Badge>
   );
 }
-

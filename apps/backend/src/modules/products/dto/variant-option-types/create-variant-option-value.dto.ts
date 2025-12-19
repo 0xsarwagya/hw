@@ -9,7 +9,8 @@ import {
 
 export class CreateVariantOptionValueDto {
   @ApiProperty({
-    description: "Value for the variant option (e.g., 'XS', 'S', 'M', 'Red', 'Blue')",
+    description:
+      "Value for the variant option (e.g., 'XS', 'S', 'M', 'Red', 'Blue')",
     example: "M",
     maxLength: 100,
   })
@@ -28,4 +29,3 @@ export class CreateVariantOptionValueDto {
   @Min(0, { message: "Display order must be greater than or equal to 0" })
   displayOrder?: number;
 }
-

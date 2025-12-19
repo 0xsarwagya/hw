@@ -14,7 +14,11 @@ export class FetchError extends Error {
   status: number;
   errors?: Record<string, string[]>;
 
-  constructor(message: string, status: number, errors?: Record<string, string[]>) {
+  constructor(
+    message: string,
+    status: number,
+    errors?: Record<string, string[]>,
+  ) {
     super(message);
     this.name = "FetchError";
     this.status = status;
@@ -42,13 +46,19 @@ function getApiBaseUrl(): string {
     return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
   }
   // Server-side: use env variable or default
-  return process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  return (
+    process.env.API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:3001"
+  );
 }
 
 /**
  * Build query string from params object
  */
-function buildQueryString(params: Record<string, string | number | boolean | undefined>): string {
+function buildQueryString(
+  params: Record<string, string | number | boolean | undefined>,
+): string {
   const searchParams = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
@@ -77,17 +87,17 @@ function getAuthToken(): string | null {
  */
 function createHeaders(init?: HeadersInit): Headers {
   const headers = new Headers(init);
-  
+
   const token = getAuthToken();
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
-  
+
   // Only set Content-Type if not already set and body exists
   if (!headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  
+
   return headers;
 }
 
@@ -97,20 +107,20 @@ function createHeaders(init?: HeadersInit): Headers {
  */
 export async function serverApiFetch<T = unknown>(
   endpoint: string,
-  options: RequestOptions & { cookies?: string } = {}
+  options: RequestOptions & { cookies?: string } = {},
 ): Promise<T> {
   const { params, cookies, ...fetchOptions } = options;
-  
+
   const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}${endpoint}${params ? buildQueryString(params) : ""}`;
-  
+
   const headers = createHeaders(fetchOptions.headers);
-  
+
   // Forward cookies for server-side requests
   if (cookies) {
     headers.set("Cookie", cookies);
   }
-  
+
   try {
     const response = await fetch(url, {
       ...fetchOptions,
@@ -124,7 +134,7 @@ export async function serverApiFetch<T = unknown>(
     }
 
     const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
+    if (contentType?.includes("application/json")) {
       return await response.json();
     }
 
@@ -133,10 +143,10 @@ export async function serverApiFetch<T = unknown>(
     if (error instanceof FetchError) {
       throw error;
     }
-    
+
     throw new FetchError(
       error instanceof Error ? error.message : "Network error occurred",
-      0
+      0,
     );
   }
 }
@@ -194,7 +204,7 @@ async function refreshAccessToken(): Promise<boolean> {
           // Clear any stored tokens
           localStorage.removeItem("admin_access_token");
           localStorage.removeItem("admin_refresh_token");
-          
+
           // Redirect to login if not already there
           const currentPath = window.location.pathname;
           if (!currentPath.includes("/login")) {
@@ -209,9 +219,9 @@ async function refreshAccessToken(): Promise<boolean> {
 
       // Refresh successful - cookies are updated automatically by browser
       const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
+      if (contentType?.includes("application/json")) {
         const data = await response.json();
-        
+
         // Update localStorage token if provided (fallback)
         if (data.accessToken && typeof window !== "undefined") {
           localStorage.setItem("admin_access_token", data.accessToken);
@@ -245,16 +255,16 @@ async function refreshAccessToken(): Promise<boolean> {
  */
 export async function apiFetch<T = unknown>(
   endpoint: string,
-  options: RequestOptions = {}
+  options: RequestOptions = {},
 ): Promise<T> {
   const { params, skipAuthRefresh, ...fetchOptions } = options;
-  
+
   const baseUrl = getApiBaseUrl();
   // Always use backend URL directly - no Next.js API route proxies
   const url = `${baseUrl}${endpoint}${params ? buildQueryString(params) : ""}`;
-  
+
   const headers = createHeaders(fetchOptions.headers);
-  
+
   try {
     const response = await fetch(url, {
       ...fetchOptions,
@@ -265,14 +275,17 @@ export async function apiFetch<T = unknown>(
     // Handle 401 Unauthorized - try to refresh token
     if (response.status === 401 && !skipAuthRefresh) {
       // Don't refresh if this is already a refresh request or login request
-      if (endpoint.includes("/auth/refresh") || endpoint.includes("/auth/login")) {
+      if (
+        endpoint.includes("/auth/refresh") ||
+        endpoint.includes("/auth/login")
+      ) {
         const error = await parseErrorResponse(response);
         throw new FetchError(error.message, error.status, error.errors);
       }
 
       // Attempt to refresh token
       const refreshSuccess = await refreshAccessToken();
-      
+
       if (refreshSuccess) {
         // Retry original request with new token
         const retryHeaders = createHeaders(fetchOptions.headers);
@@ -289,7 +302,7 @@ export async function apiFetch<T = unknown>(
 
         // Handle empty responses
         const contentType = retryResponse.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
+        if (contentType?.includes("application/json")) {
           return await retryResponse.json();
         }
 
@@ -308,7 +321,7 @@ export async function apiFetch<T = unknown>(
 
     // Handle empty responses
     const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
+    if (contentType?.includes("application/json")) {
       return await response.json();
     }
 
@@ -317,11 +330,11 @@ export async function apiFetch<T = unknown>(
     if (error instanceof FetchError) {
       throw error;
     }
-    
+
     // Network or other errors
     throw new FetchError(
       error instanceof Error ? error.message : "Network error occurred",
-      0
+      0,
     );
   }
 }
@@ -333,21 +346,33 @@ export const api = {
   get: <T = unknown>(endpoint: string, options?: RequestOptions) =>
     apiFetch<T>(endpoint, { ...options, method: "GET" }),
 
-  post: <T = unknown>(endpoint: string, data?: unknown, options?: RequestOptions) =>
+  post: <T = unknown>(
+    endpoint: string,
+    data?: unknown,
+    options?: RequestOptions,
+  ) =>
     apiFetch<T>(endpoint, {
       ...options,
       method: "POST",
       body: data ? JSON.stringify(data) : undefined,
     }),
 
-  put: <T = unknown>(endpoint: string, data?: unknown, options?: RequestOptions) =>
+  put: <T = unknown>(
+    endpoint: string,
+    data?: unknown,
+    options?: RequestOptions,
+  ) =>
     apiFetch<T>(endpoint, {
       ...options,
       method: "PUT",
       body: data ? JSON.stringify(data) : undefined,
     }),
 
-  patch: <T = unknown>(endpoint: string, data?: unknown, options?: RequestOptions) =>
+  patch: <T = unknown>(
+    endpoint: string,
+    data?: unknown,
+    options?: RequestOptions,
+  ) =>
     apiFetch<T>(endpoint, {
       ...options,
       method: "PATCH",
@@ -357,4 +382,3 @@ export const api = {
   delete: <T = unknown>(endpoint: string, options?: RequestOptions) =>
     apiFetch<T>(endpoint, { ...options, method: "DELETE" }),
 };
-

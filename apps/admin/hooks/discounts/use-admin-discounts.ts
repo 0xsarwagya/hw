@@ -1,8 +1,11 @@
 "use client";
 
-import { useApiQuery } from "../use-api-query";
 import { endpoints } from "@/lib/endpoints";
-import type { PaginatedDiscountsResponse, DiscountQueryParams } from "@/lib/types/discounts";
+import type {
+  DiscountQueryParams,
+  PaginatedDiscountsResponse,
+} from "@/lib/types/discounts";
+import { useApiQuery } from "../use-api-query";
 
 export function useAdminDiscounts(params?: DiscountQueryParams) {
   return useApiQuery<PaginatedDiscountsResponse>(endpoints.discounts.list, {
@@ -10,4 +13,3 @@ export function useAdminDiscounts(params?: DiscountQueryParams) {
     enabled: true,
   });
 }
-

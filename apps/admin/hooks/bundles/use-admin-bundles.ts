@@ -1,8 +1,11 @@
 "use client";
 
-import { useApiQuery } from "../use-api-query";
 import { endpoints } from "@/lib/endpoints";
-import type { PaginatedBundlesResponse, BundleQueryParams } from "@/lib/types/bundles";
+import type {
+  BundleQueryParams,
+  PaginatedBundlesResponse,
+} from "@/lib/types/bundles";
+import { useApiQuery } from "../use-api-query";
 
 export function useAdminBundles(params?: BundleQueryParams) {
   return useApiQuery<PaginatedBundlesResponse>(endpoints.bundles.list, {
@@ -10,4 +13,3 @@ export function useAdminBundles(params?: BundleQueryParams) {
     enabled: true,
   });
 }
-

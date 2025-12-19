@@ -1,11 +1,11 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useApiMutation } from "../use-api-mutation";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
 import type { Product, UpdateProductInput } from "@/lib/types/products";
-import { toast } from "sonner";
+import { useApiMutation } from "../use-api-mutation";
 
 export function useAdminUpdateProduct(productId: string) {
   const queryClient = useQueryClient();
@@ -14,9 +14,11 @@ export function useAdminUpdateProduct(productId: string) {
     mutationFn: async (data) => {
       return api.put<Product>(endpoints.products.update(productId), data);
     },
-    onSuccess: (data) => {
+    onSuccess: (_data) => {
       queryClient.invalidateQueries({ queryKey: [endpoints.products.list] });
-      queryClient.invalidateQueries({ queryKey: [endpoints.products.detail(productId)] });
+      queryClient.invalidateQueries({
+        queryKey: [endpoints.products.detail(productId)],
+      });
       toast.success("Product updated successfully");
     },
     onError: (error) => {
@@ -24,4 +26,3 @@ export function useAdminUpdateProduct(productId: string) {
     },
   });
 }
-

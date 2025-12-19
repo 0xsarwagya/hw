@@ -9,10 +9,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { OrderStatusBadge } from "./order-status-badge";
-import { Money } from "./money";
-import { DateTime } from "./date-time";
 import type { Order } from "@/lib/types/orders";
+import { DateTime } from "./date-time";
+import { Money } from "./money";
+import { OrderStatusBadge } from "./order-status-badge";
 
 interface OrdersTableProps {
   orders: Order[];
@@ -88,4 +88,3 @@ export function OrdersTable({ orders, isLoading }: OrdersTableProps) {
     </div>
   );
 }
-

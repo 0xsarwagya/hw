@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 interface CommandKContextValue {
   isOpen: boolean;
@@ -9,7 +16,9 @@ interface CommandKContextValue {
   toggleCommandPalette: () => void;
 }
 
-const CommandKContext = createContext<CommandKContextValue | undefined>(undefined);
+const CommandKContext = createContext<CommandKContextValue | undefined>(
+  undefined,
+);
 
 export function CommandKProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -66,4 +75,3 @@ export function useCommandK(): CommandKContextValue {
   }
   return context;
 }
-

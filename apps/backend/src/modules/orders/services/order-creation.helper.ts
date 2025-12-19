@@ -43,9 +43,7 @@ export function validateGuestCheckoutRequirements(
   }
 
   if (!sessionId) {
-    throw new BadRequestException(
-      "Session ID is required for guest checkout",
-    );
+    throw new BadRequestException("Session ID is required for guest checkout");
   }
 }
 
@@ -72,4 +70,3 @@ export function isGuestCheckout(
 ): boolean {
   return !userId || !!createOrderDto.email;
 }
-

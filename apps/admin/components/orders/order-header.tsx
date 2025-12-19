@@ -1,11 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import type { Order } from "@/lib/types/orders";
+import { FulfillmentStatusBadge } from "./fulfillment-status-badge";
 import { OrderStatusBadge } from "./order-status-badge";
 import { PaymentStatusBadge } from "./payment-status-badge";
-import { FulfillmentStatusBadge } from "./fulfillment-status-badge";
-import type { Order } from "@/lib/types/orders";
-import Link from "next/link";
 
 interface OrderHeaderProps {
   order: Order;
@@ -19,7 +19,9 @@ export function OrderHeader({ order }: OrderHeaderProps) {
           <div className="space-y-4">
             <div>
               <h2 className="text-2xl font-bold">{order.orderNumber}</h2>
-              <p className="text-sm text-muted-foreground">Order ID: {order.id}</p>
+              <p className="text-sm text-muted-foreground">
+                Order ID: {order.id}
+              </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <OrderStatusBadge status={order.status} />
@@ -45,7 +47,9 @@ export function OrderHeader({ order }: OrderHeaderProps) {
                 <p className="font-medium">Guest Checkout</p>
               )}
               {order.customerEmail && (
-                <p className="text-sm text-muted-foreground">{order.customerEmail}</p>
+                <p className="text-sm text-muted-foreground">
+                  {order.customerEmail}
+                </p>
               )}
             </div>
           </div>
@@ -54,4 +58,3 @@ export function OrderHeader({ order }: OrderHeaderProps) {
     </Card>
   );
 }
-

@@ -1,8 +1,8 @@
 "use client";
 
-import { useApiQuery } from "../use-api-query";
 import { endpoints } from "@/lib/endpoints";
 import type { PriceList } from "@/lib/types/price-lists";
+import { useApiQuery } from "../use-api-query";
 
 export function useAdminPriceLists() {
   return useApiQuery<PriceList[]>(endpoints.priceLists.list, {
@@ -15,4 +15,3 @@ export function useAdminActivePriceLists() {
     enabled: true,
   });
 }
-

@@ -1,9 +1,16 @@
 "use client";
 
+import { Upload, X } from "lucide-react";
+import Image from "next/image";
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, X } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { WIZARD_STEPS } from "@/lib/constants/wizard.constants";
 
 interface ImageUploadStepProps {
@@ -25,7 +32,7 @@ export function ImageUploadStep({
     (event: React.ChangeEvent<HTMLInputElement>) => {
       onImageUpload(event.target.files);
     },
-    [onImageUpload]
+    [onImageUpload],
   );
 
   const handleDropZoneClick = useCallback(() => {
@@ -40,12 +47,12 @@ export function ImageUploadStep({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <ImageDropZone onClick={handleDropZoneClick} onFileChange={handleFileInputChange} />
+          <ImageDropZone
+            onClick={handleDropZoneClick}
+            onFileChange={handleFileInputChange}
+          />
           {pendingImages.length > 0 && (
-            <ImagePreviewGrid
-              images={pendingImages}
-              onRemove={onRemoveImage}
-            />
+            <ImagePreviewGrid images={pendingImages} onRemove={onRemoveImage} />
           )}
         </div>
       </CardContent>
@@ -64,9 +71,11 @@ interface ImageDropZoneProps {
 function ImageDropZone({ onClick, onFileChange }: ImageDropZoneProps) {
   return (
     <>
-      <div
-        className="border-2 border-dashed rounded-lg p-8 text-center transition-colors hover:border-primary/50 cursor-pointer"
+      <button
+        type="button"
+        className="w-full border-2 border-dashed rounded-lg p-8 text-center transition-colors hover:border-primary/50 cursor-pointer bg-transparent"
         onClick={onClick}
+        aria-label="Upload images"
       >
         <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
         <p className="text-sm text-muted-foreground mb-2">
@@ -75,7 +84,7 @@ function ImageDropZone({ onClick, onFileChange }: ImageDropZoneProps) {
         <p className="text-xs text-muted-foreground">
           Images will be uploaded after product creation
         </p>
-      </div>
+      </button>
       <input
         type="file"
         accept="image/*"
@@ -101,7 +110,7 @@ function ImagePreviewGrid({ images, onRemove }: ImagePreviewGridProps) {
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {images.map((file, index) => (
         <ImagePreviewItem
-          key={index}
+          key={`image-preview-${index}-${file.name}`}
           file={file}
           index={index}
           onRemove={onRemove}
@@ -126,16 +135,18 @@ function ImagePreviewItem({ file, index, onRemove }: ImagePreviewItemProps) {
       event.stopPropagation();
       onRemove(index);
     },
-    [index, onRemove]
+    [index, onRemove],
   );
 
   return (
     <div className="relative group">
       <div className="relative aspect-square rounded-lg overflow-hidden border bg-muted">
-        <img
+        <Image
           src={URL.createObjectURL(file)}
           alt={`Preview ${index + 1}`}
-          className="w-full h-full object-cover"
+          fill
+          className="object-cover"
+          unoptimized
         />
         <Button
           variant="destructive"
@@ -150,4 +161,3 @@ function ImagePreviewItem({ file, index, onRemove }: ImagePreviewItemProps) {
     </div>
   );
 }
-

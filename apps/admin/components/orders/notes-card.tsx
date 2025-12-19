@@ -1,10 +1,10 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 
 interface NotesCardProps {
   notes?: string[];
@@ -31,7 +31,7 @@ export function NotesCard({ notes = [], onAddNote }: NotesCardProps) {
           <div className="space-y-2">
             {notes.map((note, index) => (
               <div
-                key={index}
+                key={`note-${index}-${note.slice(0, 10)}`}
                 className="rounded-md border p-3 text-sm bg-muted/50"
               >
                 {note}
@@ -59,4 +59,3 @@ export function NotesCard({ notes = [], onAddNote }: NotesCardProps) {
     </Card>
   );
 }
-

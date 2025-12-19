@@ -1,11 +1,11 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PaymentStatusBadge } from "./payment-status-badge";
-import { Button } from "@/components/ui/button";
-import { Money } from "./money";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Order } from "@/lib/types/orders";
+import { Money } from "./money";
+import { PaymentStatusBadge } from "./payment-status-badge";
 
 interface OrderPaymentSectionProps {
   order: Order;
@@ -32,18 +32,26 @@ export function OrderPaymentSection({ order }: OrderPaymentSectionProps) {
         </div>
         {order.paymentStatus && (
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Payment Status</span>
+            <span className="text-sm text-muted-foreground">
+              Payment Status
+            </span>
             <PaymentStatusBadge status={order.paymentStatus} />
           </div>
         )}
         {order.razorpayOrderId && (
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Payment Intent ID</span>
+            <span className="text-sm text-muted-foreground">
+              Payment Intent ID
+            </span>
             <span className="text-sm font-mono">{order.razorpayOrderId}</span>
           </div>
         )}
         {isCOD && !isPaid && (
-          <Button className="w-full" variant="default" onClick={handleMarkCODAsPaid}>
+          <Button
+            className="w-full"
+            variant="default"
+            onClick={handleMarkCODAsPaid}
+          >
             Mark COD as Paid
           </Button>
         )}
@@ -57,4 +65,3 @@ export function OrderPaymentSection({ order }: OrderPaymentSectionProps) {
     </Card>
   );
 }
-

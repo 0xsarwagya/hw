@@ -14,10 +14,14 @@ export function FieldError({ error, className }: FieldErrorProps) {
   const errorMessage = Array.isArray(error) ? error.join(", ") : error;
 
   return (
-    <div className={cn("flex items-center gap-1.5 text-sm text-destructive mt-1", className)}>
+    <div
+      className={cn(
+        "flex items-center gap-1.5 text-sm text-destructive mt-1",
+        className,
+      )}
+    >
       <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
       <span>{errorMessage}</span>
     </div>
   );
 }
-

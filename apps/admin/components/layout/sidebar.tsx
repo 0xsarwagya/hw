@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { navigation } from "@/lib/navigation";
-import { SidebarSection } from "./sidebar-section";
+import Link from "next/link";
+import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavState } from "@/hooks/use-nav-state";
+import { navigation } from "@/lib/navigation";
+import { cn } from "@/lib/utils";
+import { SidebarSection } from "./sidebar-section";
 
 interface SidebarProps {
   className?: string;
@@ -21,9 +21,11 @@ export function Sidebar({ className }: SidebarProps) {
     <>
       {/* Mobile overlay */}
       {isMobileOpen && (
-        <div
+        <button
+          type="button"
           className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
           onClick={() => setIsMobileOpen(false)}
+          aria-label="Close sidebar"
         />
       )}
 
@@ -33,7 +35,7 @@ export function Sidebar({ className }: SidebarProps) {
           "fixed left-0 top-0 z-50 h-screen border-r bg-background transition-all duration-300 lg:static lg:z-auto",
           isCollapsed ? "w-16" : "w-64",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-          className
+          className,
         )}
       >
         <div className="flex h-full flex-col">
@@ -45,6 +47,7 @@ export function Sidebar({ className }: SidebarProps) {
               </Link>
             )}
             <button
+              type="button"
               onClick={() => setIsMobileOpen(false)}
               className="lg:hidden"
               aria-label="Close sidebar"
@@ -57,7 +60,10 @@ export function Sidebar({ className }: SidebarProps) {
           <ScrollArea className="flex-1">
             <nav className="space-y-1 p-4">
               {navigation.map((section, sectionIndex) => (
-                <div key={sectionIndex} className="space-y-1">
+                <div
+                  key={`nav-section-${String(sectionIndex)}`}
+                  className="space-y-1"
+                >
                   {section.items.map((item) => (
                     <SidebarSection key={item.href} item={item} />
                   ))}
@@ -70,6 +76,7 @@ export function Sidebar({ className }: SidebarProps) {
 
       {/* Mobile menu button */}
       <button
+        type="button"
         onClick={() => setIsMobileOpen(true)}
         className="fixed bottom-4 left-4 z-50 rounded-full bg-primary p-3 text-primary-foreground shadow-lg lg:hidden"
         aria-label="Open sidebar"
@@ -79,4 +86,3 @@ export function Sidebar({ className }: SidebarProps) {
     </>
   );
 }
-

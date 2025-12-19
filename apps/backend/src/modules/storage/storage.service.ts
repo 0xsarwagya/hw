@@ -171,7 +171,9 @@ export class StorageService implements OnModuleInit {
   /**
    * Get file metadata (size, content type)
    */
-  async getMetadata(key: string): Promise<{ size: number; contentType?: string }> {
+  async getMetadata(
+    key: string,
+  ): Promise<{ size: number; contentType?: string }> {
     return this.provider.getMetadata(key);
   }
 

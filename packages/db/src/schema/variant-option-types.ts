@@ -5,11 +5,11 @@ import {
   pgTable,
   text,
   timestamp,
-  uuid,
   unique,
+  uuid,
 } from "drizzle-orm/pg-core";
-import { products } from "./products";
 import { productVariants } from "./product-variants";
+import { products } from "./products";
 
 /**
  * Global variant option type templates
@@ -41,9 +41,12 @@ export const productVariantOptionTypes = pgTable(
     productId: uuid("product_id")
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
-    optionTypeId: uuid("option_type_id").references(() => variantOptionTypes.id, {
-      onDelete: "set null",
-    }), // References global template if using one
+    optionTypeId: uuid("option_type_id").references(
+      () => variantOptionTypes.id,
+      {
+        onDelete: "set null",
+      },
+    ), // References global template if using one
     name: text("name").notNull(), // Custom name if not using template
     displayOrder: integer("display_order").notNull().default(0),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -76,9 +79,9 @@ export const variantOptionValues = pgTable(
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => ({
-    optionTypeIdIdx: index(
-      "variant_option_values_option_type_id_idx",
-    ).on(table.productVariantOptionTypeId),
+    optionTypeIdIdx: index("variant_option_values_option_type_id_idx").on(
+      table.productVariantOptionTypeId,
+    ),
     // Ensure unique values per option type
     uniqueValuePerOptionType: unique(
       "variant_option_values_unique_value_per_option_type",
@@ -103,9 +106,9 @@ export const variantOptionValueAssignments = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => ({
-    variantIdIdx: index(
-      "variant_option_value_assignments_variant_id_idx",
-    ).on(table.variantId),
+    variantIdIdx: index("variant_option_value_assignments_variant_id_idx").on(
+      table.variantId,
+    ),
     optionValueIdIdx: index(
       "variant_option_value_assignments_option_value_id_idx",
     ).on(table.optionValueId),
@@ -179,4 +182,3 @@ export type VariantOptionValueAssignment =
   typeof variantOptionValueAssignments.$inferSelect;
 export type NewVariantOptionValueAssignment =
   typeof variantOptionValueAssignments.$inferInsert;
-

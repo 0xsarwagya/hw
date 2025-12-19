@@ -1,7 +1,7 @@
 import { Provider } from "@nestjs/common";
 import { PinoLogger } from "nestjs-pino";
-import { ContextService } from "../logging/context.service";
 import { AppConfigService } from "../config/app.config.service";
+import { ContextService } from "../logging/context.service";
 
 /**
  * Common test providers for services that require PinoLogger, ContextService, and AppConfigService

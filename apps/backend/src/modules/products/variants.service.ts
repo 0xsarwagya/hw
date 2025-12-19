@@ -1,12 +1,16 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import {
   db,
   eq,
+  inArray,
   products,
   productVariants,
-  variantOptionValues,
   variantOptionValueAssignments,
-  inArray,
+  variantOptionValues,
 } from "@vcecom/db";
 import { CreateVariantDto } from "./dto/create-variant.dto";
 import { UpdateVariantDto } from "./dto/update-variant.dto";
@@ -125,12 +129,17 @@ export class VariantsService {
       .returning();
 
     // Handle option value assignments (new flexible system)
-    if (createVariantDto.optionValueIds && createVariantDto.optionValueIds.length > 0) {
+    if (
+      createVariantDto.optionValueIds &&
+      createVariantDto.optionValueIds.length > 0
+    ) {
       // Validate all option values exist
       const optionValues = await db
         .select()
         .from(variantOptionValues)
-        .where(inArray(variantOptionValues.id, createVariantDto.optionValueIds));
+        .where(
+          inArray(variantOptionValues.id, createVariantDto.optionValueIds),
+        );
 
       if (optionValues.length !== createVariantDto.optionValueIds.length) {
         throw new BadRequestException(
@@ -270,7 +279,9 @@ export class VariantsService {
         const optionValues = await db
           .select()
           .from(variantOptionValues)
-          .where(inArray(variantOptionValues.id, updateVariantDto.optionValueIds));
+          .where(
+            inArray(variantOptionValues.id, updateVariantDto.optionValueIds),
+          );
 
         if (optionValues.length !== updateVariantDto.optionValueIds.length) {
           throw new BadRequestException(

@@ -104,19 +104,22 @@ export class CollectionsService {
     const conditions: ReturnType<typeof or | typeof and>[] = [];
     if (query.search) {
       const searchPattern = `%${query.search}%`;
-      conditions.push(
-        or(
-          ilike(collections.name, searchPattern),
-          ilike(collections.description, searchPattern),
-        )!,
+      const searchCondition = or(
+        ilike(collections.name, searchPattern),
+        ilike(collections.description, searchPattern),
       );
+      if (searchCondition) {
+        conditions.push(searchCondition);
+      }
     }
 
     // Get total count
+    const whereCondition =
+      conditions.length > 0 ? and(...conditions) : undefined;
     const totalResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(collections)
-      .where(conditions.length > 0 ? and(...conditions)! : undefined);
+      .where(whereCondition);
 
     const total = Number(totalResult[0]?.count || 0);
 
@@ -147,7 +150,7 @@ export class CollectionsService {
         productCollections,
         eq(collections.id, productCollections.collectionId),
       )
-      .where(conditions.length > 0 ? and(...conditions)! : undefined)
+      .where(whereCondition)
       .groupBy(collections.id)
       .orderBy(collections.createdAt)
       .limit(limit)
@@ -431,4 +434,3 @@ export class CollectionsService {
     return { message: "Product removed from collection successfully" };
   }
 }
-
