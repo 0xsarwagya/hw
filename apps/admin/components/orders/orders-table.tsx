@@ -11,8 +11,10 @@ import {
 } from "@/components/ui/table";
 import type { Order } from "@/lib/types/orders";
 import { DateTime } from "./date-time";
+import { FulfillmentStatusBadge } from "./fulfillment-status-badge";
 import { Money } from "./money";
 import { OrderStatusBadge } from "./order-status-badge";
+import { PaymentStatusBadge } from "./payment-status-badge";
 
 interface OrdersTableProps {
   orders: Order[];
@@ -45,41 +47,78 @@ export function OrdersTable({ orders, isLoading }: OrdersTableProps) {
             <TableHead>Customer</TableHead>
             <TableHead>Total</TableHead>
             <TableHead>Payment</TableHead>
-            <TableHead>Created</TableHead>
+            <TableHead>Payment Status</TableHead>
             <TableHead>Fulfillment</TableHead>
+            <TableHead>Created</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {orders.map((order) => (
             <TableRow
               key={order.id}
-              className="cursor-pointer"
+              className="cursor-pointer hover:bg-muted/50"
               onClick={() => router.push(`/orders/${order.id}`)}
             >
-              <TableCell className="font-medium">{order.orderNumber}</TableCell>
+              <TableCell className="font-medium">
+                <button
+                  type="button"
+                  className="hover:underline text-left"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/orders/${order.id}`);
+                  }}
+                >
+                  {order.orderNumber}
+                </button>
+              </TableCell>
               <TableCell>
                 <OrderStatusBadge status={order.status} />
               </TableCell>
               <TableCell>
-                {order.customerName || order.customerEmail || "Guest Checkout"}
+                <div className="flex flex-col">
+                  <span>
+                    {order.customerName ||
+                      order.customerEmail ||
+                      "Guest Checkout"}
+                  </span>
+                  {order.customerEmail && order.customerName && (
+                    <span className="text-xs text-muted-foreground">
+                      {order.customerEmail}
+                    </span>
+                  )}
+                </div>
               </TableCell>
               <TableCell>
                 <Money amount={order.total} />
               </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {order.paymentMethod || "N/A"}
-              </TableCell>
               <TableCell>
-                <DateTime date={order.createdAt} />
-              </TableCell>
-              <TableCell>
-                {order.fulfillmentStatus ? (
-                  <span className="text-sm capitalize">
-                    {order.fulfillmentStatus.replace("_", " ")}
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">
+                    {order.paymentMethod || "N/A"}
                   </span>
+                  {order.paymentMethod === "COD" && (
+                    <span className="text-xs text-muted-foreground">
+                      Cash on Delivery
+                    </span>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell>
+                {order.paymentStatus ? (
+                  <PaymentStatusBadge status={order.paymentStatus} />
                 ) : (
                   <span className="text-sm text-muted-foreground">N/A</span>
                 )}
+              </TableCell>
+              <TableCell>
+                {order.fulfillmentStatus ? (
+                  <FulfillmentStatusBadge status={order.fulfillmentStatus} />
+                ) : (
+                  <span className="text-sm text-muted-foreground">N/A</span>
+                )}
+              </TableCell>
+              <TableCell>
+                <DateTime date={order.createdAt} />
               </TableCell>
             </TableRow>
           ))}

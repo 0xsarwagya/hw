@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 interface DateTimeProps {
   date: Date | string;
   className?: string;
-  format?: "short" | "long" | "date" | "time";
+  format?: "short" | "long" | "full" | "date" | "time";
 }
 
 const formatDate = (
@@ -15,6 +15,16 @@ const formatDate = (
   const d = typeof date === "string" ? new Date(date) : date;
 
   switch (format) {
+    case "full":
+      return d.toLocaleString("en-IN", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
     case "long":
       return d.toLocaleString("en-IN", {
         dateStyle: "full",

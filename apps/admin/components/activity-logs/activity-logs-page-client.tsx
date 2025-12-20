@@ -53,8 +53,14 @@ export function ActivityLogsPageClient() {
     if (filters.endDate) params.set("endDate", filters.endDate);
     if (filters.search) params.set("search", filters.search);
 
-    router.replace(`/activity-logs?${params.toString()}`, { scroll: false });
-  }, [filters, router]);
+    const newUrl = `/activity-logs?${params.toString()}`;
+    const currentUrl = `/activity-logs?${searchParams.toString()}`;
+
+    // Only update URL if it actually changed
+    if (newUrl !== currentUrl) {
+      router.replace(newUrl, { scroll: false });
+    }
+  }, [filters, router, searchParams]);
 
   const handleFiltersChange = (newFilters: ActivityLogQueryParams) => {
     setFilters(newFilters);

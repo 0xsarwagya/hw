@@ -8,9 +8,13 @@ export enum TimelineEventType {
   ORDER_DELIVERED = "order_delivered",
   ORDER_CANCELLED = "order_cancelled",
   STATUS_CHANGED = "status_changed",
+  PAYMENT_INTENT_CREATED = "payment_intent_created",
   PAYMENT_INITIATED = "payment_initiated",
   PAYMENT_COMPLETED = "payment_completed",
   PAYMENT_FAILED = "payment_failed",
+  ORDER_MARKED_PAID = "order_marked_paid",
+  CART_SNAPSHOT = "cart_snapshot",
+  INVENTORY_RESERVED = "inventory_reserved",
   SHIPMENT_CREATED = "shipment_created",
   SHIPMENT_TRACKING_UPDATED = "shipment_tracking_updated",
   SHIPMENT_LABEL_GENERATED = "shipment_label_generated",
@@ -20,6 +24,16 @@ export enum TimelineEventType {
   SHIPMENT_DELIVERED = "shipment_delivered",
   SHIPMENT_FAILED = "shipment_failed",
   SHIPMENT_RETURNED = "shipment_returned",
+  SHIPMENT_CANCELLED = "shipment_cancelled",
+  NOTE_ADDED = "note_added",
+  ADMIN_NOTE_ADDED = "admin_note_added",
+  ADDRESS_UPDATED = "address_updated",
+  REFUND_CREATED = "refund_created",
+  REFUND_PROCESSED = "refund_processed",
+  RATE_LIMIT_TRIGGERED = "rate_limit_triggered",
+  CHECKOUT_MERGED = "checkout_merged",
+  GUEST_CHECKOUT_DETECTED = "guest_checkout_detected",
+  ABANDONED_CHECKOUT_RECOVERED = "abandoned_checkout_recovered",
 }
 
 export class TimelineEventDto {
@@ -68,6 +82,56 @@ export class TimelineEventDto {
     nullable: true,
   })
   metadata?: Record<string, unknown> | null;
+
+  @ApiProperty({
+    description: "Actor who performed the action",
+    example: "admin",
+    enum: ["system", "admin", "customer", "automated"],
+    nullable: true,
+  })
+  actor?: "system" | "admin" | "customer" | "automated";
+
+  @ApiProperty({
+    description: "Actor ID (user/admin ID)",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+    nullable: true,
+  })
+  actorId?: string;
+
+  @ApiProperty({
+    description: "Actor name",
+    example: "John Admin",
+    nullable: true,
+  })
+  actorName?: string;
+
+  @ApiProperty({
+    description: "Actor email",
+    example: "admin@example.com",
+    nullable: true,
+  })
+  actorEmail?: string;
+
+  @ApiProperty({
+    description: "Trace ID for distributed tracing",
+    example: "abc123def456",
+    nullable: true,
+  })
+  traceId?: string;
+
+  @ApiProperty({
+    description: "Span ID for distributed tracing",
+    example: "span789",
+    nullable: true,
+  })
+  spanId?: string;
+
+  @ApiProperty({
+    description: "Request ID for request tracking",
+    example: "req456",
+    nullable: true,
+  })
+  requestId?: string;
 }
 
 export class OrderTimelineDto {

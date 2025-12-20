@@ -12,7 +12,9 @@ import {
 import { addresses } from "./addresses";
 import { customers } from "./customers";
 import { orderItems } from "./order-items";
+import { orderNotes } from "./order-notes";
 import { payments } from "./payments";
+import { refunds } from "./refunds";
 import { shipments } from "./shipments";
 
 export const orderStatusEnum = pgEnum("order_status", [
@@ -97,6 +99,8 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   items: many(orderItems),
   payments: many(payments),
   shipments: many(shipments),
+  notes: many(orderNotes),
+  refunds: many(refunds),
 }));
 
 export type Order = typeof orders.$inferSelect;

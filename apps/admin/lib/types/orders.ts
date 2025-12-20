@@ -66,6 +66,8 @@ export interface Order {
   subtotal: number;
   gstAmount: number;
   gstBreakdown: GSTBreakdown;
+  discountCode?: string | null;
+  discountAmount: number;
   shippingCost: number;
   total: number;
   razorpayOrderId: string | null;
@@ -83,6 +85,13 @@ export interface Order {
   paymentMethod?: string;
   paymentStatus?: PaymentStatus;
   fulfillmentStatus?: FulfillmentStatus;
+  // Snapshots
+  discountSnapshot?: Record<string, unknown> | null;
+  pricingSnapshot?: Record<string, unknown> | null;
+  // Abandoned checkout
+  abandonedCheckoutId?: string | null;
+  recoverySource?: "email" | "whatsapp" | null;
+  recoveredAt?: Date | null;
 }
 
 export interface Address {
@@ -107,6 +116,9 @@ export interface PaginatedOrdersResponse {
   totalPages: number;
 }
 
+export type OrderSortBy = "createdAt" | "total" | "orderNumber";
+export type OrderSortOrder = "asc" | "desc";
+
 export interface OrderQueryParams {
   page?: number;
   limit?: number;
@@ -118,14 +130,20 @@ export interface OrderQueryParams {
   fulfillmentStatus?: FulfillmentStatus;
   minValue?: number;
   maxValue?: number;
+  paymentMethod?: "COD" | "prepaid" | "all";
+  sortBy?: OrderSortBy;
+  sortOrder?: OrderSortOrder;
 }
 
 export type TimelineEventType =
   | "order_created"
   | "status_changed"
+  | "payment_intent_created"
   | "payment_initiated"
   | "payment_completed"
   | "payment_failed"
+  | "cart_snapshot"
+  | "inventory_reserved"
   | "shipment_created"
   | "shipment_label_generated"
   | "shipment_picked_up"
@@ -133,7 +151,19 @@ export type TimelineEventType =
   | "shipment_out_for_delivery"
   | "shipment_delivered"
   | "shipment_failed"
-  | "shipment_returned";
+  | "shipment_returned"
+  | "shipment_cancelled"
+  | "note_added"
+  | "admin_note_added"
+  | "address_updated"
+  | "refund_created"
+  | "refund_processed"
+  | "rate_limit_triggered"
+  | "checkout_merged"
+  | "guest_checkout_detected"
+  | "abandoned_checkout_recovered";
+
+export type TimelineActor = "system" | "admin" | "customer" | "automated";
 
 export interface TimelineEvent {
   type: TimelineEventType;
@@ -142,7 +172,14 @@ export interface TimelineEvent {
   previousValue?: string | null;
   newValue?: string | null;
   timestamp: Date;
+  actor?: TimelineActor;
+  actorId?: string;
+  actorName?: string;
+  actorEmail?: string;
   metadata?: Record<string, unknown> | null;
+  traceId?: string;
+  spanId?: string;
+  requestId?: string;
 }
 
 export interface OrderTimeline {

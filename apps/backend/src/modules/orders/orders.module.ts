@@ -9,11 +9,15 @@ import { RedisStoreModule } from "../redis-store/redis-store.module";
 import { OrdersController } from "./orders.controller";
 import { OrdersService } from "./orders.service";
 import { ReconciliationService } from "./reconciliation.service";
+import { OrderAddressService } from "./services/order-address.service";
 import { OrderGstService } from "./services/order-gst.service";
+import { OrderNotesService } from "./services/order-notes.service";
+import { OrderPaymentService } from "./services/order-payment.service";
 import { OrderPricingService } from "./services/order-pricing.service";
 import { OrderStatusService } from "./services/order-status.service";
 import { OrderTimelineService } from "./services/order-timeline.service";
 import { OrderValidationService } from "./services/order-validation.service";
+import { RefundsService } from "./services/refunds.service";
 
 @Module({
   imports: [
@@ -34,6 +38,10 @@ import { OrderValidationService } from "./services/order-validation.service";
     OrderStatusService,
     OrderGstService,
     OrderTimelineService,
+    OrderNotesService,
+    RefundsService,
+    OrderPaymentService,
+    OrderAddressService,
   ],
   exports: [
     OrdersService,
@@ -43,6 +51,10 @@ import { OrderValidationService } from "./services/order-validation.service";
     OrderStatusService,
     OrderGstService,
     OrderTimelineService,
+    OrderNotesService,
+    RefundsService,
+    OrderPaymentService,
+    OrderAddressService,
   ],
 })
 export class OrdersModule {}

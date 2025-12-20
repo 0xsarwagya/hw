@@ -1,5 +1,15 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { and, db, desc, eq, orders, payments, shipments } from "@vcecom/db";
+import {
+  and,
+  db,
+  desc,
+  eq,
+  orderNotes,
+  orders,
+  payments,
+  refunds,
+  shipments,
+} from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import {
   OrderTimelineDto,
@@ -261,6 +271,101 @@ export class OrderTimelineService {
       });
     }
 
+    // Get order notes
+    const orderNotesList = await db
+      .select()
+      .from(orderNotes)
+      .where(eq(orderNotes.orderId, orderId))
+      .orderBy(desc(orderNotes.createdAt));
+
+    // Add note events
+    for (const note of orderNotesList) {
+      events.push({
+        type: note.isPublic
+          ? TimelineEventType.NOTE_ADDED
+          : TimelineEventType.ADMIN_NOTE_ADDED,
+        title: note.isPublic ? "Note Added" : "Admin Note Added",
+        description: note.note,
+        timestamp: note.createdAt,
+        actor: note.authorId ? "admin" : "system",
+        actorId: note.authorId || undefined,
+        actorName: note.authorName || undefined,
+        actorEmail: note.authorEmail || undefined,
+        metadata: {
+          noteId: note.id,
+          isPublic: note.isPublic,
+        },
+      });
+    }
+
+    // Get refunds for this order
+    const orderRefunds = await db
+      .select()
+      .from(refunds)
+      .where(eq(refunds.orderId, orderId))
+      .orderBy(desc(refunds.createdAt));
+
+    // Add refund events
+    for (const refund of orderRefunds) {
+      events.push({
+        type: TimelineEventType.REFUND_CREATED,
+        title: "Refund Created",
+        description: `Refund of ₹${refund.amount} created. Reason: ${refund.reason}`,
+        timestamp: refund.createdAt,
+        actor: "admin",
+        metadata: {
+          refundId: refund.id,
+          amount: refund.amount,
+          reason: refund.reason,
+          status: refund.status,
+        },
+      });
+
+      if (refund.status === "completed" && refund.processedAt) {
+        events.push({
+          type: TimelineEventType.REFUND_PROCESSED,
+          title: "Refund Processed",
+          description: `Refund of ₹${refund.amount} has been processed`,
+          timestamp: refund.processedAt,
+          actor: "system",
+          metadata: {
+            refundId: refund.id,
+            providerRefundId: refund.providerRefundId,
+          },
+        });
+      } else if (refund.status === "failed") {
+        events.push({
+          type: TimelineEventType.REFUND_PROCESSED,
+          title: "Refund Failed",
+          description: `Refund of ₹${refund.amount} failed to process`,
+          timestamp: refund.updatedAt,
+          actor: "system",
+          metadata: {
+            refundId: refund.id,
+            status: refund.status,
+          },
+        });
+      }
+    }
+
+    // Add shipment cancelled events
+    for (const shipment of orderShipments) {
+      if (shipment.status === "cancelled") {
+        events.push({
+          type: TimelineEventType.SHIPMENT_CANCELLED,
+          title: "Shipment Cancelled",
+          description: `Shipment ${shipment.awbNumber || shipment.trackingNumber || shipment.id} was cancelled`,
+          timestamp: shipment.updatedAt,
+          actor: "admin",
+          metadata: {
+            shipmentId: shipment.id,
+            awbNumber: shipment.awbNumber,
+            trackingNumber: shipment.trackingNumber,
+          },
+        });
+      }
+    }
+
     // Sort events by timestamp (oldest first)
     events.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
@@ -277,5 +382,42 @@ export class OrderTimelineService {
         | "refunded",
       events,
     };
+  }
+
+  /**
+   * Add an event to the order timeline
+   * Note: Currently events are generated dynamically from database records.
+   * This method is a placeholder for future event storage implementation.
+   * @param orderId - Order ID
+   * @param event - Event to add
+   */
+  async addEvent(
+    orderId: string,
+    event: Omit<TimelineEventDto, "timestamp"> & { timestamp?: Date },
+  ): Promise<void> {
+    // Verify order exists
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, orderId))
+      .limit(1);
+
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    // Log the event for now (future: store in event table or JSONB field)
+    this._logger.info(
+      {
+        orderId,
+        eventType: event.type,
+        actor: event.actor,
+        actorId: event.actorId,
+      },
+      "Timeline event added",
+    );
+
+    // Future implementation: Store events in a separate table or JSONB field
+    // For now, events are generated dynamically from database records
   }
 }
