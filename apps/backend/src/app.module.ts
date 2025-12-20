@@ -14,6 +14,7 @@ import { AdminAuthModule } from "./modules/admin-auth/admin-auth.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { BundlesModule } from "./modules/bundles/bundles.module";
 import { CategoriesModule } from "./modules/categories/categories.module";
+import { CheckoutModule } from "./modules/checkout/checkout.module";
 import { CollectionsModule } from "./modules/collections/collections.module";
 import { CustomersModule } from "./modules/customers/customers.module";
 import { DatabaseModule } from "./modules/database/database.module";
@@ -23,6 +24,7 @@ import { InventoryModule } from "./modules/inventory/inventory.module";
 import { InvoicesModule } from "./modules/invoices/invoices.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { OrdersModule } from "./modules/orders/orders.module";
+import { PaymentChargesModule } from "./modules/payment-charges/payment-charges.module";
 import { PaymentsModule } from "./modules/payments/payments.module";
 import { PermissionsModule } from "./modules/permissions/permissions.module";
 import { PricingModule } from "./modules/pricing/pricing.module";
@@ -49,11 +51,13 @@ import { SystemLogsModule } from "./modules/system-logs/system-logs.module";
     StorageModule.forRootAsync(),
     AuthModule,
     CategoriesModule,
+    CheckoutModule,
     CollectionsModule,
     ProductsModule,
     CustomersModule,
     OrdersModule,
     PaymentsModule,
+    PaymentChargesModule,
     ShippingModule,
     AdminModule,
     AdminAuthModule,

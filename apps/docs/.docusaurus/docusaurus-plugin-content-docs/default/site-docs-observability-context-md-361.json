@@ -5,7 +5,7 @@
   "source": "@site/docs/observability/context.md",
   "sourceDirName": "observability",
   "slug": "/observability/context",
-  "permalink": "/docs/docs/observability/context",
+  "permalink": "/docs/observability/context",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/observability/context.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Distributed Tracing",
-    "permalink": "/docs/docs/observability/tracing"
+    "permalink": "/docs/observability/tracing"
   },
   "next": {
     "title": "Log-Trace Correlation",
-    "permalink": "/docs/docs/observability/correlation"
+    "permalink": "/docs/observability/correlation"
   }
 }

@@ -1,258 +1,258 @@
 {
-  "/docs/docs-8ec": {
+  "/docs-227": {
     "__comp": "5e95c892",
     "__context": {
       "plugin": "aba21aa0"
     }
   },
-  "/docs/docs-568": {
+  "/docs-36f": {
     "__comp": "a7bd4aaa",
-    "__props": "a2065270"
+    "__props": "0058b4c6"
   },
-  "/docs/docs-80f": {
+  "/docs-3a8": {
     "__comp": "a94703ab"
   },
-  "/docs/docs/api-reference/admin-api-a58": {
+  "/docs/api-reference/admin-api-8a5": {
     "__comp": "17896441",
     "content": "d8b6cdbf"
   },
-  "/docs/docs/api-reference/store-api-84b": {
+  "/docs/api-reference/store-api-2ad": {
     "__comp": "17896441",
     "content": "3fdde753"
   },
-  "/docs/docs/architecture/dependencies-ab6": {
+  "/docs/architecture/dependencies-255": {
     "__comp": "17896441",
     "content": "ce56f640"
   },
-  "/docs/docs/architecture/modules-9d4": {
+  "/docs/architecture/modules-220": {
     "__comp": "17896441",
     "content": "1cd9f096"
   },
-  "/docs/docs/architecture/overview-d3a": {
+  "/docs/architecture/overview-2b6": {
     "__comp": "17896441",
     "content": "0b1ac180"
   },
-  "/docs/docs/authentication/admin-auth-b1c": {
+  "/docs/authentication/admin-auth-922": {
     "__comp": "17896441",
     "content": "28c9f219"
   },
-  "/docs/docs/authentication/storefront-auth-6b8": {
+  "/docs/authentication/storefront-auth-193": {
     "__comp": "17896441",
     "content": "4da77233"
   },
-  "/docs/docs/bundles/cart-integration-7ac": {
+  "/docs/bundles/cart-integration-f06": {
     "__comp": "17896441",
     "content": "8efba4bb"
   },
-  "/docs/docs/bundles/choice-sets-6ae": {
+  "/docs/bundles/choice-sets-cee": {
     "__comp": "17896441",
     "content": "427aa2a0"
   },
-  "/docs/docs/bundles/definition-433": {
+  "/docs/bundles/definition-6fd": {
     "__comp": "17896441",
     "content": "ac2e62c3"
   },
-  "/docs/docs/bundles/overview-ee1": {
+  "/docs/bundles/overview-e81": {
     "__comp": "17896441",
     "content": "c2042449"
   },
-  "/docs/docs/bundles/pricing-12f": {
+  "/docs/bundles/pricing-29b": {
     "__comp": "17896441",
     "content": "71a843cd"
   },
-  "/docs/docs/catalog/collections-5f1": {
+  "/docs/catalog/collections-6da": {
     "__comp": "17896441",
     "content": "6aa1d44c"
   },
-  "/docs/docs/catalog/inventory-bad": {
+  "/docs/catalog/inventory-6bf": {
     "__comp": "17896441",
     "content": "f4f7ca35"
   },
-  "/docs/docs/catalog/products-cef": {
+  "/docs/catalog/products-d67": {
     "__comp": "17896441",
     "content": "62ea8477"
   },
-  "/docs/docs/catalog/variants-516": {
+  "/docs/catalog/variants-afa": {
     "__comp": "17896441",
     "content": "41972ccc"
   },
-  "/docs/docs/checkout/guest-checkout-0bf": {
+  "/docs/checkout/guest-checkout-5e6": {
     "__comp": "17896441",
     "content": "499e6ef6"
   },
-  "/docs/docs/checkout/inventory-flow-f32": {
+  "/docs/checkout/inventory-flow-5ee": {
     "__comp": "17896441",
     "content": "8afc2c65"
   },
-  "/docs/docs/checkout/overview-732": {
+  "/docs/checkout/overview-df5": {
     "__comp": "17896441",
     "content": "8053e6dc"
   },
-  "/docs/docs/checkout/payment-intent-d1f": {
+  "/docs/checkout/payment-intent-348": {
     "__comp": "17896441",
     "content": "a64b2381"
   },
-  "/docs/docs/checkout/state-machine-13b": {
+  "/docs/checkout/state-machine-5dd": {
     "__comp": "17896441",
     "content": "50aafbb1"
   },
-  "/docs/docs/checkout/webhooks-027": {
+  "/docs/checkout/webhooks-bd5": {
     "__comp": "17896441",
     "content": "b473dddb"
   },
-  "/docs/docs/database-schema/erd-2fc": {
+  "/docs/database-schema/erd-054": {
     "__comp": "17896441",
     "content": "22ed46b6"
   },
-  "/docs/docs/database-schema/overview-f8b": {
+  "/docs/database-schema/overview-484": {
     "__comp": "17896441",
     "content": "b76438c1"
   },
-  "/docs/docs/database-schema/tables-11b": {
+  "/docs/database-schema/tables-f05": {
     "__comp": "17896441",
     "content": "f8e58cd3"
   },
-  "/docs/docs/deployment/docker-be3": {
+  "/docs/deployment/docker-3d0": {
     "__comp": "17896441",
     "content": "ff8b1e34"
   },
-  "/docs/docs/deployment/overview-624": {
+  "/docs/deployment/overview-d63": {
     "__comp": "17896441",
     "content": "69425d0e"
   },
-  "/docs/docs/deployment/production-0b3": {
+  "/docs/deployment/production-9ee": {
     "__comp": "17896441",
     "content": "1973956f"
   },
-  "/docs/docs/deployment/scaling-e05": {
+  "/docs/deployment/scaling-148": {
     "__comp": "17896441",
     "content": "bdbc3a07"
   },
-  "/docs/docs/discounts/definitions-49d": {
+  "/docs/discounts/definitions-95f": {
     "__comp": "17896441",
     "content": "42b5df3a"
   },
-  "/docs/docs/discounts/drift-detection-0d7": {
+  "/docs/discounts/drift-detection-b39": {
     "__comp": "17896441",
     "content": "325554f3"
   },
-  "/docs/docs/discounts/engine-cb7": {
+  "/docs/discounts/engine-b67": {
     "__comp": "17896441",
     "content": "26747f5c"
   },
-  "/docs/docs/discounts/overview-3c8": {
+  "/docs/discounts/overview-e73": {
     "__comp": "17896441",
     "content": "aad49ae9"
   },
-  "/docs/docs/discounts/priority-stacking-e13": {
+  "/docs/discounts/priority-stacking-8fc": {
     "__comp": "17896441",
     "content": "e4710e77"
   },
-  "/docs/docs/discounts/snapshots-3ff": {
+  "/docs/discounts/snapshots-410": {
     "__comp": "17896441",
     "content": "e8f2c13e"
   },
-  "/docs/docs/introduction-478": {
+  "/docs/introduction-e0e": {
     "__comp": "17896441",
     "content": "a09c2993"
   },
-  "/docs/docs/observability/context-160": {
+  "/docs/observability/context-3f6": {
     "__comp": "17896441",
     "content": "361d7a1c"
   },
-  "/docs/docs/observability/correlation-16c": {
+  "/docs/observability/correlation-b55": {
     "__comp": "17896441",
     "content": "fde88871"
   },
-  "/docs/docs/observability/logging-b47": {
+  "/docs/observability/logging-9e5": {
     "__comp": "17896441",
     "content": "2b5a7889"
   },
-  "/docs/docs/observability/tracing-ef5": {
+  "/docs/observability/tracing-3bf": {
     "__comp": "17896441",
     "content": "da03633c"
   },
-  "/docs/docs/orders/creation-5ab": {
+  "/docs/orders/creation-70a": {
     "__comp": "17896441",
     "content": "57b76398"
   },
-  "/docs/docs/orders/fulfillment-535": {
+  "/docs/orders/fulfillment-941": {
     "__comp": "17896441",
     "content": "f780f0b5"
   },
-  "/docs/docs/orders/overview-68f": {
+  "/docs/orders/overview-e03": {
     "__comp": "17896441",
     "content": "593e8d2f"
   },
-  "/docs/docs/orders/reconciliation-a5c": {
+  "/docs/orders/reconciliation-a6b": {
     "__comp": "17896441",
     "content": "d05b1696"
   },
-  "/docs/docs/orders/refunds-289": {
+  "/docs/orders/refunds-7c4": {
     "__comp": "17896441",
     "content": "2ef541d3"
   },
-  "/docs/docs/pricing/customer-groups-6e5": {
+  "/docs/pricing/customer-groups-cd5": {
     "__comp": "17896441",
     "content": "a3e5e60a"
   },
-  "/docs/docs/pricing/drift-detection-eb5": {
+  "/docs/pricing/drift-detection-a0d": {
     "__comp": "17896441",
     "content": "7bc26092"
   },
-  "/docs/docs/pricing/overview-3bf": {
+  "/docs/pricing/overview-281": {
     "__comp": "17896441",
     "content": "ecd14ad9"
   },
-  "/docs/docs/pricing/price-lists-1ff": {
+  "/docs/pricing/price-lists-afe": {
     "__comp": "17896441",
     "content": "e7196e37"
   },
-  "/docs/docs/pricing/pricing-engine-d61": {
+  "/docs/pricing/pricing-engine-9f7": {
     "__comp": "17896441",
     "content": "dc0fee91"
   },
-  "/docs/docs/pricing/snapshots-fe3": {
+  "/docs/pricing/snapshots-782": {
     "__comp": "17896441",
     "content": "b4254be9"
   },
-  "/docs/docs/redis/caching-layers-872": {
+  "/docs/redis/caching-layers-096": {
     "__comp": "17896441",
     "content": "737a8b3b"
   },
-  "/docs/docs/redis/expirations-6ff": {
+  "/docs/redis/expirations-22c": {
     "__comp": "17896441",
     "content": "95a32ece"
   },
-  "/docs/docs/redis/key-patterns-36e": {
+  "/docs/redis/key-patterns-976": {
     "__comp": "17896441",
     "content": "3226a077"
   },
-  "/docs/docs/redis/overview-9d0": {
+  "/docs/redis/overview-af1": {
     "__comp": "17896441",
     "content": "e27b3cc1"
   },
-  "/docs/docs/reviews/aggregation-8cd": {
+  "/docs/reviews/aggregation-9ba": {
     "__comp": "17896441",
     "content": "0329dde4"
   },
-  "/docs/docs/reviews/caching-c3b": {
+  "/docs/reviews/caching-300": {
     "__comp": "17896441",
     "content": "a6bc3cca"
   },
-  "/docs/docs/reviews/moderation-7ec": {
+  "/docs/reviews/moderation-f7b": {
     "__comp": "17896441",
     "content": "0dbac33d"
   },
-  "/docs/docs/reviews/overview-123": {
+  "/docs/reviews/overview-0a4": {
     "__comp": "17896441",
     "content": "766752d4"
   },
-  "/docs/docs/reviews/verified-purchase-6fc": {
+  "/docs/reviews/verified-purchase-96f": {
     "__comp": "17896441",
     "content": "07d217bc"
   },
-  "/docs/-2a6": {
+  "/-e5f": {
     "__comp": "1df93b7f",
     "__context": {
       "plugin": "a7456010"

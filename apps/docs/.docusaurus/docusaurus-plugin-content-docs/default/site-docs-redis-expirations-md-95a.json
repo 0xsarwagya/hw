@@ -5,7 +5,7 @@
   "source": "@site/docs/redis/expirations.md",
   "sourceDirName": "redis",
   "slug": "/redis/expirations",
-  "permalink": "/docs/docs/redis/expirations",
+  "permalink": "/docs/redis/expirations",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/redis/expirations.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Redis Caching Layers",
-    "permalink": "/docs/docs/redis/caching-layers"
+    "permalink": "/docs/redis/caching-layers"
   },
   "next": {
     "title": "Admin API Reference",
-    "permalink": "/docs/docs/api-reference/admin-api"
+    "permalink": "/docs/api-reference/admin-api"
   }
 }

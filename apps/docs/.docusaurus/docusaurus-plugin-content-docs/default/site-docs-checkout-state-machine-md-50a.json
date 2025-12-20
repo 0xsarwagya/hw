@@ -5,7 +5,7 @@
   "source": "@site/docs/checkout/state-machine.md",
   "sourceDirName": "checkout",
   "slug": "/checkout/state-machine",
-  "permalink": "/docs/docs/checkout/state-machine",
+  "permalink": "/docs/checkout/state-machine",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/checkout/state-machine.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Guest Checkout",
-    "permalink": "/docs/docs/checkout/guest-checkout"
+    "permalink": "/docs/checkout/guest-checkout"
   },
   "next": {
     "title": "payment-intent",
-    "permalink": "/docs/docs/checkout/payment-intent"
+    "permalink": "/docs/checkout/payment-intent"
   }
 }

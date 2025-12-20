@@ -5,7 +5,7 @@
   "source": "@site/docs/pricing/customer-groups.md",
   "sourceDirName": "pricing",
   "slug": "/pricing/customer-groups",
-  "permalink": "/docs/docs/pricing/customer-groups",
+  "permalink": "/docs/pricing/customer-groups",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/pricing/customer-groups.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Price Lists",
-    "permalink": "/docs/docs/pricing/price-lists"
+    "permalink": "/docs/pricing/price-lists"
   },
   "next": {
     "title": "Pricing Engine",
-    "permalink": "/docs/docs/pricing/pricing-engine"
+    "permalink": "/docs/pricing/pricing-engine"
   }
 }

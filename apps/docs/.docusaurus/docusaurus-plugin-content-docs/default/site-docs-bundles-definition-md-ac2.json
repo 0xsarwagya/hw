@@ -5,7 +5,7 @@
   "source": "@site/docs/bundles/definition.md",
   "sourceDirName": "bundles",
   "slug": "/bundles/definition",
-  "permalink": "/docs/docs/bundles/definition",
+  "permalink": "/docs/bundles/definition",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/bundles/definition.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Bundles Engine Overview",
-    "permalink": "/docs/docs/bundles/overview"
+    "permalink": "/docs/bundles/overview"
   },
   "next": {
     "title": "Choice Sets",
-    "permalink": "/docs/docs/bundles/choice-sets"
+    "permalink": "/docs/bundles/choice-sets"
   }
 }

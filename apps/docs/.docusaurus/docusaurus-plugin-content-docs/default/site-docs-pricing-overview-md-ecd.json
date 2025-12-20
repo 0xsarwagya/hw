@@ -5,7 +5,7 @@
   "source": "@site/docs/pricing/overview.md",
   "sourceDirName": "pricing",
   "slug": "/pricing/overview",
-  "permalink": "/docs/docs/pricing/overview",
+  "permalink": "/docs/pricing/overview",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/pricing/overview.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Inventory Management",
-    "permalink": "/docs/docs/catalog/inventory"
+    "permalink": "/docs/catalog/inventory"
   },
   "next": {
     "title": "Price Lists",
-    "permalink": "/docs/docs/pricing/price-lists"
+    "permalink": "/docs/pricing/price-lists"
   }
 }

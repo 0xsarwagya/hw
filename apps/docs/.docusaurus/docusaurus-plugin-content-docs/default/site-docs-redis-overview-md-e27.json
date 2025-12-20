@@ -5,7 +5,7 @@
   "source": "@site/docs/redis/overview.md",
   "sourceDirName": "redis",
   "slug": "/redis/overview",
-  "permalink": "/docs/docs/redis/overview",
+  "permalink": "/docs/redis/overview",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/redis/overview.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Log-Trace Correlation",
-    "permalink": "/docs/docs/observability/correlation"
+    "permalink": "/docs/observability/correlation"
   },
   "next": {
     "title": "Redis Key Patterns",
-    "permalink": "/docs/docs/redis/key-patterns"
+    "permalink": "/docs/redis/key-patterns"
   }
 }

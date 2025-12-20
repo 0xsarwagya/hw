@@ -5,7 +5,7 @@
   "source": "@site/docs/bundles/pricing.md",
   "sourceDirName": "bundles",
   "slug": "/bundles/pricing",
-  "permalink": "/docs/docs/bundles/pricing",
+  "permalink": "/docs/bundles/pricing",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/bundles/pricing.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Choice Sets",
-    "permalink": "/docs/docs/bundles/choice-sets"
+    "permalink": "/docs/bundles/choice-sets"
   },
   "next": {
     "title": "cart-integration",
-    "permalink": "/docs/docs/bundles/cart-integration"
+    "permalink": "/docs/bundles/cart-integration"
   }
 }

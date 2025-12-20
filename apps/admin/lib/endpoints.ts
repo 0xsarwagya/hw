@@ -91,6 +91,14 @@ export const endpoints = {
     listShipments: "/shipping/shipments",
     getShipment: (id: string) => `/shipping/shipments/${id}`,
   },
+  paymentCharges: {
+    list: "/admin/payment-charges",
+    detail: (id: string) => `/admin/payment-charges/${id}`,
+    create: "/admin/payment-charges",
+    update: (id: string) => `/admin/payment-charges/${id}`,
+    delete: (id: string) => `/admin/payment-charges/${id}`,
+    preview: "/admin/payment-charges/preview",
+  },
   abandonedCheckouts: {
     list: "/admin/abandoned-checkouts",
     detail: (cartId: string) => `/admin/abandoned-checkouts/${cartId}`,

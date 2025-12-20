@@ -8,6 +8,7 @@ import {
   Bell,
   BookOpen,
   Boxes,
+  CreditCard,
   DollarSign,
   FileSearch,
   FileText,
@@ -155,6 +156,11 @@ export const navigation: NavSection[] = [
         label: "Price Lists",
         href: "/price-lists",
         icon: DollarSign,
+      },
+      {
+        label: "Payment Fees",
+        href: "/settings/payment-fees",
+        icon: CreditCard,
       },
       {
         label: "Customer Groups",

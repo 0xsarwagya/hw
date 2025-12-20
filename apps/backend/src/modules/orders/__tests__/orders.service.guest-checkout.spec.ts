@@ -14,6 +14,7 @@ import { HotReloadWatcher } from "../../discounts/services/hot-reload-watcher.se
 import { RulesetBundleService } from "../../discounts/services/ruleset-bundle.service";
 import { DiscountProfiler } from "../../discounts/services/discount-profiler.service";
 import { PaymentsService } from "../../payments/payments.service";
+import { PaymentChargeService } from "../../payments/services/payment-charge.service";
 import { PricingHotReloadWatcher } from "../../pricing/services/pricing-hot-reload-watcher.service";
 import { PriceListService } from "../../pricing/services/price-list.service";
 import { CustomerGroupService } from "../../pricing/services/customer-group.service";
@@ -225,6 +226,13 @@ describe("OrdersService - Guest Checkout", () => {
             markRead: jest.fn().mockResolvedValue(undefined),
             markAllRead: jest.fn().mockResolvedValue(undefined),
             delete: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: PaymentChargeService,
+          useValue: {
+            calculateFee: jest.fn().mockResolvedValue({ fee: 0, breakdown: {} }),
+            getAvailableMethods: jest.fn().mockResolvedValue([]),
           },
         },
         ...getCommonTestProviders(),

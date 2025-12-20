@@ -24,6 +24,7 @@ export * from "./notifications";
 export * from "./order-items";
 export * from "./order-notes";
 export * from "./orders";
+export * from "./payment-method-charges";
 export * from "./payments";
 export * from "./pincodes";
 export * from "./price-lists";

@@ -2,7 +2,6 @@ import { Injectable, OnModuleInit } from "@nestjs/common";
 import Redis from "ioredis";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
-import { createErrorContext } from "../../common/logging/logging.helper";
 import { RedisStoreService } from "../redis-store/redis-store.service";
 
 export interface SystemLogEntry {
@@ -17,24 +16,45 @@ export interface SystemLogEntry {
 
 @Injectable()
 export class SystemLogsStorageService implements OnModuleInit {
-  private client!: Redis;
+  private client: Redis | null = null;
   private readonly maxRecordsPerHour = 5000;
   private readonly ttlHours = 24;
+  private isStoringLog = false; // Guard against recursive logging
 
   constructor(
     private readonly redisStoreService: RedisStoreService,
-    private readonly logger: PinoLogger,
-    private readonly contextService: ContextService,
+    readonly _logger: PinoLogger,
+    readonly _contextService: ContextService,
   ) {}
 
   async onModuleInit() {
-    this.client = await this.redisStoreService.getClient();
+    try {
+      this.client = await this.redisStoreService.getClient();
+    } catch (error) {
+      // Use console.error to avoid recursive logging
+      console.error(
+        "Failed to initialize Redis client for system logs:",
+        error,
+      );
+      this.client = null;
+    }
   }
 
   /**
    * Store a log entry in Redis
    */
   async storeLog(entry: SystemLogEntry): Promise<void> {
+    // Guard against recursive logging
+    if (this.isStoringLog) {
+      return;
+    }
+
+    // Check if client is initialized
+    if (!this.client) {
+      return;
+    }
+
+    this.isStoringLog = true;
     try {
       const date = new Date(entry.timestamp);
       const year = date.getFullYear();
@@ -53,11 +73,11 @@ export class SystemLogsStorageService implements OnModuleInit {
       // Set TTL (24 hours)
       await this.client.expire(key, this.ttlHours * 60 * 60);
     } catch (error) {
-      // Don't throw - log storage failure shouldn't break the app
-      this.logger.warn(
-        createErrorContext(this.contextService, "storeLog", error, { entry }),
-        "Failed to store system log",
-      );
+      // Use console.error to avoid recursive logging - don't use logger here
+      // This prevents infinite recursion when logging system fails
+      console.error("Failed to store system log:", error);
+    } finally {
+      this.isStoringLog = false;
     }
   }
 
@@ -70,20 +90,17 @@ export class SystemLogsStorageService implements OnModuleInit {
     day: number,
     hour: number,
   ): Promise<SystemLogEntry[]> {
+    if (!this.client) {
+      return [];
+    }
+
     try {
       const key = `logs:system:${year}${String(month).padStart(2, "0")}${String(day).padStart(2, "0")}:${String(hour).padStart(2, "0")}`;
       const logs = await this.client.lrange(key, 0, -1);
       return logs.map((log) => JSON.parse(log) as SystemLogEntry);
     } catch (error) {
-      this.logger.error(
-        createErrorContext(this.contextService, "getLogsForHour", error, {
-          year,
-          month,
-          day,
-          hour,
-        }),
-        "Failed to get logs for hour",
-      );
+      // Use console.error to avoid recursive logging
+      console.error("Failed to get logs for hour:", error);
       return [];
     }
   }
@@ -92,6 +109,10 @@ export class SystemLogsStorageService implements OnModuleInit {
    * Get all log keys matching a date range
    */
   async getLogKeys(from: Date, to: Date): Promise<string[]> {
+    if (!this.client) {
+      return [];
+    }
+
     try {
       const keys: string[] = [];
       const current = new Date(from);
@@ -114,13 +135,8 @@ export class SystemLogsStorageService implements OnModuleInit {
 
       return keys;
     } catch (error) {
-      this.logger.error(
-        createErrorContext(this.contextService, "getLogKeys", error, {
-          from,
-          to,
-        }),
-        "Failed to get log keys",
-      );
+      // Use console.error to avoid recursive logging
+      console.error("Failed to get log keys:", error);
       return [];
     }
   }

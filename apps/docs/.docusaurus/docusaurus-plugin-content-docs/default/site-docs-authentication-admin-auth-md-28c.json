@@ -5,7 +5,7 @@
   "source": "@site/docs/authentication/admin-auth.md",
   "sourceDirName": "authentication",
   "slug": "/authentication/admin-auth",
-  "permalink": "/docs/docs/authentication/admin-auth",
+  "permalink": "/docs/authentication/admin-auth",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/authentication/admin-auth.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Cross-Module Dependencies",
-    "permalink": "/docs/docs/architecture/dependencies"
+    "permalink": "/docs/architecture/dependencies"
   },
   "next": {
     "title": "Storefront Authentication",
-    "permalink": "/docs/docs/authentication/storefront-auth"
+    "permalink": "/docs/authentication/storefront-auth"
   }
 }

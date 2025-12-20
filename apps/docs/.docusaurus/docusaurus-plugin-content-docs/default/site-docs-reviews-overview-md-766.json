@@ -5,7 +5,7 @@
   "source": "@site/docs/reviews/overview.md",
   "sourceDirName": "reviews",
   "slug": "/reviews/overview",
-  "permalink": "/docs/docs/reviews/overview",
+  "permalink": "/docs/reviews/overview",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/reviews/overview.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "reconciliation",
-    "permalink": "/docs/docs/orders/reconciliation"
+    "permalink": "/docs/orders/reconciliation"
   },
   "next": {
     "title": "Verified Purchase Reviews",
-    "permalink": "/docs/docs/reviews/verified-purchase"
+    "permalink": "/docs/reviews/verified-purchase"
   }
 }

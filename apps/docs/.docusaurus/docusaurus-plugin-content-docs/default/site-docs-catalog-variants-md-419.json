@@ -5,7 +5,7 @@
   "source": "@site/docs/catalog/variants.md",
   "sourceDirName": "catalog",
   "slug": "/catalog/variants",
-  "permalink": "/docs/docs/catalog/variants",
+  "permalink": "/docs/catalog/variants",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/catalog/variants.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Products",
-    "permalink": "/docs/docs/catalog/products"
+    "permalink": "/docs/catalog/products"
   },
   "next": {
     "title": "Collections",
-    "permalink": "/docs/docs/catalog/collections"
+    "permalink": "/docs/catalog/collections"
   }
 }

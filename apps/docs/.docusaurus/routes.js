@@ -3,374 +3,374 @@ import ComponentCreator from '@docusaurus/ComponentCreator';
 
 export default [
   {
-    path: '/docs/docs',
-    component: ComponentCreator('/docs/docs', '8ec'),
+    path: '/docs',
+    component: ComponentCreator('/docs', '227'),
     routes: [
       {
-        path: '/docs/docs',
-        component: ComponentCreator('/docs/docs', '568'),
+        path: '/docs',
+        component: ComponentCreator('/docs', '36f'),
         routes: [
           {
-            path: '/docs/docs',
-            component: ComponentCreator('/docs/docs', '80f'),
+            path: '/docs',
+            component: ComponentCreator('/docs', '3a8'),
             routes: [
               {
-                path: '/docs/docs/api-reference/admin-api',
-                component: ComponentCreator('/docs/docs/api-reference/admin-api', 'a58'),
+                path: '/docs/api-reference/admin-api',
+                component: ComponentCreator('/docs/api-reference/admin-api', '8a5'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/api-reference/store-api',
-                component: ComponentCreator('/docs/docs/api-reference/store-api', '84b'),
+                path: '/docs/api-reference/store-api',
+                component: ComponentCreator('/docs/api-reference/store-api', '2ad'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/architecture/dependencies',
-                component: ComponentCreator('/docs/docs/architecture/dependencies', 'ab6'),
+                path: '/docs/architecture/dependencies',
+                component: ComponentCreator('/docs/architecture/dependencies', '255'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/architecture/modules',
-                component: ComponentCreator('/docs/docs/architecture/modules', '9d4'),
+                path: '/docs/architecture/modules',
+                component: ComponentCreator('/docs/architecture/modules', '220'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/architecture/overview',
-                component: ComponentCreator('/docs/docs/architecture/overview', 'd3a'),
+                path: '/docs/architecture/overview',
+                component: ComponentCreator('/docs/architecture/overview', '2b6'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/authentication/admin-auth',
-                component: ComponentCreator('/docs/docs/authentication/admin-auth', 'b1c'),
+                path: '/docs/authentication/admin-auth',
+                component: ComponentCreator('/docs/authentication/admin-auth', '922'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/authentication/storefront-auth',
-                component: ComponentCreator('/docs/docs/authentication/storefront-auth', '6b8'),
+                path: '/docs/authentication/storefront-auth',
+                component: ComponentCreator('/docs/authentication/storefront-auth', '193'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/bundles/cart-integration',
-                component: ComponentCreator('/docs/docs/bundles/cart-integration', '7ac'),
+                path: '/docs/bundles/cart-integration',
+                component: ComponentCreator('/docs/bundles/cart-integration', 'f06'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/bundles/choice-sets',
-                component: ComponentCreator('/docs/docs/bundles/choice-sets', '6ae'),
+                path: '/docs/bundles/choice-sets',
+                component: ComponentCreator('/docs/bundles/choice-sets', 'cee'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/bundles/definition',
-                component: ComponentCreator('/docs/docs/bundles/definition', '433'),
+                path: '/docs/bundles/definition',
+                component: ComponentCreator('/docs/bundles/definition', '6fd'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/bundles/overview',
-                component: ComponentCreator('/docs/docs/bundles/overview', 'ee1'),
+                path: '/docs/bundles/overview',
+                component: ComponentCreator('/docs/bundles/overview', 'e81'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/bundles/pricing',
-                component: ComponentCreator('/docs/docs/bundles/pricing', '12f'),
+                path: '/docs/bundles/pricing',
+                component: ComponentCreator('/docs/bundles/pricing', '29b'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/catalog/collections',
-                component: ComponentCreator('/docs/docs/catalog/collections', '5f1'),
+                path: '/docs/catalog/collections',
+                component: ComponentCreator('/docs/catalog/collections', '6da'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/catalog/inventory',
-                component: ComponentCreator('/docs/docs/catalog/inventory', 'bad'),
+                path: '/docs/catalog/inventory',
+                component: ComponentCreator('/docs/catalog/inventory', '6bf'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/catalog/products',
-                component: ComponentCreator('/docs/docs/catalog/products', 'cef'),
+                path: '/docs/catalog/products',
+                component: ComponentCreator('/docs/catalog/products', 'd67'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/catalog/variants',
-                component: ComponentCreator('/docs/docs/catalog/variants', '516'),
+                path: '/docs/catalog/variants',
+                component: ComponentCreator('/docs/catalog/variants', 'afa'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/checkout/guest-checkout',
-                component: ComponentCreator('/docs/docs/checkout/guest-checkout', '0bf'),
+                path: '/docs/checkout/guest-checkout',
+                component: ComponentCreator('/docs/checkout/guest-checkout', '5e6'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/checkout/inventory-flow',
-                component: ComponentCreator('/docs/docs/checkout/inventory-flow', 'f32'),
+                path: '/docs/checkout/inventory-flow',
+                component: ComponentCreator('/docs/checkout/inventory-flow', '5ee'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/checkout/overview',
-                component: ComponentCreator('/docs/docs/checkout/overview', '732'),
+                path: '/docs/checkout/overview',
+                component: ComponentCreator('/docs/checkout/overview', 'df5'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/checkout/payment-intent',
-                component: ComponentCreator('/docs/docs/checkout/payment-intent', 'd1f'),
+                path: '/docs/checkout/payment-intent',
+                component: ComponentCreator('/docs/checkout/payment-intent', '348'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/checkout/state-machine',
-                component: ComponentCreator('/docs/docs/checkout/state-machine', '13b'),
+                path: '/docs/checkout/state-machine',
+                component: ComponentCreator('/docs/checkout/state-machine', '5dd'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/checkout/webhooks',
-                component: ComponentCreator('/docs/docs/checkout/webhooks', '027'),
+                path: '/docs/checkout/webhooks',
+                component: ComponentCreator('/docs/checkout/webhooks', 'bd5'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/database-schema/erd',
-                component: ComponentCreator('/docs/docs/database-schema/erd', '2fc'),
+                path: '/docs/database-schema/erd',
+                component: ComponentCreator('/docs/database-schema/erd', '054'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/database-schema/overview',
-                component: ComponentCreator('/docs/docs/database-schema/overview', 'f8b'),
+                path: '/docs/database-schema/overview',
+                component: ComponentCreator('/docs/database-schema/overview', '484'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/database-schema/tables',
-                component: ComponentCreator('/docs/docs/database-schema/tables', '11b'),
+                path: '/docs/database-schema/tables',
+                component: ComponentCreator('/docs/database-schema/tables', 'f05'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/deployment/docker',
-                component: ComponentCreator('/docs/docs/deployment/docker', 'be3'),
+                path: '/docs/deployment/docker',
+                component: ComponentCreator('/docs/deployment/docker', '3d0'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/deployment/overview',
-                component: ComponentCreator('/docs/docs/deployment/overview', '624'),
+                path: '/docs/deployment/overview',
+                component: ComponentCreator('/docs/deployment/overview', 'd63'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/deployment/production',
-                component: ComponentCreator('/docs/docs/deployment/production', '0b3'),
+                path: '/docs/deployment/production',
+                component: ComponentCreator('/docs/deployment/production', '9ee'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/deployment/scaling',
-                component: ComponentCreator('/docs/docs/deployment/scaling', 'e05'),
+                path: '/docs/deployment/scaling',
+                component: ComponentCreator('/docs/deployment/scaling', '148'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/discounts/definitions',
-                component: ComponentCreator('/docs/docs/discounts/definitions', '49d'),
+                path: '/docs/discounts/definitions',
+                component: ComponentCreator('/docs/discounts/definitions', '95f'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/discounts/drift-detection',
-                component: ComponentCreator('/docs/docs/discounts/drift-detection', '0d7'),
+                path: '/docs/discounts/drift-detection',
+                component: ComponentCreator('/docs/discounts/drift-detection', 'b39'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/discounts/engine',
-                component: ComponentCreator('/docs/docs/discounts/engine', 'cb7'),
+                path: '/docs/discounts/engine',
+                component: ComponentCreator('/docs/discounts/engine', 'b67'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/discounts/overview',
-                component: ComponentCreator('/docs/docs/discounts/overview', '3c8'),
+                path: '/docs/discounts/overview',
+                component: ComponentCreator('/docs/discounts/overview', 'e73'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/discounts/priority-stacking',
-                component: ComponentCreator('/docs/docs/discounts/priority-stacking', 'e13'),
+                path: '/docs/discounts/priority-stacking',
+                component: ComponentCreator('/docs/discounts/priority-stacking', '8fc'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/discounts/snapshots',
-                component: ComponentCreator('/docs/docs/discounts/snapshots', '3ff'),
+                path: '/docs/discounts/snapshots',
+                component: ComponentCreator('/docs/discounts/snapshots', '410'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/introduction',
-                component: ComponentCreator('/docs/docs/introduction', '478'),
+                path: '/docs/introduction',
+                component: ComponentCreator('/docs/introduction', 'e0e'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/observability/context',
-                component: ComponentCreator('/docs/docs/observability/context', '160'),
+                path: '/docs/observability/context',
+                component: ComponentCreator('/docs/observability/context', '3f6'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/observability/correlation',
-                component: ComponentCreator('/docs/docs/observability/correlation', '16c'),
+                path: '/docs/observability/correlation',
+                component: ComponentCreator('/docs/observability/correlation', 'b55'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/observability/logging',
-                component: ComponentCreator('/docs/docs/observability/logging', 'b47'),
+                path: '/docs/observability/logging',
+                component: ComponentCreator('/docs/observability/logging', '9e5'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/observability/tracing',
-                component: ComponentCreator('/docs/docs/observability/tracing', 'ef5'),
+                path: '/docs/observability/tracing',
+                component: ComponentCreator('/docs/observability/tracing', '3bf'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/orders/creation',
-                component: ComponentCreator('/docs/docs/orders/creation', '5ab'),
+                path: '/docs/orders/creation',
+                component: ComponentCreator('/docs/orders/creation', '70a'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/orders/fulfillment',
-                component: ComponentCreator('/docs/docs/orders/fulfillment', '535'),
+                path: '/docs/orders/fulfillment',
+                component: ComponentCreator('/docs/orders/fulfillment', '941'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/orders/overview',
-                component: ComponentCreator('/docs/docs/orders/overview', '68f'),
+                path: '/docs/orders/overview',
+                component: ComponentCreator('/docs/orders/overview', 'e03'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/orders/reconciliation',
-                component: ComponentCreator('/docs/docs/orders/reconciliation', 'a5c'),
+                path: '/docs/orders/reconciliation',
+                component: ComponentCreator('/docs/orders/reconciliation', 'a6b'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/orders/refunds',
-                component: ComponentCreator('/docs/docs/orders/refunds', '289'),
+                path: '/docs/orders/refunds',
+                component: ComponentCreator('/docs/orders/refunds', '7c4'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/pricing/customer-groups',
-                component: ComponentCreator('/docs/docs/pricing/customer-groups', '6e5'),
+                path: '/docs/pricing/customer-groups',
+                component: ComponentCreator('/docs/pricing/customer-groups', 'cd5'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/pricing/drift-detection',
-                component: ComponentCreator('/docs/docs/pricing/drift-detection', 'eb5'),
+                path: '/docs/pricing/drift-detection',
+                component: ComponentCreator('/docs/pricing/drift-detection', 'a0d'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/pricing/overview',
-                component: ComponentCreator('/docs/docs/pricing/overview', '3bf'),
+                path: '/docs/pricing/overview',
+                component: ComponentCreator('/docs/pricing/overview', '281'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/pricing/price-lists',
-                component: ComponentCreator('/docs/docs/pricing/price-lists', '1ff'),
+                path: '/docs/pricing/price-lists',
+                component: ComponentCreator('/docs/pricing/price-lists', 'afe'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/pricing/pricing-engine',
-                component: ComponentCreator('/docs/docs/pricing/pricing-engine', 'd61'),
+                path: '/docs/pricing/pricing-engine',
+                component: ComponentCreator('/docs/pricing/pricing-engine', '9f7'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/pricing/snapshots',
-                component: ComponentCreator('/docs/docs/pricing/snapshots', 'fe3'),
+                path: '/docs/pricing/snapshots',
+                component: ComponentCreator('/docs/pricing/snapshots', '782'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/redis/caching-layers',
-                component: ComponentCreator('/docs/docs/redis/caching-layers', '872'),
+                path: '/docs/redis/caching-layers',
+                component: ComponentCreator('/docs/redis/caching-layers', '096'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/redis/expirations',
-                component: ComponentCreator('/docs/docs/redis/expirations', '6ff'),
+                path: '/docs/redis/expirations',
+                component: ComponentCreator('/docs/redis/expirations', '22c'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/redis/key-patterns',
-                component: ComponentCreator('/docs/docs/redis/key-patterns', '36e'),
+                path: '/docs/redis/key-patterns',
+                component: ComponentCreator('/docs/redis/key-patterns', '976'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/redis/overview',
-                component: ComponentCreator('/docs/docs/redis/overview', '9d0'),
+                path: '/docs/redis/overview',
+                component: ComponentCreator('/docs/redis/overview', 'af1'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/reviews/aggregation',
-                component: ComponentCreator('/docs/docs/reviews/aggregation', '8cd'),
+                path: '/docs/reviews/aggregation',
+                component: ComponentCreator('/docs/reviews/aggregation', '9ba'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/reviews/caching',
-                component: ComponentCreator('/docs/docs/reviews/caching', 'c3b'),
+                path: '/docs/reviews/caching',
+                component: ComponentCreator('/docs/reviews/caching', '300'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/reviews/moderation',
-                component: ComponentCreator('/docs/docs/reviews/moderation', '7ec'),
+                path: '/docs/reviews/moderation',
+                component: ComponentCreator('/docs/reviews/moderation', 'f7b'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/reviews/overview',
-                component: ComponentCreator('/docs/docs/reviews/overview', '123'),
+                path: '/docs/reviews/overview',
+                component: ComponentCreator('/docs/reviews/overview', '0a4'),
                 exact: true,
                 sidebar: "docsSidebar"
               },
               {
-                path: '/docs/docs/reviews/verified-purchase',
-                component: ComponentCreator('/docs/docs/reviews/verified-purchase', '6fc'),
+                path: '/docs/reviews/verified-purchase',
+                component: ComponentCreator('/docs/reviews/verified-purchase', '96f'),
                 exact: true,
                 sidebar: "docsSidebar"
               }
@@ -381,8 +381,8 @@ export default [
     ]
   },
   {
-    path: '/docs/',
-    component: ComponentCreator('/docs/', '2a6'),
+    path: '/',
+    component: ComponentCreator('/', 'e5f'),
     exact: true
   },
   {

@@ -1,313 +1,313 @@
 {
   "docusaurus-plugin-content-docs": {
     "default": {
-      "path": "/docs/docs",
+      "path": "/docs",
       "versions": [
         {
           "name": "current",
           "label": "Next",
           "isLast": true,
-          "path": "/docs/docs",
+          "path": "/docs",
           "mainDocId": "introduction",
           "docs": [
             {
               "id": "api-reference/admin-api",
-              "path": "/docs/docs/api-reference/admin-api",
+              "path": "/docs/api-reference/admin-api",
               "sidebar": "docsSidebar"
             },
             {
               "id": "api-reference/store-api",
-              "path": "/docs/docs/api-reference/store-api",
+              "path": "/docs/api-reference/store-api",
               "sidebar": "docsSidebar"
             },
             {
               "id": "architecture/dependencies",
-              "path": "/docs/docs/architecture/dependencies",
+              "path": "/docs/architecture/dependencies",
               "sidebar": "docsSidebar"
             },
             {
               "id": "architecture/modules",
-              "path": "/docs/docs/architecture/modules",
+              "path": "/docs/architecture/modules",
               "sidebar": "docsSidebar"
             },
             {
               "id": "architecture/overview",
-              "path": "/docs/docs/architecture/overview",
+              "path": "/docs/architecture/overview",
               "sidebar": "docsSidebar"
             },
             {
               "id": "authentication/admin-auth",
-              "path": "/docs/docs/authentication/admin-auth",
+              "path": "/docs/authentication/admin-auth",
               "sidebar": "docsSidebar"
             },
             {
               "id": "authentication/storefront-auth",
-              "path": "/docs/docs/authentication/storefront-auth",
+              "path": "/docs/authentication/storefront-auth",
               "sidebar": "docsSidebar"
             },
             {
               "id": "bundles/cart-integration",
-              "path": "/docs/docs/bundles/cart-integration",
+              "path": "/docs/bundles/cart-integration",
               "sidebar": "docsSidebar"
             },
             {
               "id": "bundles/choice-sets",
-              "path": "/docs/docs/bundles/choice-sets",
+              "path": "/docs/bundles/choice-sets",
               "sidebar": "docsSidebar"
             },
             {
               "id": "bundles/definition",
-              "path": "/docs/docs/bundles/definition",
+              "path": "/docs/bundles/definition",
               "sidebar": "docsSidebar"
             },
             {
               "id": "bundles/overview",
-              "path": "/docs/docs/bundles/overview",
+              "path": "/docs/bundles/overview",
               "sidebar": "docsSidebar"
             },
             {
               "id": "bundles/pricing",
-              "path": "/docs/docs/bundles/pricing",
+              "path": "/docs/bundles/pricing",
               "sidebar": "docsSidebar"
             },
             {
               "id": "catalog/collections",
-              "path": "/docs/docs/catalog/collections",
+              "path": "/docs/catalog/collections",
               "sidebar": "docsSidebar"
             },
             {
               "id": "catalog/inventory",
-              "path": "/docs/docs/catalog/inventory",
+              "path": "/docs/catalog/inventory",
               "sidebar": "docsSidebar"
             },
             {
               "id": "catalog/products",
-              "path": "/docs/docs/catalog/products",
+              "path": "/docs/catalog/products",
               "sidebar": "docsSidebar"
             },
             {
               "id": "catalog/variants",
-              "path": "/docs/docs/catalog/variants",
+              "path": "/docs/catalog/variants",
               "sidebar": "docsSidebar"
             },
             {
               "id": "checkout/guest-checkout",
-              "path": "/docs/docs/checkout/guest-checkout",
+              "path": "/docs/checkout/guest-checkout",
               "sidebar": "docsSidebar"
             },
             {
               "id": "checkout/inventory-flow",
-              "path": "/docs/docs/checkout/inventory-flow",
+              "path": "/docs/checkout/inventory-flow",
               "sidebar": "docsSidebar"
             },
             {
               "id": "checkout/overview",
-              "path": "/docs/docs/checkout/overview",
+              "path": "/docs/checkout/overview",
               "sidebar": "docsSidebar"
             },
             {
               "id": "checkout/payment-intent",
-              "path": "/docs/docs/checkout/payment-intent",
+              "path": "/docs/checkout/payment-intent",
               "sidebar": "docsSidebar"
             },
             {
               "id": "checkout/state-machine",
-              "path": "/docs/docs/checkout/state-machine",
+              "path": "/docs/checkout/state-machine",
               "sidebar": "docsSidebar"
             },
             {
               "id": "checkout/webhooks",
-              "path": "/docs/docs/checkout/webhooks",
+              "path": "/docs/checkout/webhooks",
               "sidebar": "docsSidebar"
             },
             {
               "id": "database-schema/erd",
-              "path": "/docs/docs/database-schema/erd",
+              "path": "/docs/database-schema/erd",
               "sidebar": "docsSidebar"
             },
             {
               "id": "database-schema/overview",
-              "path": "/docs/docs/database-schema/overview",
+              "path": "/docs/database-schema/overview",
               "sidebar": "docsSidebar"
             },
             {
               "id": "database-schema/tables",
-              "path": "/docs/docs/database-schema/tables",
+              "path": "/docs/database-schema/tables",
               "sidebar": "docsSidebar"
             },
             {
               "id": "deployment/docker",
-              "path": "/docs/docs/deployment/docker",
+              "path": "/docs/deployment/docker",
               "sidebar": "docsSidebar"
             },
             {
               "id": "deployment/overview",
-              "path": "/docs/docs/deployment/overview",
+              "path": "/docs/deployment/overview",
               "sidebar": "docsSidebar"
             },
             {
               "id": "deployment/production",
-              "path": "/docs/docs/deployment/production",
+              "path": "/docs/deployment/production",
               "sidebar": "docsSidebar"
             },
             {
               "id": "deployment/scaling",
-              "path": "/docs/docs/deployment/scaling",
+              "path": "/docs/deployment/scaling",
               "sidebar": "docsSidebar"
             },
             {
               "id": "discounts/definitions",
-              "path": "/docs/docs/discounts/definitions",
+              "path": "/docs/discounts/definitions",
               "sidebar": "docsSidebar"
             },
             {
               "id": "discounts/drift-detection",
-              "path": "/docs/docs/discounts/drift-detection",
+              "path": "/docs/discounts/drift-detection",
               "sidebar": "docsSidebar"
             },
             {
               "id": "discounts/engine",
-              "path": "/docs/docs/discounts/engine",
+              "path": "/docs/discounts/engine",
               "sidebar": "docsSidebar"
             },
             {
               "id": "discounts/overview",
-              "path": "/docs/docs/discounts/overview",
+              "path": "/docs/discounts/overview",
               "sidebar": "docsSidebar"
             },
             {
               "id": "discounts/priority-stacking",
-              "path": "/docs/docs/discounts/priority-stacking",
+              "path": "/docs/discounts/priority-stacking",
               "sidebar": "docsSidebar"
             },
             {
               "id": "discounts/snapshots",
-              "path": "/docs/docs/discounts/snapshots",
+              "path": "/docs/discounts/snapshots",
               "sidebar": "docsSidebar"
             },
             {
               "id": "introduction",
-              "path": "/docs/docs/introduction",
+              "path": "/docs/introduction",
               "sidebar": "docsSidebar"
             },
             {
               "id": "observability/context",
-              "path": "/docs/docs/observability/context",
+              "path": "/docs/observability/context",
               "sidebar": "docsSidebar"
             },
             {
               "id": "observability/correlation",
-              "path": "/docs/docs/observability/correlation",
+              "path": "/docs/observability/correlation",
               "sidebar": "docsSidebar"
             },
             {
               "id": "observability/logging",
-              "path": "/docs/docs/observability/logging",
+              "path": "/docs/observability/logging",
               "sidebar": "docsSidebar"
             },
             {
               "id": "observability/tracing",
-              "path": "/docs/docs/observability/tracing",
+              "path": "/docs/observability/tracing",
               "sidebar": "docsSidebar"
             },
             {
               "id": "orders/creation",
-              "path": "/docs/docs/orders/creation",
+              "path": "/docs/orders/creation",
               "sidebar": "docsSidebar"
             },
             {
               "id": "orders/fulfillment",
-              "path": "/docs/docs/orders/fulfillment",
+              "path": "/docs/orders/fulfillment",
               "sidebar": "docsSidebar"
             },
             {
               "id": "orders/overview",
-              "path": "/docs/docs/orders/overview",
+              "path": "/docs/orders/overview",
               "sidebar": "docsSidebar"
             },
             {
               "id": "orders/reconciliation",
-              "path": "/docs/docs/orders/reconciliation",
+              "path": "/docs/orders/reconciliation",
               "sidebar": "docsSidebar"
             },
             {
               "id": "orders/refunds",
-              "path": "/docs/docs/orders/refunds",
+              "path": "/docs/orders/refunds",
               "sidebar": "docsSidebar"
             },
             {
               "id": "pricing/customer-groups",
-              "path": "/docs/docs/pricing/customer-groups",
+              "path": "/docs/pricing/customer-groups",
               "sidebar": "docsSidebar"
             },
             {
               "id": "pricing/drift-detection",
-              "path": "/docs/docs/pricing/drift-detection",
+              "path": "/docs/pricing/drift-detection",
               "sidebar": "docsSidebar"
             },
             {
               "id": "pricing/overview",
-              "path": "/docs/docs/pricing/overview",
+              "path": "/docs/pricing/overview",
               "sidebar": "docsSidebar"
             },
             {
               "id": "pricing/price-lists",
-              "path": "/docs/docs/pricing/price-lists",
+              "path": "/docs/pricing/price-lists",
               "sidebar": "docsSidebar"
             },
             {
               "id": "pricing/pricing-engine",
-              "path": "/docs/docs/pricing/pricing-engine",
+              "path": "/docs/pricing/pricing-engine",
               "sidebar": "docsSidebar"
             },
             {
               "id": "pricing/snapshots",
-              "path": "/docs/docs/pricing/snapshots",
+              "path": "/docs/pricing/snapshots",
               "sidebar": "docsSidebar"
             },
             {
               "id": "redis/caching-layers",
-              "path": "/docs/docs/redis/caching-layers",
+              "path": "/docs/redis/caching-layers",
               "sidebar": "docsSidebar"
             },
             {
               "id": "redis/expirations",
-              "path": "/docs/docs/redis/expirations",
+              "path": "/docs/redis/expirations",
               "sidebar": "docsSidebar"
             },
             {
               "id": "redis/key-patterns",
-              "path": "/docs/docs/redis/key-patterns",
+              "path": "/docs/redis/key-patterns",
               "sidebar": "docsSidebar"
             },
             {
               "id": "redis/overview",
-              "path": "/docs/docs/redis/overview",
+              "path": "/docs/redis/overview",
               "sidebar": "docsSidebar"
             },
             {
               "id": "reviews/aggregation",
-              "path": "/docs/docs/reviews/aggregation",
+              "path": "/docs/reviews/aggregation",
               "sidebar": "docsSidebar"
             },
             {
               "id": "reviews/caching",
-              "path": "/docs/docs/reviews/caching",
+              "path": "/docs/reviews/caching",
               "sidebar": "docsSidebar"
             },
             {
               "id": "reviews/moderation",
-              "path": "/docs/docs/reviews/moderation",
+              "path": "/docs/reviews/moderation",
               "sidebar": "docsSidebar"
             },
             {
               "id": "reviews/overview",
-              "path": "/docs/docs/reviews/overview",
+              "path": "/docs/reviews/overview",
               "sidebar": "docsSidebar"
             },
             {
               "id": "reviews/verified-purchase",
-              "path": "/docs/docs/reviews/verified-purchase",
+              "path": "/docs/reviews/verified-purchase",
               "sidebar": "docsSidebar"
             }
           ],
@@ -315,7 +315,7 @@
           "sidebars": {
             "docsSidebar": {
               "link": {
-                "path": "/docs/docs/introduction",
+                "path": "/docs/introduction",
                 "label": "introduction"
               }
             }

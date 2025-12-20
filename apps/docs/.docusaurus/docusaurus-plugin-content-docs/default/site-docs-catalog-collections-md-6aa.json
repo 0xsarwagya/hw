@@ -5,7 +5,7 @@
   "source": "@site/docs/catalog/collections.md",
   "sourceDirName": "catalog",
   "slug": "/catalog/collections",
-  "permalink": "/docs/docs/catalog/collections",
+  "permalink": "/docs/catalog/collections",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/catalog/collections.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Product Variants",
-    "permalink": "/docs/docs/catalog/variants"
+    "permalink": "/docs/catalog/variants"
   },
   "next": {
     "title": "Inventory Management",
-    "permalink": "/docs/docs/catalog/inventory"
+    "permalink": "/docs/catalog/inventory"
   }
 }

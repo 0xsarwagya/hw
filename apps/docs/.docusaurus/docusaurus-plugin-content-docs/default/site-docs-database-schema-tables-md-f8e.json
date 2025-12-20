@@ -5,7 +5,7 @@
   "source": "@site/docs/database-schema/tables.md",
   "sourceDirName": "database-schema",
   "slug": "/database-schema/tables",
-  "permalink": "/docs/docs/database-schema/tables",
+  "permalink": "/docs/database-schema/tables",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/database-schema/tables.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Entity Relationship Diagram",
-    "permalink": "/docs/docs/database-schema/erd"
+    "permalink": "/docs/database-schema/erd"
   },
   "next": {
     "title": "Deployment Overview",
-    "permalink": "/docs/docs/deployment/overview"
+    "permalink": "/docs/deployment/overview"
   }
 }

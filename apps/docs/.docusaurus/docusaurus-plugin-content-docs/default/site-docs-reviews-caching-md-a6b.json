@@ -5,7 +5,7 @@
   "source": "@site/docs/reviews/caching.md",
   "sourceDirName": "reviews",
   "slug": "/reviews/caching",
-  "permalink": "/docs/docs/reviews/caching",
+  "permalink": "/docs/reviews/caching",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/reviews/caching.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "aggregation",
-    "permalink": "/docs/docs/reviews/aggregation"
+    "permalink": "/docs/reviews/aggregation"
   },
   "next": {
     "title": "Logging System",
-    "permalink": "/docs/docs/observability/logging"
+    "permalink": "/docs/observability/logging"
   }
 }

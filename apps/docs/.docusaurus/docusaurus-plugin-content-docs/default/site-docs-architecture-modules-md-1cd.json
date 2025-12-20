@@ -5,7 +5,7 @@
   "source": "@site/docs/architecture/modules.md",
   "sourceDirName": "architecture",
   "slug": "/architecture/modules",
-  "permalink": "/docs/docs/architecture/modules",
+  "permalink": "/docs/architecture/modules",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/architecture/modules.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "System Architecture Overview",
-    "permalink": "/docs/docs/architecture/overview"
+    "permalink": "/docs/architecture/overview"
   },
   "next": {
     "title": "Cross-Module Dependencies",
-    "permalink": "/docs/docs/architecture/dependencies"
+    "permalink": "/docs/architecture/dependencies"
   }
 }

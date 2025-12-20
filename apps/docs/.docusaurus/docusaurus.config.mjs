@@ -28,8 +28,8 @@ export default {
     },
     "experimental_router": "browser"
   },
-  "url": "https://legendary-chainsaw-8e4147z.pages.github.io",
-  "baseUrl": "/docs/",
+  "url": "https://vcecom-internal.vestcodes.co",
+  "baseUrl": "/",
   "organizationName": "Vestcodes",
   "projectName": "vcecom",
   "markdown": {
@@ -355,6 +355,13 @@ export default {
         }
       ]
     },
+    "mermaid": {
+      "theme": {
+        "dark": "dark",
+        "light": "default"
+      },
+      "options": {}
+    },
     "docs": {
       "versionPersistence": "localStorage",
       "sidebar": {
@@ -371,13 +378,6 @@ export default {
     "tableOfContents": {
       "minHeadingLevel": 2,
       "maxHeadingLevel": 3
-    },
-    "mermaid": {
-      "theme": {
-        "dark": "dark",
-        "light": "default"
-      },
-      "options": {}
     }
   },
   "baseUrlIssueBanner": true,

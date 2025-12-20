@@ -48,6 +48,29 @@ export interface CheckoutMetadata {
   pricingSnapshot: PricingSnapshot | null;
 
   /**
+   * Selected payment method
+   */
+  paymentMethod?: string;
+
+  /**
+   * Payment fee in paise
+   */
+  paymentFee?: number;
+
+  /**
+   * Payment fee breakdown details
+   */
+  paymentFeeBreakdown?: {
+    method: string;
+    chargeType: string;
+    flatAmount?: number;
+    percentage?: number;
+    calculatedFee: number;
+    mixMin?: number;
+    mixCap?: number;
+  };
+
+  /**
    * Timestamp when metadata was created
    * ISO 8601 format string
    */

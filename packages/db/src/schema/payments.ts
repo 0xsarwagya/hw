@@ -26,6 +26,10 @@ export const paymentMethodEnum = pgEnum("payment_method", [
   "card",
   "netbanking",
   "wallet",
+  "razorpay_upi",
+  "razorpay_card",
+  "stripe_card",
+  "bnpl",
 ]);
 
 export const payments = pgTable(
