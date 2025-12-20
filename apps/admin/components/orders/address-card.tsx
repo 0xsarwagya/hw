@@ -32,7 +32,7 @@ export function AddressCard({
 
   const { data: couriersData, refetch: checkServiceability } =
     useShiprocketCouriers(
-      order && order.shippingAddress
+      order?.shippingAddress
         ? {
             pickupPincode: "400001", // Default pickup - should come from settings
             deliveryPincode: address.pincode,
@@ -65,7 +65,7 @@ export function AddressCard({
         });
         toast.error("Postal code is not serviceable");
       }
-    } catch (error) {
+    } catch (_error) {
       setServiceabilityResult({
         serviceable: false,
         message: "Failed to check serviceability",
@@ -76,8 +76,9 @@ export function AddressCard({
     }
   };
 
-  const addressType =
-    title.toLowerCase().includes("shipping") ? "shipping" : "billing";
+  const addressType = title.toLowerCase().includes("shipping")
+    ? "shipping"
+    : "billing";
 
   return (
     <Card>
@@ -129,7 +130,9 @@ export function AddressCard({
             <p className="text-muted-foreground">Phone: {address.phone}</p>
           )}
           {address.landmark && (
-            <p className="text-muted-foreground">Landmark: {address.landmark}</p>
+            <p className="text-muted-foreground">
+              Landmark: {address.landmark}
+            </p>
           )}
           {serviceabilityResult && (
             <div
@@ -147,4 +150,3 @@ export function AddressCard({
     </Card>
   );
 }
-

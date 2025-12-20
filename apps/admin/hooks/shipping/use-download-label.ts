@@ -10,13 +10,13 @@ interface DownloadLabelParams {
 
 export function useDownloadLabel() {
   return {
-    downloadLabel: async ({ shipmentId, awb }: DownloadLabelParams) => {
+    downloadLabel: async ({ shipmentId }: DownloadLabelParams) => {
       try {
         // Fetch label URL from backend
         const response = await api.get<{ labelUrl: string }>(
           `/api/shipping/shipments/${shipmentId}/label`,
         );
-        
+
         if (response.labelUrl) {
           // Open label in new tab
           window.open(response.labelUrl, "_blank");
@@ -32,4 +32,3 @@ export function useDownloadLabel() {
     },
   };
 }
-

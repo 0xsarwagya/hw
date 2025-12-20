@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useCreateRefund } from "@/hooks/orders/use-admin-refunds";
 import type { Order } from "@/lib/types/orders";
 import { Money } from "./money";
@@ -35,7 +35,7 @@ export function RefundDialog({ order, trigger }: RefundDialogProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const refundAmount = parseFloat(amount);
-    if (isNaN(refundAmount) || refundAmount <= 0) {
+    if (Number.isNaN(refundAmount) || refundAmount <= 0) {
       return;
     }
     if (refundAmount > order.total) {
@@ -53,7 +53,7 @@ export function RefundDialog({ order, trigger }: RefundDialogProps) {
       setAmount(order.total.toString());
       setReason("");
       setInitiatePaymentRefund(true);
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hook
     }
   };
@@ -113,8 +113,7 @@ export function RefundDialog({ order, trigger }: RefundDialogProps) {
                   {!isFullRefund && (
                     <>
                       {" "}
-                      · Remaining:{" "}
-                      <Money amount={order.total - refundAmount} />
+                      · Remaining: <Money amount={order.total - refundAmount} />
                     </>
                   )}
                 </>
@@ -173,4 +172,3 @@ export function RefundDialog({ order, trigger }: RefundDialogProps) {
     </Dialog>
   );
 }
-

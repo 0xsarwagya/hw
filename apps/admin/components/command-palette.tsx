@@ -26,8 +26,7 @@ export function CommandPalette() {
     const trimmed = search.trim();
     return (
       trimmed.length > 0 &&
-      (trimmed.toLowerCase().includes("order") ||
-        /^[A-Z0-9-]+$/i.test(trimmed))
+      (trimmed.toLowerCase().includes("order") || /^[A-Z0-9-]+$/i.test(trimmed))
     );
   }, [search]);
 
@@ -128,4 +127,3 @@ export function CommandPalette() {
     </CommandDialog>
   );
 }
-

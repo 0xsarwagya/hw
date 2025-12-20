@@ -4,7 +4,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
-import type { Order } from "@/lib/types/orders";
 import { useApiMutation } from "../use-api-mutation";
 import { useApiQuery } from "../use-api-query";
 
@@ -59,4 +58,3 @@ export function useCreateRefund() {
     },
   });
 }
-

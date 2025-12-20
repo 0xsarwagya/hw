@@ -11,14 +11,17 @@ export async function GET(_request: NextRequest) {
       .map((c) => `${c.name}=${c.value}`)
       .join("; ");
 
-    const response = await fetch(`${API_URL}/shipping/shiprocket/pickup-locations`, {
-      method: "GET",
-      headers: {
-        Cookie: cookieHeader,
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${API_URL}/shipping/shiprocket/pickup-locations`,
+      {
+        method: "GET",
+        headers: {
+          Cookie: cookieHeader,
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
       },
-      credentials: "include",
-    });
+    );
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({
@@ -37,4 +40,3 @@ export async function GET(_request: NextRequest) {
     );
   }
 }
-

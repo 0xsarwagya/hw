@@ -170,7 +170,9 @@ export function OrderFiltersBar({
           <SelectContent>
             <SelectItem value="all">All Fulfillment Statuses</SelectItem>
             <SelectItem value="unfulfilled">Unfulfilled</SelectItem>
-            <SelectItem value="partially_fulfilled">Partially Fulfilled</SelectItem>
+            <SelectItem value="partially_fulfilled">
+              Partially Fulfilled
+            </SelectItem>
             <SelectItem value="fulfilled">Fulfilled</SelectItem>
             <SelectItem value="shipped">Shipped</SelectItem>
             <SelectItem value="delivered">Delivered</SelectItem>
@@ -201,7 +203,10 @@ export function OrderFiltersBar({
         <Select
           value={`${sortBy}-${sortOrder}`}
           onValueChange={(value) => {
-            const [by, order] = value.split("-") as [OrderSortBy, OrderSortOrder];
+            const [by, order] = value.split("-") as [
+              OrderSortBy,
+              OrderSortOrder,
+            ];
             onSortChange(by, order);
           }}
         >

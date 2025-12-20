@@ -46,7 +46,7 @@ export function OrderPaymentSection({ order }: OrderPaymentSectionProps) {
         provider: "razorpay",
       });
       setReconcileDialogOpen(false);
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hook
     }
   };
@@ -54,7 +54,7 @@ export function OrderPaymentSection({ order }: OrderPaymentSectionProps) {
   const handleMarkPaid = async () => {
     try {
       await markPaidMutation.mutateAsync({ orderId: order.id });
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hook
     }
   };
@@ -122,7 +122,9 @@ export function OrderPaymentSection({ order }: OrderPaymentSectionProps) {
               >
                 <div>
                   <span className="text-muted-foreground">
-                    {refund.status === "completed" ? "Refunded" : "Refund Pending"}
+                    {refund.status === "completed"
+                      ? "Refunded"
+                      : "Refund Pending"}
                   </span>
                   {refund.reason && (
                     <p className="text-xs text-muted-foreground">
@@ -162,8 +164,7 @@ export function OrderPaymentSection({ order }: OrderPaymentSectionProps) {
               <span>Remaining After Refunds</span>
               <Money
                 amount={
-                  order.total -
-                  refunds.reduce((sum, r) => sum + r.amount, 0)
+                  order.total - refunds.reduce((sum, r) => sum + r.amount, 0)
                 }
               />
             </div>
@@ -172,7 +173,10 @@ export function OrderPaymentSection({ order }: OrderPaymentSectionProps) {
 
         <div className="pt-2 space-y-2">
           {canReconcile && (
-            <Dialog open={reconcileDialogOpen} onOpenChange={setReconcileDialogOpen}>
+            <Dialog
+              open={reconcileDialogOpen}
+              onOpenChange={setReconcileDialogOpen}
+            >
               <DialogTrigger asChild>
                 <Button variant="outline" className="w-full" size="sm">
                   <RefreshCw className="mr-2 h-4 w-4" />
@@ -199,7 +203,9 @@ export function OrderPaymentSection({ order }: OrderPaymentSectionProps) {
                     onClick={handleReconcile}
                     disabled={reconcileMutation.isPending}
                   >
-                    {reconcileMutation.isPending ? "Reconciling..." : "Reconcile"}
+                    {reconcileMutation.isPending
+                      ? "Reconciling..."
+                      : "Reconcile"}
                   </Button>
                 </DialogFooter>
               </DialogContent>

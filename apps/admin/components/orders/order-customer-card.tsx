@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { User, UserX } from "lucide-react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +18,11 @@ export function OrderCustomerCard({ order }: OrderCustomerCardProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          {isGuest ? <UserX className="h-5 w-5" /> : <User className="h-5 w-5" />}
+          {isGuest ? (
+            <UserX className="h-5 w-5" />
+          ) : (
+            <User className="h-5 w-5" />
+          )}
           Customer
         </CardTitle>
       </CardHeader>
@@ -86,4 +90,3 @@ export function OrderCustomerCard({ order }: OrderCustomerCardProps) {
     </Card>
   );
 }
-

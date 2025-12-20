@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useUpdateOrderAddress } from "@/hooks/orders/use-update-order-address";
 import type { Address } from "@/lib/types/orders";
 
@@ -54,7 +53,7 @@ export function EditAddressDialog({
         address: formData,
       });
       setOpen(false);
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hook
     }
   };
@@ -72,7 +71,9 @@ export function EditAddressDialog({
       )}
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit {addressType === "shipping" ? "Shipping" : "Billing"} Address</DialogTitle>
+          <DialogTitle>
+            Edit {addressType === "shipping" ? "Shipping" : "Billing"} Address
+          </DialogTitle>
           <DialogDescription>
             Update the {addressType} address for this order
           </DialogDescription>
@@ -203,4 +204,3 @@ export function EditAddressDialog({
     </Dialog>
   );
 }
-

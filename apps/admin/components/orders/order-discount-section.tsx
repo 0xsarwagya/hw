@@ -1,8 +1,8 @@
 "use client";
 
 import { AlertTriangle, Tag } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Order } from "@/lib/types/orders";
 import { Money } from "./money";
 
@@ -15,6 +15,7 @@ export function OrderDiscountSection({ order }: OrderDiscountSectionProps) {
   const discountSnapshot = order.discountSnapshot as
     | {
         appliedDiscounts?: Array<{
+          id?: string;
           code?: string;
           type?: string;
           value?: number;
@@ -22,8 +23,11 @@ export function OrderDiscountSection({ order }: OrderDiscountSectionProps) {
           name?: string;
         }>;
         autoDiscounts?: Array<{
+          id?: string;
+          code?: string;
           type?: string;
           value?: number;
+          valueType?: string;
           name?: string;
         }>;
         bundleBreakdowns?: Array<unknown>;
@@ -49,7 +53,9 @@ export function OrderDiscountSection({ order }: OrderDiscountSectionProps) {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">Discount Code</p>
-              <p className="text-sm text-muted-foreground">{order.discountCode}</p>
+              <p className="text-sm text-muted-foreground">
+                {order.discountCode}
+              </p>
             </div>
             <Badge variant="secondary">{order.discountCode}</Badge>
           </div>
@@ -57,7 +63,9 @@ export function OrderDiscountSection({ order }: OrderDiscountSectionProps) {
 
         {order.discountAmount > 0 && (
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Discount Amount</span>
+            <span className="text-sm text-muted-foreground">
+              Discount Amount
+            </span>
             <Money amount={order.discountAmount} />
           </div>
         )}
@@ -68,9 +76,9 @@ export function OrderDiscountSection({ order }: OrderDiscountSectionProps) {
               discountSnapshot.appliedDiscounts.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Applied Discounts</p>
-                  {discountSnapshot.appliedDiscounts.map((discount, index) => (
+                  {discountSnapshot.appliedDiscounts.map((discount) => (
                     <div
-                      key={index}
+                      key={discount.id || discount.code || Math.random()}
                       className="flex items-center justify-between p-2 bg-muted rounded"
                     >
                       <div>
@@ -99,9 +107,9 @@ export function OrderDiscountSection({ order }: OrderDiscountSectionProps) {
               discountSnapshot.autoDiscounts.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Auto Discounts</p>
-                  {discountSnapshot.autoDiscounts.map((discount, index) => (
+                  {discountSnapshot.autoDiscounts.map((discount) => (
                     <div
-                      key={index}
+                      key={discount.id || discount.code || Math.random()}
                       className="flex items-center justify-between p-2 bg-muted rounded"
                     >
                       <div>
@@ -147,4 +155,3 @@ export function OrderDiscountSection({ order }: OrderDiscountSectionProps) {
     </Card>
   );
 }
-

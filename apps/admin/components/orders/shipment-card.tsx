@@ -4,11 +4,11 @@ import { Download, ExternalLink, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useDownloadLabel } from "@/hooks/shipping/use-download-label";
 import type { ShipmentTracking } from "@/lib/types/shipping";
 import { CancelShipmentDialog } from "./cancel-shipment-dialog";
 import { DateTime } from "./date-time";
 import { ShipmentTrackingDialog } from "./shipment-tracking-dialog";
-import { useDownloadLabel } from "@/hooks/shipping/use-download-label";
 
 interface ShipmentCardProps {
   shipment: ShipmentTracking;
@@ -95,4 +95,3 @@ export function ShipmentCard({ shipment }: ShipmentCardProps) {
     </Card>
   );
 }
-

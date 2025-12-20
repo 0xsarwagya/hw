@@ -6,7 +6,6 @@ import {
   Download,
   MoreHorizontal,
   RefreshCw,
-  Trash2,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -43,7 +42,7 @@ interface OrderActionsDropdownProps {
 export function OrderActionsDropdown({
   order,
   onRefund,
-  refundDialogOpen,
+  refundDialogOpen: _refundDialogOpen,
   onRefundDialogChange,
 }: OrderActionsDropdownProps) {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
@@ -68,7 +67,7 @@ export function OrderActionsDropdown({
         provider: "razorpay",
       });
       setReconcileDialogOpen(false);
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hook
     }
   };
@@ -89,7 +88,8 @@ export function OrderActionsDropdown({
     toast.info("Archive order feature coming soon");
   };
 
-  const canReconcile = order.razorpayOrderId && order.paymentStatus !== "completed";
+  const canReconcile =
+    order.razorpayOrderId && order.paymentStatus !== "completed";
   const canCancel =
     order.status !== "cancelled" &&
     order.status !== "refunded" &&
@@ -150,7 +150,9 @@ export function OrderActionsDropdown({
                     onClick={handleReconcile}
                     disabled={reconcileMutation.isPending}
                   >
-                    {reconcileMutation.isPending ? "Reconciling..." : "Reconcile"}
+                    {reconcileMutation.isPending
+                      ? "Reconciling..."
+                      : "Reconcile"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -210,4 +212,3 @@ export function OrderActionsDropdown({
     </>
   );
 }
-

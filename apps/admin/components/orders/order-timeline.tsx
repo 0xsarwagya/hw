@@ -1,18 +1,17 @@
 "use client";
 
 import {
+  AlertTriangle,
   CheckCircle2,
   Clock,
+  CreditCard,
+  MapPin,
+  MessageSquare,
   Package,
+  RefreshCw,
+  ShoppingCart,
   User,
   XCircle,
-  CreditCard,
-  FileText,
-  MapPin,
-  RefreshCw,
-  AlertTriangle,
-  ShoppingCart,
-  MessageSquare,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +21,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { OrderTimeline as OrderTimelineType, TimelineActor } from "@/lib/types/orders";
+import type {
+  OrderTimeline as OrderTimelineType,
+  TimelineActor,
+} from "@/lib/types/orders";
 import { DateTime } from "./date-time";
 
 interface OrderTimelineProps {
@@ -167,16 +169,17 @@ export function OrderTimeline({ timeline }: OrderTimelineProps) {
                           )}
                         </div>
                       )}
-                      {event.metadata && Object.keys(event.metadata).length > 0 && (
-                        <details className="mt-2">
-                          <summary className="text-xs text-muted-foreground cursor-pointer">
-                            View metadata
-                          </summary>
-                          <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto">
-                            {JSON.stringify(event.metadata, null, 2)}
-                          </pre>
-                        </details>
-                      )}
+                      {event.metadata &&
+                        Object.keys(event.metadata).length > 0 && (
+                          <details className="mt-2">
+                            <summary className="text-xs text-muted-foreground cursor-pointer">
+                              View metadata
+                            </summary>
+                            <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto">
+                              {JSON.stringify(event.metadata, null, 2)}
+                            </pre>
+                          </details>
+                        )}
                     </div>
                     <DateTime date={event.timestamp} format="short" />
                   </div>

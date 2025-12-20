@@ -55,7 +55,7 @@ export function ActivityLogsPageClient() {
 
     const newUrl = `/activity-logs?${params.toString()}`;
     const currentUrl = `/activity-logs?${searchParams.toString()}`;
-    
+
     // Only update URL if it actually changed
     if (newUrl !== currentUrl) {
       router.replace(newUrl, { scroll: false });

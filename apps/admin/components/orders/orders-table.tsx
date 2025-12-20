@@ -61,6 +61,7 @@ export function OrdersTable({ orders, isLoading }: OrdersTableProps) {
             >
               <TableCell className="font-medium">
                 <button
+                  type="button"
                   className="hover:underline text-left"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -76,7 +77,9 @@ export function OrdersTable({ orders, isLoading }: OrdersTableProps) {
               <TableCell>
                 <div className="flex flex-col">
                   <span>
-                    {order.customerName || order.customerEmail || "Guest Checkout"}
+                    {order.customerName ||
+                      order.customerEmail ||
+                      "Guest Checkout"}
                   </span>
                   {order.customerEmail && order.customerName && (
                     <span className="text-xs text-muted-foreground">
@@ -94,7 +97,9 @@ export function OrdersTable({ orders, isLoading }: OrdersTableProps) {
                     {order.paymentMethod || "N/A"}
                   </span>
                   {order.paymentMethod === "COD" && (
-                    <span className="text-xs text-muted-foreground">Cash on Delivery</span>
+                    <span className="text-xs text-muted-foreground">
+                      Cash on Delivery
+                    </span>
                   )}
                 </div>
               </TableCell>

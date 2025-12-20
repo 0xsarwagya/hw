@@ -15,14 +15,17 @@ export async function POST(
       .map((c) => `${c.name}=${c.value}`)
       .join("; ");
 
-    const response = await fetch(`${API_URL}/admin/orders/${orderId}/mark-paid`, {
-      method: "POST",
-      headers: {
-        Cookie: cookieHeader,
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${API_URL}/admin/orders/${orderId}/mark-paid`,
+      {
+        method: "POST",
+        headers: {
+          Cookie: cookieHeader,
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
       },
-      credentials: "include",
-    });
+    );
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({
@@ -41,4 +44,3 @@ export async function POST(
     );
   }
 }
-

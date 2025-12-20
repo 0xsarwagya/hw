@@ -13,7 +13,7 @@ interface CancelShipmentDialogProps {
 
 export function CancelShipmentDialog({
   awb,
-  shipmentId,
+  shipmentId: _shipmentId,
   trigger,
 }: CancelShipmentDialogProps) {
   const [open, setOpen] = useState(false);
@@ -23,7 +23,7 @@ export function CancelShipmentDialog({
     try {
       await cancelShipment.mutateAsync({ awb });
       setOpen(false);
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hook
     }
   };
@@ -31,14 +31,16 @@ export function CancelShipmentDialog({
   return (
     <>
       {trigger && (
-        <div onClick={() => setOpen(true)}>{trigger}</div>
-      )}
-      {!trigger && (
-        <Button
-          variant="outline"
-          size="sm"
+        <button
+          type="button"
+          className="inline-flex items-center"
           onClick={() => setOpen(true)}
         >
+          {trigger}
+        </button>
+      )}
+      {!trigger && (
+        <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
           Cancel Shipment
         </Button>
       )}
@@ -56,4 +58,3 @@ export function CancelShipmentDialog({
     </>
   );
 }
-

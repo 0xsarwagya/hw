@@ -1,8 +1,8 @@
 "use client";
 
 import { Package } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import type { OrderItem } from "@/lib/types/orders";
 import { Money } from "./money";
 
@@ -53,7 +53,8 @@ export function BundleLineItem({ item }: BundleLineItemProps) {
                 <div className="text-right">
                   <Money amount={variant.unitPrice * variant.quantity} />
                   <p className="text-xs text-muted-foreground">
-                    <Money amount={variant.unitPrice} showCurrency={false} /> each
+                    <Money amount={variant.unitPrice} showCurrency={false} />{" "}
+                    each
                   </p>
                 </div>
               </div>

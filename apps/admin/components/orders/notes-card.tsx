@@ -34,7 +34,7 @@ export function NotesCard({ orderId }: NotesCardProps) {
       });
       setNewNote("");
       setIsPublic(false);
-    } catch (error) {
+    } catch (_error) {
       // Error handled by mutation hook
     }
   };

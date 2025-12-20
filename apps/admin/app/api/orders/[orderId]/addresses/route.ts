@@ -17,15 +17,18 @@ export async function PATCH(
 
     const body = await request.json();
 
-    const response = await fetch(`${API_URL}/admin/orders/${orderId}/addresses`, {
-      method: "PATCH",
-      headers: {
-        Cookie: cookieHeader,
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${API_URL}/admin/orders/${orderId}/addresses`,
+      {
+        method: "PATCH",
+        headers: {
+          Cookie: cookieHeader,
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(body),
       },
-      credentials: "include",
-      body: JSON.stringify(body),
-    });
+    );
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({
@@ -44,4 +47,3 @@ export async function PATCH(
     );
   }
 }
-

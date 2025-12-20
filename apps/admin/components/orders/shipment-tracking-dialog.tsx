@@ -10,7 +10,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useTrackShipment } from "@/hooks/shipping/use-track-shipment";
-import type { TrackShipmentResponse } from "@/lib/types/shipping";
 import { DateTime } from "./date-time";
 
 interface ShipmentTrackingDialogProps {
@@ -32,7 +31,10 @@ export function ShipmentTrackingDialog({
         <DialogTrigger asChild>{trigger}</DialogTrigger>
       ) : (
         <DialogTrigger asChild>
-          <button className="text-sm text-primary hover:underline">
+          <button
+            type="button"
+            className="text-sm text-primary hover:underline"
+          >
             Track Shipment
           </button>
         </DialogTrigger>
@@ -61,7 +63,9 @@ export function ShipmentTrackingDialog({
                     Estimated Delivery
                   </p>
                   <p className="font-medium">
-                    {new Date(tracking.estimatedDeliveryDate).toLocaleDateString()}
+                    {new Date(
+                      tracking.estimatedDeliveryDate,
+                    ).toLocaleDateString()}
                   </p>
                 </div>
               )}
@@ -71,9 +75,9 @@ export function ShipmentTrackingDialog({
               <div className="space-y-3">
                 <p className="font-medium">Tracking History</p>
                 <div className="space-y-3">
-                  {tracking.events.map((event, index) => (
+                  {tracking.events.map((event) => (
                     <div
-                      key={index}
+                      key={event.date || Math.random().toString()}
                       className="flex gap-4 border-l-2 border-primary pl-4"
                     >
                       <Package className="h-5 w-5 text-primary mt-0.5" />
@@ -123,4 +127,3 @@ export function ShipmentTrackingDialog({
     </Dialog>
   );
 }
-

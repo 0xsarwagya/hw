@@ -18,4 +18,3 @@ export interface PickupLocation {
 export function useShiprocketPickupLocations() {
   return useApiQuery<PickupLocation[]>(endpoints.shipping.pickupLocations);
 }
-

@@ -239,17 +239,18 @@ function parseFiltersFromSearchParams(
     paymentStatus:
       (searchParams.get("paymentStatus") as PaymentStatus) || undefined,
     fulfillmentStatus:
-      (searchParams.get("fulfillmentStatus") as FulfillmentStatus) ||
-      undefined,
+      (searchParams.get("fulfillmentStatus") as FulfillmentStatus) || undefined,
     search: searchParams.get("search") || undefined,
     startDate: searchParams.get("startDate") || undefined,
     endDate: searchParams.get("endDate") || undefined,
-    minValue: searchParams.get("minValue")
-      ? parseFloat(searchParams.get("minValue")!)
-      : undefined,
-    maxValue: searchParams.get("maxValue")
-      ? parseFloat(searchParams.get("maxValue")!)
-      : undefined,
+    minValue: (() => {
+      const minValue = searchParams.get("minValue");
+      return minValue ? parseFloat(minValue) : undefined;
+    })(),
+    maxValue: (() => {
+      const maxValue = searchParams.get("maxValue");
+      return maxValue ? parseFloat(maxValue) : undefined;
+    })(),
     paymentMethod:
       (searchParams.get("paymentMethod") as "COD" | "prepaid") || undefined,
     sortBy: (searchParams.get("sortBy") as OrderSortBy) || undefined,
@@ -286,7 +287,8 @@ function useSyncFiltersToUrl(
       urlParams.set("minValue", filters.minValue.toString());
     if (filters.maxValue !== undefined)
       urlParams.set("maxValue", filters.maxValue.toString());
-    if (filters.paymentMethod) urlParams.set("paymentMethod", filters.paymentMethod);
+    if (filters.paymentMethod)
+      urlParams.set("paymentMethod", filters.paymentMethod);
     if (filters.sortBy) urlParams.set("sortBy", filters.sortBy);
     if (filters.sortOrder) urlParams.set("sortOrder", filters.sortOrder);
 

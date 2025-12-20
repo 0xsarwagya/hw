@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Order } from "@/lib/types/orders";
 import { DateTime } from "./date-time";
@@ -74,7 +73,10 @@ export function OrderHeader({ order }: OrderHeaderProps) {
                   <p className="text-xs text-muted-foreground mt-1">
                     Recovered via {order.recoverySource}
                     {order.recoveredAt && (
-                      <> · <DateTime date={order.recoveredAt} format="short" /></>
+                      <>
+                        {" "}
+                        · <DateTime date={order.recoveredAt} format="short" />
+                      </>
                     )}
                   </p>
                 )}
@@ -94,4 +96,3 @@ export function OrderHeader({ order }: OrderHeaderProps) {
     </Card>
   );
 }
-

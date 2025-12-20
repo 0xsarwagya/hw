@@ -12,14 +12,14 @@ import { useUpdateOrderStatus } from "@/hooks/orders/use-update-order-status";
 import type { OrderStatus } from "@/lib/types/orders";
 import { FulfillmentControls } from "./fulfillment-controls";
 import { NotesCard } from "./notes-card";
+import { OrderCustomerCard } from "./order-customer-card";
+import { OrderDiscountSection } from "./order-discount-section";
 import { OrderErrorState } from "./order-error-state";
 import { OrderHeader } from "./order-header";
 import { OrderLineItems } from "./order-line-items";
 import { OrderPaymentSection } from "./order-payment-section";
 import { OrderShippingSection } from "./order-shipping-section";
 import { OrderSummary } from "./order-summary";
-import { OrderDiscountSection } from "./order-discount-section";
-import { OrderCustomerCard } from "./order-customer-card";
 import { OrderTimelineLoadingSkeleton } from "./order-timeline-loading-skeleton";
 
 // Lazy load heavy components

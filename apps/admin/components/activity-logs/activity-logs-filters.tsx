@@ -84,7 +84,7 @@ export function ActivityLogsFilters({
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchValue]);
+  }, [searchValue, onFiltersChange]);
 
   // Update date filters
   useEffect(() => {
@@ -95,7 +95,7 @@ export function ActivityLogsFilters({
       page: 1,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate, endDate]);
+  }, [startDate, endDate, onFiltersChange]);
 
   const hasFilters =
     filters.adminId ||
