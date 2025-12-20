@@ -3,14 +3,15 @@ import { BUILD_INFO } from "../../build-info.js";
 
 /**
  * Pino logger configuration
- * - JSON format for production
- * - Pretty format for development
+ * - Pretty format enabled by default (can be disabled with LOG_PRETTY=false)
+ * - JSON format when LOG_PRETTY=false
  * - Redaction for sensitive data
  */
 export function createPinoConfig() {
   const isDevelopment = process.env.NODE_ENV === "development";
   const logLevel = process.env.LOG_LEVEL || (isDevelopment ? "debug" : "info");
-  const usePretty = process.env.LOG_PRETTY === "true" || isDevelopment;
+  // Enable pretty printing by default, allow disabling via LOG_PRETTY=false
+  const usePretty = process.env.LOG_PRETTY !== "false";
 
   const baseConfig: pino.LoggerOptions = {
     level: logLevel,
@@ -55,7 +56,7 @@ export function createPinoConfig() {
     },
   };
 
-  // Use pretty printing in development
+  // Use pretty printing by default
   if (usePretty) {
     return pino(
       {
@@ -67,6 +68,9 @@ export function createPinoConfig() {
             translateTime: "HH:MM:ss Z",
             ignore: "pid,hostname",
             singleLine: false,
+            messageFormat: "{levelLabel} {msg}",
+            errorLikeObjectKeys: ["err", "error"],
+            hideObject: false,
           },
         },
       },
@@ -74,6 +78,6 @@ export function createPinoConfig() {
     );
   }
 
-  // JSON format for production
+  // JSON format when LOG_PRETTY=false
   return pino(baseConfig, pino.destination(1)); // stdout
 }

@@ -15,6 +15,8 @@ export * from "./customer-groups";
 export * from "./customers";
 export * from "./discount-audit-logs";
 export * from "./discounts";
+export * from "./inventory-adjustments";
+export * from "./inventory-settings";
 export * from "./invoices";
 export * from "./order-items";
 export * from "./order-notes";
