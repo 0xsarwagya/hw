@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-// @ts-expect-error - jszip types may not be available
 import JSZip from "jszip";
 
 @Injectable()

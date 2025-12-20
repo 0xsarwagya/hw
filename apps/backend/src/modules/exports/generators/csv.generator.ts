@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-// @ts-expect-error - fast-csv types may not be available
 import * as csv from "fast-csv";
 
 @Injectable()

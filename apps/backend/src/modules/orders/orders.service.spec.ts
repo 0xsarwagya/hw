@@ -292,6 +292,17 @@ describe("OrdersService", () => {
         OrderGstService,
         OrderStatusService,
         OrderTimelineService,
+        {
+          provide: NotificationsService,
+          useValue: {
+            createFromEvent: jest.fn().mockResolvedValue(undefined),
+            create: jest.fn().mockResolvedValue(undefined),
+            findAll: jest.fn().mockResolvedValue({ data: [], total: 0 }),
+            markRead: jest.fn().mockResolvedValue(undefined),
+            markAllRead: jest.fn().mockResolvedValue(undefined),
+            delete: jest.fn().mockResolvedValue(undefined),
+          },
+        },
         ...getCommonTestProviders(),
       ],
     })
