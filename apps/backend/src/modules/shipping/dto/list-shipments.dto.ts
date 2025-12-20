@@ -1,4 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { shipmentStatusEnum } from "@vcecom/db";
 import { Type } from "class-transformer";
 import {
   IsDateString,
@@ -24,35 +25,12 @@ export class ListShipmentsQueryDto {
 
   @ApiProperty({
     description: "Filter by shipment status",
-    enum: [
-      "pending",
-      "label_generated",
-      "picked_up",
-      "in_transit",
-      "out_for_delivery",
-      "delivered",
-      "failed",
-      "returned",
-      "cancelled",
-    ],
+    enum: shipmentStatusEnum.enumValues,
     required: false,
   })
   @IsOptional()
-  @IsEnum(
-    [
-      "pending",
-      "label_generated",
-      "picked_up",
-      "in_transit",
-      "out_for_delivery",
-      "delivered",
-      "failed",
-      "returned",
-      "cancelled",
-    ],
-    { message: "Invalid shipment status" },
-  )
-  status?: string;
+  @IsEnum(shipmentStatusEnum.enumValues, { message: "Invalid shipment status" })
+  status?: (typeof shipmentStatusEnum.enumValues)[number];
 
   @ApiProperty({
     description: "Filter by shipping provider",
