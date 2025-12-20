@@ -93,7 +93,9 @@ export class PaymentChargesService {
     const [updated] = await db
       .update(paymentMethodCharges)
       .set({
-        ...(dto.chargeType && { chargeType: dto.chargeType as unknown as ChargeType }),
+        ...(dto.chargeType && {
+          chargeType: dto.chargeType as unknown as ChargeType,
+        }),
         ...(dto.flatAmount !== undefined && { flatAmount: dto.flatAmount }),
         ...(dto.percentage !== undefined && { percentage: dto.percentage }),
         ...(dto.mixCap !== undefined && { mixCap: dto.mixCap }),
