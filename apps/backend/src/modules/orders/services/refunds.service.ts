@@ -12,6 +12,8 @@ import {
   MAX_REFUND_AMOUNT_MULTIPLIER,
   MIN_REFUND_AMOUNT_INR,
 } from "../../../common/constants/orders.constants";
+import { NotificationsService } from "../../notifications/notifications.service";
+import { NotificationType } from "../../notifications/types/notification.types";
 import { RazorpayConfigService } from "../../payments/razorpay-config.service";
 import { TimelineEventType } from "../dto/order-timeline.dto";
 import { OrderTimelineService } from "./order-timeline.service";
@@ -25,6 +27,7 @@ export class RefundsService implements OnModuleInit {
     private readonly razorpayConfigService: RazorpayConfigService,
     private readonly appConfigService: AppConfigService,
     private readonly timelineService: OrderTimelineService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -156,6 +159,32 @@ export class RefundsService implements OnModuleInit {
         status: createdRefund.status,
       },
     });
+
+    // Create notification for refund
+    try {
+      await this.notificationsService.createFromEvent({
+        adminId: null, // Broadcast to all admins
+        type: NotificationType.ORDER,
+        title: "Refund Created",
+        message: `Refund of ₹${amount.toFixed(2)} created for Order #${order.orderNumber || orderId}`,
+        meta: {
+          orderId,
+          refundId: createdRefund.id,
+          amount,
+          reason: reason.trim(),
+        },
+      });
+    } catch (error) {
+      // Log but don't throw - notification failure shouldn't break refund creation
+      this.logger.warn(
+        {
+          orderId,
+          refundId: createdRefund.id,
+          error,
+        },
+        "Failed to create refund notification",
+      );
+    }
 
     // Process refund asynchronously if payment provider is available
     if (order.razorpayOrderId && this.razorpay) {

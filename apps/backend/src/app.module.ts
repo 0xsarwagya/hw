@@ -18,16 +18,21 @@ import { CollectionsModule } from "./modules/collections/collections.module";
 import { CustomersModule } from "./modules/customers/customers.module";
 import { DatabaseModule } from "./modules/database/database.module";
 import { DiscountsModule } from "./modules/discounts/discounts.module";
+import { ExportsModule } from "./modules/exports/exports.module";
 import { InventoryModule } from "./modules/inventory/inventory.module";
 import { InvoicesModule } from "./modules/invoices/invoices.module";
+import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { OrdersModule } from "./modules/orders/orders.module";
 import { PaymentsModule } from "./modules/payments/payments.module";
+import { PermissionsModule } from "./modules/permissions/permissions.module";
 import { PricingModule } from "./modules/pricing/pricing.module";
 import { ProductsModule } from "./modules/products/products.module";
 import { RedisStoreModule } from "./modules/redis-store/redis-store.module";
 import { ReviewsModule } from "./modules/reviews/reviews.module";
 import { ShippingModule } from "./modules/shipping/shipping.module";
 import { StorageModule } from "./modules/storage/storage.module";
+import { StoresModule } from "./modules/stores/stores.module";
+import { SystemLogsModule } from "./modules/system-logs/system-logs.module";
 
 @Module({
   imports: [
@@ -58,8 +63,13 @@ import { StorageModule } from "./modules/storage/storage.module";
     PricingModule,
     RedisStoreModule,
     InventoryModule,
+    PermissionsModule,
     BundlesModule,
     ReviewsModule,
+    NotificationsModule,
+    StoresModule,
+    ExportsModule,
+    SystemLogsModule,
   ],
   controllers: [
     AppController,

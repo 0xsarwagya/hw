@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { NotificationsModule } from "../notifications/notifications.module";
 import { ProductsModule } from "../products/products.module";
 import { RedisStoreModule } from "../redis-store/redis-store.module";
 import { AdminInventoryController } from "./admin-inventory.controller";
@@ -7,7 +8,7 @@ import { InventoryController } from "./inventory.controller";
 import { InventoryService } from "./inventory.service";
 
 @Module({
-  imports: [RedisStoreModule, ProductsModule],
+  imports: [RedisStoreModule, ProductsModule, NotificationsModule],
   controllers: [InventoryController, AdminInventoryController],
   providers: [InventoryService, AdminInventoryService],
   exports: [AdminInventoryService],

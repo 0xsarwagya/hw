@@ -6,6 +6,7 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+import { adminRoles } from "./admin-roles";
 
 export const userRoleEnum = pgEnum("user_role", [
   "admin",
@@ -22,6 +23,9 @@ export const users = pgTable(
     email: text("email").notNull().unique(),
     passwordHash: text("password_hash"),
     role: userRoleEnum("role").notNull().default("customer"),
+    roleId: uuid("role_id").references(() => adminRoles.id, {
+      onDelete: "set null",
+    }), // Reference to admin_roles for granular permissions
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

@@ -57,6 +57,7 @@ import { OrderStatusService } from "./services/order-status.service";
 import { OrderGstService } from "./services/order-gst.service";
 import { OrderTimelineService } from "./services/order-timeline.service";
 import { getCommonTestProviders } from "../../common/testing/test-helpers";
+import { NotificationsService } from "../notifications/notifications.service";
 
 // Helper function to create properly chained db.select mocks
 function createSelectMock(returnValue: any) {

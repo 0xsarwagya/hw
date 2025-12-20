@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { NotificationsModule } from "../notifications/notifications.module";
 import { RedisStoreModule } from "../redis-store/redis-store.module";
 import { AdminReviewsController } from "./admin-reviews.controller";
 import { ReviewsController } from "./reviews.controller";
@@ -9,7 +10,7 @@ import { ReviewModerationService } from "./services/review-moderation.service";
 import { ReviewsService } from "./services/reviews.service";
 
 @Module({
-  imports: [RedisStoreModule],
+  imports: [RedisStoreModule, NotificationsModule],
   controllers: [ReviewsController, AdminReviewsController],
   providers: [
     ReviewsService,

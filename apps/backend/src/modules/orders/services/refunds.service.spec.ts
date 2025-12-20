@@ -9,6 +9,7 @@ import {
 } from "../../../common/constants/orders.constants";
 import { AppConfigService } from "../../../common/config/app.config.service";
 import { getCommonTestProviders } from "../../../common/testing/test-helpers";
+import { NotificationsService } from "../../notifications/notifications.service";
 import { RazorpayConfigService } from "../../payments/razorpay-config.service";
 import { OrderTimelineService } from "./order-timeline.service";
 import { RefundsService } from "./refunds.service";
@@ -123,6 +124,15 @@ describe("RefundsService", () => {
       }),
     };
 
+    const mockNotificationsService = {
+      createFromEvent: jest.fn().mockResolvedValue(undefined),
+      create: jest.fn().mockResolvedValue(undefined),
+      findAll: jest.fn().mockResolvedValue({ data: [], total: 0 }),
+      markRead: jest.fn().mockResolvedValue(undefined),
+      markAllRead: jest.fn().mockResolvedValue(undefined),
+      delete: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RefundsService,
@@ -137,6 +147,10 @@ describe("RefundsService", () => {
         {
           provide: AppConfigService,
           useValue: mockAppConfigService,
+        },
+        {
+          provide: NotificationsService,
+          useValue: mockNotificationsService,
         },
         ...getCommonTestProviders(),
       ],

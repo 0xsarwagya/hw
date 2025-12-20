@@ -18,7 +18,6 @@ if (!process.env.DATABASE_URL) {
 import * as bcrypt from "bcrypt";
 import { db } from "./db/index";
 import { users } from "./schema";
-import type { NewUser } from "./schema/users";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@vcecom.local";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Admin@123";
@@ -37,13 +36,18 @@ async function seedAdminUser() {
     const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
 
     // Create admin user
+    // Note: roleId column may not exist in database yet, so we only set required fields
     const [adminUser] = await db
       .insert(users)
       .values({
         email: ADMIN_EMAIL,
         passwordHash,
         role: "admin",
-      } as NewUser)
+      } as {
+        email: string;
+        passwordHash: string;
+        role: "admin" | "customer" | "support" | "reviewer" | "marketing";
+      })
       .returning();
 
     if (!adminUser) {

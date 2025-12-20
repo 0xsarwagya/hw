@@ -5,6 +5,7 @@ import {
   NestInterceptor,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
+import { db, discounts, eq, orders, products } from "@vcecom/db";
 import { Observable } from "rxjs";
 import { tap } from "rxjs/operators";
 import { ContextService } from "../../../common/logging/context.service";
@@ -71,20 +72,82 @@ export class ActivityLoggingInterceptor implements NestInterceptor {
       });
     }
 
+    // Determine if we should capture diff
+    const shouldCaptureDiff =
+      metadata.captureDiff &&
+      metadata.entityType &&
+      entityId &&
+      (request.method === "PUT" || request.method === "PATCH");
+
     // Log activity after successful execution
     return next.handle().pipe(
       tap({
-        next: () => {
-          // Log successful activity
-          this.activityService.logActivity({
-            adminId: user.id,
-            action: metadata.action,
-            entityId,
-            metadata:
-              Object.keys(metadataFields).length > 0
-                ? metadataFields
-                : undefined,
-          });
+        next: (response) => {
+          // Handle diff capture asynchronously
+          if (shouldCaptureDiff && metadata.entityType && entityId) {
+            // Fetch before state and log with diff asynchronously
+            this.fetchBeforeState(metadata.entityType, entityId)
+              .then((beforeState) => {
+                const afterState = this.extractAfterState(
+                  response,
+                  metadata.entityType,
+                );
+
+                if (beforeState || afterState) {
+                  this.activityService
+                    .logActivityWithDiff({
+                      adminId: user.id,
+                      action: metadata.action,
+                      entityId,
+                      metadata:
+                        Object.keys(metadataFields).length > 0
+                          ? metadataFields
+                          : undefined,
+                      diff: {
+                        before: beforeState,
+                        after: afterState,
+                      },
+                    })
+                    .catch(() => {
+                      // Silently fail
+                    });
+                } else {
+                  // Fallback to regular logging
+                  this.activityService.logActivity({
+                    adminId: user.id,
+                    action: metadata.action,
+                    entityId,
+                    metadata:
+                      Object.keys(metadataFields).length > 0
+                        ? metadataFields
+                        : undefined,
+                  });
+                }
+              })
+              .catch(() => {
+                // If before state fetch fails, log without diff
+                this.activityService.logActivity({
+                  adminId: user.id,
+                  action: metadata.action,
+                  entityId,
+                  metadata:
+                    Object.keys(metadataFields).length > 0
+                      ? metadataFields
+                      : undefined,
+                });
+              });
+          } else {
+            // Log successful activity without diff
+            this.activityService.logActivity({
+              adminId: user.id,
+              action: metadata.action,
+              entityId,
+              metadata:
+                Object.keys(metadataFields).length > 0
+                  ? metadataFields
+                  : undefined,
+            });
+          }
         },
         error: (error) => {
           // Log failed activity with error info
@@ -101,5 +164,80 @@ export class ActivityLoggingInterceptor implements NestInterceptor {
         },
       }),
     );
+  }
+
+  /**
+   * Fetch before state for diff capture
+   */
+  private async fetchBeforeState(
+    entityType: string | undefined,
+    entityId: string | undefined,
+  ): Promise<Record<string, unknown> | null> {
+    if (!entityType || !entityId) {
+      return null;
+    }
+
+    try {
+      switch (entityType.toLowerCase()) {
+        case "product": {
+          const [product] = await db
+            .select()
+            .from(products)
+            .where(eq(products.id, entityId))
+            .limit(1);
+          return product ? (product as Record<string, unknown>) : null;
+        }
+
+        case "discount": {
+          const [discount] = await db
+            .select()
+            .from(discounts)
+            .where(eq(discounts.id, entityId))
+            .limit(1);
+          return discount ? (discount as Record<string, unknown>) : null;
+        }
+
+        case "order": {
+          const [order] = await db
+            .select()
+            .from(orders)
+            .where(eq(orders.id, entityId))
+            .limit(1);
+          return order ? (order as Record<string, unknown>) : null;
+        }
+
+        default:
+          return null;
+      }
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  /**
+   * Extract after state from response
+   */
+  private extractAfterState(
+    response: unknown,
+    entityType?: string,
+  ): Record<string, unknown> | null {
+    if (!response || typeof response !== "object") {
+      return null;
+    }
+
+    // If response is already a plain object, return it
+    if (response && typeof response === "object" && !Array.isArray(response)) {
+      // Filter out sensitive fields
+      const sensitiveFields = ["password", "passwordhash", "token", "secret"];
+      const filtered: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(response)) {
+        if (!sensitiveFields.includes(key.toLowerCase())) {
+          filtered[key] = value;
+        }
+      }
+      return filtered;
+    }
+
+    return null;
   }
 }

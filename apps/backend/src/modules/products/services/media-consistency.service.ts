@@ -17,6 +17,8 @@ import {
   createErrorContext,
   createLogContext,
 } from "../../../common/logging/logging.helper";
+import { NotificationsService } from "../../notifications/notifications.service";
+import { NotificationType } from "../../notifications/types/notification.types";
 import { StorageService } from "../../storage/storage.service";
 import {
   MediaFix,
@@ -38,6 +40,7 @@ export class MediaConsistencyService {
     private readonly auditService: MediaAuditService,
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -69,6 +72,39 @@ export class MediaConsistencyService {
 
     // Calculate stats
     const stats = await this.calculateStats(issues);
+
+    // Create notification if critical issues found
+    if (issues.length > 0) {
+      try {
+        const criticalCount = issues.filter(
+          (issue) => issue.severity === "critical",
+        ).length;
+        await this.notificationsService.createFromEvent({
+          adminId: null, // Broadcast to all admins
+          type: NotificationType.SYSTEM,
+          title: "Media Health Issues Detected",
+          message: `Found ${issues.length} media consistency issue${issues.length > 1 ? "s" : ""}${criticalCount > 0 ? ` (${criticalCount} critical)` : ""}`,
+          meta: {
+            totalIssues: issues.length,
+            criticalCount,
+            stats,
+          },
+        });
+      } catch (error) {
+        // Log but don't throw - notification failure shouldn't break scan
+        this.logger.warn(
+          createErrorContext(
+            this.contextService,
+            "createMediaHealthNotification",
+            error,
+            {
+              issueCount: issues.length,
+            },
+          ),
+          "Failed to create media health notification",
+        );
+      }
+    }
 
     this.logger.info(
       createLogContext(this.contextService, "scanAllIssues", {
