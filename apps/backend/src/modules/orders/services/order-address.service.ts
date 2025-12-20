@@ -3,8 +3,9 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { and, db, eq, addresses, orders } from "@vcecom/db";
+import { addresses, db, eq, orders } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
+import { TimelineEventType } from "../dto/order-timeline.dto";
 import { OrderTimelineService } from "./order-timeline.service";
 
 interface AddressUpdate {
@@ -58,9 +59,7 @@ export class OrderAddressService {
 
     // Validate PIN code format (6 digits)
     if (addressData.pincode && !/^\d{6}$/.test(addressData.pincode)) {
-      throw new BadRequestException(
-        "PIN code must be exactly 6 digits",
-      );
+      throw new BadRequestException("PIN code must be exactly 6 digits");
     }
 
     // Get the address ID to update
@@ -90,7 +89,7 @@ export class OrderAddressService {
 
     // Add timeline event
     await this.timelineService.addEvent(orderId, {
-      type: "address_updated" as any,
+      type: TimelineEventType.ADDRESS_UPDATED,
       title: `${addressType === "shipping" ? "Shipping" : "Billing"} Address Updated`,
       description: `Order ${addressType} address was updated`,
       actor: "admin",
@@ -126,4 +125,3 @@ export class OrderAddressService {
     return updatedOrder;
   }
 }
-

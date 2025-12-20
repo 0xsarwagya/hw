@@ -4,8 +4,8 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  MaxLength,
   Matches,
+  MaxLength,
 } from "class-validator";
 
 export class UpdateOrderAddressDto {
@@ -83,4 +83,3 @@ export class UpdateOrderAddressDto {
   @MaxLength(100, { message: "District must not exceed 100 characters" })
   district?: string;
 }
-

@@ -3,9 +3,10 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { and, db, eq, orders, payments } from "@vcecom/db";
+import { db, eq, orders, payments } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { COD_PAYMENT_METHOD } from "../../../common/constants/orders.constants";
+import { TimelineEventType } from "../dto/order-timeline.dto";
 import { OrderTimelineService } from "./order-timeline.service";
 
 @Injectable()
@@ -76,7 +77,7 @@ export class OrderPaymentService {
 
     // Add timeline event
     await this.timelineService.addEvent(orderId, {
-      type: "order_marked_paid" as any,
+      type: TimelineEventType.ORDER_MARKED_PAID,
       title: "Order Marked as Paid",
       description: `COD order marked as paid by admin`,
       actor: "admin",
@@ -109,4 +110,3 @@ export class OrderPaymentService {
     return updatedOrder;
   }
 }
-

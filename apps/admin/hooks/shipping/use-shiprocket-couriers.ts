@@ -35,7 +35,10 @@ export function useShiprocketCouriers(params?: CourierServiceabilityParams) {
     endpoints.shipping.courierServiceability,
     {
       enabled: !!params,
-      params: params as unknown as Record<string, string | number | boolean | undefined>,
+      params: params as unknown as Record<
+        string,
+        string | number | boolean | undefined
+      >,
     },
   );
 }

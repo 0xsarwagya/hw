@@ -58,4 +58,3 @@ export class OrderNoteResponseDto {
   })
   updatedAt: Date;
 }
-

@@ -2,9 +2,7 @@ import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { addresses, db, eq, orderItems, orders, shipments } from "@vcecom/db";
 import { AppConfigService } from "../../common/config/app.config.service";
 import {
-  DEFAULT_PICKUP_PINCODE,
   SHIPROCKET_CANCEL_SHIPMENT_ENDPOINT_TEMPLATE,
-  SHIPROCKET_COURIER_SERVICEABILITY_ENDPOINT,
   SHIPROCKET_PICKUP_LOCATIONS_ENDPOINT,
 } from "../../common/constants/shipping.constants";
 import { ShiprocketConfigService } from "./shiprocket-config.service";

@@ -58,4 +58,3 @@ export class RefundResponseDto {
   })
   updatedAt: Date;
 }
-

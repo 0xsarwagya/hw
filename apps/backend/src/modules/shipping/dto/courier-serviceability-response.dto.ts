@@ -8,4 +8,3 @@ export class CourierServiceabilityResponseDto {
   })
   couriers: CourierRateDto[];
 }
-

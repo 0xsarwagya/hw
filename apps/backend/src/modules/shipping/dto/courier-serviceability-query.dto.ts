@@ -1,5 +1,11 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from "class-validator";
 
 export class CourierServiceabilityQueryDto {
   @ApiProperty({
@@ -49,4 +55,3 @@ export class CourierServiceabilityQueryDto {
   @Min(0, { message: "COD amount must be at least 0" })
   codAmount?: number;
 }
-

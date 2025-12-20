@@ -40,4 +40,3 @@ export const orderNotesRelations = relations(orderNotes, ({ one }) => ({
 
 export type OrderNote = typeof orderNotes.$inferSelect;
 export type NewOrderNote = typeof orderNotes.$inferInsert;
-

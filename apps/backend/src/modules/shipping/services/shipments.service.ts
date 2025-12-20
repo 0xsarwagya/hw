@@ -1,11 +1,21 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { and, db, desc, eq, gte, lte, shipments, sql } from "@vcecom/db";
+import {
+  and,
+  db,
+  desc,
+  eq,
+  gte,
+  lte,
+  shipmentStatusEnum,
+  shipments,
+  sql,
+} from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "../../../common/constants";
 
 interface ShipmentFilters {
   orderId?: string;
-  status?: string;
+  status?: (typeof shipmentStatusEnum.enumValues)[number];
   provider?: string;
   startDate?: Date;
   endDate?: Date;
@@ -15,7 +25,7 @@ interface ShipmentFilters {
 
 @Injectable()
 export class ShipmentsService {
-  constructor(private readonly logger: PinoLogger) {}
+  constructor(readonly _logger: PinoLogger) {}
 
   /**
    * Get all shipments with optional filters
@@ -36,7 +46,7 @@ export class ShipmentsService {
     }
 
     if (filters.status) {
-      conditions.push(eq(shipments.status, filters.status as any));
+      conditions.push(eq(shipments.status, filters.status));
     }
 
     if (filters.provider) {
@@ -51,8 +61,7 @@ export class ShipmentsService {
       conditions.push(lte(shipments.createdAt, filters.endDate));
     }
 
-    const whereClause =
-      conditions.length > 0 ? and(...conditions) : undefined;
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     // Get total count
     const totalCount = await db
@@ -116,4 +125,3 @@ export class ShipmentsService {
     return shipmentsList;
   }
 }
-

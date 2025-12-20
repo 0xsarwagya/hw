@@ -127,4 +127,3 @@ export class PaginatedShipmentsResponseDto {
     totalPages: number;
   };
 }
-

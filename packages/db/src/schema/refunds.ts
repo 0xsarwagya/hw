@@ -50,4 +50,3 @@ export const refundsRelations = relations(refunds, ({ one }) => ({
 
 export type Refund = typeof refunds.$inferSelect;
 export type NewRefund = typeof refunds.$inferInsert;
-

@@ -7,12 +7,13 @@ import {
 import { and, db, desc, eq, orders, payments, refunds } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import Razorpay from "razorpay";
+import { AppConfigService } from "../../../common/config/app.config.service";
 import {
   MAX_REFUND_AMOUNT_MULTIPLIER,
   MIN_REFUND_AMOUNT_INR,
 } from "../../../common/constants/orders.constants";
-import { AppConfigService } from "../../../common/config/app.config.service";
 import { RazorpayConfigService } from "../../payments/razorpay-config.service";
+import { TimelineEventType } from "../dto/order-timeline.dto";
 import { OrderTimelineService } from "./order-timeline.service";
 
 @Injectable()
@@ -143,7 +144,7 @@ export class RefundsService implements OnModuleInit {
 
     // Add timeline event
     await this.timelineService.addEvent(orderId, {
-      type: "refund_created" as any,
+      type: TimelineEventType.REFUND_CREATED,
       title: "Refund Created",
       description: `Refund of ₹${amount} created. Reason: ${reason.trim()}`,
       actor: "admin",
@@ -219,10 +220,7 @@ export class RefundsService implements OnModuleInit {
         .select()
         .from(payments)
         .where(
-          and(
-            eq(payments.orderId, order.id),
-            eq(payments.status, "captured"),
-          ),
+          and(eq(payments.orderId, order.id), eq(payments.status, "captured")),
         )
         .limit(1);
 
@@ -256,11 +254,11 @@ export class RefundsService implements OnModuleInit {
 
       // Add timeline event
       await this.timelineService.addEvent(refund.orderId, {
-        type: "refund_processed" as any,
+        type: TimelineEventType.REFUND_PROCESSED,
         title: "Refund Processed",
         description: `Refund of ₹${refund.amount} has been processed`,
         actor: "system",
-        timestamp: updatedRefund.processedAt!,
+        timestamp: updatedRefund.processedAt || new Date(),
         metadata: {
           refundId: updatedRefund.id,
           providerRefundId: updatedRefund.providerRefundId,
@@ -298,4 +296,3 @@ export class RefundsService implements OnModuleInit {
     }
   }
 }
-

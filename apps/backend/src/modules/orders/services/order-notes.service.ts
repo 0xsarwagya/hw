@@ -3,8 +3,9 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { and, db, desc, eq, orderNotes, orders } from "@vcecom/db";
+import { db, desc, eq, orderNotes, orders } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
+import { TimelineEventType } from "../dto/order-timeline.dto";
 import { OrderTimelineService } from "./order-timeline.service";
 
 @Injectable()
@@ -87,7 +88,9 @@ export class OrderNotesService {
 
     // Add timeline event
     await this.timelineService.addEvent(orderId, {
-      type: isPublic ? ("note_added" as any) : ("admin_note_added" as any),
+      type: isPublic
+        ? TimelineEventType.NOTE_ADDED
+        : TimelineEventType.ADMIN_NOTE_ADDED,
       title: isPublic ? "Note Added" : "Admin Note Added",
       description: note.trim(),
       actor: authorId ? "admin" : "system",
@@ -114,4 +117,3 @@ export class OrderNotesService {
     return createdNote;
   }
 }
-

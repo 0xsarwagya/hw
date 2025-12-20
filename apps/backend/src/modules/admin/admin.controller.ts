@@ -461,7 +461,8 @@ export class AdminController {
   })
   @ApiResponse({
     status: 400,
-    description: "Bad request (invalid amount, exceeds refundable amount, etc.)",
+    description:
+      "Bad request (invalid amount, exceeds refundable amount, etc.)",
   })
   @ApiResponse({
     status: 404,
@@ -496,14 +497,17 @@ export class AdminController {
   async getRefunds(
     @Param("orderId") orderId: string,
   ): Promise<RefundResponseDto[]> {
-    return (await this.refundsService.findByOrderId(orderId)) as unknown as RefundResponseDto[];
+    return (await this.refundsService.findByOrderId(
+      orderId,
+    )) as unknown as RefundResponseDto[];
   }
 
   @Get("orders/:orderId/notes")
   @RateLimit(RATE_LIMIT_PRESETS.ADMIN_GET)
   @ApiOperation({
     summary: "Get all notes for an order (admin)",
-    description: "Retrieve all notes (both admin and customer-visible) for an order.",
+    description:
+      "Retrieve all notes (both admin and customer-visible) for an order.",
   })
   @ApiResponse({
     status: 200,
@@ -517,7 +521,9 @@ export class AdminController {
   async getOrderNotes(
     @Param("orderId") orderId: string,
   ): Promise<OrderNoteResponseDto[]> {
-    return (await this.orderNotesService.findByOrderId(orderId)) as unknown as OrderNoteResponseDto[];
+    return (await this.orderNotesService.findByOrderId(
+      orderId,
+    )) as unknown as OrderNoteResponseDto[];
   }
 
   @Post("orders/:orderId/notes")

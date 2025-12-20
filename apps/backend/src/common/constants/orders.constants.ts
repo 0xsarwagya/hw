@@ -28,4 +28,3 @@ export const COD_PAYMENT_METHOD = "cod";
  * Refunds below this amount are not allowed
  */
 export const MIN_REFUND_AMOUNT_INR = 1.0;
-
