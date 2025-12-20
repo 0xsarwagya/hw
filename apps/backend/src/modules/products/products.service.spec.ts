@@ -4,6 +4,8 @@ import { ProductsService } from "./products.service";
 import { FilterProductsDto, SortField, SortOrder } from "./dto/filter.dto";
 import { SearchProductsDto, SearchSortBy } from "./dto/search.dto";
 import { StorageService } from "../storage/storage.service";
+import { MediaTransactionService } from "./services/media-transaction.service";
+import { MediaCacheInvalidationService } from "./services/media-cache-invalidation.service";
 
 // Mock database
 jest.mock("@vcecom/db", () => ({
@@ -46,6 +48,20 @@ describe("ProductsService", () => {
     list: jest.fn(),
   };
 
+  const mockMediaTransactionService = {
+    lockProductImages: jest.fn(),
+    lockVariantImages: jest.fn(),
+    withProductImageLock: jest.fn((productId, operation) => operation()),
+    withVariantImageLock: jest.fn((productId, variantId, operation) => operation()),
+  };
+
+  const mockMediaCacheInvalidationService = {
+    invalidateProductImages: jest.fn(),
+    invalidateVariantImages: jest.fn(),
+    invalidateProductCache: jest.fn(),
+    invalidateAllMediaCaches: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -53,6 +69,14 @@ describe("ProductsService", () => {
         {
           provide: StorageService,
           useValue: mockStorageService,
+        },
+        {
+          provide: MediaTransactionService,
+          useValue: mockMediaTransactionService,
+        },
+        {
+          provide: MediaCacheInvalidationService,
+          useValue: mockMediaCacheInvalidationService,
         },
       ],
     }).compile();
