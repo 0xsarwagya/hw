@@ -1,8 +1,131 @@
-# Test Scripts
+# Scripts
 
-This directory contains scripts for setting up and running tests locally and in CI.
+This directory contains utility scripts for development, testing, and maintenance.
 
 ## Scripts
+
+### `generate-changelog-ai.ts`
+
+AI-powered changelog generator that fetches merged PRs from GitHub and uses Mistral API to generate a comprehensive changelog in Keep a Changelog format.
+
+#### Features
+
+- **GitHub Integration**: Fetches all merged PRs from your repository
+- **AI Categorization**: Uses Mistral API to categorize PRs (feat, fix, docs, etc.)
+- **Smart Formatting**: Generates user-facing descriptions from PR content
+- **Breaking Changes Detection**: Automatically identifies and highlights breaking changes
+- **Keep a Changelog Format**: Generates changelog following industry-standard format
+- **Rate Limiting**: Built-in rate limiting and retry logic for API calls
+
+#### Prerequisites
+
+1. **GitHub Personal Access Token**:
+   - Create a token at https://github.com/settings/tokens
+   - Required scopes: `public_repo` (for public repos) or `repo` (for private repos)
+   - Set as `GITHUB_TOKEN` environment variable
+
+2. **Mistral API Key**:
+   - Sign up at https://console.mistral.ai/
+   - Get your API key from the dashboard
+   - Set as `MISTRAL_API_KEY` environment variable
+
+#### Usage
+
+```bash
+# Generate changelog from all merged PRs
+pnpm changelog:ai
+
+# Generate changelog for PRs merged since a specific tag
+pnpm changelog:ai --since v1.0.0
+
+# Specify custom output file
+pnpm changelog:ai --output CHANGES.md
+
+# Specify custom repository
+pnpm changelog:ai --repo owner/repo-name
+
+# Preview without writing to file (dry-run)
+pnpm changelog:ai --dry-run
+
+# Show help
+pnpm changelog:ai --help
+```
+
+#### Options
+
+- `--since <tag>`: Only include PRs merged since this git tag
+- `--output <file>`: Output file path (default: `CHANGELOG.md`)
+- `--repo <owner/repo>`: GitHub repository (default: from `package.json`)
+- `--dry-run`: Preview changelog without writing to file
+- `--help, -h`: Show help message
+
+#### Environment Variables
+
+- `GITHUB_TOKEN`: GitHub personal access token (required)
+- `MISTRAL_API_KEY`: Mistral API key (required)
+
+#### Examples
+
+```bash
+# Basic usage - generate changelog from all PRs
+export GITHUB_TOKEN=ghp_xxxxxxxxxxxx
+export MISTRAL_API_KEY=your_mistral_key
+pnpm changelog:ai
+
+# Generate changelog for new PRs since last release
+pnpm changelog:ai --since v2.0.0
+
+# Preview what would be generated
+pnpm changelog:ai --dry-run
+
+# Generate changelog for a different repository
+pnpm changelog:ai --repo Vestcodes/other-repo
+```
+
+#### How It Works
+
+1. **Fetch PRs**: Uses GitHub API to fetch all merged PRs (optionally filtered by tag)
+2. **Categorize**: Sends each PR to Mistral API for categorization and description enhancement
+3. **Group**: Groups PRs by category (Added, Changed, Fixed, etc.)
+4. **Format**: Generates markdown changelog following Keep a Changelog format
+5. **Write**: Writes the changelog to `CHANGELOG.md` (or specified file)
+
+#### Changelog Format
+
+The generated changelog follows [Keep a Changelog](https://keepachangelog.com/) format:
+
+```markdown
+# Changelog
+
+## [Unreleased] or [Version] - YYYY-MM-DD
+
+### Breaking Changes
+- **scope**: Description (PR #123)
+
+### Added
+- **scope**: Feature description (PR #124)
+
+### Changed
+- **scope**: Change description (PR #125)
+
+### Fixed
+- **scope**: Bug fix description (PR #126)
+```
+
+#### Error Handling
+
+- Validates environment variables before execution
+- Handles GitHub API rate limits (5000 requests/hour)
+- Implements retry logic for Mistral API calls
+- Falls back to title-based categorization if Mistral API fails
+- Graceful error messages with helpful suggestions
+
+#### Notes
+
+- The script replaces the existing `CHANGELOG.md` file (unless `--dry-run` is used)
+- PRs are sorted by merge date (newest first)
+- Breaking changes are automatically detected and shown in a separate section
+- The script uses batch processing with rate limiting to avoid API throttling
 
 ### `test-local.sh`
 

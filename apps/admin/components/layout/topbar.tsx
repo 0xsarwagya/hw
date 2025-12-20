@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, LogOut, Search, Settings, User } from "lucide-react";
+import { LogOut, Search, Settings, User } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCommandK } from "@/hooks/use-command-k";
 import { useAdminSession } from "@/providers/session-provider";
+import { NotificationBell } from "./notification-bell";
 
 interface TopbarProps {
   onSearchClick?: () => void;
@@ -68,10 +69,7 @@ export function Topbar({ onSearchClick }: TopbarProps) {
       {/* Right side */}
       <div className="flex items-center gap-4">
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-destructive" />
-        </Button>
+        <NotificationBell />
 
         {/* Environment badge */}
         {getEnvironmentBadge()}
