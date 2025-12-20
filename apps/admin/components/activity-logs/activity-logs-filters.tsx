@@ -2,7 +2,7 @@
 
 import { format } from "date-fns";
 import { CalendarIcon, Search, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -66,28 +66,36 @@ export function ActivityLogsFilters({
 
   const { data: admins = [] } = useAdminFetchAdmins();
 
+  // Use ref to track latest filters without causing re-renders
+  const filtersRef = useRef(filters);
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       onFiltersChange({
-        ...filters,
+        ...filtersRef.current,
         search: searchValue || undefined,
         page: 1,
       });
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [searchValue, filters, onFiltersChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchValue]);
 
   // Update date filters
   useEffect(() => {
     onFiltersChange({
-      ...filters,
+      ...filtersRef.current,
       startDate: startDate?.toISOString(),
       endDate: endDate?.toISOString(),
       page: 1,
     });
-  }, [startDate, endDate, filters, onFiltersChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startDate, endDate]);
 
   const hasFilters =
     filters.adminId ||

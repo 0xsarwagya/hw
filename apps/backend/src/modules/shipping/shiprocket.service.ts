@@ -1,6 +1,12 @@
 import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { addresses, db, eq, orderItems, orders, shipments } from "@vcecom/db";
 import { AppConfigService } from "../../common/config/app.config.service";
+import {
+  DEFAULT_PICKUP_PINCODE,
+  SHIPROCKET_CANCEL_SHIPMENT_ENDPOINT_TEMPLATE,
+  SHIPROCKET_COURIER_SERVICEABILITY_ENDPOINT,
+  SHIPROCKET_PICKUP_LOCATIONS_ENDPOINT,
+} from "../../common/constants/shipping.constants";
 import { ShiprocketConfigService } from "./shiprocket-config.service";
 
 export interface ShiprocketAuthToken {
@@ -618,6 +624,156 @@ export class ShiprocketService implements OnModuleInit {
       estimatedDeliveryDate: trackingData.estimated_delivery_date || null,
       events: events,
       message: "Tracking information retrieved successfully",
+    };
+  }
+
+  /**
+   * Get available pickup locations from Shiprocket
+   * @returns Array of pickup locations
+   */
+  async getPickupLocations(): Promise<
+    Array<{
+      id: number;
+      name: string;
+      pincode: string;
+      city: string;
+      state: string;
+      country: string;
+      address: string;
+      phone: string;
+      email: string;
+      isDefault: boolean;
+    }>
+  > {
+    if (!this.isInitialized()) {
+      throw new Error(
+        "Shiprocket is not initialized. Please initialize Shiprocket first.",
+      );
+    }
+
+    const response = await this.makeRequest<{
+      data: Array<{
+        id: number;
+        name: string;
+        pincode: string;
+        city: string;
+        state: string;
+        country: string;
+        address: string;
+        phone: string;
+        email: string;
+        is_default: boolean;
+      }>;
+    }>(SHIPROCKET_PICKUP_LOCATIONS_ENDPOINT, {
+      method: "GET",
+    });
+
+    return (
+      response.data?.map((location) => ({
+        id: location.id,
+        name: location.name,
+        pincode: location.pincode,
+        city: location.city,
+        state: location.state,
+        country: location.country,
+        address: location.address,
+        phone: location.phone,
+        email: location.email,
+        isDefault: location.is_default || false,
+      })) || []
+    );
+  }
+
+  /**
+   * Get courier serviceability (GET version with query params)
+   * @param pickupPincode - Pickup PIN code
+   * @param deliveryPincode - Delivery PIN code
+   * @param weight - Weight in kg
+   * @param orderValue - Order value in INR
+   * @param codAmount - COD amount in INR (optional)
+   * @returns Array of available couriers
+   */
+  async getCourierServiceability(
+    pickupPincode: string,
+    deliveryPincode: string,
+    weight: number,
+    orderValue: number,
+    codAmount?: number,
+  ): Promise<
+    Array<{
+      courierId: number;
+      courierName: string;
+      rate: number;
+      estimatedDeliveryDays: number | null;
+      codCharges: number;
+      totalRate: number;
+      codAvailable: boolean;
+      isRecommended: boolean;
+    }>
+  > {
+    // Use existing calculateRates method but return only courier rates
+    const result = await this.calculateRates(
+      pickupPincode,
+      deliveryPincode,
+      weight,
+      orderValue,
+      codAmount,
+    );
+
+    return result.courierRates;
+  }
+
+  /**
+   * Cancel a shipment
+   * @param awbNumber - AWB number of the shipment to cancel
+   * @returns Cancelled shipment details
+   */
+  async cancelShipment(awbNumber: string): Promise<{
+    awbNumber: string;
+    status: string;
+    message: string;
+  }> {
+    if (!this.isInitialized()) {
+      throw new Error(
+        "Shiprocket is not initialized. Please initialize Shiprocket first.",
+      );
+    }
+
+    if (!awbNumber || awbNumber.trim().length === 0) {
+      throw new Error("AWB number is required");
+    }
+
+    // Cancel shipment via Shiprocket API
+    const response = await this.makeRequest<{
+      message: string;
+      status: number;
+    }>(SHIPROCKET_CANCEL_SHIPMENT_ENDPOINT_TEMPLATE, {
+      method: "POST",
+      body: JSON.stringify({
+        awbs: [awbNumber],
+      }),
+    });
+
+    // Update shipment status in database
+    const [updatedShipment] = await db
+      .update(shipments)
+      .set({
+        status: "cancelled",
+        updatedAt: new Date(),
+      })
+      .where(eq(shipments.awbNumber, awbNumber))
+      .returning();
+
+    if (!updatedShipment) {
+      throw new NotFoundException(
+        `Shipment with AWB ${awbNumber} not found in database`,
+      );
+    }
+
+    return {
+      awbNumber,
+      status: "cancelled",
+      message: response.message || "Shipment cancelled successfully",
     };
   }
 }

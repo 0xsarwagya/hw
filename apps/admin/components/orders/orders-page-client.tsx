@@ -11,7 +11,14 @@ import {
   ORDER_DEFAULT_LIMIT,
   ORDER_DEFAULT_PAGE,
 } from "@/lib/constants/orders.constants";
-import type { OrderQueryParams, OrderStatus } from "@/lib/types/orders";
+import type {
+  FulfillmentStatus,
+  OrderQueryParams,
+  OrderSortBy,
+  OrderSortOrder,
+  OrderStatus,
+  PaymentStatus,
+} from "@/lib/types/orders";
 import { PaginationControls } from "../common/pagination-controls";
 import { OrderFiltersBar } from "./order-filters-bar";
 import { OrdersTable } from "./orders-table";
@@ -76,6 +83,28 @@ export function OrdersPageClient() {
     setOrderFilters((prev) => ({ ...prev, status, page: ORDER_DEFAULT_PAGE }));
   }, []);
 
+  const handlePaymentStatusChange = useCallback(
+    (status: PaymentStatus | undefined) => {
+      setOrderFilters((prev) => ({
+        ...prev,
+        paymentStatus: status,
+        page: ORDER_DEFAULT_PAGE,
+      }));
+    },
+    [],
+  );
+
+  const handleFulfillmentStatusChange = useCallback(
+    (status: FulfillmentStatus | undefined) => {
+      setOrderFilters((prev) => ({
+        ...prev,
+        fulfillmentStatus: status,
+        page: ORDER_DEFAULT_PAGE,
+      }));
+    },
+    [],
+  );
+
   const handleSearchChange = useCallback((search: string) => {
     setOrderFilters((prev) => ({
       ...prev,
@@ -90,6 +119,38 @@ export function OrdersPageClient() {
         ...prev,
         startDate: range?.from?.toISOString(),
         endDate: range?.to?.toISOString(),
+        page: ORDER_DEFAULT_PAGE,
+      }));
+    },
+    [],
+  );
+
+  const handlePriceRangeChange = useCallback((min?: number, max?: number) => {
+    setOrderFilters((prev) => ({
+      ...prev,
+      minValue: min,
+      maxValue: max,
+      page: ORDER_DEFAULT_PAGE,
+    }));
+  }, []);
+
+  const handlePaymentMethodChange = useCallback(
+    (method: "COD" | "prepaid" | "all") => {
+      setOrderFilters((prev) => ({
+        ...prev,
+        paymentMethod: method === "all" ? undefined : method,
+        page: ORDER_DEFAULT_PAGE,
+      }));
+    },
+    [],
+  );
+
+  const handleSortChange = useCallback(
+    (sortBy: OrderSortBy, sortOrder: OrderSortOrder) => {
+      setOrderFilters((prev) => ({
+        ...prev,
+        sortBy,
+        sortOrder,
         page: ORDER_DEFAULT_PAGE,
       }));
     },
@@ -115,11 +176,25 @@ export function OrdersPageClient() {
       filters={
         <OrderFiltersBar
           status={orderFilters.status}
+          paymentStatus={orderFilters.paymentStatus}
+          fulfillmentStatus={orderFilters.fulfillmentStatus}
           search={orderFilters.search}
           dateRange={dateRange}
+          minValue={orderFilters.minValue}
+          maxValue={orderFilters.maxValue}
+          paymentMethod={
+            orderFilters.paymentMethod || ("all" as "COD" | "prepaid" | "all")
+          }
+          sortBy={orderFilters.sortBy || "createdAt"}
+          sortOrder={orderFilters.sortOrder || "desc"}
           onStatusChange={handleStatusChange}
+          onPaymentStatusChange={handlePaymentStatusChange}
+          onFulfillmentStatusChange={handleFulfillmentStatusChange}
           onSearchChange={handleSearchChange}
           onDateRangeChange={handleDateRangeChange}
+          onPriceRangeChange={handlePriceRangeChange}
+          onPaymentMethodChange={handlePaymentMethodChange}
+          onSortChange={handleSortChange}
           onClear={handleClearFilters}
         />
       }
@@ -161,9 +236,24 @@ function parseFiltersFromSearchParams(
       10,
     ),
     status: (searchParams.get("status") as OrderStatus) || undefined,
+    paymentStatus:
+      (searchParams.get("paymentStatus") as PaymentStatus) || undefined,
+    fulfillmentStatus:
+      (searchParams.get("fulfillmentStatus") as FulfillmentStatus) ||
+      undefined,
     search: searchParams.get("search") || undefined,
     startDate: searchParams.get("startDate") || undefined,
     endDate: searchParams.get("endDate") || undefined,
+    minValue: searchParams.get("minValue")
+      ? parseFloat(searchParams.get("minValue")!)
+      : undefined,
+    maxValue: searchParams.get("maxValue")
+      ? parseFloat(searchParams.get("maxValue")!)
+      : undefined,
+    paymentMethod:
+      (searchParams.get("paymentMethod") as "COD" | "prepaid") || undefined,
+    sortBy: (searchParams.get("sortBy") as OrderSortBy) || undefined,
+    sortOrder: (searchParams.get("sortOrder") as OrderSortOrder) || undefined,
   };
 }
 
@@ -185,9 +275,20 @@ function useSyncFiltersToUrl(
       urlParams.set("limit", filters.limit.toString());
     }
     if (filters.status) urlParams.set("status", filters.status);
+    if (filters.paymentStatus)
+      urlParams.set("paymentStatus", filters.paymentStatus);
+    if (filters.fulfillmentStatus)
+      urlParams.set("fulfillmentStatus", filters.fulfillmentStatus);
     if (filters.search) urlParams.set("search", filters.search);
     if (filters.startDate) urlParams.set("startDate", filters.startDate);
     if (filters.endDate) urlParams.set("endDate", filters.endDate);
+    if (filters.minValue !== undefined)
+      urlParams.set("minValue", filters.minValue.toString());
+    if (filters.maxValue !== undefined)
+      urlParams.set("maxValue", filters.maxValue.toString());
+    if (filters.paymentMethod) urlParams.set("paymentMethod", filters.paymentMethod);
+    if (filters.sortBy) urlParams.set("sortBy", filters.sortBy);
+    if (filters.sortOrder) urlParams.set("sortOrder", filters.sortOrder);
 
     router.replace(`/orders?${urlParams.toString()}`, { scroll: false });
   }, [filters, router]);

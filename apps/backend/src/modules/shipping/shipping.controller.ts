@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from "@nestjs/common";
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
@@ -42,7 +43,14 @@ import {
   ShiprocketConnectionTestResponseDto,
 } from "./dto/shiprocket-config.dto";
 import { TrackShipmentResponseDto } from "./dto/track-shipment.dto";
+import { CancelShipmentResponseDto } from "./dto/cancel-shipment.dto";
+import { CourierServiceabilityQueryDto } from "./dto/courier-serviceability-query.dto";
+import { CourierServiceabilityResponseDto } from "./dto/courier-serviceability-response.dto";
+import { ListShipmentsQueryDto, PaginatedShipmentsResponseDto } from "./dto/list-shipments.dto";
+import { PickupLocationDto } from "./dto/pickup-location.dto";
+import { ShipmentResponseDto } from "./dto/shipment-response.dto";
 import { NimbusPostService } from "./nimbus-post.service";
+import { ShipmentsService } from "./services/shipments.service";
 import { ShippingRulesService } from "./shipping-rules.service";
 import { ShiprocketService } from "./shiprocket.service";
 
@@ -55,6 +63,7 @@ export class ShippingController {
     private readonly shiprocketService: ShiprocketService,
     private readonly nimbusPostService: NimbusPostService,
     private readonly shippingRulesService: ShippingRulesService,
+    private readonly shipmentsService: ShipmentsService,
   ) {}
 
   @Get("shiprocket/status")
@@ -530,5 +539,174 @@ export class ShippingController {
   })
   async getStateShippingRules(): Promise<StateShippingRuleDto[]> {
     return this.shippingRulesService.getStateShippingRules();
+  }
+
+  @Get("shiprocket/pickup-locations")
+  @Roles("admin")
+  @ApiOperation({
+    summary: "Get Shiprocket pickup locations",
+    description:
+      "Retrieves all available pickup locations from Shiprocket. Admin-only endpoint.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Pickup locations retrieved successfully",
+    type: [PickupLocationDto],
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  @ApiResponse({
+    status: 500,
+    description:
+      "Internal server error - Shiprocket not initialized or API error",
+  })
+  async getPickupLocations(): Promise<PickupLocationDto[]> {
+    return this.shiprocketService.getPickupLocations();
+  }
+
+  @Get("shiprocket/courier-serviceability")
+  @Roles("admin", "customer")
+  @ApiOperation({
+    summary: "Get courier serviceability (GET version)",
+    description:
+      "Checks which couriers can service a route. Returns available couriers with rates. Accessible by both admin and customer users.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Courier serviceability retrieved successfully",
+    type: CourierServiceabilityResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request - Invalid input parameters",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 500,
+    description:
+      "Internal server error - Shiprocket not initialized or API error",
+  })
+  async getCourierServiceability(
+    @Query() query: CourierServiceabilityQueryDto,
+  ): Promise<CourierServiceabilityResponseDto> {
+    const couriers = await this.shiprocketService.getCourierServiceability(
+      query.pickupPincode,
+      query.deliveryPincode,
+      query.weight,
+      query.orderValue,
+      query.codAmount,
+    );
+
+    return { couriers };
+  }
+
+  @Post("shiprocket/cancel/:awb")
+  @Roles("admin")
+  @ApiOperation({
+    summary: "Cancel shipment (admin)",
+    description:
+      "Cancels a shipment in Shiprocket and updates the database. Admin-only endpoint.",
+  })
+  @ApiParam({
+    name: "awb",
+    description: "AWB (Airway Bill) number",
+    example: "AWB123456789",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Shipment cancelled successfully",
+    type: CancelShipmentResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Shipment not found",
+  })
+  @ApiResponse({
+    status: 500,
+    description:
+      "Internal server error - Shiprocket not initialized or API error",
+  })
+  async cancelShipment(
+    @Param("awb") awbNumber: string,
+  ): Promise<CancelShipmentResponseDto> {
+    return this.shiprocketService.cancelShipment(awbNumber);
+  }
+
+  @Get("shipments")
+  @Roles("admin", "customer")
+  @ApiOperation({
+    summary: "List shipments",
+    description:
+      "Retrieve a paginated list of shipments with optional filters. Accessible by both admin and customer users.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "List of shipments retrieved successfully",
+    type: PaginatedShipmentsResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  async listShipments(
+    @Query() query: ListShipmentsQueryDto,
+  ): Promise<PaginatedShipmentsResponseDto> {
+    const filters = {
+      orderId: query.orderId,
+      status: query.status,
+      provider: query.provider,
+      startDate: query.startDate ? new Date(query.startDate) : undefined,
+      endDate: query.endDate ? new Date(query.endDate) : undefined,
+      page: query.page,
+      limit: query.limit,
+    };
+
+    return this.shipmentsService.findAll(filters);
+  }
+
+  @Get("shipments/:id")
+  @Roles("admin", "customer")
+  @ApiOperation({
+    summary: "Get shipment by ID",
+    description:
+      "Retrieve a single shipment by ID. Accessible by both admin and customer users.",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Shipment ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Shipment retrieved successfully",
+    type: ShipmentResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Shipment not found",
+  })
+  async getShipment(@Param("id") id: string): Promise<ShipmentResponseDto> {
+    return this.shipmentsService.findOne(id);
   }
 }

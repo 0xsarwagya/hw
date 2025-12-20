@@ -3,6 +3,7 @@ import { ShippingController } from "./shipping.controller";
 import { ShippingRulesService } from "./shipping-rules.service";
 import { ShiprocketService } from "./shiprocket.service";
 import { NimbusPostService } from "./nimbus-post.service";
+import { ShipmentsService } from "./services/shipments.service";
 
 // Mock the database globally
 jest.mock("@vcecom/db", () => ({
@@ -46,6 +47,12 @@ describe("ShippingController", () => {
       // Add minimal mock methods if needed
     };
 
+    const mockShipmentsService = {
+      findAll: jest.fn(),
+      findOne: jest.fn(),
+      findByOrderId: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ShippingController],
       providers: [
@@ -60,6 +67,10 @@ describe("ShippingController", () => {
         {
           provide: NimbusPostService,
           useValue: mockNimbusPostService,
+        },
+        {
+          provide: ShipmentsService,
+          useValue: mockShipmentsService,
         },
       ],
     }).compile();

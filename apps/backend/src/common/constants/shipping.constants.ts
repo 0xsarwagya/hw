@@ -37,3 +37,34 @@ export const GRAMS_PER_KILOGRAM = 1000;
  * Used in zone-based rate calculations
  */
 export const DEFAULT_WEIGHT_INCREMENT_GRAMS = 500;
+
+/**
+ * Shiprocket API endpoint paths
+ * These are relative paths appended to the base URL
+ */
+
+/**
+ * Shiprocket courier serviceability endpoint
+ * Used to check which couriers can service a route
+ */
+export const SHIPROCKET_COURIER_SERVICEABILITY_ENDPOINT =
+  "/courier/serviceability/";
+
+/**
+ * Shiprocket pickup locations endpoint
+ * Used to fetch available pickup locations
+ */
+export const SHIPROCKET_PICKUP_LOCATIONS_ENDPOINT = "/settings/company/pickup";
+
+/**
+ * Shiprocket cancel shipment endpoint template
+ * Requires AWB number as path parameter
+ */
+export const SHIPROCKET_CANCEL_SHIPMENT_ENDPOINT_TEMPLATE =
+  "/orders/cancel/shipment/awbs";
+
+/**
+ * Default pickup pincode
+ * Used when no pickup pincode is specified
+ */
+export const DEFAULT_PICKUP_PINCODE = "400001"; // Mumbai

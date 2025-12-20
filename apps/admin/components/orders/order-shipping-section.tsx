@@ -28,6 +28,9 @@ export function OrderShippingSection({ order }: OrderShippingSectionProps) {
           <AddressCard
             address={order.shippingAddress}
             title="Shipping Address"
+            orderId={order.id}
+            order={order}
+            editable={true}
           />
         )}
         {order.billingAddress &&
@@ -35,6 +38,9 @@ export function OrderShippingSection({ order }: OrderShippingSectionProps) {
             <AddressCard
               address={order.billingAddress}
               title="Billing Address"
+              orderId={order.id}
+              order={order}
+              editable={true}
             />
           )}
         {shipments && shipments.length > 0 ? (

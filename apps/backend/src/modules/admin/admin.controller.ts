@@ -4,8 +4,10 @@ import {
   Get,
   NotFoundException,
   Param,
+  Patch,
   Post,
   Query,
+  Request,
   UseGuards,
 } from "@nestjs/common";
 import {
@@ -21,6 +23,10 @@ import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
+import { OrderAddressService } from "../orders/services/order-address.service";
+import { OrderNotesService } from "../orders/services/order-notes.service";
+import { OrderPaymentService } from "../orders/services/order-payment.service";
+import { RefundsService } from "../orders/services/refunds.service";
 import { AdminService } from "./admin.service";
 import {
   AdminQueryAbandonedCheckoutsDto,
@@ -43,6 +49,20 @@ import {
   BulkProductOperationDto,
   BulkProductOperationResponseDto,
 } from "./dto/bulk-operations.dto";
+import { CreateOrderNoteDto } from "./dto/create-order-note.dto";
+import { CreateRefundDto } from "./dto/create-refund.dto";
+import { MarkOrderPaidResponseDto } from "./dto/mark-order-paid.dto";
+import { OrderNoteResponseDto } from "./dto/order-note-response.dto";
+import { RefundResponseDto } from "./dto/refund-response.dto";
+import { UpdateOrderAddressDto } from "./dto/update-order-address.dto";
+
+interface AuthenticatedRequest extends Request {
+  user: {
+    userId: string;
+    email: string;
+    role: string;
+  };
+}
 
 @ApiTags("admin")
 @Controller("admin")
@@ -50,7 +70,13 @@ import {
 @ApiBearerAuth("JWT-auth")
 @Roles("admin")
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly orderNotesService: OrderNotesService,
+    private readonly refundsService: RefundsService,
+    private readonly orderPaymentService: OrderPaymentService,
+    private readonly orderAddressService: OrderAddressService,
+  ) {}
 
   @Get("products")
   @RateLimit(RATE_LIMIT_PRESETS.ADMIN_GET)
@@ -387,5 +413,185 @@ export class AdminController {
       throw new NotFoundException("Abandoned checkout not found");
     }
     return checkout;
+  }
+
+  @Post("orders/:orderId/mark-paid")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_MUTATE)
+  @ApiOperation({
+    summary: "Mark COD order as paid (admin)",
+    description:
+      "Manually mark a Cash on Delivery order as paid. Only works for COD orders that are not already paid.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Order marked as paid successfully",
+    type: MarkOrderPaidResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request (not COD, already paid, etc.)",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Order not found",
+  })
+  async markOrderAsPaid(
+    @Request() req: AuthenticatedRequest,
+    @Param("orderId") orderId: string,
+  ): Promise<MarkOrderPaidResponseDto> {
+    return (await this.orderPaymentService.markAsPaid(
+      orderId,
+      req.user.userId,
+      req.user.email.split("@")[0],
+      req.user.email,
+    )) as unknown as MarkOrderPaidResponseDto;
+  }
+
+  @Post("orders/:orderId/refund")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_MUTATE)
+  @ApiOperation({
+    summary: "Create refund for an order (admin)",
+    description:
+      "Create a refund for an order. Refund will be processed via payment provider if available.",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Refund created successfully",
+    type: RefundResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request (invalid amount, exceeds refundable amount, etc.)",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Order not found",
+  })
+  async createRefund(
+    @Param("orderId") orderId: string,
+    @Body() createRefundDto: CreateRefundDto,
+  ): Promise<RefundResponseDto> {
+    return (await this.refundsService.create(
+      orderId,
+      createRefundDto.amount,
+      createRefundDto.reason,
+    )) as unknown as RefundResponseDto;
+  }
+
+  @Get("orders/:orderId/refunds")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_GET)
+  @ApiOperation({
+    summary: "Get all refunds for an order (admin)",
+    description: "Retrieve all refunds associated with an order.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "List of refunds retrieved successfully",
+    type: [RefundResponseDto],
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Order not found",
+  })
+  async getRefunds(
+    @Param("orderId") orderId: string,
+  ): Promise<RefundResponseDto[]> {
+    return (await this.refundsService.findByOrderId(orderId)) as unknown as RefundResponseDto[];
+  }
+
+  @Get("orders/:orderId/notes")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_GET)
+  @ApiOperation({
+    summary: "Get all notes for an order (admin)",
+    description: "Retrieve all notes (both admin and customer-visible) for an order.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "List of notes retrieved successfully",
+    type: [OrderNoteResponseDto],
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Order not found",
+  })
+  async getOrderNotes(
+    @Param("orderId") orderId: string,
+  ): Promise<OrderNoteResponseDto[]> {
+    return (await this.orderNotesService.findByOrderId(orderId)) as unknown as OrderNoteResponseDto[];
+  }
+
+  @Post("orders/:orderId/notes")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_MUTATE)
+  @ApiOperation({
+    summary: "Create note for an order (admin)",
+    description:
+      "Add a note to an order. Notes can be admin-only or customer-visible.",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Note created successfully",
+    type: OrderNoteResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request (empty note, etc.)",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Order not found",
+  })
+  async createOrderNote(
+    @Request() req: AuthenticatedRequest,
+    @Param("orderId") orderId: string,
+    @Body() createNoteDto: CreateOrderNoteDto,
+  ): Promise<OrderNoteResponseDto> {
+    return (await this.orderNotesService.create(
+      orderId,
+      createNoteDto.note,
+      createNoteDto.isPublic || false,
+      req.user.userId,
+      req.user.email.split("@")[0],
+      req.user.email,
+    )) as unknown as OrderNoteResponseDto;
+  }
+
+  @Patch("orders/:orderId/addresses")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_MUTATE)
+  @ApiOperation({
+    summary: "Update order address (admin)",
+    description:
+      "Update shipping or billing address for an order. Validates address fields and PIN code format.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Address updated successfully",
+    type: MarkOrderPaidResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request (invalid address fields, PIN code format, etc.)",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Order or address not found",
+  })
+  async updateOrderAddress(
+    @Request() req: AuthenticatedRequest,
+    @Param("orderId") orderId: string,
+    @Body() updateAddressDto: UpdateOrderAddressDto,
+  ): Promise<MarkOrderPaidResponseDto> {
+    return (await this.orderAddressService.updateAddress(
+      orderId,
+      updateAddressDto.addressType,
+      {
+        street: updateAddressDto.street,
+        city: updateAddressDto.city,
+        state: updateAddressDto.state,
+        pincode: updateAddressDto.pincode,
+        country: updateAddressDto.country,
+        district: updateAddressDto.district,
+      },
+      req.user.userId,
+    )) as unknown as MarkOrderPaidResponseDto;
   }
 }

@@ -1,22 +1,40 @@
 "use client";
 
-import { Download, ExternalLink } from "lucide-react";
+import { Download, ExternalLink, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { ShipmentTracking } from "@/lib/types/shipping";
+import { CancelShipmentDialog } from "./cancel-shipment-dialog";
 import { DateTime } from "./date-time";
+import { ShipmentTrackingDialog } from "./shipment-tracking-dialog";
+import { useDownloadLabel } from "@/hooks/shipping/use-download-label";
 
 interface ShipmentCardProps {
   shipment: ShipmentTracking;
 }
 
 export function ShipmentCard({ shipment }: ShipmentCardProps) {
+  const { downloadLabel } = useDownloadLabel();
+  const canCancel =
+    shipment.status !== "delivered" &&
+    shipment.status !== "cancelled" &&
+    shipment.status !== "failed";
+
+  const handleDownloadLabel = () => {
+    if (shipment.awbNumber) {
+      downloadLabel({
+        shipmentId: shipment.id,
+        awb: shipment.awbNumber,
+      });
+    }
+  };
+
   return (
     <Card>
       <CardContent className="pt-4">
         <div className="flex items-start justify-between">
-          <div className="space-y-2">
+          <div className="space-y-2 flex-1">
             <div className="flex items-center gap-2">
               <span className="font-medium">{shipment.provider}</span>
               <Badge variant="outline">{shipment.status}</Badge>
@@ -34,30 +52,42 @@ export function ShipmentCard({ shipment }: ShipmentCardProps) {
             )}
             <DateTime date={shipment.createdAt} format="short" />
           </div>
-          <div className="flex gap-2">
-            {shipment.labelUrl && (
-              <Button variant="outline" size="sm" asChild>
-                <a
-                  href={shipment.labelUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              {shipment.labelUrl && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadLabel}
                 >
                   <Download className="h-4 w-4 mr-1" />
                   Label
-                </a>
-              </Button>
-            )}
-            {shipment.trackingNumber && (
-              <Button variant="outline" size="sm" asChild>
-                <a
-                  href={`https://shiprocket.co/tracking/${shipment.trackingNumber}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <ExternalLink className="h-4 w-4 mr-1" />
-                  Track
-                </a>
-              </Button>
+                </Button>
+              )}
+              {shipment.awbNumber && (
+                <ShipmentTrackingDialog
+                  awb={shipment.awbNumber}
+                  trackingNumber={shipment.trackingNumber}
+                  trigger={
+                    <Button variant="outline" size="sm">
+                      <ExternalLink className="h-4 w-4 mr-1" />
+                      Track
+                    </Button>
+                  }
+                />
+              )}
+            </div>
+            {canCancel && shipment.awbNumber && (
+              <CancelShipmentDialog
+                awb={shipment.awbNumber}
+                shipmentId={shipment.id}
+                trigger={
+                  <Button variant="outline" size="sm" className="w-full">
+                    <X className="h-4 w-4 mr-1" />
+                    Cancel
+                  </Button>
+                }
+              />
             )}
           </div>
         </div>
@@ -65,3 +95,4 @@ export function ShipmentCard({ shipment }: ShipmentCardProps) {
     </Card>
   );
 }
+

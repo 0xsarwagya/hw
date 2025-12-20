@@ -18,6 +18,8 @@ import { OrderLineItems } from "./order-line-items";
 import { OrderPaymentSection } from "./order-payment-section";
 import { OrderShippingSection } from "./order-shipping-section";
 import { OrderSummary } from "./order-summary";
+import { OrderDiscountSection } from "./order-discount-section";
+import { OrderCustomerCard } from "./order-customer-card";
 import { OrderTimelineLoadingSkeleton } from "./order-timeline-loading-skeleton";
 
 // Lazy load heavy components
@@ -130,14 +132,16 @@ function OrderDetailContent({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <OrderLineItems order={order} />
+          <OrderDiscountSection order={order} />
           <OrderShippingSection order={order} />
           <OrderTimelineSection
             timeline={timeline}
             isLoading={timelineLoading}
           />
-          <NotesCard />
+          <NotesCard orderId={order.id} />
         </div>
         <div className="space-y-6">
+          <OrderCustomerCard order={order} />
           <OrderSummary order={order} />
           <OrderPaymentSection order={order} />
           <FulfillmentControls
