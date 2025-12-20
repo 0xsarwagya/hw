@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PaginationControls } from "@/components/common/pagination-controls";
 import { AdminPageLayout } from "@/components/layout/admin-page-layout";
 import { useAdminActivityLogs } from "@/hooks/activity-logs/use-admin-activity-logs";
@@ -37,8 +37,15 @@ export function ActivityLogsPageClient() {
 
   const { data, isLoading, error } = useAdminActivityLogs(filters);
 
-  // Sync filters to URL
+  // Sync filters to URL - skip initial mount to prevent infinite loops
+  const isInitialMount = useRef(true);
   useEffect(() => {
+    // Skip on initial mount - filters are already synced from URL
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
     const params = new URLSearchParams();
     if (filters.page && filters.page > 1) {
       params.set("page", filters.page.toString());
@@ -53,14 +60,16 @@ export function ActivityLogsPageClient() {
     if (filters.endDate) params.set("endDate", filters.endDate);
     if (filters.search) params.set("search", filters.search);
 
-    const newUrl = `/activity-logs?${params.toString()}`;
-    const currentUrl = `/activity-logs?${searchParams.toString()}`;
+    const newSearch = params.toString();
+    const currentSearch = window.location.search.replace(/^\?/, "");
 
     // Only update URL if it actually changed
-    if (newUrl !== currentUrl) {
-      router.replace(newUrl, { scroll: false });
+    if (newSearch !== currentSearch) {
+      router.replace(`/activity-logs${newSearch ? `?${newSearch}` : ""}`, {
+        scroll: false,
+      });
     }
-  }, [filters, router, searchParams]);
+  }, [filters, router]);
 
   const handleFiltersChange = (newFilters: ActivityLogQueryParams) => {
     setFilters(newFilters);

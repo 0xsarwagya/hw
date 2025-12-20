@@ -45,7 +45,18 @@ export const endpoints = {
     presignedUrl: "/admin/storage/presigned-url",
   },
   inventory: {
-    metrics: "/inventory/metrics",
+    list: "/admin/inventory",
+    detail: (variantId: string) => `/admin/inventory/${variantId}`,
+    adjust: (variantId: string) => `/admin/inventory/${variantId}/adjust`,
+    bulkAdjust: "/admin/inventory/bulk-adjust",
+    logs: (variantId: string) => `/admin/inventory/${variantId}/logs`,
+    reservations: (variantId: string) =>
+      `/admin/inventory/${variantId}/reservations`,
+    reservationsSummary: "/admin/inventory/reservations/summary",
+    health: "/admin/inventory/health",
+    settings: "/admin/inventory/settings",
+    variantsIndex: "/admin/inventory/variants/index",
+    metrics: "/inventory/metrics", // Keep for backward compatibility
   },
   admin: {
     stats: "/admin/stats",

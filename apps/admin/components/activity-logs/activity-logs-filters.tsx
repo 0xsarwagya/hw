@@ -66,16 +66,22 @@ export function ActivityLogsFilters({
 
   const { data: admins = [] } = useAdminFetchAdmins();
 
-  // Use ref to track latest filters without causing re-renders
+  // Use refs to track latest values without causing re-renders
   const filtersRef = useRef(filters);
+  const onFiltersChangeRef = useRef(onFiltersChange);
+
   useEffect(() => {
     filtersRef.current = filters;
   }, [filters]);
 
+  useEffect(() => {
+    onFiltersChangeRef.current = onFiltersChange;
+  }, [onFiltersChange]);
+
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      onFiltersChange({
+      onFiltersChangeRef.current({
         ...filtersRef.current,
         search: searchValue || undefined,
         page: 1,
@@ -83,19 +89,33 @@ export function ActivityLogsFilters({
     }, 250);
 
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchValue, onFiltersChange]);
+  }, [searchValue]);
 
-  // Update date filters
+  // Update date filters - skip initial mount to prevent infinite loop
+  const isInitialMount = useRef(true);
   useEffect(() => {
-    onFiltersChange({
-      ...filtersRef.current,
-      startDate: startDate?.toISOString(),
-      endDate: endDate?.toISOString(),
-      page: 1,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate, endDate, onFiltersChange]);
+    // Skip on initial mount to prevent triggering filter change immediately
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Only update if dates actually changed
+    const newStartDate = startDate?.toISOString();
+    const newEndDate = endDate?.toISOString();
+
+    if (
+      newStartDate !== filtersRef.current.startDate ||
+      newEndDate !== filtersRef.current.endDate
+    ) {
+      onFiltersChangeRef.current({
+        ...filtersRef.current,
+        startDate: newStartDate,
+        endDate: newEndDate,
+        page: 1,
+      });
+    }
+  }, [startDate, endDate]);
 
   const hasFilters =
     filters.adminId ||

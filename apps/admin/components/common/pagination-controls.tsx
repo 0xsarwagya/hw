@@ -47,7 +47,7 @@ export function PaginationControls({
   const paginationText =
     total === 0
       ? `Showing 0 ${itemLabel}`
-      : `Showing ${startItem.toLocaleString()} to ${endItem.toLocaleString()} of ${total.toLocaleString()} ${itemLabel}`;
+      : `Showing ${(startItem ?? 0).toLocaleString()} to ${(endItem ?? 0).toLocaleString()} of ${(total ?? 0).toLocaleString()} ${itemLabel}`;
 
   return (
     <div className="flex items-center justify-between">

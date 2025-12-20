@@ -72,11 +72,6 @@ export const navigation: NavSection[] = [
             href: "/products/create",
             icon: Plus,
           },
-          {
-            label: "Inventory",
-            href: "/products/inventory",
-            icon: Boxes,
-          },
         ],
       },
       {
@@ -88,6 +83,28 @@ export const navigation: NavSection[] = [
         label: "Collections",
         href: "/products/collections",
         icon: FolderOpen,
+      },
+      {
+        label: "Inventory",
+        href: "/inventory",
+        icon: Boxes,
+        children: [
+          {
+            label: "All Inventory",
+            href: "/inventory",
+            icon: Boxes,
+          },
+          {
+            label: "Settings",
+            href: "/inventory/settings",
+            icon: Settings,
+          },
+          {
+            label: "Bulk Adjust",
+            href: "/inventory/bulk-adjust",
+            icon: Plus,
+          },
+        ],
       },
     ],
   },

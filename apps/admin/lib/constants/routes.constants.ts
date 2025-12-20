@@ -25,7 +25,6 @@ export const ROUTES = {
       DETAIL: (productId: string, variantId: string) =>
         `/products/${productId}/variants/${variantId}`,
     },
-    INVENTORY: "/products/inventory",
   },
   ORDERS: {
     LIST: "/orders",
