@@ -1,21 +1,24 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import {
-  and,
-  db,
-  desc,
-  eq,
-  gte,
-  lte,
-  shipmentStatusEnum,
-  shipments,
-  sql,
-} from "@vcecom/db";
+import { and, db, desc, eq, gte, lte, shipments, sql } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "../../../common/constants";
 
+// Shipment status enum values - defined inline to match DTO
+const SHIPMENT_STATUS_VALUES = [
+  "pending",
+  "label_generated",
+  "picked_up",
+  "in_transit",
+  "out_for_delivery",
+  "delivered",
+  "failed",
+  "returned",
+  "cancelled",
+] as const;
+
 interface ShipmentFilters {
   orderId?: string;
-  status?: (typeof shipmentStatusEnum.enumValues)[number];
+  status?: (typeof SHIPMENT_STATUS_VALUES)[number];
   provider?: string;
   startDate?: Date;
   endDate?: Date;
