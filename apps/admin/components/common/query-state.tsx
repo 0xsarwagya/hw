@@ -105,13 +105,34 @@ export function QueryState<T>({
       return <>{errorComponent}</>;
     }
 
+    // User-friendly error messages based on status
+    const getErrorMessage = (err: FetchError): string => {
+      if (err.status === 401) {
+        return "Your session has expired. Please refresh the page.";
+      }
+      if (err.status === 403) {
+        return "You don't have permission to view this data.";
+      }
+      if (err.status === 404) {
+        return "The requested resource was not found.";
+      }
+      if (err.status === 429) {
+        return "Too many requests. Please wait a moment and try again.";
+      }
+      if (err.status >= 500) {
+        return "Server error. Please try again later.";
+      }
+      if (err.status === 0) {
+        return "Network error. Please check your internet connection.";
+      }
+      return err.message || "An error occurred while loading data.";
+    };
+
     return (
       <div className="text-center py-8">
         <div className="text-destructive mb-2">
           <p className="font-medium">Error loading data</p>
-          <p className="text-sm mt-1">
-            {error.message || "Unknown error occurred"}
-          </p>
+          <p className="text-sm mt-1">{getErrorMessage(error)}</p>
         </div>
         {onRetry && (
           <Button variant="outline" onClick={onRetry} className="mt-4">

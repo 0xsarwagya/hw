@@ -5,9 +5,12 @@
 
 import type { LucideIcon } from "lucide-react";
 import {
+  Bell,
   BookOpen,
   Boxes,
   DollarSign,
+  FileSearch,
+  FileText,
   FolderOpen,
   FolderTree,
   HardDrive,
@@ -18,6 +21,7 @@ import {
   ShoppingBag,
   ShoppingCart,
   Star,
+  Store,
   Tag,
   UserCog,
   Users,
@@ -184,6 +188,16 @@ export const navigation: NavSection[] = [
         href: "/storage",
         icon: HardDrive,
       },
+      {
+        label: "Notifications",
+        href: "/notifications",
+        icon: Bell,
+      },
+      {
+        label: "Audit Logs",
+        href: "/audit-logs",
+        icon: FileSearch,
+      },
     ],
   },
   {
@@ -193,6 +207,26 @@ export const navigation: NavSection[] = [
         label: "Activity Logs",
         href: "/activity-logs",
         icon: BookOpen,
+      },
+      {
+        label: "System Logs",
+        href: "/settings/system-logs",
+        icon: FileText,
+      },
+      {
+        label: "Roles & Permissions",
+        href: "/settings/roles",
+        icon: UserCog,
+      },
+      {
+        label: "Store Settings",
+        href: "/settings/store",
+        icon: Store,
+      },
+      {
+        label: "Currency",
+        href: "/settings/currency",
+        icon: DollarSign,
       },
       {
         label: "Settings",
