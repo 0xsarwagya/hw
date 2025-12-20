@@ -308,6 +308,18 @@ export async function apiFetch<T = unknown>(
 
         return undefined as T;
       } else {
+        // Refresh failed - redirect to login if not already there
+        if (typeof window !== "undefined") {
+          const currentPath = window.location.pathname;
+          if (!currentPath.includes("/login")) {
+            const loginUrl = new URL("/login", window.location.origin);
+            loginUrl.searchParams.set("expired", "true");
+            loginUrl.searchParams.set("redirect", currentPath);
+            window.location.href = loginUrl.toString();
+            // Return a promise that never resolves to prevent further execution
+            return new Promise(() => {}) as T;
+          }
+        }
         // Refresh failed - throw original 401 error
         const error = await parseErrorResponse(response);
         throw new FetchError(error.message, error.status, error.errors);

@@ -1,721 +1,414 @@
-# VCEcom Development Roadmap
+# VCEcom Roadmap
 
-**Project:** VCEcom Modular Ecommerce System  
+**Project:** VCEcom - AI-Powered Ecommerce Builder & Agency Accelerator  
 **Version:** 1.0-beta  
 **Market Focus:** India 🇮🇳  
+**Vision:** Evolve into SaaS AI Ecommerce Builder & Agency Accelerator  
 **Last Updated:** 2025-01-28
 
 ---
 
 ## 🎯 Overview
 
-This roadmap outlines the development phases for building VCEcom, a **production-ready, India-first headless commerce platform**. The roadmap is organized into phases, with each phase building upon the previous one.
+VCEcom is a production-ready, India-first ecommerce platform designed to evolve into a **SaaS AI ecommerce builder** and **agency accelerator**. This roadmap outlines our journey from MVP to a complete platform that empowers agencies and businesses to build online stores faster with AI-powered tools.
+
+**Our Vision:**
+- **SaaS Evolution**: Platform designed to evolve into a hosted SaaS solution
+- **AI Ecommerce Builder**: AI-powered tools for building stores, generating content, and automating workflows
+- **Agency Accelerator**: Tools and features that help agencies build and manage multiple client stores efficiently
+- **India-First**: Built specifically for the Indian market with native GST compliance
 
 **Core Philosophy:**
-- **GST-First**: GST compliance is not an add-on—it's integrated into the core architecture from day one
-- **Order Lifecycle**: Complete state machine-driven order management with idempotent operations
-- **India-Optimized**: Built specifically for the Indian market with native support for Indian business requirements
-- **Production-Ready**: Enterprise-grade features including audit logs, rate limiting, and security hardening
-
-## 📋 Roadmap Phases
-
-### Phase 0: Foundation & Setup ✅ (Completed)
-
-**Status:** Complete  
-**Duration:** Week 1
-
-- [x] Monorepo setup with Turborepo
-- [x] NestJS backend structure
-- [x] Next.js admin dashboard
-- [x] Drizzle ORM configuration
-- [x] Database package setup
-- [x] Biome, Commitlint, Semantic-release configuration
-- [x] GitHub Actions workflows
-- [x] Branch strategy (dev, beta, prod)
-- [x] Initial project structure
+- **GST-First**: GST compliance is integrated into the core architecture, not an add-on
+- **Multi-Tenancy Ready**: Architecture designed for SaaS deployment from day one
+- **AI-Powered**: Leverage AI to accelerate store building and content creation
+- **Agency-Focused**: Tools and workflows optimized for agencies managing multiple clients
 
 ---
 
-### Phase 1: Core Database Schema & Authentication ✅
-
-**Status:** Complete  
-**Priority:** Critical  
-**Duration:** Week 2-3  
-**Dependencies:** Phase 0  
-**Issue:** [#1](https://github.com/Vestcodes/vcecom/issues/1) ✅
-
-#### 1.1 Database Schema (Week 2) ✅
-
-**Package:** `@vcecom/db`
-
-- [x] [#11](https://github.com/Vestcodes/vcecom/issues/11) **Database Schema: Users & Authentication Tables** ✅
-- [x] [#12](https://github.com/Vestcodes/vcecom/issues/12) **Database Schema: Product Catalog Tables** ✅
-- [x] [#13](https://github.com/Vestcodes/vcecom/issues/13) **Database Schema: Cart & Orders Tables** ✅
-- [x] [#14](https://github.com/Vestcodes/vcecom/issues/14) **Database Schema: Payments & Shipping Tables** ✅
-- [x] [#15](https://github.com/Vestcodes/vcecom/issues/15) **Database Migrations & Seed Data** ✅
-
-#### 1.2 Authentication Module (Week 3) ✅
-
-**Module:** `apps/backend/src/modules/auth`
-
-- [x] [#16](https://github.com/Vestcodes/vcecom/issues/16) **JWT Authentication Implementation** ✅
-- [x] [#17](https://github.com/Vestcodes/vcecom/issues/17) **Role-Based Authorization & Guards** ✅
-
-**Deliverables:**
-- Complete database schema in `@vcecom/db`
-- Authentication module with JWT
-- Role-based access control
-
----
-
-### Phase 2: Product Management & Catalog ✅
-
-**Status:** Complete  
-**Priority:** High  
-**Duration:** Week 4-5  
-**Dependencies:** Phase 1  
-**Issue:** [#2](https://github.com/Vestcodes/vcecom/issues/2) ✅
-
-#### 2.1 Categories Module (Week 4) ✅
-
-**Module:** `apps/backend/src/modules/categories`
-
-- [x] [#18](https://github.com/Vestcodes/vcecom/issues/18) **Categories CRUD API** ✅
-
-#### 2.2 Products Module (Week 4-5) ✅
-
-**Module:** `apps/backend/src/modules/products`
-
-- [x] [#19](https://github.com/Vestcodes/vcecom/issues/19) **Products CRUD API** ✅
-- [x] [#20](https://github.com/Vestcodes/vcecom/issues/20) **Product Variants Management** ✅
-- [x] [#21](https://github.com/Vestcodes/vcecom/issues/21) **Product Search & Filtering** ✅
-- [x] [#22](https://github.com/Vestcodes/vcecom/issues/22) **GST Integration for Products** ✅
-
-**Deliverables:**
-- Complete product catalog API
-- Category management API
-- Product search and filtering
-- GST calculation
-
----
-
-### Phase 3: Shopping Cart & Customer Management ✅
-
-**Status:** Complete  
-**Priority:** High  
-**Duration:** Week 6-7  
-**Dependencies:** Phase 2  
-**Issue:** [#3](https://github.com/Vestcodes/vcecom/issues/3) ✅
-
-#### 3.1 Customers Module (Week 6) ✅
-
-**Module:** `apps/backend/src/modules/customers`
-
-- [x] [#23](https://github.com/Vestcodes/vcecom/issues/23) **Customer Registration & Profile API** ✅
-- [x] [#24](https://github.com/Vestcodes/vcecom/issues/24) **Address Management API** ✅
-
-#### 3.2 Cart Module (Week 6-7) ✅
-
-**Module:** `apps/backend/src/modules/carts`
-
-- [x] [#25](https://github.com/Vestcodes/vcecom/issues/25) **Shopping Cart API** ✅
-- [x] [#26](https://github.com/Vestcodes/vcecom/issues/26) **Cart Calculations (GST)** ✅
-
-**Deliverables:**
-- Customer management API
-- Address management with Indian format
-- Shopping cart API with GST calculations
-
----
-
-### Phase 4: Order Management & Processing ✅
-
-**Status:** Complete  
-**Priority:** High  
-**Duration:** Week 8-9  
-**Dependencies:** Phase 3  
-**Issue:** [#4](https://github.com/Vestcodes/vcecom/issues/4) ✅
-
-#### 4.1 Orders Module (Week 8) ✅
-
-**Module:** `apps/backend/src/modules/orders`
-
-- [x] [#27](https://github.com/Vestcodes/vcecom/issues/27) **Order Creation API** ✅
-- [x] [#28](https://github.com/Vestcodes/vcecom/issues/28) **Order Management & Status API** ✅
-- [x] [#29](https://github.com/Vestcodes/vcecom/issues/29) **Order Tracking & Timeline** ✅
-
-**Order Lifecycle & State Machine:**
-- ✅ **State Transitions**: `pending → confirmed → processing → shipped → delivered → refunded`
-- ✅ **Cancellation Path**: Orders can be cancelled from `pending`, `confirmed`, or `processing` states
-- ✅ **Idempotent Operations**: Order creation and status updates are idempotent (safe to retry)
-- ✅ **State Validation**: Invalid state transitions are rejected with clear error messages
-- ✅ **Order Timeline**: Complete audit trail of order status changes
-
-**Deliverables:**
-- Complete order management API
-- State machine-driven order lifecycle
-- Order status workflow with validation
-- Order history for customers
-- Idempotent order operations
-
----
-
-### Phase 5: Razorpay Payment Integration ✅
-
-**Status:** Complete  
-**Priority:** High  
-**Duration:** Week 10-11  
-**Dependencies:** Phase 4  
-**Issue:** [#5](https://github.com/Vestcodes/vcecom/issues/5) ✅
-
-#### 5.1 Razorpay Setup (Week 10) ✅
-
-**Module:** `apps/backend/src/modules/payments`
-
-- [x] [#30](https://github.com/Vestcodes/vcecom/issues/30) **Razorpay Setup & Configuration** ✅
-- [x] [#31](https://github.com/Vestcodes/vcecom/issues/31) **Razorpay Order Creation** ✅
-
-#### 5.2 Payment Methods (Week 10-11) ✅
-
-- [x] [#32](https://github.com/Vestcodes/vcecom/issues/32) **Payment Methods Integration** ✅
-- [x] [#33](https://github.com/Vestcodes/vcecom/issues/33) **Payment Verification & Webhooks** ✅
-
-**Deliverables:**
-- Razorpay integration complete
-- All payment methods supported
-- Payment webhooks working
-- COD support
-
----
-
-### Phase 6: Shipping Integration ✅
-
-**Status:** Complete
-**Priority:** High
-**Duration:** Week 12-13
-**Dependencies:** Phase 5
-**Issue:** [#6](https://github.com/Vestcodes/vcecom/issues/6) ✅
-
-#### 6.1 Shiprocket Integration (Week 12) ✅
-
-**Module:** `apps/backend/src/modules/shipping`
-
-- [x] [#34](https://github.com/Vestcodes/vcecom/issues/34) **Shiprocket Integration Setup** ✅
-- [x] [#35](https://github.com/Vestcodes/vcecom/issues/35) **Shiprocket Rate Calculation** ✅
-- [x] [#36](https://github.com/Vestcodes/vcecom/issues/36) **Shiprocket Label Generation & Tracking** ✅
-
-#### 6.2 Nimbus Post Integration (Week 12-13) ✅
-
-- [x] [#37](https://github.com/Vestcodes/vcecom/issues/37) **Nimbus Post Integration** ✅
-
-#### 6.3 Shipping Features (Week 13) ✅
-
-- [x] [#38](https://github.com/Vestcodes/vcecom/issues/38) **PIN Code Validation & Shipping Rules** ✅
-
-**Deliverables:**
-- [x] Shiprocket integration complete
-- [x] Nimbus Post integration complete
-- [x] Shipping rate calculation (PIN code based)
-- [x] Label generation
-- [x] Tracking integration
-
----
-
-### Phase 7: Admin Dashboard (Basic) ✅
-
-**Status:** Complete (Basic)  
-**Priority:** Medium  
-**Duration:** Week 14-15  
-**Dependencies:** Phase 4, Phase 5  
-**Issue:** [#7](https://github.com/Vestcodes/vcecom/issues/7) ✅
-
-#### 7.1 Admin API Endpoints (Week 14) ✅
-
-**Module:** `apps/backend/src/modules/admin`
-
-- [x] [#39](https://github.com/Vestcodes/vcecom/issues/39) **Admin API Endpoints** ✅
-
-#### 7.2 Admin UI (Week 14-15) ✅
-
-**App:** `apps/admin`
-
-- [x] [#40](https://github.com/Vestcodes/vcecom/issues/40) **Admin Dashboard UI - Overview** ✅
-- [x] [#41](https://github.com/Vestcodes/vcecom/issues/41) **Admin Product Management UI** ✅
-- [x] [#42](https://github.com/Vestcodes/vcecom/issues/42) **Admin Order Management UI** ✅
-
-**Deliverables:**
-- ✅ Admin API endpoints (orders, products, stats)
-- ✅ Basic admin dashboard UI with overview
-- ✅ Product management UI (CRUD operations)
-- ✅ Order management UI (view, update status, timeline)
-
-**Note:** Basic admin dashboard is complete. Advanced features (analytics, reporting, bulk operations) are planned for future phases.
-
----
-
-### Phase 8: GST Compliance & Indian Features ✅
-
-**Status:** Complete  
-**Priority:** High (Core Functionality)  
-**Duration:** Week 16  
-**Dependencies:** Phase 4, Phase 5  
-**Issue:** [#8](https://github.com/Vestcodes/vcecom/issues/8) ✅
-
-**Strategic Note:** GST is not an add-on feature—it's **core commerce logic** for the Indian market. GST calculation is integrated into cart calculations, order processing, and invoice generation from the ground up.
-
-#### 8.1 GST Implementation (Week 16) ✅
-
-- [x] [#43](https://github.com/Vestcodes/vcecom/issues/43) **GST Calculation Logic (CGST/SGST/IGST)** ✅
-  - Integrated into cart calculations
-  - Integrated into order processing
-  - State-based GST rules (intra-state vs inter-state)
-- [x] [#44](https://github.com/Vestcodes/vcecom/issues/44) **Tax Invoice Generation** ✅
-  - PDF invoice generation with GST breakdown
-  - Sequential invoice numbering
-  - Complete order and customer details
-- [x] [#45](https://github.com/Vestcodes/vcecom/issues/45) **GSTIN Validation** ✅
-  - Format validation (15 characters)
-  - Structure validation (state code, PAN, checksum)
-  - Integration with customer profiles
-
-#### 8.2 Indian Address Features ✅
-
-- [x] [#46](https://github.com/Vestcodes/vcecom/issues/46) **Indian Address & Phone Validation** ✅
-  - PIN code validation (6 digits, format, serviceability)
-  - State/district autocomplete from PIN codes
-  - Indian state list (28 states + 8 UTs)
-  - Address format validation
-  - Phone number validation (10 digits, +91)
-  - Phone format normalization
-
-**Deliverables:**
-- ✅ Complete GST calculation (CGST/SGST/IGST) integrated into core systems
-- ✅ Tax invoice generation (PDF) with GST breakdown
-- ✅ Indian address validation (PIN code, state, district)
-- ✅ Phone number validation (10-digit, +91)
-- ✅ GSTIN format & structure validation
-- ✅ State-based GST rules for intra-state vs inter-state transactions
-
----
-
-### Phase 9: Search & Filtering ✅
-
-**Status:** Complete  
-**Priority:** Medium  
-**Duration:** Week 17  
-**Dependencies:** Phase 2  
-**Issue:** [#9](https://github.com/Vestcodes/vcecom/issues/9) ✅
-
-#### 9.1 Product Search (Week 17) ✅
-
-- [x] [#47](https://github.com/Vestcodes/vcecom/issues/47) **Product Search Implementation** ✅
-- [x] [#48](https://github.com/Vestcodes/vcecom/issues/48) **Product Filtering & Sorting** ✅
-- [x] [#49](https://github.com/Vestcodes/vcecom/issues/49) **Pagination Implementation** ✅
-
-**Deliverables:**
-- ✅ Product search API (full-text search, SKU search)
-- ✅ Advanced filtering (category, price, availability, status)
-- ✅ Sorting (price, name, date)
-- ✅ Pagination support (page-based & cursor-based)
-
----
-
-### Phase 10: Discounts & Promotions (Basic) ✅
-
-**Status:** Complete  
-**Priority:** Low  
-**Duration:** Week 18  
-**Dependencies:** Phase 3, Phase 4  
-**Issue:** [#10](https://github.com/Vestcodes/vcecom/issues/10) ✅
-
-#### 10.1 Discount System (Week 18) ✅
-
-- [x] [#50](https://github.com/Vestcodes/vcecom/issues/50) **Discount Code System** ✅
-- [x] [#51](https://github.com/Vestcodes/vcecom/issues/51) **Apply Discount to Cart** ✅
-
-**Deliverables:**
-- ✅ Discount code system (STANDARD & BUY_GET types)
-- ✅ Cart discount application
-- ✅ Discount validation (expiry, usage limits, minimum order)
-- ✅ Discount calculation (percentage & fixed amount)
-- ✅ Order discount integration
-- ✅ Admin discount management API
-
----
-
-## 🎯 Milestones
-
-### Milestone 1: MVP Core (Week 1-9)
-**Target:** End of Week 9
-
-- ✅ Foundation setup
-- ✅ Database schema
-- ✅ Authentication
-- ✅ Product catalog
-- ✅ Shopping cart
-- ✅ Order management
-- ✅ Customer management
-
-**Success Criteria:**
-- Customers can browse products
-- Customers can add to cart
-- Customers can place orders
-- Admin can manage products
-
-### Milestone 2: Payment & Shipping (Week 10-13)
-**Target:** End of Week 13
-
+## ✅ Completed Features
+
+### Foundation & Core Infrastructure
+- ✅ Monorepo architecture with modern tooling
+- ✅ Type-safe database layer with PostgreSQL
+- ✅ RESTful API backend
+- ✅ Admin dashboard interface
+- ✅ Authentication & authorization system
+- ✅ Multi-tenancy ready architecture
+
+### Product Catalog
+- ✅ Product management with variants
+- ✅ Category and collection management
+- ✅ Product search and filtering
+- ✅ Advanced sorting and pagination
+- ✅ Image management and optimization
+
+### Shopping Experience
+- ✅ Shopping cart with real-time calculations
+- ✅ Customer registration and profiles
+- ✅ Address management (Indian format)
+- ✅ Guest checkout support
+
+### Order Management
+- ✅ Complete order lifecycle management
+- ✅ Order status tracking and timeline
+- ✅ Order history for customers
+- ✅ Reliable order processing
+
+### Payments
 - ✅ Razorpay integration
+- ✅ Multiple payment methods (UPI, Cards, Net Banking, Wallets)
+- ✅ Cash on Delivery (COD)
+- ✅ Payment webhooks and verification
+- ✅ Secure payment processing
+
+### Shipping & Fulfillment
 - ✅ Shiprocket integration
 - ✅ Nimbus Post integration
-- ✅ Payment processing
-- ✅ Shipping label generation
+- ✅ Shipping rate calculation
+- ✅ Label generation
+- ✅ Order tracking
+- ✅ PIN code-based shipping rules
 
-**Success Criteria:**
-- ✅ Customers can pay via Razorpay
-- ✅ Orders can be shipped via Shiprocket/Nimbus Post
-- ✅ Payment webhooks working
-- ✅ Shipping tracking functional
+### GST Compliance
+- ✅ Automatic GST calculation (CGST/SGST/IGST)
+- ✅ State-based GST rules (intra-state vs inter-state)
+- ✅ Tax invoice generation (PDF)
+- ✅ GSTIN validation
+- ✅ Complete GST breakdown in invoices
 
-### Milestone 3: Admin Dashboard (Week 14-15) ✅
-**Target:** End of Week 15
+### Indian Market Features
+- ✅ PIN code validation and serviceability
+- ✅ Indian address format validation
+- ✅ State and district autocomplete
+- ✅ Phone number validation (10-digit, +91)
+- ✅ Indian state list (28 states + 8 UTs)
 
-- ✅ Admin dashboard UI (basic)
-- ✅ Product management UI
-- ✅ Order management UI
+### Discounts & Promotions
+- ✅ Discount code system
+- ✅ Percentage and fixed amount discounts
+- ✅ Cart-level discount application
+- ✅ Discount validation (expiry, usage limits)
+- ✅ Minimum order value support
+
+### Admin Dashboard
+- ✅ Product management interface
+- ✅ Order management interface
+- ✅ Customer management
+- ✅ Dashboard overview with key metrics
+- ✅ Order status updates
 - ✅ Basic analytics
 
-**Success Criteria:**
-- ✅ Admin can manage products via UI
-- ✅ Admin can process orders via UI
-- ✅ Dashboard shows key metrics
-- ✅ Order status can be updated via UI
-
-### Milestone 4: India Compliance (Week 16) ✅
-**Target:** End of Week 16
-
-- ✅ GST calculation (CGST/SGST/IGST)
-- ✅ Tax invoices (PDF generation)
-- ✅ Indian address validation (PIN code, state, district)
-- ✅ Phone validation (10-digit, +91)
-- ✅ GSTIN validation
-
-**Success Criteria:**
-- ✅ All orders include GST
-- ✅ Tax invoices generated
-- ✅ Indian addresses validated
-- ✅ GSTIN format validated
-
-### Milestone 5: Enhanced Features (Week 17-18) ✅
-**Target:** End of Week 18
-
-- ✅ Product search (full-text, SKU)
-- ✅ Advanced filtering (category, price, availability)
-- ✅ Sorting (price, name, date)
-- ✅ Pagination (page-based & cursor-based)
-- ✅ Discount codes (STANDARD & BUY_GET)
-- ✅ Cart discount application
-
-**Success Criteria:**
-- ✅ Customers can search products
-- ✅ Discount codes work
-- ✅ Enhanced user experience
-- ✅ All features tested and documented
-
 ---
 
-## 🔄 Future Phases (Post-MVP)
+## 🚀 Upcoming Features
 
-### Phase 11: Checkout Hardening 🔴 (Top Priority)
+### AI-Powered Features (High Priority)
 
-**Status:** Not Started  
-**Priority:** Top Priority  
-**Duration:** TBD  
-**Dependencies:** Phase 10  
+#### AI Store Builder
+- AI-powered store setup wizard
+- Automated store configuration
+- Smart template selection
+- AI-driven store optimization suggestions
 
-**Strategic Importance:** Critical for production readiness. Prevents double checkout, double payment, and ensures final consistency guarantees before money moves.
+#### AI Content Generation
+- Product description generator
+- SEO-optimized content creation
+- Marketing copy generation
+- Automated product tagging and categorization
 
-#### 11.1 Cart-Level Checkout Locks
-- Prevent double checkout / double payment
-- Cart-level locking mechanism during checkout
-- Idempotent checkout initiation
+#### AI Recommendations
+- Smart product recommendations
+- Cross-sell and upsell suggestions
+- Customer behavior analysis
+- Personalized shopping experiences
 
-#### 11.2 Payment Retry Safety
+#### AI Automation
+- Automated workflow creation
+- Smart inventory management
+- Predictive analytics
+- Automated customer support responses
+
+### Agency Tools & Multi-Store Management (High Priority)
+
+#### Multi-Store Management
+- Manage multiple client stores from one dashboard
+- Centralized billing and subscription management
+- Cross-store analytics and reporting
+- Unified client communication
+
+#### White-Label Options
+- Custom branding for agencies
+- Agency-specific domain support
+- Customizable admin interface
+- Branded client portals
+
+#### Client Onboarding
+- Streamlined client setup workflows
+- Automated store provisioning
+- Template-based store creation
+- Quick start wizards
+
+#### Template Library
+- Pre-built store templates
+- Industry-specific templates
+- Customizable template marketplace
+- Template versioning and updates
+
+#### Agency Dashboard
+- Client store overview
+- Performance metrics across stores
+- Resource usage monitoring
+- Billing and subscription management
+
+### SaaS Infrastructure (High Priority)
+
+#### Multi-Tenancy
+- Complete multi-tenant architecture
+- Tenant isolation and security
+- Resource quotas and limits
+- Tenant-specific configurations
+
+#### Subscription Management
+- Flexible pricing plans
+- Usage-based billing
+- Subscription lifecycle management
+- Payment processing integration
+
+#### User Management
+- Role-based access control
+- Team collaboration features
+- User invitations and onboarding
+- Permission management
+
+#### Infrastructure
+- Auto-scaling capabilities
+- Load balancing
+- High availability setup
+- Disaster recovery
+
+### Checkout Hardening (High Priority)
+**Focus:** Production reliability and preventing double charges
+
+- Cart-level checkout locks to prevent double checkout
 - Safe payment retry mechanisms
-- Idempotent payment processing
-- Payment state reconciliation
+- Final consistency guarantees before payment processing
+- Enhanced error handling and recovery
 
-#### 11.3 Final Consistency Guarantees
-- Final consistency checks before money moves
-- Transaction validation
-- Order-payment consistency verification
+### Enhanced Discount Engine
+**Focus:** More powerful and flexible discount system
 
-**Deliverables:**
-- Cart-level checkout locks
-- Double checkout prevention
-- Payment retry safety mechanisms
-- Final consistency guarantees
-
----
-
-### Phase 12: Discount Engine v2
-
-**Status:** Not Started  
-**Priority:** High  
-**Duration:** TBD  
-**Dependencies:** Phase 10  
-
-**Strategic Importance:** Enhanced discount system with priority rules, stacking, and deterministic application.
-
-#### 12.1 Priority & Stacking Rules
-- Discount priority system
-- Stacking rules configuration
-- Conflict resolution
-
-#### 12.2 Deterministic Application
-- Deterministic discount application order
-- Consistent discount calculation
-- Predictable discount behavior
-
-#### 12.3 Idempotent Discount Resolution
-- Idempotent discount calculation
-- Consistent discount application
-- Discount state management
-
-**Deliverables:**
-- Priority-based discount system
-- Discount stacking rules
+- Discount priority and stacking rules
 - Deterministic discount application
-- Idempotent discount resolution
+- Advanced discount types
+- Customer group-based discounts
+- Time-based promotions
 
----
+### Multi-Location Inventory
+**Focus:** Support for multiple warehouses and locations
 
-### Phase 13: Multi-Location / Warehouse Inventory
-
-**Status:** Not Started  
-**Priority:** Medium  
-**Duration:** TBD  
-**Dependencies:** Phase 10  
-
-**Strategic Note:** You are already architecturally ready. This becomes mostly data modeling + routing.
-
-#### 13.1 Multi-Location Data Modeling
-- Warehouse/location schema
-- Inventory allocation per location
-- Location-based inventory tracking
-
-#### 13.2 Inventory Routing
+- Multi-warehouse inventory management
 - Location-based inventory routing
-- Fulfillment location selection
-- Inventory allocation logic
-
-#### 13.3 Multi-Location Operations
 - Cross-location inventory transfers
-- Location-specific inventory management
-- Multi-location order fulfillment
-
-**Deliverables:**
-- Multi-location inventory schema
-- Location-based inventory routing
-- Multi-location fulfillment logic
+- Location-specific fulfillment
 - Inventory allocation system
 
----
+### Advanced Inventory Management
+**Focus:** Better inventory control and visibility
 
-### Phase 14: TBD
+- Real-time inventory tracking
+- Low stock alerts
+- Inventory reservations
+- Bulk inventory operations
+- Inventory history and audit
 
-**Status:** Not Started  
-**Priority:** TBD  
-**Duration:** TBD  
-**Dependencies:** TBD  
+### Customer Features
+**Focus:** Enhanced customer experience
 
-_Phase 14 details to be defined._
-
-### Phase 15: Customer Features
-- Wishlist
-- Product reviews
+- Wishlist functionality
+- Product reviews and ratings
 - Loyalty program
 - Referral system
+- Customer segmentation
 
-### Phase 16: Indian Integrations
+### Indian Integrations
+**Focus:** Deeper integration with Indian services
+
 - SMS notifications (MSG91)
-- WhatsApp Business API
+- WhatsApp Business API integration
 - Regional language support
-- Festival sales
+- Festival sales and promotions
+- Aadhaar-based verification (optional)
 
-### Phase 17: Storefront API
-- Public API optimization
-- GraphQL support (optional)
-- Caching layer
-- API documentation
+### Advanced Admin Features
+**Focus:** More powerful admin tools
 
-### Phase 18: Plugin System (Event-Driven, Non-Invasive)
+- Advanced analytics and reporting
+- Bulk operations (products, orders, customers)
+- Custom reports and exports
+- Email templates and notifications
+- Advanced user roles and permissions
 
-**Status:** Not Started  
-**Priority:** Low  
-**Duration:** TBD  
-**Dependencies:** Phase 17  
+### Storefront API Enhancements
+**Focus:** Better developer experience
 
-**Architecture Constraints:**
-- **Event-Driven**: Plugin system will be event-driven, allowing plugins to react to system events (order.created, payment.completed, etc.)
-- **Non-Invasive**: Plugins cannot override core business logic in v1
-- **Webhook System**: External integrations via webhooks for order, payment, and shipping events
-- **Third-Party Integrations**: Support for external services (analytics, marketing, etc.) via webhooks and API hooks
+- GraphQL API support (optional)
+- Enhanced caching layer
+- API rate limiting and quotas
+- Comprehensive API documentation
+- Webhook system for integrations
 
-**What Phase 18 Includes:**
+### Plugin System
+**Focus:** Extensibility and integrations
+
 - Event-driven plugin architecture
 - Webhook system for external integrations
-- Plugin registry and lifecycle management
 - Third-party integration framework
-
-**What Phase 18 Does NOT Include (v1):**
-- Core logic overrides (e.g., custom GST calculation, custom payment flows)
-- Plugin marketplace (future consideration)
-- Medusa.js compatibility layer (different architecture)
-- Database schema modifications via plugins
-
-**Future Considerations:**
-- Plugin marketplace (Phase 20+)
-- Core logic extension points (Phase 20+)
-- Advanced plugin APIs (Phase 20+)
+- Plugin registry and management
+- Custom integrations support
 
 ---
 
-### Phase 19: Production Hardening & Enterprise Readiness
+## 🎯 Strategic Milestones
 
-**Status:** Not Started  
-**Priority:** High  
-**Duration:** TBD  
-**Dependencies:** Phase 10+  
+### Milestone 1: MVP Core ✅
+**Status:** Complete
 
-**Strategic Importance:** This phase addresses production readiness concerns that enterprise evaluators look for. It signals maturity and operational readiness.
+- Foundation and infrastructure
+- Product catalog
+- Shopping cart
+- Order management
+- Customer management
+- Basic admin dashboard
 
-#### 19.1 Rate Limiting & API Security
-- API rate limiting (per-user, per-IP)
-- DDoS protection strategies
-- API key management
-- Request throttling
+### Milestone 2: Payment & Shipping ✅
+**Status:** Complete
 
-#### 19.2 Idempotency & Reliability
-- Idempotency keys for critical operations (order creation, payment processing)
-- Idempotent webhook processing
-- Retry mechanisms with exponential backoff
-- Circuit breakers for external services
+- Razorpay payment integration
+- Shiprocket and Nimbus Post shipping
+- Payment processing
+- Shipping label generation
+- Order tracking
 
-#### 19.3 Webhook Reliability
-- Webhook retry mechanism with exponential backoff
-- Dead-letter queue for failed webhooks
-- Webhook delivery status tracking
-- Webhook signature verification
+### Milestone 3: India Compliance ✅
+**Status:** Complete
 
-#### 19.4 Audit Logging & Compliance
-- Comprehensive audit logs for all critical operations
-- User action tracking
-- Data change history
-- Compliance-ready logging (GDPR, data retention policies)
+- GST calculation and compliance
+- Tax invoice generation
+- Indian address validation
+- PIN code validation
+- Phone number validation
 
-#### 19.5 Data Management
-- Automated backup strategy
-- Point-in-time recovery
-- Data export capabilities
-- Data retention policies
+### Milestone 4: Enhanced Features ✅
+**Status:** Complete
 
-#### 19.6 Security Hardening
-- Security audit and penetration testing
-- OWASP Top 10 compliance
-- Input validation hardening
-- SQL injection prevention (already via Drizzle ORM)
-- XSS prevention
-- CSRF protection
+- Product search and filtering
+- Discount code system
+- Advanced admin dashboard
+- Order lifecycle management
 
-#### 19.7 Monitoring & Observability
-- Application performance monitoring (APM)
-- Error tracking and alerting
-- Log aggregation and analysis
-- Health check endpoints
-- Metrics and dashboards
+### Milestone 5: Production Hardening (In Progress)
+**Focus:** Enterprise readiness
 
-**Deliverables:**
-- Production-ready API with rate limiting
-- Idempotent operations for all critical paths
-- Reliable webhook delivery system
+- Rate limiting and API security
 - Comprehensive audit logging
-- Automated backup and recovery
-- Security-hardened application
-- Full observability stack
+- Enhanced monitoring and observability
+- Security hardening
+- Backup and recovery systems
+- Performance optimization
 
-**Success Criteria:**
-- API can handle production traffic with rate limiting
-- All critical operations are idempotent
-- Webhook delivery success rate > 99.9%
-- Audit logs capture all critical operations
-- Backup and recovery tested and documented
-- Security audit passed
-- Monitoring and alerting operational
+### Milestone 6: AI-Powered Features (Planned)
+**Focus:** AI ecommerce builder capabilities
 
----
+- AI store builder
+- AI content generation
+- Smart recommendations
+- Automated workflows
 
-## 📊 Development Timeline
+### Milestone 7: Agency Tools (Planned)
+**Focus:** Agency accelerator features
 
-```
-Week 1:   ✅ Foundation & Setup
-Week 2-3:  Phase 1 - Database Schema & Auth
-Week 4-5:  Phase 2 - Product Management
-Week 6-7:  Phase 3 - Cart & Customers
-Week 8-9:  Phase 4 - Order Management
-Week 10-11: Phase 5 - Razorpay Integration
-Week 12-13: ✅ Phase 6 - Shipping Integration
-Week 14-15: ✅ Phase 7 - Admin Dashboard (Basic)
-Week 16:    Phase 8 - GST Compliance
-Week 17:    Phase 9 - Search & Filtering
-Week 18:    Phase 10 - Discounts
-```
+- Multi-store management
+- White-label options
+- Client onboarding tools
+- Template library
+- Agency dashboard
 
-**Total MVP Timeline:** ~18 weeks (4.5 months)
+### Milestone 8: SaaS Infrastructure (Planned)
+**Focus:** SaaS evolution
+
+- Complete multi-tenancy
+- Subscription management
+- User management
+- Infrastructure scaling
 
 ---
 
-## 🎯 Success Metrics
+## 📊 Development Priorities
 
-### Technical Metrics
-- API response time < 200ms (read), < 500ms (write)
-- Support 1000+ concurrent users
-- Handle 10,000+ products
-- 100% TypeScript coverage
-- Test coverage > 80%
+### High Priority
+- AI-powered features (store builder, content generation)
+- Agency tools (multi-store management, white-label)
+- SaaS infrastructure (multi-tenancy, subscriptions)
+- Checkout hardening and reliability
+- Enhanced discount engine
 
-### Business Metrics
-- Successful order processing
-- Payment success rate > 95%
-- Shipping label generation success > 99%
-- GST compliance 100%
-- Admin dashboard usability
+### Medium Priority
+- Multi-location inventory
+- Customer features (wishlist, reviews)
+- Advanced analytics
+- Storefront API enhancements
+- Indian integrations (SMS, WhatsApp)
+
+### Low Priority
+- Plugin system
+- GraphQL API support
+- Advanced customization options
+
+---
+
+## 🤝 Community & Feedback
+
+We value community input! Your feedback helps shape the future of VCEcom.
+
+**How to Contribute:**
+- Report bugs and issues
+- Suggest new features
+- Share your use cases (especially agencies!)
+- Provide feedback on existing features
+- Request AI-powered features
+- Suggest agency-focused tools
+
+**Stay Updated:**
+- Follow our GitHub repository for updates
+- Check the changelog for latest releases
+- Review documentation for new features
+- Join discussions about AI features and agency tools
 
 ---
 
 ## 📝 Notes
 
-- **Priorities:** High priority features are marked and should be completed first
-- **Dependencies:** Each phase builds on previous phases
-- **Flexibility:** Timeline can be adjusted based on team capacity
-- **Testing:** Each phase should include unit and integration tests
-- **Documentation:** API documentation should be updated with each phase
+- **Priorities** may shift based on community feedback and market needs
+- **Timeline** is flexible and adjusted based on development capacity
+- **Features** are subject to change based on user needs
+- **Testing** and quality assurance are priorities for all releases
+- **SaaS Evolution** is a core focus - architecture decisions consider multi-tenancy and scalability
 
 ---
 
-**Last Updated:** 2025-12-16  
-**Next Review:** After Phase 19 completion
+**Last Updated:** 2025-01-28  
+**Next Review:** Quarterly
 
 ---
 
 ## 🎯 Strategic Positioning
 
-VCEcom has evolved from a lightweight ecommerce backend to a **production-ready, India-first headless commerce platform**. Key differentiators:
+VCEcom is positioned as a **platform that can evolve into a SaaS AI ecommerce builder and agency accelerator**, designed for:
 
-1. **GST-First Architecture**: GST compliance is not an add-on—it's integrated into core systems from day one
-2. **Complete Order Lifecycle**: State machine-driven order management with idempotent operations
-3. **India-Optimized**: Built specifically for Indian market requirements (PIN codes, GSTIN, Indian address formats)
-4. **Production-Ready**: Enterprise-grade features including audit logs, rate limiting, and security hardening (Phase 19)
+1. **Agencies**: Build and manage multiple client stores efficiently
+2. **AI-Powered Building**: Leverage AI to accelerate store creation and content generation
+3. **SaaS Evolution**: Architecture ready for hosted SaaS deployment
+4. **India-First**: Native GST compliance and Indian market integrations
 
-This is not a framework experiment—it's a **complete, production-ready commerce platform** ready for scale.
-
+This is not just an ecommerce backend—it's a **complete platform designed to evolve into a SaaS solution** that empowers agencies and businesses to build online stores faster with AI-powered tools.

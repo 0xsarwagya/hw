@@ -148,6 +148,7 @@ export class AdminActivityLogsService {
         action: adminActivityLogs.action,
         entityId: adminActivityLogs.entityId,
         metadata: adminActivityLogs.metadata,
+        diff: adminActivityLogs.diff,
         ipAddress: adminActivityLogs.ipAddress,
         userAgent: adminActivityLogs.userAgent,
         createdAt: adminActivityLogs.createdAt,
@@ -170,6 +171,12 @@ export class AdminActivityLogsService {
       resource: this.extractResource(log.action),
       entityId: log.entityId,
       metadata: log.metadata as Record<string, unknown> | null,
+      diff: log.diff
+        ? (log.diff as {
+            before: Record<string, unknown> | null;
+            after: Record<string, unknown> | null;
+          })
+        : null,
       ipAddress: log.ipAddress,
       userAgent: log.userAgent,
       createdAt: log.createdAt,
@@ -198,6 +205,7 @@ export class AdminActivityLogsService {
         action: adminActivityLogs.action,
         entityId: adminActivityLogs.entityId,
         metadata: adminActivityLogs.metadata,
+        diff: adminActivityLogs.diff,
         ipAddress: adminActivityLogs.ipAddress,
         userAgent: adminActivityLogs.userAgent,
         createdAt: adminActivityLogs.createdAt,
@@ -219,9 +227,46 @@ export class AdminActivityLogsService {
       resource: this.extractResource(log.action),
       entityId: log.entityId,
       metadata: log.metadata as Record<string, unknown> | null,
+      diff: log.diff
+        ? (log.diff as {
+            before: Record<string, unknown> | null;
+            after: Record<string, unknown> | null;
+          })
+        : null,
       ipAddress: log.ipAddress,
       userAgent: log.userAgent,
       createdAt: log.createdAt,
+    };
+  }
+
+  /**
+   * Get diff for a specific activity log
+   */
+  async getActivityLogDiff(id: string): Promise<{
+    before: Record<string, unknown> | null;
+    after: Record<string, unknown> | null;
+  }> {
+    const [log] = await db
+      .select({
+        diff: adminActivityLogs.diff,
+      })
+      .from(adminActivityLogs)
+      .where(eq(adminActivityLogs.id, id))
+      .limit(1);
+
+    if (!log) {
+      throw new NotFoundException(`Activity log with ID ${id} not found`);
+    }
+
+    if (!log.diff) {
+      throw new NotFoundException(
+        `No diff available for activity log with ID ${id}`,
+      );
+    }
+
+    return log.diff as {
+      before: Record<string, unknown> | null;
+      after: Record<string, unknown> | null;
     };
   }
 }

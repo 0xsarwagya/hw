@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CommandPalette } from "@/components/command-palette";
+import { ErrorBoundaryWrapper } from "@/components/common/error-boundary-wrapper";
 import { AdminShell } from "@/components/layout/admin-shell";
 import { SidebarSkeleton } from "@/components/skeletons/sidebar-skeleton";
 import { CommandKProvider } from "@/hooks/use-command-k";
@@ -42,13 +43,17 @@ export default async function AdminLayout({
   }
 
   return (
-    <SessionProvider initialSession={session}>
-      <CommandKProvider>
-        <AdminShell>
-          <Suspense fallback={<SidebarSkeleton />}>{children}</Suspense>
-        </AdminShell>
-        <CommandPalette />
-      </CommandKProvider>
-    </SessionProvider>
+    <ErrorBoundaryWrapper>
+      <SessionProvider initialSession={session}>
+        <CommandKProvider>
+          <AdminShell>
+            <Suspense fallback={<SidebarSkeleton />}>
+              <ErrorBoundaryWrapper>{children}</ErrorBoundaryWrapper>
+            </Suspense>
+          </AdminShell>
+          <CommandPalette />
+        </CommandKProvider>
+      </SessionProvider>
+    </ErrorBoundaryWrapper>
   );
 }

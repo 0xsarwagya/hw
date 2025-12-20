@@ -1,3 +1,11 @@
+import {
+  Boxes,
+  FileText,
+  Package,
+  ShoppingCart,
+  Tag,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -9,7 +17,24 @@ interface EmptyStateProps {
   actionHref?: string;
   onAction?: () => void;
   className?: string;
+  icon?: React.ReactNode;
+  type?:
+    | "products"
+    | "orders"
+    | "customers"
+    | "discounts"
+    | "bundles"
+    | "default";
 }
+
+const typeIcons = {
+  products: Package,
+  orders: ShoppingCart,
+  customers: Users,
+  discounts: Tag,
+  bundles: Boxes,
+  default: FileText,
+};
 
 /**
  * Reusable empty state component
@@ -22,20 +47,41 @@ export function EmptyState({
   actionHref,
   onAction,
   className,
+  icon,
+  type = "default",
 }: EmptyStateProps) {
   const hasAction = actionLabel && (actionHref || onAction);
+  const IconComponent = icon || typeIcons[type];
 
   return (
-    <div className={cn("text-center py-8 text-muted-foreground", className)}>
-      <p className="text-lg font-medium mb-2">{title}</p>
-      {description && <p className="text-sm mb-4">{description}</p>}
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center py-12 px-4",
+        className,
+      )}
+    >
+      {IconComponent && (
+        <div className="mb-4 text-muted-foreground">
+          {typeof IconComponent === "function" ? (
+            <IconComponent className="h-12 w-12" />
+          ) : (
+            IconComponent
+          )}
+        </div>
+      )}
+      <h3 className="text-lg font-semibold mb-2 text-foreground">{title}</h3>
+      {description && (
+        <p className="text-sm text-muted-foreground mb-6 max-w-md text-center">
+          {description}
+        </p>
+      )}
       {hasAction &&
         (actionHref ? (
-          <Button asChild variant="outline">
+          <Button asChild variant="default">
             <Link href={actionHref}>{actionLabel}</Link>
           </Button>
         ) : (
-          <Button variant="outline" onClick={onAction}>
+          <Button variant="default" onClick={onAction}>
             {actionLabel}
           </Button>
         ))}
