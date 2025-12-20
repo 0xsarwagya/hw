@@ -51,6 +51,8 @@ import { DiscountSnapshotValidator } from "../discounts/services/discount-snapsh
 import { DriftDetectorService } from "../discounts/services/drift-detector.service";
 import { HotReloadWatcher } from "../discounts/services/hot-reload-watcher.service";
 import { RulesetBundleService } from "../discounts/services/ruleset-bundle.service";
+import { NotificationsService } from "../notifications/notifications.service";
+import { NotificationType } from "../notifications/types/notification.types";
 import { PaymentsService } from "../payments/payments.service";
 import { PricingDriftSeverity } from "../pricing/audit/pricing-audit.types";
 import { runPricingEngine } from "../pricing/engine/pricing-engine";
@@ -120,6 +122,7 @@ export class OrdersService {
     private readonly bundlePricingService: BundlePricingService,
     @Inject(forwardRef(() => PaymentsService))
     private readonly paymentsService: PaymentsService,
+    private readonly notificationsService: NotificationsService,
     // Extracted services
     private readonly validationService: OrderValidationService,
     private readonly pricingService: OrderPricingService,
@@ -1645,6 +1648,33 @@ export class OrdersService {
         "Failed to transition to ORDER_CREATED",
       );
       // Continue - order is created, state transition failure is non-critical
+    }
+
+    // Create notification for new order
+    try {
+      await this.notificationsService.createFromEvent({
+        adminId: null, // Broadcast to all admins
+        type: NotificationType.ORDER,
+        title: "New Order Received",
+        message: `Order #${orderNumber} has been placed for ₹${total.toFixed(2)}`,
+        meta: {
+          orderId,
+          orderNumber,
+          total,
+          customerId,
+        },
+      });
+    } catch (error) {
+      // Log but don't throw - notification failure shouldn't break order creation
+      this.logger.warn(
+        createErrorContext(
+          this.contextService,
+          "createOrderNotification",
+          error,
+          { orderId, orderNumber },
+        ),
+        "Failed to create order notification",
+      );
     }
 
     // Record discount usage if discount was applied

@@ -57,6 +57,7 @@ import { OrderStatusService } from "./services/order-status.service";
 import { OrderGstService } from "./services/order-gst.service";
 import { OrderTimelineService } from "./services/order-timeline.service";
 import { getCommonTestProviders } from "../../common/testing/test-helpers";
+import { NotificationsService } from "../notifications/notifications.service";
 
 // Helper function to create properly chained db.select mocks
 function createSelectMock(returnValue: any) {
@@ -291,6 +292,17 @@ describe("OrdersService", () => {
         OrderGstService,
         OrderStatusService,
         OrderTimelineService,
+        {
+          provide: NotificationsService,
+          useValue: {
+            createFromEvent: jest.fn().mockResolvedValue(undefined),
+            create: jest.fn().mockResolvedValue(undefined),
+            findAll: jest.fn().mockResolvedValue({ data: [], total: 0 }),
+            markRead: jest.fn().mockResolvedValue(undefined),
+            markAllRead: jest.fn().mockResolvedValue(undefined),
+            delete: jest.fn().mockResolvedValue(undefined),
+          },
+        },
         ...getCommonTestProviders(),
       ],
     })

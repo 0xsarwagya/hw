@@ -1,10 +1,13 @@
 import { Global, Module } from "@nestjs/common";
 import { LoggerModule as PinoLoggerModule } from "nestjs-pino";
+import { SystemLogsModule } from "../../modules/system-logs/system-logs.module";
 import { createPinoConfig } from "./pino.config";
+import { PinoRedisHookService } from "./pino-redis-hook.service";
 
 @Global() // Make LoggerModule global so PinoLogger is available everywhere
 @Module({
   imports: [
+    SystemLogsModule, // Import to make SystemLogsStorageService available
     PinoLoggerModule.forRoot({
       pinoHttp: {
         ...createPinoConfig(),
@@ -61,9 +64,12 @@ import { createPinoConfig } from "./pino.config";
             return false;
           },
         },
+        // Add custom stream for Redis storage
+        stream: undefined, // Will be set via hook
       },
     }),
   ],
+  providers: [PinoRedisHookService],
   exports: [PinoLoggerModule],
 })
 export class LoggerModule {}

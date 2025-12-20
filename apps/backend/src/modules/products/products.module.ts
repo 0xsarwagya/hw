@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ScheduleModule } from "@nestjs/schedule";
+import { NotificationsModule } from "../notifications/notifications.module";
 import { RedisStoreModule } from "../redis-store/redis-store.module";
 import { StorageModule } from "../storage/storage.module";
 import { MediaHealthController } from "./controllers/media-health.controller";
@@ -14,7 +15,12 @@ import { VariantsController } from "./variants.controller";
 import { VariantsService } from "./variants.service";
 
 @Module({
-  imports: [StorageModule, ScheduleModule, RedisStoreModule],
+  imports: [
+    StorageModule,
+    ScheduleModule,
+    RedisStoreModule,
+    NotificationsModule,
+  ],
   controllers: [ProductsController, VariantsController, MediaHealthController],
   providers: [
     ProductsService,

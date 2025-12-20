@@ -18,6 +18,7 @@ export const adminActivityLogs = pgTable(
     action: text("action").notNull(), // e.g., "product.create", "discount.update"
     entityId: text("entity_id"), // Optional: ID of the entity affected (e.g., productId, discountId)
     metadata: jsonb("metadata"), // Optional: additional context (e.g., changes made, old/new values)
+    diff: jsonb("diff"), // Before/after state diff: { before: {...}, after: {...} }
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
     createdAt: timestamp("created_at").defaultNow().notNull(),

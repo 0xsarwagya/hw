@@ -28,6 +28,7 @@ import { InventoryStore } from "../../redis-store/stores/inventory-store";
 import { IdempotencyStore } from "../../redis-store/stores/idempotency-store";
 import { CreateOrderDto } from "../dto/create-order.dto";
 import { OrdersService } from "../orders.service";
+import { NotificationsService } from "../../notifications/notifications.service";
 import { OrderValidationService } from "../services/order-validation.service";
 import { OrderPricingService } from "../services/order-pricing.service";
 import { OrderStatusService } from "../services/order-status.service";
@@ -215,6 +216,17 @@ describe("OrdersService - Guest Checkout", () => {
         OrderGstService,
         OrderStatusService,
         OrderTimelineService,
+        {
+          provide: NotificationsService,
+          useValue: {
+            createFromEvent: jest.fn().mockResolvedValue(undefined),
+            create: jest.fn().mockResolvedValue(undefined),
+            findAll: jest.fn().mockResolvedValue({ data: [], total: 0 }),
+            markRead: jest.fn().mockResolvedValue(undefined),
+            markAllRead: jest.fn().mockResolvedValue(undefined),
+            delete: jest.fn().mockResolvedValue(undefined),
+          },
+        },
         ...getCommonTestProviders(),
       ],
     })

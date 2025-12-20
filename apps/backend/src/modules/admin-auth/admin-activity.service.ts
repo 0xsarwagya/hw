@@ -14,6 +14,10 @@ export interface LogActivityParams {
   metadata?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
+  diff?: {
+    before: Record<string, unknown> | null;
+    after: Record<string, unknown> | null;
+  };
 }
 
 @Injectable()
@@ -34,6 +38,7 @@ export class AdminActivityService {
       metadata,
       ipAddress: providedIp,
       userAgent: providedUserAgent,
+      diff,
     } = params;
 
     // Extract IP and userAgent from context if not provided
@@ -48,6 +53,12 @@ export class AdminActivityService {
         action,
         entityId: entityId || null,
         metadata: metadata ? (metadata as Record<string, unknown>) : null,
+        diff: diff
+          ? ({
+              before: diff.before,
+              after: diff.after,
+            } as Record<string, unknown>)
+          : null,
         ipAddress,
         userAgent,
       });
@@ -59,6 +70,7 @@ export class AdminActivityService {
           action,
           entityId,
           metadata,
+          diff,
           ipAddress,
           userAgent,
         }),
@@ -111,6 +123,23 @@ export class AdminActivityService {
       action: "admin.session.revoke",
       entityId: revokedSessionId,
       metadata: { revokedBy },
+    });
+  }
+
+  /**
+   * Log admin activity with before/after diff
+   */
+  async logActivityWithDiff(
+    params: LogActivityParams & {
+      diff: {
+        before: Record<string, unknown> | null;
+        after: Record<string, unknown> | null;
+      };
+    },
+  ): Promise<void> {
+    await this.logActivity({
+      ...params,
+      diff: params.diff,
     });
   }
 }

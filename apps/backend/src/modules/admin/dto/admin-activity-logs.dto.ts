@@ -138,6 +138,16 @@ export class ActivityLogResponseDto {
   metadata: Record<string, unknown> | null;
 
   @ApiProperty({
+    description: "Before/after state diff",
+    example: { before: { title: "Old Name" }, after: { title: "New Name" } },
+    nullable: true,
+  })
+  diff: {
+    before: Record<string, unknown> | null;
+    after: Record<string, unknown> | null;
+  } | null;
+
+  @ApiProperty({
     description: "IP address",
     example: "192.168.1.1",
     nullable: true,

@@ -6,8 +6,9 @@ import { BUILD_INFO } from "../../build-info.js";
  * - Pretty format enabled by default (can be disabled with LOG_PRETTY=false)
  * - JSON format when LOG_PRETTY=false
  * - Redaction for sensitive data
+ * @param redisStream - Optional Redis stream for duplicating logs
  */
-export function createPinoConfig() {
+export function createPinoConfig(redisStream?: pino.StreamEntry) {
   const isDevelopment = process.env.NODE_ENV === "development";
   const logLevel = process.env.LOG_LEVEL || (isDevelopment ? "debug" : "info");
   // Enable pretty printing by default, allow disabling via LOG_PRETTY=false

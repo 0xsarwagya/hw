@@ -144,4 +144,13 @@ export const RATE_LIMIT_PRESETS = {
     window: 300, // 5 minutes
     keyType: "ip" as RateLimitKeyType,
   },
+
+  /**
+   * Export endpoints - strict limits (5 per minute)
+   */
+  EXPORT: {
+    limit: isDevelopment ? 20 : 5,
+    window: 60, // 1 minute
+    keyType: "userId" as RateLimitKeyType,
+  },
 } as const;

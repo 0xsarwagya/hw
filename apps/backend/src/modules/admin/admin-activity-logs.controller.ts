@@ -137,4 +137,54 @@ export class AdminActivityLogsController {
   ): Promise<ActivityLogResponseDto> {
     return this.activityLogsService.getActivityLog(id);
   }
+
+  @Get(":id/diff")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_GET)
+  @ApiOperation({
+    summary: "Get activity log diff (admin)",
+    description:
+      "Retrieve the before/after diff for a specific activity log. Admin-only endpoint.",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Activity log ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Activity log diff retrieved successfully",
+    schema: {
+      type: "object",
+      properties: {
+        before: {
+          type: "object",
+          nullable: true,
+          description: "State before the change",
+        },
+        after: {
+          type: "object",
+          nullable: true,
+          description: "State after the change",
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Activity log not found or no diff available",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  async getActivityLogDiff(@Param("id") id: string): Promise<{
+    before: Record<string, unknown> | null;
+    after: Record<string, unknown> | null;
+  }> {
+    return this.activityLogsService.getActivityLogDiff(id);
+  }
 }

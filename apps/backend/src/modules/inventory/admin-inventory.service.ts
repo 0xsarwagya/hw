@@ -29,6 +29,8 @@ import {
   generatePaginationMetadata,
   normalizePaginationParams,
 } from "../../common/utils/pagination.utils";
+import { NotificationsService } from "../notifications/notifications.service";
+import { NotificationType } from "../notifications/types/notification.types";
 import { KEY_PATTERNS } from "../redis-store/constants/key-patterns";
 import { RedisStoreService } from "../redis-store/redis-store.service";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
@@ -76,6 +78,7 @@ export class AdminInventoryService implements OnModuleInit {
     private readonly inventoryStore: InventoryStore,
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async onModuleInit() {
@@ -415,6 +418,62 @@ export class AdminInventoryService implements OnModuleInit {
 
         return adjustment;
       });
+
+      // Check if inventory is now low stock and create notification
+      try {
+        const threshold = await this.getLowStockThreshold(variantId);
+        const committed =
+          await this.inventoryStore.getReservedInventory(variantId);
+        const available = Math.max(0, newQuantity - (committed || 0));
+
+        if (available <= threshold && available > 0) {
+          // Get variant info for notification
+          const [variant] = await db
+            .select({
+              sku: productVariants.sku,
+              productId: productVariants.productId,
+            })
+            .from(productVariants)
+            .where(eq(productVariants.id, variantId))
+            .limit(1);
+
+          if (variant) {
+            const [product] = await db
+              .select({ title: products.title })
+              .from(products)
+              .where(eq(products.id, variant.productId))
+              .limit(1);
+
+            await this.notificationsService.createFromEvent({
+              adminId: null, // Broadcast to all admins
+              type: NotificationType.INVENTORY,
+              title: "Low Stock Alert",
+              message: `${product?.title || "Product"} (${variant.sku}) is low on stock. Available: ${available}`,
+              meta: {
+                variantId,
+                productId: variant.productId,
+                sku: variant.sku,
+                available,
+                threshold,
+              },
+            });
+          }
+        }
+      } catch (error) {
+        // Log but don't throw - notification failure shouldn't break inventory adjustment
+        this.logger.warn(
+          createErrorContext(
+            this.contextService,
+            "createLowStockNotification",
+            error,
+            {
+              variantId,
+              newQuantity,
+            },
+          ),
+          "Failed to create low stock notification",
+        );
+      }
 
       // Invalidate logs cache for this variant
       await this.invalidateLogsCache(variantId);

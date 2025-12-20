@@ -20,6 +20,8 @@ import {
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import { createLogContext } from "../../../common/logging/logging.helper";
+import { NotificationsService } from "../../notifications/notifications.service";
+import { NotificationType } from "../../notifications/types/notification.types";
 import { CreateReviewDto } from "../dto/create-review.dto";
 import { ReviewQueryDto, ReviewSortOrder } from "../dto/review-query.dto";
 import { ReviewResponseDto } from "../dto/review-response.dto";
@@ -43,6 +45,7 @@ export class ReviewsService {
     private readonly eventsService: ReviewEventsService,
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -107,6 +110,40 @@ export class ReviewsService {
 
     // Try auto-approve if customer has enough approved reviews
     await this.moderationService.tryAutoApprove(newReview.id);
+
+    // Refresh review to check if still pending after auto-approve attempt
+    const [checkReview] = await db
+      .select()
+      .from(reviews)
+      .where(eq(reviews.id, newReview.id))
+      .limit(1);
+
+    // Create notification if review is still pending
+    if (checkReview && checkReview.status === "pending") {
+      try {
+        await this.notificationsService.createFromEvent({
+          adminId: null, // Broadcast to all admins
+          type: NotificationType.REVIEW,
+          title: "Review Pending Approval",
+          message: `A new ${createReviewDto.rating}-star review is pending approval`,
+          meta: {
+            reviewId: newReview.id,
+            variantId: createReviewDto.variantId,
+            rating: createReviewDto.rating,
+            orderId: createReviewDto.orderId,
+          },
+        });
+      } catch (error) {
+        // Log but don't throw - notification failure shouldn't break review creation
+        this.logger.warn(
+          {
+            reviewId: newReview.id,
+            error,
+          },
+          "Failed to create review notification",
+        );
+      }
+    }
 
     // Refresh review to get updated status
     const [refreshedReview] = await db
