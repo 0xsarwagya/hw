@@ -5,7 +5,7 @@
   "source": "@site/docs/bundles/choice-sets.md",
   "sourceDirName": "bundles",
   "slug": "/bundles/choice-sets",
-  "permalink": "/docs/docs/bundles/choice-sets",
+  "permalink": "/docs/bundles/choice-sets",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/bundles/choice-sets.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Bundle Definition",
-    "permalink": "/docs/docs/bundles/definition"
+    "permalink": "/docs/bundles/definition"
   },
   "next": {
     "title": "pricing",
-    "permalink": "/docs/docs/bundles/pricing"
+    "permalink": "/docs/bundles/pricing"
   }
 }

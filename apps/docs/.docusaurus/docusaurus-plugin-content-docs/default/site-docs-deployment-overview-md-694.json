@@ -5,7 +5,7 @@
   "source": "@site/docs/deployment/overview.md",
   "sourceDirName": "deployment",
   "slug": "/deployment/overview",
-  "permalink": "/docs/docs/deployment/overview",
+  "permalink": "/docs/deployment/overview",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/deployment/overview.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Database Tables",
-    "permalink": "/docs/docs/database-schema/tables"
+    "permalink": "/docs/database-schema/tables"
   },
   "next": {
     "title": "docker",
-    "permalink": "/docs/docs/deployment/docker"
+    "permalink": "/docs/deployment/docker"
   }
 }

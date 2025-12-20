@@ -5,7 +5,7 @@
   "source": "@site/docs/catalog/inventory.md",
   "sourceDirName": "catalog",
   "slug": "/catalog/inventory",
-  "permalink": "/docs/docs/catalog/inventory",
+  "permalink": "/docs/catalog/inventory",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/catalog/inventory.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Collections",
-    "permalink": "/docs/docs/catalog/collections"
+    "permalink": "/docs/catalog/collections"
   },
   "next": {
     "title": "Pricing System Overview",
-    "permalink": "/docs/docs/pricing/overview"
+    "permalink": "/docs/pricing/overview"
   }
 }

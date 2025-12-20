@@ -25,6 +25,7 @@ import {
 import { CartsService } from "../carts/carts.service";
 import { CustomersService } from "../customers/customers.service";
 import { AddressesService } from "../customers/addresses.service";
+import { PaymentChargeService } from "../payments/services/payment-charge.service";
 import { DiscountAuditService } from "../discounts/services/discount-audit.service";
 import { DiscountSnapshotValidator } from "../discounts/services/discount-snapshot-validator.service";
 import { DriftDetectorService } from "../discounts/services/drift-detector.service";
@@ -301,6 +302,13 @@ describe("OrdersService", () => {
             markRead: jest.fn().mockResolvedValue(undefined),
             markAllRead: jest.fn().mockResolvedValue(undefined),
             delete: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: PaymentChargeService,
+          useValue: {
+            calculateFee: jest.fn().mockResolvedValue({ fee: 0, breakdown: {} }),
+            getAvailableMethods: jest.fn().mockResolvedValue([]),
           },
         },
         ...getCommonTestProviders(),

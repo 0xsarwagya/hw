@@ -5,7 +5,7 @@
   "source": "@site/docs/checkout/inventory-flow.md",
   "sourceDirName": "checkout",
   "slug": "/checkout/inventory-flow",
-  "permalink": "/docs/docs/checkout/inventory-flow",
+  "permalink": "/docs/checkout/inventory-flow",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/checkout/inventory-flow.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "webhooks",
-    "permalink": "/docs/docs/checkout/webhooks"
+    "permalink": "/docs/checkout/webhooks"
   },
   "next": {
     "title": "Orders System",
-    "permalink": "/docs/docs/orders/overview"
+    "permalink": "/docs/orders/overview"
   }
 }

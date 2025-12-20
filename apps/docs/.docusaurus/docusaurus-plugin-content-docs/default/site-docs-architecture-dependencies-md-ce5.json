@@ -5,7 +5,7 @@
   "source": "@site/docs/architecture/dependencies.md",
   "sourceDirName": "architecture",
   "slug": "/architecture/dependencies",
-  "permalink": "/docs/docs/architecture/dependencies",
+  "permalink": "/docs/architecture/dependencies",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/architecture/dependencies.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Module Breakdown",
-    "permalink": "/docs/docs/architecture/modules"
+    "permalink": "/docs/architecture/modules"
   },
   "next": {
     "title": "Admin Authentication",
-    "permalink": "/docs/docs/authentication/admin-auth"
+    "permalink": "/docs/authentication/admin-auth"
   }
 }

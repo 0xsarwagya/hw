@@ -5,7 +5,7 @@
   "source": "@site/docs/bundles/overview.md",
   "sourceDirName": "bundles",
   "slug": "/bundles/overview",
-  "permalink": "/docs/docs/bundles/overview",
+  "permalink": "/docs/bundles/overview",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/bundles/overview.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Discount Drift Detection",
-    "permalink": "/docs/docs/discounts/drift-detection"
+    "permalink": "/docs/discounts/drift-detection"
   },
   "next": {
     "title": "Bundle Definition",
-    "permalink": "/docs/docs/bundles/definition"
+    "permalink": "/docs/bundles/definition"
   }
 }

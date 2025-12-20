@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -41,6 +42,9 @@ export const orders = pgTable(
     discountCode: text("discount_code"),
     discountAmount: real("discount_amount").notNull().default(0),
     shippingCost: real("shipping_cost").notNull().default(0),
+    paymentFee: integer("payment_fee").notNull().default(0), // in paise
+    paymentMethod: text("payment_method"), // selected payment method
+    paymentFeeBreakdown: jsonb("payment_fee_breakdown"), // calculation details
     total: real("total").notNull().default(0),
     razorpayOrderId: text("razorpay_order_id").unique(),
     shippingProvider: text("shipping_provider"),
@@ -77,6 +81,9 @@ export const orders = pgTable(
     ),
     billingAddressIdIdx: index("orders_billing_address_id_idx").on(
       table.billingAddressId,
+    ),
+    paymentMethodIdx: index("orders_payment_method_idx").on(
+      table.paymentMethod,
     ),
   }),
 );

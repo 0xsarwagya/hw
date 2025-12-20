@@ -5,7 +5,7 @@
   "source": "@site/docs/api-reference/admin-api.md",
   "sourceDirName": "api-reference",
   "slug": "/api-reference/admin-api",
-  "permalink": "/docs/docs/api-reference/admin-api",
+  "permalink": "/docs/api-reference/admin-api",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/api-reference/admin-api.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Redis TTL and Expiration Strategy",
-    "permalink": "/docs/docs/redis/expirations"
+    "permalink": "/docs/redis/expirations"
   },
   "next": {
     "title": "Store API Reference",
-    "permalink": "/docs/docs/api-reference/store-api"
+    "permalink": "/docs/api-reference/store-api"
   }
 }

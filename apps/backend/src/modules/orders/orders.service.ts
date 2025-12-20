@@ -53,7 +53,9 @@ import { HotReloadWatcher } from "../discounts/services/hot-reload-watcher.servi
 import { RulesetBundleService } from "../discounts/services/ruleset-bundle.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { NotificationType } from "../notifications/types/notification.types";
+import { PaymentFeeBreakdownDto } from "../payments/dto/payment-charge.dto";
 import { PaymentsService } from "../payments/payments.service";
+import { PaymentChargeService } from "../payments/services/payment-charge.service";
 import { PricingDriftSeverity } from "../pricing/audit/pricing-audit.types";
 import { runPricingEngine } from "../pricing/engine/pricing-engine";
 import {
@@ -122,6 +124,7 @@ export class OrdersService {
     private readonly bundlePricingService: BundlePricingService,
     @Inject(forwardRef(() => PaymentsService))
     private readonly paymentsService: PaymentsService,
+    private readonly paymentChargeService: PaymentChargeService,
     private readonly notificationsService: NotificationsService,
     // Extracted services
     private readonly validationService: OrderValidationService,
@@ -945,7 +948,31 @@ export class OrdersService {
         0,
         effectiveSubtotal - discountAmount,
       );
-      const total = subtotalAfterDiscount + totalGstAmount + shippingCost;
+
+      // Get payment fee from checkout metadata if payment method was selected
+      let paymentFee = 0;
+      let paymentMethod: string | undefined;
+      let paymentFeeBreakdown: PaymentFeeBreakdownDto | undefined;
+
+      if (checkoutSessionId) {
+        const existingMetadata =
+          await this.checkoutStore.getCheckoutMetadata(checkoutSessionId);
+        if (
+          existingMetadata?.paymentMethod &&
+          existingMetadata.paymentFee !== undefined
+        ) {
+          paymentFee = existingMetadata.paymentFee; // Already in paise
+          paymentMethod = existingMetadata.paymentMethod;
+          paymentFeeBreakdown = existingMetadata.paymentFeeBreakdown;
+        }
+      }
+
+      // Include payment fee in total (convert from paise to rupees)
+      const total =
+        subtotalAfterDiscount +
+        totalGstAmount +
+        shippingCost +
+        paymentFee / 100;
 
       // Store checkout metadata for order creation (will be used in webhook handler)
       if (!checkoutSessionId) {
@@ -962,6 +989,9 @@ export class OrdersService {
         shippingCost: createOrderDto.shippingCost || 0,
         discountSnapshot,
         pricingSnapshot,
+        paymentMethod,
+        paymentFee,
+        paymentFeeBreakdown,
         createdAt: new Date().toISOString(),
       };
 
@@ -1470,7 +1500,35 @@ export class OrdersService {
       }
     }
     const subtotalAfterDiscount = Math.max(0, finalSubtotal - discountAmount);
-    const total = subtotalAfterDiscount + totalGstAmount + shippingCost;
+
+    // Calculate payment fee
+    let paymentFee = 0;
+    let paymentMethod: string | null = null;
+    let paymentFeeBreakdown: PaymentFeeBreakdownDto | null = null;
+
+    if (metadata.paymentMethod && metadata.paymentFee !== undefined) {
+      // Use payment fee from metadata (already calculated during checkout)
+      paymentFee = metadata.paymentFee;
+      paymentMethod = metadata.paymentMethod;
+      paymentFeeBreakdown = metadata.paymentFeeBreakdown || null;
+    } else if (metadata.paymentMethod) {
+      // Payment method selected but fee not calculated - calculate it now
+      const cartTotalInPaise = Math.round(
+        (subtotalAfterDiscount + totalGstAmount + shippingCost) * 100,
+      );
+      const { fee, breakdown } = await this.paymentChargeService.calculateFee(
+        metadata.paymentMethod,
+        cartTotalInPaise,
+        "INR",
+      );
+      paymentFee = fee;
+      paymentMethod = metadata.paymentMethod;
+      paymentFeeBreakdown = breakdown;
+    }
+
+    // Include payment fee in total (convert from paise to rupees)
+    const total =
+      subtotalAfterDiscount + totalGstAmount + shippingCost + paymentFee / 100;
 
     // Generate order number
     const orderNumber = await this.generateOrderNumber();
@@ -1490,6 +1548,9 @@ export class OrdersService {
           discountCode,
           discountAmount,
           shippingCost,
+          paymentFee, // Payment fee in paise
+          paymentMethod, // Selected payment method
+          paymentFeeBreakdown, // Payment fee breakdown
           total,
           shippingAddressId: metadata.shippingAddressId,
           billingAddressId: metadata.billingAddressId,

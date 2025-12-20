@@ -5,7 +5,7 @@
   "source": "@site/docs/orders/creation.md",
   "sourceDirName": "orders",
   "slug": "/orders/creation",
-  "permalink": "/docs/docs/orders/creation",
+  "permalink": "/docs/orders/creation",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/orders/creation.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Orders System",
-    "permalink": "/docs/docs/orders/overview"
+    "permalink": "/docs/orders/overview"
   },
   "next": {
     "title": "fulfillment",
-    "permalink": "/docs/docs/orders/fulfillment"
+    "permalink": "/docs/orders/fulfillment"
   }
 }

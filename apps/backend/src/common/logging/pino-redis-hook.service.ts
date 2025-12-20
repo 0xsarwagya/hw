@@ -70,6 +70,11 @@ export class PinoRedisHookService implements OnModuleInit {
     args: unknown[] = [],
   ): Promise<void> {
     try {
+      // Skip if storage service is not available (prevents errors during initialization)
+      if (!this.storageService) {
+        return;
+      }
+
       // Extract log data
       let logData: Record<string, unknown> = {};
       let message = "";
@@ -87,6 +92,15 @@ export class PinoRedisHookService implements OnModuleInit {
           (typeof objWithMsg.msg === "string" ? objWithMsg.msg : "") ||
           (typeof args[0] === "string" ? args[0] : "") ||
           "";
+      }
+
+      // Skip storing logs about log storage failures to prevent recursion
+      if (
+        typeof message === "string" &&
+        (message.includes("Failed to store system log") ||
+          message.includes("Failed to get logs"))
+      ) {
+        return;
       }
 
       // Map level string to number for consistency
@@ -114,7 +128,7 @@ export class PinoRedisHookService implements OnModuleInit {
 
       await this.storageService.storeLog(logEntry);
     } catch (_error) {
-      // Silently fail
+      // Silently fail - don't log errors here to prevent recursion
     }
   }
 }

@@ -5,7 +5,7 @@
   "source": "@site/docs/catalog/products.md",
   "sourceDirName": "catalog",
   "slug": "/catalog/products",
-  "permalink": "/docs/docs/catalog/products",
+  "permalink": "/docs/catalog/products",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/catalog/products.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Storefront Authentication",
-    "permalink": "/docs/docs/authentication/storefront-auth"
+    "permalink": "/docs/authentication/storefront-auth"
   },
   "next": {
     "title": "Product Variants",
-    "permalink": "/docs/docs/catalog/variants"
+    "permalink": "/docs/catalog/variants"
   }
 }

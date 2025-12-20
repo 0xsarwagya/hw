@@ -5,7 +5,7 @@
   "source": "@site/docs/observability/logging.md",
   "sourceDirName": "observability",
   "slug": "/observability/logging",
-  "permalink": "/docs/docs/observability/logging",
+  "permalink": "/docs/observability/logging",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/observability/logging.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "caching",
-    "permalink": "/docs/docs/reviews/caching"
+    "permalink": "/docs/reviews/caching"
   },
   "next": {
     "title": "Distributed Tracing",
-    "permalink": "/docs/docs/observability/tracing"
+    "permalink": "/docs/observability/tracing"
   }
 }

@@ -5,7 +5,7 @@
   "source": "@site/docs/introduction.md",
   "sourceDirName": ".",
   "slug": "/introduction",
-  "permalink": "/docs/docs/introduction",
+  "permalink": "/docs/introduction",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/introduction.md",
@@ -17,6 +17,6 @@
   "sidebar": "docsSidebar",
   "next": {
     "title": "System Architecture Overview",
-    "permalink": "/docs/docs/architecture/overview"
+    "permalink": "/docs/architecture/overview"
   }
 }

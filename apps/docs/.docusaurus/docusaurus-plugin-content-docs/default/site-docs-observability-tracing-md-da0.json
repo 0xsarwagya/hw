@@ -5,7 +5,7 @@
   "source": "@site/docs/observability/tracing.md",
   "sourceDirName": "observability",
   "slug": "/observability/tracing",
-  "permalink": "/docs/docs/observability/tracing",
+  "permalink": "/docs/observability/tracing",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/observability/tracing.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Logging System",
-    "permalink": "/docs/docs/observability/logging"
+    "permalink": "/docs/observability/logging"
   },
   "next": {
     "title": "Request Context Propagation",
-    "permalink": "/docs/docs/observability/context"
+    "permalink": "/docs/observability/context"
   }
 }

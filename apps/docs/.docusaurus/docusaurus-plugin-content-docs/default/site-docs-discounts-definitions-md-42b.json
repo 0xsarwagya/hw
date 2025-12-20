@@ -5,7 +5,7 @@
   "source": "@site/docs/discounts/definitions.md",
   "sourceDirName": "discounts",
   "slug": "/discounts/definitions",
-  "permalink": "/docs/docs/discounts/definitions",
+  "permalink": "/docs/discounts/definitions",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/discounts/definitions.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Discount Engine Overview",
-    "permalink": "/docs/docs/discounts/overview"
+    "permalink": "/docs/discounts/overview"
   },
   "next": {
     "title": "Discount Engine",
-    "permalink": "/docs/docs/discounts/engine"
+    "permalink": "/docs/discounts/engine"
   }
 }

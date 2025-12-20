@@ -16,10 +16,10 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: "https://legendary-chainsaw-8e4147z.pages.github.io",
+  url: "https://vcecom-internal.vestcodes.co",
   // Set the /<baseUrl>/ pathname under which your site is served
   // GitHub Pages serves from root, so docs are at /docs/
-  baseUrl: "/docs/",
+  baseUrl: "/",
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.

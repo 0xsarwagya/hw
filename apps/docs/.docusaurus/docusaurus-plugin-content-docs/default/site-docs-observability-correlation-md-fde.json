@@ -5,7 +5,7 @@
   "source": "@site/docs/observability/correlation.md",
   "sourceDirName": "observability",
   "slug": "/observability/correlation",
-  "permalink": "/docs/docs/observability/correlation",
+  "permalink": "/docs/observability/correlation",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/observability/correlation.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Request Context Propagation",
-    "permalink": "/docs/docs/observability/context"
+    "permalink": "/docs/observability/context"
   },
   "next": {
     "title": "Redis Architecture",
-    "permalink": "/docs/docs/redis/overview"
+    "permalink": "/docs/redis/overview"
   }
 }

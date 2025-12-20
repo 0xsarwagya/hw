@@ -5,7 +5,7 @@
   "source": "@site/docs/deployment/production.md",
   "sourceDirName": "deployment",
   "slug": "/deployment/production",
-  "permalink": "/docs/docs/deployment/production",
+  "permalink": "/docs/deployment/production",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/deployment/production.md",
@@ -17,6 +17,6 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "scaling",
-    "permalink": "/docs/docs/deployment/scaling"
+    "permalink": "/docs/deployment/scaling"
   }
 }

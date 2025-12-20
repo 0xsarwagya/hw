@@ -53,6 +53,11 @@ export const ROUTES = {
   REVIEWS: "/reviews",
   STORAGE: "/storage",
   SETTINGS: "/settings",
+  PAYMENT_FEES: {
+    LIST: "/settings/payment-fees",
+    CREATE: "/settings/payment-fees/create",
+    DETAIL: (id: string) => `/settings/payment-fees/${id}`,
+  },
 } as const;
 
 export const BREADCRUMB_LABELS = {

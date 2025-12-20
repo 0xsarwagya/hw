@@ -5,7 +5,7 @@
   "source": "@site/docs/redis/caching-layers.md",
   "sourceDirName": "redis",
   "slug": "/redis/caching-layers",
-  "permalink": "/docs/docs/redis/caching-layers",
+  "permalink": "/docs/redis/caching-layers",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/redis/caching-layers.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Redis Key Patterns",
-    "permalink": "/docs/docs/redis/key-patterns"
+    "permalink": "/docs/redis/key-patterns"
   },
   "next": {
     "title": "Redis TTL and Expiration Strategy",
-    "permalink": "/docs/docs/redis/expirations"
+    "permalink": "/docs/redis/expirations"
   }
 }

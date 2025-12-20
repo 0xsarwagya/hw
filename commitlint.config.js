@@ -28,6 +28,7 @@ module.exports = {
         "config", // Configuration changes
         "deps", // Dependency updates
         "release", // Release related
+        "docs", // Documentation changes
       ],
     ],
     "scope-empty": [2, "never"],

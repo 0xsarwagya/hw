@@ -5,7 +5,7 @@
   "source": "@site/docs/deployment/docker.md",
   "sourceDirName": "deployment",
   "slug": "/deployment/docker",
-  "permalink": "/docs/docs/deployment/docker",
+  "permalink": "/docs/deployment/docker",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/deployment/docker.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Deployment Overview",
-    "permalink": "/docs/docs/deployment/overview"
+    "permalink": "/docs/deployment/overview"
   },
   "next": {
     "title": "scaling",
-    "permalink": "/docs/docs/deployment/scaling"
+    "permalink": "/docs/deployment/scaling"
   }
 }

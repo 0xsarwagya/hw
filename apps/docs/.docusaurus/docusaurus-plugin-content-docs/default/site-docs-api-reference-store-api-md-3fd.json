@@ -5,7 +5,7 @@
   "source": "@site/docs/api-reference/store-api.md",
   "sourceDirName": "api-reference",
   "slug": "/api-reference/store-api",
-  "permalink": "/docs/docs/api-reference/store-api",
+  "permalink": "/docs/api-reference/store-api",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/api-reference/store-api.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Admin API Reference",
-    "permalink": "/docs/docs/api-reference/admin-api"
+    "permalink": "/docs/api-reference/admin-api"
   },
   "next": {
     "title": "Database Schema Overview",
-    "permalink": "/docs/docs/database-schema/overview"
+    "permalink": "/docs/database-schema/overview"
   }
 }

@@ -5,7 +5,7 @@
   "source": "@site/docs/architecture/overview.md",
   "sourceDirName": "architecture",
   "slug": "/architecture/overview",
-  "permalink": "/docs/docs/architecture/overview",
+  "permalink": "/docs/architecture/overview",
   "draft": false,
   "unlisted": false,
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/architecture/overview.md",
@@ -17,10 +17,10 @@
   "sidebar": "docsSidebar",
   "previous": {
     "title": "Introduction",
-    "permalink": "/docs/docs/introduction"
+    "permalink": "/docs/introduction"
   },
   "next": {
     "title": "Module Breakdown",
-    "permalink": "/docs/docs/architecture/modules"
+    "permalink": "/docs/architecture/modules"
   }
 }

@@ -1,4 +1,5 @@
 export default {
+  "0058b4c6": [() => import(/* webpackChunkName: "0058b4c6" */ "@generated/docusaurus-plugin-content-docs/default/p/docs-175.json"), "@generated/docusaurus-plugin-content-docs/default/p/docs-175.json", require.resolveWeak("@generated/docusaurus-plugin-content-docs/default/p/docs-175.json")],
   "0329dde4": [() => import(/* webpackChunkName: "0329dde4" */ "@site/docs/reviews/aggregation.md"), "@site/docs/reviews/aggregation.md", require.resolveWeak("@site/docs/reviews/aggregation.md")],
   "07d217bc": [() => import(/* webpackChunkName: "07d217bc" */ "@site/docs/reviews/verified-purchase.md"), "@site/docs/reviews/verified-purchase.md", require.resolveWeak("@site/docs/reviews/verified-purchase.md")],
   "0b1ac180": [() => import(/* webpackChunkName: "0b1ac180" */ "@site/docs/architecture/overview.md"), "@site/docs/architecture/overview.md", require.resolveWeak("@site/docs/architecture/overview.md")],
@@ -38,7 +39,6 @@ export default {
   "8efba4bb": [() => import(/* webpackChunkName: "8efba4bb" */ "@site/docs/bundles/cart-integration.md"), "@site/docs/bundles/cart-integration.md", require.resolveWeak("@site/docs/bundles/cart-integration.md")],
   "95a32ece": [() => import(/* webpackChunkName: "95a32ece" */ "@site/docs/redis/expirations.md"), "@site/docs/redis/expirations.md", require.resolveWeak("@site/docs/redis/expirations.md")],
   "a09c2993": [() => import(/* webpackChunkName: "a09c2993" */ "@site/docs/introduction.md"), "@site/docs/introduction.md", require.resolveWeak("@site/docs/introduction.md")],
-  "a2065270": [() => import(/* webpackChunkName: "a2065270" */ "@generated/docusaurus-plugin-content-docs/default/p/docs-docs-fbb.json"), "@generated/docusaurus-plugin-content-docs/default/p/docs-docs-fbb.json", require.resolveWeak("@generated/docusaurus-plugin-content-docs/default/p/docs-docs-fbb.json")],
   "a3e5e60a": [() => import(/* webpackChunkName: "a3e5e60a" */ "@site/docs/pricing/customer-groups.md"), "@site/docs/pricing/customer-groups.md", require.resolveWeak("@site/docs/pricing/customer-groups.md")],
   "a64b2381": [() => import(/* webpackChunkName: "a64b2381" */ "@site/docs/checkout/payment-intent.md"), "@site/docs/checkout/payment-intent.md", require.resolveWeak("@site/docs/checkout/payment-intent.md")],
   "a6bc3cca": [() => import(/* webpackChunkName: "a6bc3cca" */ "@site/docs/reviews/caching.md"), "@site/docs/reviews/caching.md", require.resolveWeak("@site/docs/reviews/caching.md")],
