@@ -23,6 +23,12 @@ export const endpoints = {
       add: (id: string) => `/products/${id}/images`,
       delete: (imageId: string) => `/products/images/${imageId}`,
       updateOrder: (imageId: string) => `/products/images/${imageId}/order`,
+      update: (imageId: string) => `/products/images/${imageId}`,
+      replace: (imageId: string) => `/products/images/${imageId}/replace`,
+    },
+    variantImages: {
+      list: (productId: string, variantId: string) =>
+        `/products/${productId}/variants/${variantId}/images`,
     },
     variants: {
       list: (productId: string) => `/products/${productId}/variants`,
@@ -198,5 +204,10 @@ export const endpoints = {
     removePriceList: (id: string, priceListId: string) =>
       `/admin/customer-groups/${id}/price-lists/${priceListId}`,
     members: (id: string) => `/admin/customer-groups/${id}/members`,
+  },
+  mediaHealth: {
+    scan: "/admin/media/health/scan",
+    fix: (action: string) => `/admin/media/health/fix/${action}`,
+    auditLogs: "/admin/media/health/audit-logs",
   },
 } as const;

@@ -18,6 +18,7 @@ export * from "./discounts";
 export * from "./inventory-adjustments";
 export * from "./inventory-settings";
 export * from "./invoices";
+export * from "./media-audit-logs";
 export * from "./order-items";
 export * from "./order-notes";
 export * from "./orders";

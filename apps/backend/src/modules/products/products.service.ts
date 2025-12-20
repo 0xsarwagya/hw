@@ -53,10 +53,16 @@ import {
   SearchSortBy,
 } from "./dto/search.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
+import { MediaCacheInvalidationService } from "./services/media-cache-invalidation.service";
+import { MediaTransactionService } from "./services/media-transaction.service";
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly storageService: StorageService) {}
+  constructor(
+    private readonly storageService: StorageService,
+    private readonly mediaTransactionService?: MediaTransactionService,
+    private readonly mediaCacheInvalidationService?: MediaCacheInvalidationService,
+  ) {}
   /**
    * Create a new product
    */
@@ -930,69 +936,203 @@ export class ProductsService {
   }
 
   /**
+   * Get variant-specific images with resolved URLs
+   * Converts S3 keys to public URLs, keeps existing URLs as-is
+   */
+  async getVariantImages(productId: string, variantId: string) {
+    // Validate variant exists and belongs to product
+    const [variant] = await db
+      .select()
+      .from(productVariants)
+      .where(
+        and(
+          eq(productVariants.id, variantId),
+          eq(productVariants.productId, productId),
+        ),
+      )
+      .limit(1);
+
+    if (!variant) {
+      throw new NotFoundException(
+        `Variant with ID ${variantId} not found for product ${productId}`,
+      );
+    }
+
+    const images = await db
+      .select()
+      .from(productImages)
+      .where(
+        and(
+          eq(productImages.productId, productId),
+          eq(productImages.variantId, variantId),
+        ),
+      )
+      .orderBy(asc(productImages.order));
+
+    // Resolve S3 keys to URLs
+    const resolvedImages = await Promise.all(
+      images.map(async (image) => {
+        let url = image.url;
+        if (this.isS3Key(image.url)) {
+          try {
+            url = await this.storageService.getUrl(image.url);
+          } catch {
+            // If S3 key resolution fails, keep original
+            url = image.url;
+          }
+        }
+        return {
+          ...image,
+          url,
+        };
+      }),
+    );
+
+    return resolvedImages;
+  }
+
+  /**
    * Add an image to a product
    * @param productId - Product ID
    * @param imageKey - S3 key or URL
    * @param altText - Alt text for the image
-   * @param order - Display order
+   * @param order - Display order (auto-incremented if not provided)
    * @param variantId - Optional variant ID
    */
   async addProductImage(
     productId: string,
     imageKey: string,
     altText?: string,
-    order = 0,
+    order?: number,
     variantId?: string,
   ) {
-    // Validate product exists
-    const [product] = await db
-      .select()
-      .from(products)
-      .where(eq(products.id, productId))
-      .limit(1);
-
-    if (!product) {
-      throw new NotFoundException(`Product with ID ${productId} not found`);
-    }
-
-    // Validate variant exists if provided
-    if (variantId) {
-      const [variant] = await db
+    const operation = async () => {
+      // Validate product exists
+      const [product] = await db
         .select()
-        .from(productVariants)
-        .where(eq(productVariants.id, variantId))
+        .from(products)
+        .where(eq(products.id, productId))
         .limit(1);
 
-      if (!variant) {
-        throw new NotFoundException(`Variant with ID ${variantId} not found`);
+      if (!product) {
+        throw new NotFoundException(`Product with ID ${productId} not found`);
       }
-    }
 
-    const [newImage] = await db
-      .insert(productImages)
-      .values({
-        productId,
-        variantId: variantId || null,
-        url: imageKey, // Store S3 key or URL
-        altText: altText || null,
-        order,
-      })
-      .returning();
+      // Validate variant exists if provided
+      if (variantId) {
+        const [variant] = await db
+          .select()
+          .from(productVariants)
+          .where(eq(productVariants.id, variantId))
+          .limit(1);
 
-    // Resolve URL if it's an S3 key
-    let url = imageKey;
-    if (this.isS3Key(imageKey)) {
-      try {
-        url = await this.storageService.getUrl(imageKey);
-      } catch {
-        url = imageKey;
+        if (!variant) {
+          throw new NotFoundException(`Variant with ID ${variantId} not found`);
+        }
       }
-    }
 
-    return {
-      ...newImage,
-      url,
+      // Lock images for this product/variant
+      if (this.mediaTransactionService) {
+        if (variantId) {
+          await this.mediaTransactionService.lockVariantImages(
+            productId,
+            variantId,
+          );
+        } else {
+          await this.mediaTransactionService.lockProductImages(productId);
+        }
+      }
+
+      // Check existing image count and validate limits
+      const existingImages = await db
+        .select()
+        .from(productImages)
+        .where(
+          variantId
+            ? and(
+                eq(productImages.productId, productId),
+                eq(productImages.variantId, variantId),
+              )
+            : and(
+                eq(productImages.productId, productId),
+                sql`${productImages.variantId} IS NULL`,
+              ),
+        );
+
+      const maxImages = variantId ? 10 : 15;
+      if (existingImages.length >= maxImages) {
+        throw new BadRequestException(
+          `Maximum ${maxImages} image${maxImages > 1 ? "s" : ""} allowed per ${
+            variantId ? "variant" : "product"
+          }. Please delete an existing image first.`,
+        );
+      }
+
+      // Auto-increment order if not provided
+      let finalOrder = order;
+      if (finalOrder === undefined) {
+        const maxOrder = existingImages.reduce(
+          (max, img) => Math.max(max, img.order),
+          -1,
+        );
+        finalOrder = maxOrder + 1;
+      }
+
+      const [newImage] = await db
+        .insert(productImages)
+        .values({
+          productId,
+          variantId: variantId || null,
+          url: imageKey, // Store S3 key or URL
+          altText: altText || null,
+          order: finalOrder,
+        })
+        .returning();
+
+      // Resolve URL if it's an S3 key
+      let url = imageKey;
+      if (this.isS3Key(imageKey)) {
+        try {
+          url = await this.storageService.getUrl(imageKey);
+        } catch {
+          url = imageKey;
+        }
+      }
+
+      return {
+        ...newImage,
+        url,
+      };
     };
+
+    const result = this.mediaTransactionService
+      ? variantId
+        ? await this.mediaTransactionService.withVariantImageLock(
+            productId,
+            variantId,
+            operation,
+          )
+        : await this.mediaTransactionService.withProductImageLock(
+            productId,
+            operation,
+          )
+      : await operation();
+
+    // Invalidate cache
+    if (this.mediaCacheInvalidationService) {
+      if (variantId) {
+        await this.mediaCacheInvalidationService.invalidateVariantImages(
+          productId,
+          variantId,
+        );
+      } else {
+        await this.mediaCacheInvalidationService.invalidateProductImages(
+          productId,
+        );
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -1076,13 +1216,201 @@ export class ProductsService {
       throw new NotFoundException(`Image with ID ${imageId} not found`);
     }
 
+    const operation = async () => {
+      // Lock images for this product/variant
+      if (this.mediaTransactionService) {
+        if (image.variantId) {
+          await this.mediaTransactionService.lockVariantImages(
+            image.productId,
+            image.variantId,
+          );
+        } else {
+          await this.mediaTransactionService.lockProductImages(image.productId);
+        }
+      }
+
+      const [updated] = await db
+        .update(productImages)
+        .set({ order, updatedAt: new Date() })
+        .where(eq(productImages.id, imageId))
+        .returning();
+
+      return updated;
+    };
+
+    const result = this.mediaTransactionService
+      ? image.variantId
+        ? await this.mediaTransactionService.withVariantImageLock(
+            image.productId,
+            image.variantId,
+            operation,
+          )
+        : await this.mediaTransactionService.withProductImageLock(
+            image.productId,
+            operation,
+          )
+      : await operation();
+
+    // Invalidate cache
+    if (this.mediaCacheInvalidationService) {
+      if (image.variantId) {
+        await this.mediaCacheInvalidationService.invalidateVariantImages(
+          image.productId,
+          image.variantId,
+        );
+      } else {
+        await this.mediaCacheInvalidationService.invalidateProductImages(
+          image.productId,
+        );
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Update product image (alt text and/or order)
+   */
+  async updateImage(imageId: string, altText?: string, order?: number) {
+    const [image] = await db
+      .select()
+      .from(productImages)
+      .where(eq(productImages.id, imageId))
+      .limit(1);
+
+    if (!image) {
+      throw new NotFoundException(`Image with ID ${imageId} not found`);
+    }
+
+    const updateData: {
+      altText?: string | null;
+      order?: number;
+      updatedAt: Date;
+    } = {
+      updatedAt: new Date(),
+    };
+
+    if (altText !== undefined) {
+      updateData.altText = altText || null;
+    }
+
+    if (order !== undefined) {
+      updateData.order = order;
+    }
+
     const [updated] = await db
       .update(productImages)
-      .set({ order, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(productImages.id, imageId))
       .returning();
 
-    return updated;
+    // Resolve URL if it's an S3 key
+    let url = updated.url;
+    if (this.isS3Key(updated.url)) {
+      try {
+        url = await this.storageService.getUrl(updated.url);
+      } catch {
+        url = updated.url;
+      }
+    }
+
+    return {
+      ...updated,
+      url,
+    };
+  }
+
+  /**
+   * Replace a product image with a new one
+   * Deletes the old S3 file and updates the URL
+   */
+  async replaceProductImage(imageId: string, newImageKey: string) {
+    const [image] = await db
+      .select()
+      .from(productImages)
+      .where(eq(productImages.id, imageId))
+      .limit(1);
+
+    if (!image) {
+      throw new NotFoundException(`Image with ID ${imageId} not found`);
+    }
+
+    const operation = async () => {
+      // Lock images for this product/variant
+      if (this.mediaTransactionService) {
+        if (image.variantId) {
+          await this.mediaTransactionService.lockVariantImages(
+            image.productId,
+            image.variantId,
+          );
+        } else {
+          await this.mediaTransactionService.lockProductImages(image.productId);
+        }
+      }
+
+      // Delete old S3 file if it's an S3 key
+      if (this.isS3Key(image.url)) {
+        try {
+          await this.storageService.delete(image.url);
+        } catch {
+          // Continue even if S3 deletion fails
+        }
+      }
+
+      // Update image URL
+      const [updated] = await db
+        .update(productImages)
+        .set({
+          url: newImageKey,
+          updatedAt: new Date(),
+        })
+        .where(eq(productImages.id, imageId))
+        .returning();
+
+      // Resolve URL if it's an S3 key
+      let url = newImageKey;
+      if (this.isS3Key(newImageKey)) {
+        try {
+          url = await this.storageService.getUrl(newImageKey);
+        } catch {
+          url = newImageKey;
+        }
+      }
+
+      return {
+        ...updated,
+        url,
+      };
+    };
+
+    const result = this.mediaTransactionService
+      ? image.variantId
+        ? await this.mediaTransactionService.withVariantImageLock(
+            image.productId,
+            image.variantId,
+            operation,
+          )
+        : await this.mediaTransactionService.withProductImageLock(
+            image.productId,
+            operation,
+          )
+      : await operation();
+
+    // Invalidate cache
+    if (this.mediaCacheInvalidationService) {
+      if (image.variantId) {
+        await this.mediaCacheInvalidationService.invalidateVariantImages(
+          image.productId,
+          image.variantId,
+        );
+      } else {
+        await this.mediaCacheInvalidationService.invalidateProductImages(
+          image.productId,
+        );
+      }
+    }
+
+    return result;
   }
 
   /**

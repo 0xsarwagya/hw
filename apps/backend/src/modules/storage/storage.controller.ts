@@ -34,9 +34,11 @@ import {
   MAX_LIST_KEYS,
   MIN_IMAGE_QUALITY,
 } from "../../common/constants";
+import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
+import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 import {
   BatchDeleteDto,
   BatchDeleteResponseDto,
@@ -100,6 +102,7 @@ export class StorageController {
   @UseInterceptors(
     FileInterceptor("file", { limits: { fileSize: MAX_FILE_SIZE } }),
   )
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_MUTATE)
   @ApiConsumes("multipart/form-data")
   @ApiOperation({
     summary: "Upload a single file",
@@ -197,6 +200,7 @@ export class StorageController {
   @UseInterceptors(
     FilesInterceptor("files", 10, { limits: { fileSize: MAX_FILE_SIZE } }),
   )
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_MUTATE)
   @ApiConsumes("multipart/form-data")
   @ApiOperation({
     summary: "Upload multiple files",
@@ -452,6 +456,7 @@ export class StorageController {
 
   @Post("presigned-url")
   @HttpCode(HttpStatus.CREATED)
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_MUTATE)
   @ApiOperation({
     summary: "Generate presigned URL",
     description:

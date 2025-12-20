@@ -187,6 +187,7 @@ export {
   gte,
   ilike,
   inArray,
+  isNull,
   lt,
   lte,
   ne,

@@ -52,12 +52,30 @@ Products can be associated with categories for organization:
 
 ## Product Images
 
-Products support multiple images with the following features:
+Products support comprehensive media management with the following features:
 
-- Primary image selection
-- Image upload via storage service
-- Automatic thumbnail generation
-- Public URL generation for frontend display
+### Product-Level Images
+- **Multiple Images**: Up to 15 images per product
+- **Primary Image**: First image (order = 0) is marked as featured
+- **Image Ordering**: Drag-and-drop reordering with automatic order management
+- **Alt Text**: Accessibility support with editable alt text
+- **Image Replacement**: Replace existing images without losing order
+- **Automatic Compression**: Server-side image compression using Sharp (WebP/JPEG/PNG)
+- **Storage Integration**: S3/Minio/Supabase storage with presigned URLs
+
+### Variant-Level Images
+- **Variant Images**: Up to 10 images per variant
+- **Image Inheritance**: Variants can inherit product images or use custom images
+- **Toggle Support**: Switch between product images and variant-specific images
+- **Separate Management**: Variant images managed independently from product images
+
+### Image Management Features
+- **Drag-and-Drop Upload**: Multiple file selection with progress indicators
+- **Visual Reordering**: Drag-and-drop interface for image ordering
+- **Image Inspector**: Right-side panel for editing alt text, replacing images, and viewing metadata
+- **Media Gallery**: Grouped display showing featured, additional, and variant images
+- **Rate Limiting**: Upload endpoints protected with ADMIN_MUTATE rate limits
+- **Validation**: File size (10MB max), MIME type validation (JPEG, PNG, WebP, GIF)
 
 ## Search and Filtering
 
@@ -127,24 +145,253 @@ DELETE /admin/products/{id}
 
 ## Product Images API
 
-### Upload Product Image
-```http
-POST /admin/products/{productId}/images
-Content-Type: multipart/form-data
-
-image: <file>
-isPrimary: true
-```
-
 ### List Product Images
 ```http
-GET /admin/products/{productId}/images
+GET /products/{productId}/images
+Authorization: Bearer <token>
+```
+
+Response:
+```json
+[
+  {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "productId": "123e4567-e89b-12d3-a456-426614174001",
+    "variantId": null,
+    "url": "https://storage.example.com/products/image.webp",
+    "altText": "Product image description",
+    "order": 0,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  }
+]
+```
+
+### Upload Product Image
+```http
+POST /products/{productId}/images
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "imageKey": "products/20241216-abc123.webp",
+  "altText": "Product image description",
+  "order": 0,
+  "variantId": "optional-variant-id"
+}
+```
+
+**Note**: Images must be uploaded to storage first using `/admin/storage/upload`, then the returned key is used here.
+
+### Update Image (Alt Text/Order)
+```http
+PATCH /products/images/{imageId}
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "altText": "Updated alt text",
+  "order": 1
+}
+```
+
+### Replace Image
+```http
+PUT /products/images/{imageId}/replace
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "imageKey": "products/20241216-new-image.webp"
+}
+```
+
+### Update Image Order
+```http
+PUT /products/images/{imageId}/order
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "order": 2
+}
 ```
 
 ### Delete Product Image
 ```http
-DELETE /admin/products/{productId}/images/{imageId}
+DELETE /products/images/{imageId}
+Authorization: Bearer <token>
 ```
+
+### Get Variant Images
+```http
+GET /products/{productId}/variants/{variantId}/images
+Authorization: Bearer <token>
+```
+
+### Image Constraints
+- **Product Images**: Maximum 15 images per product
+- **Variant Images**: Maximum 10 images per variant
+- **File Size**: Maximum 10MB per image
+- **Formats**: JPEG, PNG, WebP, GIF
+- **Auto-Ordering**: If order not specified, automatically increments from highest existing order
+
+## Media Consistency Engine
+
+The media consistency engine ensures data integrity and handles race conditions in product media management. It provides automated validation, consistency checks, and repair mechanisms.
+
+### Features
+
+- **Invariant Checkers**: Validators that detect inconsistencies
+- **Auto-Fix Services**: Services that automatically repair issues
+- **Audit Logging**: Immutable log of all fixes and issues
+- **Admin Tools**: UI and API endpoints for manual intervention
+- **Cron Jobs**: Automated nightly maintenance
+- **Race Condition Handling**: Transaction-based locking for concurrent operations
+
+### Issue Types
+
+The consistency engine detects and fixes the following issues:
+
+1. **Orphan Images**: Images with invalid productId/variantId references
+2. **Order Index Gaps**: Missing or non-sequential order values
+3. **Order Index Collisions**: Multiple images with the same order value
+4. **S3 Consistency Issues**: Database records without corresponding S3 files
+5. **Variant Inheritance Violations**: Variants with incorrect image inheritance
+
+### Media Health API
+
+#### Scan for Issues
+
+```http
+GET /admin/media/health/scan
+```
+
+Returns all detected issues and health statistics.
+
+**Response:**
+
+```json
+{
+  "issues": [
+    {
+      "type": "orphan_image",
+      "severity": "error",
+      "description": "Image references non-existent product",
+      "productId": "...",
+      "imageId": "...",
+      "suggestedFix": "Delete orphaned image"
+    }
+  ],
+  "stats": {
+    "totalProducts": 100,
+    "totalImages": 500,
+    "orphanImages": 5,
+    "orderIndexIssues": 2,
+    "s3ConsistencyIssues": 1,
+    "totalIssues": 8
+  },
+  "scannedAt": "2024-01-01T00:00:00Z"
+}
+```
+
+#### Fix Issues
+
+```http
+POST /admin/media/health/fix/{action}
+```
+
+Available actions:
+- `order` - Fix order index errors
+- `orphans` - Remove orphan images
+- `inheritance` - Fix variant inheritance
+- `s3` - Clean S3 orphans
+- `all` - Run all fixes
+
+**Query Parameters:**
+- `performedBy` (optional) - User ID or "system" for automated fixes
+
+**Response:**
+
+```json
+{
+  "fixed": [
+    {
+      "issueId": "...",
+      "issueType": "orphan_image",
+      "action": "deleted_orphan_image",
+      "success": true
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "totalIssues": 5,
+    "fixedCount": 5,
+    "errorCount": 0
+  }
+}
+```
+
+#### Audit Logs
+
+```http
+GET /admin/media/health/audit-logs
+```
+
+**Query Parameters:**
+- `productId` (optional)
+- `variantId` (optional)
+- `imageId` (optional)
+- `action` (optional)
+- `limit` (optional)
+- `offset` (optional)
+
+### Automated Maintenance
+
+A nightly cron job runs at 3 AM daily to:
+- Scan for all media consistency issues
+- Auto-fix orphan images
+- Auto-fix order drift
+- Log all operations to audit logs
+
+### Race Condition Handling
+
+All image operations (add, update, delete, reorder) are wrapped in transactions with row-level locking to prevent race conditions:
+
+- Product images are locked during operations
+- Variant images are locked during operations
+- Retry logic handles deadlocks and serialization errors
+- Cache invalidation ensures UI consistency
+
+### Cache Invalidation
+
+The consistency engine automatically invalidates caches when fixes are applied:
+- Product image caches
+- Variant image caches
+- Product detail caches
+
+### Admin UI
+
+Access the media health dashboard at `/media-health` in the admin panel to:
+- View current health statistics
+- See all detected issues
+- Run manual fixes
+- Review audit logs
+
+### Troubleshooting
+
+**Common Issues:**
+
+1. **Orphan Images**: Usually caused by deleted products/variants. Run the orphan cleanup fix.
+2. **Order Index Gaps**: Can occur after manual deletions. Run the order fix.
+3. **S3 Missing Files**: Database records exist but S3 files are missing. Check S3 storage and run S3 cleanup.
+
+**Best Practices:**
+
+- Run a scan before major media operations
+- Review audit logs regularly
+- Let automated maintenance handle routine fixes
+- Use manual fixes for specific issues only
 
 ## Validation Rules
 
