@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -536,6 +537,7 @@ export class ProductsController {
 
   @Get(":id/images")
   @Roles("admin")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_GET)
   @ApiBearerAuth("JWT-auth")
   @ApiOperation({
     summary: "Get product images",
@@ -575,6 +577,7 @@ export class ProductsController {
 
   @Post(":id/images")
   @Roles("admin")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_MUTATE)
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth("JWT-auth")
   @ApiOperation({
@@ -642,6 +645,7 @@ export class ProductsController {
 
   @Delete("images/:imageId")
   @Roles("admin")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_MUTATE)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth("JWT-auth")
   @ApiOperation({
@@ -666,6 +670,7 @@ export class ProductsController {
 
   @Put("images/:imageId/order")
   @Roles("admin")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_MUTATE)
   @ApiBearerAuth("JWT-auth")
   @ApiOperation({
     summary: "Update image order",
@@ -701,5 +706,92 @@ export class ProductsController {
     @Body() body: { order: number },
   ) {
     return this.productsService.updateImageOrder(imageId, body.order);
+  }
+
+  @Patch("images/:imageId")
+  @Roles("admin")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_MUTATE)
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({
+    summary: "Update product image",
+    description:
+      "Update alt text and/or order of a product image. Admin-only endpoint.",
+  })
+  @ApiParam({
+    name: "imageId",
+    description: "Image ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        altText: {
+          type: "string",
+          description: "Alt text for the image",
+          example: "Product image",
+          nullable: true,
+        },
+        order: {
+          type: "number",
+          description: "Display order",
+          example: 0,
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: "Image updated successfully",
+  })
+  @ApiNotFoundResponse({ description: "Image not found" })
+  @ApiUnauthorizedResponse({ description: "Unauthorized" })
+  @ApiForbiddenResponse({ description: "Forbidden - Admin role required" })
+  async updateImage(
+    @Param("imageId") imageId: string,
+    @Body() body: { altText?: string; order?: number },
+  ) {
+    return this.productsService.updateImage(imageId, body.altText, body.order);
+  }
+
+  @Put("images/:imageId/replace")
+  @Roles("admin")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_MUTATE)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({
+    summary: "Replace product image",
+    description:
+      "Replace a product image with a new one. Old S3 file is deleted. Admin-only endpoint.",
+  })
+  @ApiParam({
+    name: "imageId",
+    description: "Image ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        imageKey: {
+          type: "string",
+          description:
+            "S3 key (e.g., 'products/20251216-abc123.webp') or full URL",
+          example: "products/20251216-abc123.webp",
+        },
+      },
+      required: ["imageKey"],
+    },
+  })
+  @ApiOkResponse({
+    description: "Image replaced successfully",
+  })
+  @ApiNotFoundResponse({ description: "Image not found" })
+  @ApiUnauthorizedResponse({ description: "Unauthorized" })
+  @ApiForbiddenResponse({ description: "Forbidden - Admin role required" })
+  async replaceImage(
+    @Param("imageId") imageId: string,
+    @Body() body: { imageKey: string },
+  ) {
+    return this.productsService.replaceProductImage(imageId, body.imageKey);
   }
 }

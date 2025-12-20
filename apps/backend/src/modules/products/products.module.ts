@@ -1,14 +1,35 @@
 import { Module } from "@nestjs/common";
+import { ScheduleModule } from "@nestjs/schedule";
+import { RedisStoreModule } from "../redis-store/redis-store.module";
 import { StorageModule } from "../storage/storage.module";
+import { MediaHealthController } from "./controllers/media-health.controller";
 import { ProductsController } from "./products.controller";
 import { ProductsService } from "./products.service";
+import { MediaAuditService } from "./services/media-audit.service";
+import { MediaCacheInvalidationService } from "./services/media-cache-invalidation.service";
+import { MediaConsistencyService } from "./services/media-consistency.service";
+import { MediaConsistencyWorker } from "./services/media-consistency-worker.service";
+import { MediaTransactionService } from "./services/media-transaction.service";
 import { VariantsController } from "./variants.controller";
 import { VariantsService } from "./variants.service";
 
 @Module({
-  imports: [StorageModule],
-  controllers: [ProductsController, VariantsController],
-  providers: [ProductsService, VariantsService],
-  exports: [ProductsService, VariantsService],
+  imports: [StorageModule, ScheduleModule, RedisStoreModule],
+  controllers: [ProductsController, VariantsController, MediaHealthController],
+  providers: [
+    ProductsService,
+    VariantsService,
+    MediaAuditService,
+    MediaConsistencyService,
+    MediaConsistencyWorker,
+    MediaTransactionService,
+    MediaCacheInvalidationService,
+  ],
+  exports: [
+    ProductsService,
+    VariantsService,
+    MediaConsistencyService,
+    MediaAuditService,
+  ],
 })
 export class ProductsModule {}

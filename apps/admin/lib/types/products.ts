@@ -168,6 +168,15 @@ export interface UpdateImageOrderInput {
   order: number;
 }
 
+export interface UpdateImageInput {
+  altText?: string | null;
+  order?: number;
+}
+
+export interface ReplaceImageInput {
+  imageKey: string;
+}
+
 export interface ProductWithVariants extends Product {
   variants?: Variant[];
   images?: ProductImage[];

@@ -22,16 +22,22 @@ import {
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 import { Public } from "../../common/decorators/public.decorator";
+import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
+import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 import { CreateVariantDto } from "./dto/create-variant.dto";
 import { UpdateVariantDto } from "./dto/update-variant.dto";
 import { VariantResponseDto } from "./dto/variant-response.dto";
+import { ProductsService } from "./products.service";
 import { VariantsService } from "./variants.service";
 
 @ApiTags("product-variants")
 @Controller("products/:productId/variants")
 export class VariantsController {
-  constructor(private readonly variantsService: VariantsService) {}
+  constructor(
+    private readonly variantsService: VariantsService,
+    private readonly productsService: ProductsService,
+  ) {}
 
   @Public()
   @Get()
@@ -229,5 +235,53 @@ export class VariantsController {
   })
   async remove(@Param("id") id: string) {
     return this.variantsService.remove(id);
+  }
+
+  @Get(":id/images")
+  @Roles("admin")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_GET)
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({
+    summary: "Get variant images",
+    description:
+      "Get all images for a variant with resolved URLs. Admin-only endpoint.",
+  })
+  @ApiParam({
+    name: "productId",
+    description: "Product ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Variant ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiOkResponse({
+    description: "Variant images",
+    schema: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          productId: { type: "string" },
+          variantId: { type: "string", nullable: true },
+          url: { type: "string" },
+          altText: { type: "string", nullable: true },
+          order: { type: "number" },
+          createdAt: { type: "string" },
+          updatedAt: { type: "string" },
+        },
+      },
+    },
+  })
+  @ApiNotFoundResponse({ description: "Variant not found" })
+  @ApiUnauthorizedResponse({ description: "Unauthorized" })
+  @ApiForbiddenResponse({ description: "Forbidden - Admin role required" })
+  async getVariantImages(
+    @Param("productId") productId: string,
+    @Param("id") variantId: string,
+  ) {
+    return this.productsService.getVariantImages(productId, variantId);
   }
 }
