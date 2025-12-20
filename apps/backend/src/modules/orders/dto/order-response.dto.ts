@@ -79,7 +79,42 @@ export class OrderResponseDto {
   shippingCost: number;
 
   @ApiProperty({
-    description: "Order total (subtotal + GST + shipping)",
+    description: "Payment fee in paise (immutable after order creation)",
+    example: 3000,
+    required: false,
+  })
+  paymentFee?: number;
+
+  @ApiProperty({
+    description: "Payment method used",
+    example: "COD",
+    nullable: true,
+  })
+  paymentMethod?: string | null;
+
+  @ApiProperty({
+    description: "Payment fee breakdown details",
+    example: {
+      method: "COD",
+      chargeType: "FLAT",
+      flatAmount: 3000,
+      calculatedFee: 3000,
+    },
+    nullable: true,
+    required: false,
+  })
+  paymentFeeBreakdown?: {
+    method: string;
+    chargeType: string;
+    calculatedFee: number;
+    flatAmount?: number;
+    percentage?: number;
+    mixMin?: number;
+    mixCap?: number;
+  } | null;
+
+  @ApiProperty({
+    description: "Order total (subtotal + GST + shipping + payment fee)",
     example: 2409.97,
   })
   total: number;

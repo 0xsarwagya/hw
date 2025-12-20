@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Order } from "@/lib/types/orders";
+import { FeeBreakdownDisplay } from "./fee-breakdown-display";
 import { Money } from "./money";
 
 interface OrderSummaryProps {
@@ -32,6 +33,14 @@ export function OrderSummary({ order }: OrderSummaryProps) {
               <Money amount={order.shippingCost} />
             </div>
           )}
+          {order.paymentFee && order.paymentFee > 0 && (
+            <FeeBreakdownDisplay
+              paymentFee={order.paymentFee}
+              paymentFeeBreakdown={order.paymentFeeBreakdown}
+              paymentMethod={order.paymentMethod || undefined}
+              compact
+            />
+          )}
           <div className="border-t pt-2 flex justify-between font-semibold">
             <span>Total</span>
             <Money amount={order.total} />
@@ -57,6 +66,17 @@ export function OrderSummary({ order }: OrderSummaryProps) {
             )}
           </div>
         )}
+        {order.paymentFee &&
+          order.paymentFee > 0 &&
+          order.paymentFeeBreakdown && (
+            <div className="pt-4 border-t">
+              <FeeBreakdownDisplay
+                paymentFee={order.paymentFee}
+                paymentFeeBreakdown={order.paymentFeeBreakdown}
+                paymentMethod={order.paymentMethod || undefined}
+              />
+            </div>
+          )}
       </CardContent>
     </Card>
   );

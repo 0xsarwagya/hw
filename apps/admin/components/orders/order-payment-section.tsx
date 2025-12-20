@@ -18,6 +18,7 @@ import { useAdminPaymentReconcile } from "@/hooks/orders/use-admin-payment-recon
 import { useAdminRefunds } from "@/hooks/orders/use-admin-refunds";
 import { useMarkOrderPaid } from "@/hooks/orders/use-mark-order-paid";
 import type { Order } from "@/lib/types/orders";
+import { FeeBreakdownDisplay } from "./fee-breakdown-display";
 import { Money } from "./money";
 import { PaymentStatusBadge } from "./payment-status-badge";
 import { RefundDialog } from "./refund-dialog";
@@ -139,6 +140,16 @@ export function OrderPaymentSection({ order }: OrderPaymentSectionProps) {
               <span>Total Refunded</span>
               <Money amount={refunds.reduce((sum, r) => sum + r.amount, 0)} />
             </div>
+          </div>
+        )}
+
+        {order.paymentFee && order.paymentFee > 0 && (
+          <div className="pt-2 border-t">
+            <FeeBreakdownDisplay
+              paymentFee={order.paymentFee}
+              paymentFeeBreakdown={order.paymentFeeBreakdown}
+              paymentMethod={order.paymentMethod || undefined}
+            />
           </div>
         )}
 

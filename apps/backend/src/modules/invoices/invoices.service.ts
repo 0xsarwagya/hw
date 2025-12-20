@@ -441,6 +441,62 @@ export class InvoicesService {
     doc.text("Shipping:", 400, yPos);
     doc.text(`₹${data.order.shippingCost.toFixed(2)}`, 520, yPos);
 
+    // Payment fee
+    if (data.order.paymentFee && data.order.paymentFee > 0) {
+      const paymentFeeInRupees = data.order.paymentFee / 100;
+      const paymentMethodLabel = data.order.paymentMethod || "Payment Method";
+      yPos += 20;
+      doc.text(`Payment Fee (${paymentMethodLabel}):`, 400, yPos);
+      doc.text(`₹${paymentFeeInRupees.toFixed(2)}`, 520, yPos);
+
+      // Payment fee breakdown if available
+      if (data.order.paymentFeeBreakdown) {
+        const breakdown = data.order.paymentFeeBreakdown as {
+          chargeType: string;
+          flatAmount?: number;
+          percentage?: number;
+          calculatedFee: number;
+        };
+        yPos += 15;
+        doc.fontSize(8).font("Helvetica");
+        if (breakdown.chargeType === "FLAT" && breakdown.flatAmount) {
+          doc.text(
+            `  Base Fee: ₹${(breakdown.flatAmount / 100).toFixed(2)}`,
+            400,
+            yPos,
+          );
+        } else if (
+          breakdown.chargeType === "PERCENTAGE" &&
+          breakdown.percentage
+        ) {
+          doc.text(
+            `  Percentage (${breakdown.percentage}%): ₹${paymentFeeInRupees.toFixed(2)}`,
+            400,
+            yPos,
+          );
+        } else if (breakdown.chargeType === "MIXED") {
+          if (breakdown.flatAmount) {
+            doc.text(
+              `  Base Fee: ₹${(breakdown.flatAmount / 100).toFixed(2)}`,
+              400,
+              yPos,
+            );
+            yPos += 12;
+          }
+          if (breakdown.percentage) {
+            const percentageFee =
+              paymentFeeInRupees - (breakdown.flatAmount || 0) / 100;
+            doc.text(
+              `  Percentage (${breakdown.percentage}%): ₹${percentageFee.toFixed(2)}`,
+              400,
+              yPos,
+            );
+          }
+        }
+        doc.fontSize(10);
+      }
+    }
+
     yPos += 20;
     doc.moveTo(400, yPos).lineTo(550, yPos).stroke();
     yPos += 10;

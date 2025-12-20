@@ -69,6 +69,17 @@ export interface Order {
   discountCode?: string | null;
   discountAmount: number;
   shippingCost: number;
+  paymentFee?: number; // Payment fee in paise
+  paymentFeeBreakdown?: {
+    method: string;
+    chargeType: "FLAT" | "PERCENTAGE" | "MIXED";
+    calculatedFee: number;
+    flatAmount?: number;
+    percentage?: number;
+    mixMin?: number;
+    mixCap?: number;
+  } | null;
+  paymentMethod?: string | null;
   total: number;
   razorpayOrderId: string | null;
   shippingProvider: string | null;
@@ -82,7 +93,6 @@ export interface Order {
   customerEmail?: string;
   shippingAddress?: Address;
   billingAddress?: Address;
-  paymentMethod?: string;
   paymentStatus?: PaymentStatus;
   fulfillmentStatus?: FulfillmentStatus;
   // Snapshots

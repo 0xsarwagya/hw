@@ -125,6 +125,7 @@ export class PaymentsService implements OnModuleInit {
         const razorpay = this.getRazorpayInstance();
 
         // Prepare Razorpay order options
+        // CRITICAL: Amount MUST include payment fee (verified upstream in orders.service.ts)
         const options = {
           amount,
           currency,
@@ -136,9 +137,36 @@ export class PaymentsService implements OnModuleInit {
           },
         };
 
+        // Log payment intent creation with amount breakdown for verification
+        this.logger.info(
+          {
+            checkoutSessionId,
+            amount,
+            currency,
+            paymentFee: notes?.payment_fee,
+            paymentMethod: notes?.payment_method,
+          },
+          "Creating Razorpay payment intent with fee included",
+        );
+
         try {
           // Create order in Razorpay
           const razorpayOrder = await razorpay.orders.create(options);
+
+          // Verify Razorpay order amount matches expected amount
+          if (razorpayOrder.amount !== amount) {
+            this.logger.error(
+              {
+                checkoutSessionId,
+                expectedAmount: amount,
+                razorpayAmount: razorpayOrder.amount,
+              },
+              "Razorpay order amount mismatch - fee may not be included",
+            );
+            throw new BadRequestException(
+              `Razorpay order amount mismatch: expected ${amount}, got ${razorpayOrder.amount}`,
+            );
+          }
 
           // Return payment intent
           const intent: PaymentIntent = {

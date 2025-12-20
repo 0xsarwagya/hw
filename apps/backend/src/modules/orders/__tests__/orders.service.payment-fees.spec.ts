@@ -593,7 +593,7 @@ describe("OrdersService - Payment Fees Integration", () => {
       );
     });
 
-    it.skip("should include payment fee in payment intent amount", async () => {
+    it("should include payment fee in payment intent amount", async () => {
       const paymentFee = 3000; // ₹30
       const paymentFeeBreakdown = {
         method: PaymentMethod.COD,
