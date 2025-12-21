@@ -37,6 +37,7 @@ import {
   InventoryLogsQueryDto,
   PaginatedInventoryLogsResponseDto,
 } from "./dto/inventory-logs.dto";
+import { InventoryMetricsDto } from "./dto/inventory-metrics.dto";
 import {
   InventoryReservationsResponseDto,
   ReservationsSummaryResponseDto,
@@ -50,13 +51,17 @@ import {
   ListInventoryQueryDto,
   PaginatedInventoryResponseDto,
 } from "./dto/list-inventory.dto";
+import { InventoryService } from "./inventory.service";
 
-@ApiTags("admin-inventory")
+@ApiTags("admin")
 @Controller("admin/inventory")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth("JWT-auth")
 export class AdminInventoryController {
-  constructor(private readonly adminInventoryService: AdminInventoryService) {}
+  constructor(
+    private readonly adminInventoryService: AdminInventoryService,
+    private readonly inventoryService: InventoryService,
+  ) {}
 
   // IMPORTANT: Specific routes must come BEFORE parameterized routes
   // Otherwise :variantId will match routes like "settings", "health", etc.
@@ -84,6 +89,31 @@ export class AdminInventoryController {
   })
   async getVariantsIndex(): Promise<VariantsIndexResponseDto> {
     return this.adminInventoryService.getVariantsIndex();
+  }
+
+  @Get("metrics")
+  @Roles("admin")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_GET)
+  @ApiOperation({
+    summary: "Get inventory health metrics",
+    description:
+      "Returns inventory health metrics including available, reserved, reserved ratio, expired reservations count, and failed reservations count. Admin access required.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Inventory metrics retrieved successfully",
+    type: InventoryMetricsDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  async getMetrics(): Promise<InventoryMetricsDto> {
+    return this.inventoryService.getMetrics();
   }
 
   @Get("health")

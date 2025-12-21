@@ -65,8 +65,8 @@ import { ShipmentsService } from "./services/shipments.service";
 import { ShippingRulesService } from "./shipping-rules.service";
 import { ShiprocketService } from "./shiprocket.service";
 
-@ApiTags("shipping")
-@Controller("shipping")
+@ApiTags("admin")
+@Controller("admin/shipping")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth("JWT-auth")
 export class ShippingController {

@@ -3,7 +3,7 @@ import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { trace } from "@opentelemetry/api";
 import { Public } from "../decorators/public.decorator";
 
-@ApiTags("health")
+@ApiTags("admin")
 @Controller("_health")
 @Public()
 export class HealthTracingController {

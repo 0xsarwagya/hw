@@ -32,7 +32,7 @@ import { CreateCollectionDto } from "./dto/create-collection.dto";
 import { QueryCollectionsDto } from "./dto/query-collections.dto";
 import { UpdateCollectionDto } from "./dto/update-collection.dto";
 
-@ApiTags("collections")
+@ApiTags("admin")
 @Controller("admin/collections")
 export class CollectionsController {
   constructor(private readonly collectionsService: CollectionsService) {}

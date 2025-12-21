@@ -9,8 +9,8 @@ import { RolesGuard } from "../../common/guards/roles.guard";
 import { InvoiceResponseDto } from "./dto/invoice-response.dto";
 import { InvoicesService } from "./invoices.service";
 
-@ApiTags("invoices")
-@Controller("invoices")
+@ApiTags("admin")
+@Controller("admin/invoices")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth("JWT-auth")
 export class InvoicesController {

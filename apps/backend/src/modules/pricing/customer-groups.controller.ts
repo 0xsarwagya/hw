@@ -26,7 +26,7 @@ import {
 } from "./dto/customer-group.dto";
 import { CustomerGroupService } from "./services/customer-group.service";
 
-@ApiTags("admin/customer-groups")
+@ApiTags("admin")
 @Controller("admin/customer-groups")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth("JWT-auth")

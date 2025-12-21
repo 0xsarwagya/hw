@@ -26,7 +26,7 @@ import { RolesGuard } from "../../common/guards/roles.guard";
 import { ReviewResponseDto } from "./dto/review-response.dto";
 import { ReviewModerationService } from "./services/review-moderation.service";
 
-@ApiTags("admin", "reviews")
+@ApiTags("admin")
 @Controller("admin/reviews")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth("JWT-auth")

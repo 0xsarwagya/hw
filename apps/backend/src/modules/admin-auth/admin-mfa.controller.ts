@@ -28,7 +28,7 @@ import {
   Verify2FADto,
 } from "./dto/mfa.dto";
 
-@ApiTags("admin-auth")
+@ApiTags("admin")
 @Controller("admin/auth/2fa")
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth("JWT-auth")

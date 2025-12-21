@@ -2,9 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
-  Get,
   Headers,
-  Param,
   Post,
   RawBodyRequest,
   Req,
@@ -28,101 +26,21 @@ import {
   RazorpayOrderResponseDto,
 } from "./dto/create-razorpay-order.dto";
 import {
-  RazorpayConfigDto,
-  RazorpayConfigResponseDto,
-} from "./dto/razorpay-config.dto";
-import {
   PaymentVerificationResponseDto,
   VerifyPaymentDto,
 } from "./dto/verify-payment.dto";
 import { RazorpayWebhookEventDto } from "./dto/webhook-event.dto";
 import { PaymentsService } from "./payments.service";
 
-@ApiTags("payments")
-@Controller("payments")
-@UseGuards(JwtAuthGuard, RolesGuard)
-@ApiBearerAuth("JWT-auth")
-export class PaymentsController {
+@ApiTags("store")
+@Controller("store/payments")
+export class StorePaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
-  @Get("razorpay/status")
-  @Roles("admin")
-  @ApiOperation({
-    summary: "Get Razorpay initialization status",
-    description:
-      "Returns the current initialization status of Razorpay. Only accessible by admin users.",
-  })
-  @ApiResponse({
-    status: 200,
-    description: "Razorpay initialization status",
-    schema: {
-      type: "object",
-      properties: {
-        initialized: {
-          type: "boolean",
-          example: true,
-        },
-        message: {
-          type: "string",
-          example: "Razorpay is initialized",
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 401,
-    description: "Unauthorized",
-  })
-  @ApiResponse({
-    status: 403,
-    description: "Forbidden - Admin access required",
-  })
-  getRazorpayStatus() {
-    const isInitialized = this.paymentsService.isInitialized();
-    return {
-      initialized: isInitialized,
-      message: isInitialized
-        ? "Razorpay is initialized"
-        : "Razorpay is not initialized",
-    };
-  }
-
-  @Post("razorpay/initialize")
-  @Roles("admin")
-  @ApiOperation({
-    summary: "Initialize Razorpay with API keys",
-    description:
-      "Initializes Razorpay with the provided API keys. Only accessible by admin users. This endpoint allows manual initialization of Razorpay if environment variables are not set.",
-  })
-  @ApiResponse({
-    status: 201,
-    description: "Razorpay initialized successfully",
-    type: RazorpayConfigResponseDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: "Bad request - Invalid configuration",
-  })
-  @ApiResponse({
-    status: 401,
-    description: "Unauthorized",
-  })
-  @ApiResponse({
-    status: 403,
-    description: "Forbidden - Admin access required",
-  })
-  initializeRazorpay(
-    @Body() configDto: RazorpayConfigDto,
-  ): RazorpayConfigResponseDto {
-    this.paymentsService.initialize(configDto.keyId, configDto.keySecret);
-    return {
-      initialized: true,
-      message: "Razorpay initialized successfully",
-    };
-  }
-
   @Post("razorpay/orders")
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("admin", "customer")
+  @ApiBearerAuth("JWT-auth")
   @ApiOperation({
     summary: "Create Razorpay order for payment",
     description:
@@ -153,7 +71,9 @@ export class PaymentsController {
   }
 
   @Post("razorpay/verify")
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("admin", "customer")
+  @ApiBearerAuth("JWT-auth")
   @ApiOperation({
     summary: "Verify Razorpay payment signature",
     description:
@@ -177,60 +97,6 @@ export class PaymentsController {
     @Body() verifyPaymentDto: VerifyPaymentDto,
   ): Promise<PaymentVerificationResponseDto> {
     return this.paymentsService.verifyPayment(verifyPaymentDto);
-  }
-
-  @Get("razorpay/payments/:paymentId")
-  @Roles("admin")
-  @ApiOperation({
-    summary: "Get Razorpay payment details",
-    description:
-      "Retrieves payment details from Razorpay by payment ID. Only accessible by admin users.",
-  })
-  @ApiResponse({
-    status: 200,
-    description: "Payment details",
-  })
-  @ApiResponse({
-    status: 401,
-    description: "Unauthorized",
-  })
-  @ApiResponse({
-    status: 403,
-    description: "Forbidden - Admin access required",
-  })
-  @ApiResponse({
-    status: 404,
-    description: "Payment not found",
-  })
-  async getPaymentDetails(@Param("paymentId") paymentId: string) {
-    return this.paymentsService.getPaymentDetails(paymentId);
-  }
-
-  @Get("razorpay/orders/:orderId")
-  @Roles("admin")
-  @ApiOperation({
-    summary: "Get Razorpay order details",
-    description:
-      "Retrieves order details from Razorpay by order ID. Only accessible by admin users.",
-  })
-  @ApiResponse({
-    status: 200,
-    description: "Razorpay order details",
-  })
-  @ApiResponse({
-    status: 401,
-    description: "Unauthorized",
-  })
-  @ApiResponse({
-    status: 403,
-    description: "Forbidden - Admin access required",
-  })
-  @ApiResponse({
-    status: 404,
-    description: "Razorpay order not found",
-  })
-  async getRazorpayOrderDetails(@Param("orderId") orderId: string) {
-    return this.paymentsService.getRazorpayOrderDetails(orderId);
   }
 
   @Post("razorpay/webhook")
