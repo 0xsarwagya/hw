@@ -5,6 +5,7 @@
 
 import type { LucideIcon } from "lucide-react";
 import {
+  BarChart3,
   Bell,
   BookOpen,
   Boxes,
@@ -16,6 +17,7 @@ import {
   FolderTree,
   HardDrive,
   LayoutDashboard,
+  MessageSquare,
   Package,
   Plus,
   Settings,
@@ -24,6 +26,8 @@ import {
   Star,
   Store,
   Tag,
+  TrendingUp,
+  Truck,
   UserCog,
   Users,
 } from "lucide-react";
@@ -56,6 +60,33 @@ export const navigation: NavSection[] = [
         label: "Dashboard",
         href: "/",
         icon: LayoutDashboard,
+        children: [
+          {
+            label: "Overview",
+            href: "/",
+            icon: LayoutDashboard,
+          },
+          {
+            label: "Performance",
+            href: "/dashboards/performance",
+            icon: TrendingUp,
+          },
+          {
+            label: "Operations",
+            href: "/dashboards/operations",
+            icon: Truck,
+          },
+          {
+            label: "Customer & Support",
+            href: "/dashboards/customer-support",
+            icon: MessageSquare,
+          },
+          {
+            label: "Product & Merchandising",
+            href: "/dashboards/product-merchandising",
+            icon: BarChart3,
+          },
+        ],
       },
     ],
   },
