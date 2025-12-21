@@ -246,4 +246,11 @@ export const endpoints = {
     history: (jobName: string) => `/admin/jobs/${jobName}/history`,
     trigger: (jobName: string) => `/admin/jobs/${jobName}/trigger`,
   },
+  dashboards: {
+    overview: "/admin/dashboards/overview",
+    performance: "/admin/dashboards/performance",
+    operations: "/admin/dashboards/operations",
+    customerSupport: "/admin/dashboards/customer-support",
+    productMerchandising: "/admin/dashboards/product-merchandising",
+  },
 } as const;
