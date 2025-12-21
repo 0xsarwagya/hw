@@ -3,6 +3,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   real,
@@ -85,6 +86,55 @@ export const paymentMethodCharges = pgTable(
     codDisallowPreorder: boolean("cod_disallow_preorder")
       .notNull()
       .default(true),
+    /**
+     * Disallow COD for international addresses (non-India)
+     */
+    codDisallowInternational: boolean("cod_disallow_international")
+      .notNull()
+      .default(true),
+    /**
+     * Restricted states for COD (array of state codes)
+     * COD will be unavailable if shipping address is in these states
+     */
+    codRestrictedStates: jsonb("cod_restricted_states").$type<string[]>(),
+    /**
+     * Customer groups that can bypass COD restrictions (VIP override)
+     * Array of customer group IDs
+     */
+    codAllowedCustomerGroups: jsonb("cod_allowed_customer_groups").$type<
+      string[]
+    >(),
+    /**
+     * Region restrictions (JSONB) - state/country restrictions for payment method
+     * Format: { countries: string[], states: string[] }
+     */
+    restrictedRegions: jsonb("restricted_regions").$type<{
+      countries?: string[];
+      states?: string[];
+    }>(),
+    /**
+     * Cart content restrictions (JSONB) - restrictions based on cart items
+     * e.g., { hazmat: true, digital: true, subscription: true }
+     */
+    restrictedCartContent: jsonb("restricted_cart_content").$type<{
+      hazmat?: boolean;
+      digital?: boolean;
+      subscription?: boolean;
+    }>(),
+    /**
+     * Minimum order value for payment method (in paise)
+     */
+    minOrderValue: integer("min_order_value"),
+    /**
+     * Maximum order value for payment method (in paise)
+     */
+    maxOrderValue: integer("max_order_value"),
+    /**
+     * Store-level disabled flag - if true, payment method is disabled store-wide
+     */
+    storeLevelDisabled: boolean("store_level_disabled")
+      .notNull()
+      .default(false),
     active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),

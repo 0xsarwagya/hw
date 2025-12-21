@@ -1,10 +1,20 @@
-import { Injectable } from "@nestjs/common";
-import { and, db, eq, PaymentMethod, paymentMethodCharges } from "@vcecom/db";
+import { Injectable, Optional } from "@nestjs/common";
+import {
+  and,
+  db,
+  eq,
+  inArray,
+  PaymentMethod,
+  paymentMethodCharges,
+  products,
+  productVariants,
+} from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import {
   PaymentFeeBreakdownDto,
   PaymentMethodWithFeeDto,
 } from "../dto/payment-charge.dto";
+import { PaymentFeeAuditService } from "./payment-fee-audit.service";
 
 export interface CartItem {
   productVariantId: string;
@@ -13,9 +23,24 @@ export interface CartItem {
   metadata?: unknown;
 }
 
+export interface ShippingAddress {
+  country?: string;
+  state?: string;
+  pincode?: string;
+}
+
+export interface CodEligibilityContext {
+  shippingAddress?: ShippingAddress;
+  customerGroupIds?: string[];
+  checkoutId?: string; // Checkout session ID for audit logging
+}
+
 @Injectable()
 export class PaymentChargeService {
-  constructor(private readonly logger: PinoLogger) {}
+  constructor(
+    private readonly logger: PinoLogger,
+    @Optional() private readonly auditService?: PaymentFeeAuditService,
+  ) {}
 
   /**
    * Calculate payment fee for a given method and cart total
@@ -114,6 +139,7 @@ export class PaymentChargeService {
     cartTotal: number, // in paise
     currency: string = "INR",
     cartItems: CartItem[] = [],
+    context?: CodEligibilityContext,
   ): Promise<PaymentMethodWithFeeDto[]> {
     // Fetch all active charge configurations for the currency
     const chargeConfigs = await db
@@ -123,32 +149,73 @@ export class PaymentChargeService {
         and(
           eq(paymentMethodCharges.currency, currency),
           eq(paymentMethodCharges.active, true),
+          eq(paymentMethodCharges.storeLevelDisabled, false), // Exclude store-level disabled methods
         ),
       );
 
     // If no configs for currency, fallback to INR
     if (chargeConfigs.length === 0 && currency !== "INR") {
-      return this.getAvailableMethods(cartTotal, "INR", cartItems);
+      return this.getAvailableMethods(cartTotal, "INR", cartItems, context);
     }
 
     const methods: PaymentMethodWithFeeDto[] = [];
 
     for (const config of chargeConfigs) {
+      // Check order value restrictions (min/max)
+      if (config.minOrderValue !== null && cartTotal < config.minOrderValue) {
+        continue; // Skip method if below minimum
+      }
+      if (config.maxOrderValue !== null && cartTotal > config.maxOrderValue) {
+        continue; // Skip method if above maximum
+      }
+
+      // Check region restrictions
+      if (config.restrictedRegions && context?.shippingAddress) {
+        const regions = config.restrictedRegions as {
+          countries?: string[];
+          states?: string[];
+        };
+        if (
+          regions.countries?.includes(context.shippingAddress.country || "") ||
+          regions.states?.includes(context.shippingAddress.state || "")
+        ) {
+          continue; // Skip if region is restricted
+        }
+      }
+
+      // Check cart content restrictions
+      if (config.restrictedCartContent) {
+        const restrictions = config.restrictedCartContent as {
+          hazmat?: boolean;
+          digital?: boolean;
+          subscription?: boolean;
+        };
+        // Digital check will be done in COD eligibility
+        if (restrictions.hazmat || restrictions.subscription) {
+          // TODO: Implement hazmat/subscription detection
+          // For now, skip if restriction is set
+          if (restrictions.hazmat || restrictions.subscription) {
+            continue;
+          }
+        }
+      }
+
       const { fee, breakdown } = await this.calculateFee(
         config.method,
         cartTotal,
         currency,
       );
 
-      // Check COD eligibility if method is COD
+      // Check method-specific eligibility (COD has additional checks)
       let available = true;
       let unavailableReason: string | undefined;
 
       if (config.method === "COD") {
-        const eligibility = this.validateCodEligibility(
+        const eligibility = await this.validateCodEligibility(
           cartTotal,
           cartItems,
           config,
+          context,
         );
         available = eligibility.eligible;
         unavailableReason = eligibility.reason;
@@ -169,13 +236,106 @@ export class PaymentChargeService {
 
   /**
    * Validate COD eligibility based on restrictions
+   * Implements all 7 restriction checks in order:
+   * 1. Digital products check
+   * 2. Preorder items check
+   * 3. Cart total max amount check
+   * 4. International address check
+   * 5. Restricted states check
+   * 6. Shipping zone COD availability check
+   * 7. Customer group override check
    */
-  validateCodEligibility(
+  async validateCodEligibility(
     cartTotal: number, // in paise
     cartItems: CartItem[],
     chargeConfig: typeof paymentMethodCharges.$inferSelect,
-  ): { eligible: boolean; reason?: string } {
-    // Check max amount restriction
+    context?: CodEligibilityContext,
+  ): Promise<{ eligible: boolean; reason?: string }> {
+    // Check 1: Digital products restriction
+    if (chargeConfig.codDisallowDigital && cartItems.length > 0) {
+      const variantIds = cartItems.map((item) => item.productVariantId);
+      const variantsWithProducts = await db
+        .select({
+          variantId: productVariants.id,
+          productId: productVariants.productId,
+          isDigital: products.isDigital,
+        })
+        .from(productVariants)
+        .innerJoin(products, eq(productVariants.productId, products.id))
+        .where(inArray(productVariants.id, variantIds));
+
+      const hasDigitalProduct = variantsWithProducts.some(
+        (v) => v.isDigital === true,
+      );
+
+      if (hasDigitalProduct) {
+        const reason = "COD not available for digital products";
+        // Audit log restriction
+        if (this.auditService) {
+          this.auditService
+            .logMethodRestricted(
+              context?.checkoutId || "unknown",
+              "COD",
+              reason,
+              cartTotal,
+            )
+            .catch((error) => {
+              this.logger.warn(
+                { error },
+                "Failed to log COD restriction for digital products",
+              );
+            });
+        }
+        return {
+          eligible: false,
+          reason,
+        };
+      }
+    }
+
+    // Check 2: Preorder items restriction
+    if (chargeConfig.codDisallowPreorder && cartItems.length > 0) {
+      const variantIds = cartItems.map((item) => item.productVariantId);
+      const variantsWithProducts = await db
+        .select({
+          variantId: productVariants.id,
+          productId: productVariants.productId,
+          isPreorder: products.isPreorder,
+        })
+        .from(productVariants)
+        .innerJoin(products, eq(productVariants.productId, products.id))
+        .where(inArray(productVariants.id, variantIds));
+
+      const hasPreorder = variantsWithProducts.some(
+        (v) => v.isPreorder === true,
+      );
+
+      if (hasPreorder) {
+        const reason = "COD not available for preorder items";
+        // Audit log restriction
+        if (this.auditService) {
+          this.auditService
+            .logMethodRestricted(
+              context?.checkoutId || "unknown",
+              "COD",
+              reason,
+              cartTotal,
+            )
+            .catch((error) => {
+              this.logger.warn(
+                { error },
+                "Failed to log COD restriction for preorder items",
+              );
+            });
+        }
+        return {
+          eligible: false,
+          reason,
+        };
+      }
+    }
+
+    // Check 3: Cart total max amount restriction
     if (
       chargeConfig.codMaxAmount !== null &&
       chargeConfig.codMaxAmount !== undefined &&
@@ -187,25 +347,82 @@ export class PaymentChargeService {
       };
     }
 
-    // Check high-value items restriction
-    if (chargeConfig.codDisallowHighValue) {
-      // TODO: Implement high-value item detection
-      // For now, we'll need to check product metadata or add a field to products
-      // This is a placeholder that can be enhanced
+    // Check 4: International address restriction
+    if (
+      chargeConfig.codDisallowInternational &&
+      context?.shippingAddress?.country &&
+      context.shippingAddress.country.toLowerCase() !== "india"
+    ) {
+      return {
+        eligible: false,
+        reason: "COD not available for international addresses",
+      };
     }
 
-    // Check digital products restriction
-    if (chargeConfig.codDisallowDigital) {
-      // TODO: Implement digital product detection
-      // Check if any cart item is a digital product
-      // This requires product metadata or a field in products table
+    // Check 5: Restricted states check
+    if (
+      chargeConfig.codRestrictedStates &&
+      Array.isArray(chargeConfig.codRestrictedStates) &&
+      chargeConfig.codRestrictedStates.length > 0 &&
+      context?.shippingAddress?.state
+    ) {
+      const restrictedStates = chargeConfig.codRestrictedStates.map((s) =>
+        s.toLowerCase(),
+      );
+      if (
+        restrictedStates.includes(context.shippingAddress.state.toLowerCase())
+      ) {
+        return {
+          eligible: false,
+          reason: `COD not available in ${context.shippingAddress.state}`,
+        };
+      }
     }
 
-    // Check preorder items restriction
-    if (chargeConfig.codDisallowPreorder) {
-      // TODO: Implement preorder detection
-      // Check if any cart item is a preorder product
-      // This requires product metadata or a field in products table
+    // Check 6: Shipping zone COD availability
+    // This is checked via pincode serviceability - if pincode says COD unavailable, disable it
+    if (context?.shippingAddress?.pincode) {
+      try {
+        // Import pincode serviceability check
+        const { checkPincodeServiceability } = await import(
+          "../../../common/utils/pincode.utils"
+        );
+        const serviceability = await checkPincodeServiceability(
+          context.shippingAddress.pincode,
+        );
+        if (serviceability.codAvailable === false) {
+          return {
+            eligible: false,
+            reason: "COD not available for this PIN code",
+          };
+        }
+      } catch (error) {
+        // Log but don't fail - if pincode check fails, allow COD
+        this.logger.warn(
+          {
+            pincode: context.shippingAddress.pincode,
+            error: error instanceof Error ? error.message : String(error),
+          },
+          "Failed to check pincode serviceability for COD",
+        );
+      }
+    }
+
+    // Check 7: Customer group override (VIP can bypass restrictions)
+    if (
+      context?.customerGroupIds &&
+      chargeConfig.codAllowedCustomerGroups &&
+      Array.isArray(chargeConfig.codAllowedCustomerGroups) &&
+      chargeConfig.codAllowedCustomerGroups.length > 0
+    ) {
+      const allowedGroups = chargeConfig.codAllowedCustomerGroups;
+      const hasAllowedGroup = context.customerGroupIds.some((groupId) =>
+        allowedGroups.includes(groupId),
+      );
+      if (hasAllowedGroup) {
+        // VIP customer group - allow COD despite restrictions
+        return { eligible: true };
+      }
     }
 
     return { eligible: true };

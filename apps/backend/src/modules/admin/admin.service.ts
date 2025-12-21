@@ -21,6 +21,7 @@ import {
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { UserBundleSelection } from "../bundles/services/bundle-eligibility.service";
 import { CartsService } from "../carts/carts.service";
+import { OrderResponseDto } from "../orders/dto/order-response.dto";
 import { ProductsService } from "../products/products.service";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
 import { RedisStoreService } from "../redis-store/redis-store.service";
@@ -152,7 +153,19 @@ export class AdminService {
           ...order,
           gstBreakdown,
           items,
-        };
+          paymentFeeBreakdown: order.paymentFeeBreakdown as
+            | {
+                method: string;
+                chargeType: string;
+                calculatedFee: number;
+                flatAmount?: number;
+                percentage?: number;
+                mixMin?: number;
+                mixCap?: number;
+              }
+            | null
+            | undefined,
+        } as OrderResponseDto;
       }),
     );
 

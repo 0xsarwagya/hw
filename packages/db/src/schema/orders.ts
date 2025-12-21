@@ -42,9 +42,25 @@ export const orders = pgTable(
     discountCode: text("discount_code"),
     discountAmount: real("discount_amount").notNull().default(0),
     shippingCost: real("shipping_cost").notNull().default(0),
+    /**
+     * Payment fee in paise (immutable after order creation)
+     * This fee is frozen at order creation time and cannot be changed.
+     * For partial refunds, payment fees are NOT refunded unless explicitly configured.
+     * The fee amount is included in the payment intent total sent to payment gateway.
+     */
     paymentFee: integer("payment_fee").notNull().default(0), // in paise
     paymentMethod: text("payment_method"), // selected payment method
+    /**
+     * Payment fee breakdown details (immutable after order creation)
+     * Contains calculation details: method, chargeType, flatAmount, percentage, etc.
+     * Used for transparency and audit purposes.
+     */
     paymentFeeBreakdown: jsonb("payment_fee_breakdown"), // calculation details
+    /**
+     * Currency code for payment fee (default: INR)
+     * Stores the currency in which the payment fee was calculated
+     */
+    paymentFeeCurrency: text("payment_fee_currency").notNull().default("INR"),
     total: real("total").notNull().default(0),
     razorpayOrderId: text("razorpay_order_id").unique(),
     shippingProvider: text("shipping_provider"),

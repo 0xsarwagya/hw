@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  boolean,
   index,
   pgEnum,
   pgTable,
@@ -35,6 +36,16 @@ export const products = pgTable(
     categoryId: uuid("category_id").references(() => categories.id, {
       onDelete: "set null",
     }),
+    /**
+     * Digital product flag - if true, product is digital (e.g., software, ebooks)
+     * Digital products cannot use COD payment method
+     */
+    isDigital: boolean("is_digital").notNull().default(false),
+    /**
+     * Preorder product flag - if true, product is a preorder
+     * Preorder products cannot use COD payment method
+     */
+    isPreorder: boolean("is_preorder").notNull().default(false),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

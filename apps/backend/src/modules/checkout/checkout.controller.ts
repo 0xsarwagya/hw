@@ -8,13 +8,23 @@ import {
   Query,
   Request,
 } from "@nestjs/common";
-import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import {
+  ApiHeader,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from "@nestjs/swagger";
+import { customers, db, eq } from "@vcecom/db";
 import { Public } from "../../common/decorators/public.decorator";
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 import { CartsService } from "../carts/carts.service";
 import { PaymentFeeBreakdownDto } from "../payments/dto/payment-charge.dto";
-import { PaymentChargeService } from "../payments/services/payment-charge.service";
+import {
+  CodEligibilityContext,
+  PaymentChargeService,
+} from "../payments/services/payment-charge.service";
 import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import {
   PaymentMethodWithFeeDto,
@@ -36,11 +46,36 @@ export class CheckoutController {
   @ApiOperation({
     summary: "Get available payment methods with fees",
     description:
-      "Returns all available payment methods with calculated fees based on current cart total. Supports both authenticated and guest checkout.",
+      "Returns all available payment methods with calculated fees based on current cart total. Supports both authenticated and guest checkout. Payment method availability is dynamically determined based on cart content, shipping address, and restrictions.",
   })
   @ApiHeader({
     name: "X-Session-Id",
     description: "Session ID for guest checkout (required for guest checkout)",
+    required: false,
+  })
+  @ApiQuery({
+    name: "checkoutSessionId",
+    description: "Checkout session ID (optional)",
+    required: false,
+  })
+  @ApiQuery({
+    name: "shippingAddressId",
+    description: "Shipping address ID for availability checks (optional)",
+    required: false,
+  })
+  @ApiQuery({
+    name: "country",
+    description: "Shipping country for availability checks (optional)",
+    required: false,
+  })
+  @ApiQuery({
+    name: "state",
+    description: "Shipping state for availability checks (optional)",
+    required: false,
+  })
+  @ApiQuery({
+    name: "pincode",
+    description: "Shipping PIN code for availability checks (optional)",
     required: false,
   })
   @ApiResponse({
@@ -58,6 +93,10 @@ export class CheckoutController {
     },
     @Headers("x-session-id") sessionId?: string,
     @Query("checkoutSessionId") checkoutSessionId?: string,
+    @Query("shippingAddressId") shippingAddressId?: string,
+    @Query("country") country?: string,
+    @Query("state") state?: string,
+    @Query("pincode") pincode?: string,
   ): Promise<{ methods: PaymentMethodWithFeeDto[] }> {
     const userId = req.user?.userId || null;
 
@@ -79,11 +118,67 @@ export class CheckoutController {
       metadata: (item as { metadata?: unknown }).metadata,
     }));
 
-    // Get available payment methods with fees
+    // Build COD eligibility context
+    const context: CodEligibilityContext = {};
+
+    // Get shipping address info if provided
+    if (shippingAddressId || country || state || pincode) {
+      context.shippingAddress = {
+        country: country || undefined,
+        state: state || undefined,
+        pincode: pincode || undefined,
+      };
+
+      // If shippingAddressId provided, fetch full address details
+      if (shippingAddressId) {
+        try {
+          const { addresses } = await import("@vcecom/db");
+          const [address] = await db
+            .select({
+              country: addresses.country,
+              state: addresses.state,
+              pincode: addresses.pincode,
+            })
+            .from(addresses)
+            .where(eq(addresses.id, shippingAddressId))
+            .limit(1);
+
+          if (address) {
+            context.shippingAddress = {
+              country: address.country || country,
+              state: address.state || state,
+              pincode: address.pincode || pincode,
+            };
+          }
+        } catch (_error) {
+          // Log but continue - address fetch failure shouldn't break payment methods
+        }
+      }
+    }
+
+    // Get customer group IDs if user is authenticated
+    if (userId && cart.customerId) {
+      try {
+        const [customer] = await db
+          .select({ customerGroupId: customers.customerGroupId })
+          .from(customers)
+          .where(eq(customers.id, cart.customerId))
+          .limit(1);
+
+        if (customer?.customerGroupId) {
+          context.customerGroupIds = [customer.customerGroupId];
+        }
+      } catch (_error) {
+        // Log but continue - customer group fetch failure shouldn't break payment methods
+      }
+    }
+
+    // Get available payment methods with fees and restrictions
     const methods = await this.paymentChargeService.getAvailableMethods(
       cartTotalInPaise,
       "INR", // TODO: Get currency from cart/store config
       cartItems,
+      context,
     );
 
     return { methods };

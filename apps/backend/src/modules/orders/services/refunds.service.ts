@@ -115,14 +115,42 @@ export class RefundsService implements OnModuleInit {
       0,
     );
 
-    const maxRefundable = order.total * MAX_REFUND_AMOUNT_MULTIPLIER;
+    // Calculate refundable amount (exclude payment fee for partial refunds)
+    // Payment fees are typically NOT refunded by payment gateways
+    // Full refund: refund entire order total (includes fee)
+    // Partial refund: exclude payment fee from refundable amount
+    const paymentFeeInRupees = (order.paymentFee || 0) / 100;
+    const isFullRefund = amount >= order.total - totalRefunded;
+    const refundableAmount = isFullRefund
+      ? order.total // Full refund includes fee
+      : order.total - paymentFeeInRupees; // Partial refund excludes fee
+
+    const maxRefundable = refundableAmount * MAX_REFUND_AMOUNT_MULTIPLIER;
     const remainingRefundable = maxRefundable - totalRefunded;
 
     if (amount > remainingRefundable) {
+      const feeNote = isFullRefund
+        ? ""
+        : ` (Payment fee of ₹${paymentFeeInRupees.toFixed(2)} excluded from partial refund)`;
       throw new BadRequestException(
-        `Refund amount exceeds remaining refundable amount of ${remainingRefundable} INR`,
+        `Refund amount exceeds remaining refundable amount of ₹${remainingRefundable.toFixed(2)}${feeNote}`,
       );
     }
+
+    // Log refund calculation for audit
+    this.logger.debug(
+      {
+        orderId,
+        refundAmount: amount,
+        orderTotal: order.total,
+        paymentFee: paymentFeeInRupees,
+        isFullRefund,
+        refundableAmount,
+        totalRefunded,
+        remainingRefundable,
+      },
+      "Refund calculation - payment fee handling",
+    );
 
     // Create refund record
     const [createdRefund] = await db

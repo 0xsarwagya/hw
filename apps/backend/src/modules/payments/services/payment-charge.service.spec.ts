@@ -11,6 +11,16 @@ jest.mock("@vcecom/db", () => ({
   },
   eq: jest.fn((field, value) => ({ field, value })),
   and: jest.fn((...conditions) => conditions),
+  inArray: jest.fn((field, values) => ({ field, values })),
+  productVariants: {
+    id: "id",
+    productId: "product_id",
+  },
+  products: {
+    id: "id",
+    isDigital: "is_digital",
+    isPreorder: "is_preorder",
+  },
   paymentMethodCharges: {
     method: "method",
     currency: "currency",
@@ -594,7 +604,7 @@ describe("PaymentChargeService", () => {
   });
 
   describe("validateCodEligibility", () => {
-    it("should allow COD when cart total is below max amount", () => {
+    it("should allow COD when cart total is below max amount", async () => {
       const mockChargeConfig = {
         id: "charge-1",
         method: "COD",
@@ -609,6 +619,9 @@ describe("PaymentChargeService", () => {
         codDisallowHighValue: false,
         codDisallowDigital: true,
         codDisallowPreorder: true,
+        codDisallowInternational: true,
+        codRestrictedStates: null,
+        codAllowedCustomerGroups: null,
         active: true,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -617,7 +630,16 @@ describe("PaymentChargeService", () => {
       const cartTotal = 100000; // ₹1000
       const cartItems: any[] = [];
 
-      const result = service.validateCodEligibility(
+      // Mock database select to return empty array (no digital/preorder products)
+      (db.select as jest.Mock).mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          innerJoin: jest.fn().mockReturnValue({
+            where: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      });
+
+      const result = await service.validateCodEligibility(
         cartTotal,
         cartItems,
         mockChargeConfig,
@@ -626,7 +648,7 @@ describe("PaymentChargeService", () => {
       expect(result.eligible).toBe(true);
     });
 
-    it("should disallow COD when cart total exceeds max amount", () => {
+    it("should disallow COD when cart total exceeds max amount", async () => {
       const mockChargeConfig = {
         id: "charge-1",
         method: "COD",
@@ -641,6 +663,9 @@ describe("PaymentChargeService", () => {
         codDisallowHighValue: false,
         codDisallowDigital: true,
         codDisallowPreorder: true,
+        codDisallowInternational: true,
+        codRestrictedStates: null,
+        codAllowedCustomerGroups: null,
         active: true,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -649,7 +674,16 @@ describe("PaymentChargeService", () => {
       const cartTotal = 600000; // ₹6000 - exceeds max
       const cartItems: any[] = [];
 
-      const result = service.validateCodEligibility(
+      // Mock database select to return empty array (no digital/preorder products)
+      (db.select as jest.Mock).mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          innerJoin: jest.fn().mockReturnValue({
+            where: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      });
+
+      const result = await service.validateCodEligibility(
         cartTotal,
         cartItems,
         mockChargeConfig,
@@ -659,7 +693,7 @@ describe("PaymentChargeService", () => {
       expect(result.reason).toContain("COD not available for orders above");
     });
 
-    it("should allow COD when max amount is not set", () => {
+    it("should allow COD when max amount is not set", async () => {
       const mockChargeConfig = {
         id: "charge-1",
         method: "COD",
@@ -674,6 +708,9 @@ describe("PaymentChargeService", () => {
         codDisallowHighValue: false,
         codDisallowDigital: true,
         codDisallowPreorder: true,
+        codDisallowInternational: true,
+        codRestrictedStates: null,
+        codAllowedCustomerGroups: null,
         active: true,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -682,7 +719,16 @@ describe("PaymentChargeService", () => {
       const cartTotal = 1000000; // ₹10000
       const cartItems: any[] = [];
 
-      const result = service.validateCodEligibility(
+      // Mock database select to return empty array (no digital/preorder products)
+      (db.select as jest.Mock).mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          innerJoin: jest.fn().mockReturnValue({
+            where: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      });
+
+      const result = await service.validateCodEligibility(
         cartTotal,
         cartItems,
         mockChargeConfig,

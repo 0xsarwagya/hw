@@ -974,6 +974,30 @@ export class OrdersService {
         shippingCost +
         paymentFee / 100;
 
+      // Verify payment intent amount calculation includes fee
+      const expectedAmountInPaise = Math.round(total * 100);
+      const expectedComponents = {
+        subtotalAfterDiscount: Math.round(subtotalAfterDiscount * 100),
+        totalGstAmount: Math.round(totalGstAmount * 100),
+        shippingCost: Math.round(shippingCost * 100),
+        paymentFee,
+        total: expectedAmountInPaise,
+      };
+
+      this.logger.debug(
+        createLogContext(
+          this.contextService,
+          "paymentIntentAmountVerification",
+          {
+            checkoutSessionId,
+            expectedAmountInPaise,
+            components: expectedComponents,
+            paymentMethod,
+          },
+        ),
+        "Payment intent amount verification - fee included in total",
+      );
+
       // Store checkout metadata for order creation (will be used in webhook handler)
       if (!checkoutSessionId) {
         throw new ConflictException(
@@ -1033,7 +1057,37 @@ export class OrdersService {
 
         // Create payment intent idempotently
         // Amount is in rupees, convert to paise for Razorpay
+        // CRITICAL: Amount MUST include payment fee (already included in total calculation above)
         const amountInPaise = Math.round(total * 100);
+
+        // Verify amount includes fee before creating payment intent
+        const expectedAmount =
+          Math.round(
+            (subtotalAfterDiscount + totalGstAmount + shippingCost) * 100,
+          ) + paymentFee;
+        if (amountInPaise !== expectedAmount) {
+          this.logger.error(
+            createErrorContext(
+              this.contextService,
+              "paymentIntentAmountMismatch",
+              new Error("Payment intent amount does not include fee"),
+              {
+                checkoutSessionId,
+                amountInPaise,
+                expectedAmount,
+                paymentFee,
+                subtotalAfterDiscount,
+                totalGstAmount,
+                shippingCost,
+              },
+            ),
+            "Payment intent amount verification failed - fee not included",
+          );
+          throw new ConflictException(
+            "Payment intent amount calculation error - fee must be included",
+          );
+        }
+
         paymentIntent = await this.paymentsService.createPaymentIntent(
           checkoutSessionId,
           amountInPaise,
@@ -1041,6 +1095,8 @@ export class OrdersService {
           undefined, // receipt will be generated from checkoutSessionId
           {
             order_number: `pending-${Date.now()}`, // Temporary, will be updated after order creation
+            payment_fee: paymentFee.toString(), // Store fee in notes for verification
+            payment_method: paymentMethod || "unknown",
           },
         );
         if (!paymentIntent || !paymentIntent.paymentIntentId) {
@@ -1048,14 +1104,23 @@ export class OrdersService {
             "Payment intent creation returned invalid result",
           );
         }
-        this.logger.debug(
+        this.logger.info(
           createLogContext(this.contextService, "createPaymentIntent", {
             checkoutSessionId,
             paymentIntentId: paymentIntent.paymentIntentId,
             amount: amountInPaise,
             currency: "INR",
+            paymentFee,
+            paymentMethod,
+            components: {
+              subtotal: Math.round(subtotalAfterDiscount * 100),
+              gst: Math.round(totalGstAmount * 100),
+              shipping: Math.round(shippingCost * 100),
+              fee: paymentFee,
+              total: amountInPaise,
+            },
           }),
-          "Payment intent created",
+          "Payment intent created with fee included",
         );
 
         // Detect drift during payment intent creation (discounts)
@@ -1505,12 +1570,15 @@ export class OrdersService {
     let paymentFee = 0;
     let paymentMethod: string | null = null;
     let paymentFeeBreakdown: PaymentFeeBreakdownDto | null = null;
+    const _paymentFeeCurrency = "INR"; // Default currency (TODO: Get from store config)
 
     if (metadata.paymentMethod && metadata.paymentFee !== undefined) {
       // Use payment fee from metadata (already calculated during checkout)
       paymentFee = metadata.paymentFee;
       paymentMethod = metadata.paymentMethod;
       paymentFeeBreakdown = metadata.paymentFeeBreakdown || null;
+      // TODO: Get currency from metadata or store config
+      // For now, default to INR
     } else if (metadata.paymentMethod) {
       // Payment method selected but fee not calculated - calculate it now
       const cartTotalInPaise = Math.round(
@@ -1519,7 +1587,7 @@ export class OrdersService {
       const { fee, breakdown } = await this.paymentChargeService.calculateFee(
         metadata.paymentMethod,
         cartTotalInPaise,
-        "INR",
+        "INR", // TODO: Get currency from store config
       );
       paymentFee = fee;
       paymentMethod = metadata.paymentMethod;
@@ -2019,6 +2087,9 @@ export class OrdersService {
       gstAmount: totalGstAmount,
       gstBreakdown,
       shippingCost,
+      paymentFee: paymentFee > 0 ? paymentFee : undefined,
+      paymentMethod: paymentMethod || null,
+      paymentFeeBreakdown: paymentFeeBreakdown || null,
       total,
       razorpayOrderId: paymentIntentId,
       shippingProvider: null,

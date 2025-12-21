@@ -41,6 +41,16 @@ export interface InvoiceData {
   total: string;
   paymentMethod: string;
   paymentStatus: string;
+  paymentFee?: string;
+  paymentFeeBreakdown?: {
+    method: string;
+    chargeType: "FLAT" | "PERCENTAGE" | "MIXED";
+    calculatedFee: number;
+    flatAmount?: number;
+    percentage?: number;
+    mixMin?: number;
+    mixCap?: number;
+  } | null;
   gstNumber?: string;
   invoiceNumber: string;
 }
@@ -157,6 +167,46 @@ export function generateInvoiceHTML(data: InvoiceData): string {
               <td colspan="4" class="text-right">Discount:</td>
               <td class="text-right">-${data.discount}</td>
             </tr>
+            `
+                : ""
+            }
+            ${
+              data.paymentFee && data.paymentFee !== "0"
+                ? `
+            <tr>
+              <td colspan="4" class="text-right">Payment Fee (${data.paymentMethod}):</td>
+              <td class="text-right">${data.paymentFee}</td>
+            </tr>
+            ${
+              data.paymentFeeBreakdown
+                ? `
+            <tr>
+              <td colspan="5" style="padding-left: 20px; font-size: 0.9em; color: #666;">
+                ${
+                  data.paymentFeeBreakdown.chargeType === "FLAT" &&
+                  data.paymentFeeBreakdown.flatAmount
+                    ? `Base Fee: ₹${(data.paymentFeeBreakdown.flatAmount / 100).toFixed(2)}`
+                    : ""
+                }
+                ${
+                  data.paymentFeeBreakdown.chargeType === "PERCENTAGE" &&
+                  data.paymentFeeBreakdown.percentage
+                    ? `Percentage (${data.paymentFeeBreakdown.percentage}%): ${data.paymentFee}`
+                    : ""
+                }
+                ${
+                  data.paymentFeeBreakdown.chargeType === "MIXED"
+                    ? `
+                  ${data.paymentFeeBreakdown.flatAmount ? `Base Fee: ₹${(data.paymentFeeBreakdown.flatAmount / 100).toFixed(2)}` : ""}
+                  ${data.paymentFeeBreakdown.percentage ? `Percentage (${data.paymentFeeBreakdown.percentage}%): ₹${((data.paymentFeeBreakdown.calculatedFee - (data.paymentFeeBreakdown.flatAmount || 0)) / 100).toFixed(2)}` : ""}
+                `
+                    : ""
+                }
+              </td>
+            </tr>
+            `
+                : ""
+            }
             `
                 : ""
             }
