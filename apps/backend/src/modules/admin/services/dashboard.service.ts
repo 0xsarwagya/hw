@@ -21,6 +21,7 @@ import {
 import { PinoLogger } from "nestjs-pino";
 import { CustomerSupportDashboardResponseDto } from "../dto/dashboard-customer-support.dto";
 import { OperationsDashboardResponseDto } from "../dto/dashboard-operations.dto";
+import { OverviewDashboardResponseDto } from "../dto/dashboard-overview.dto";
 import { PerformanceDashboardResponseDto } from "../dto/dashboard-performance.dto";
 import { ProductMerchandisingDashboardResponseDto } from "../dto/dashboard-product-merchandising.dto";
 
@@ -870,6 +871,134 @@ export class DashboardService {
       priceElasticity,
       inventoryTurnover,
       conversionFunnel,
+    };
+  }
+
+  /**
+   * Get Overview Dashboard data - aggregated key metrics
+   */
+  async getOverviewDashboard(): Promise<OverviewDashboardResponseDto> {
+    const now = new Date();
+    const todayStart = new Date(now.setHours(0, 0, 0, 0));
+    const weekStart = new Date(now.setDate(now.getDate() - 7));
+    const monthStart = new Date(now.setDate(now.getDate() - 30));
+
+    // Get all orders
+    const allOrders = await db.select().from(orders);
+    const totalOrders = allOrders.length;
+    const totalRevenue = allOrders.reduce((sum, o) => sum + Number(o.total), 0);
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    // Monthly revenue
+    const monthlyOrders = allOrders.filter(
+      (o) => new Date(o.createdAt) >= monthStart,
+    );
+    const monthlyRevenue = monthlyOrders.reduce(
+      (sum, o) => sum + Number(o.total),
+      0,
+    );
+
+    // Orders by period
+    const ordersToday = allOrders.filter(
+      (o) => new Date(o.createdAt) >= todayStart,
+    ).length;
+    const ordersThisWeek = allOrders.filter(
+      (o) => new Date(o.createdAt) >= weekStart,
+    ).length;
+    const ordersThisMonth = monthlyOrders.length;
+
+    // Order status counts
+    const orderStatusCounts = await db
+      .select({
+        status: orders.status,
+        count: sql<number>`count(*)`,
+      })
+      .from(orders)
+      .groupBy(orders.status);
+
+    const statusMap = orderStatusCounts.reduce(
+      (acc, s) => {
+        acc[s.status] = Number(s.count);
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    // Customers
+    const allCustomers = await db.select().from(customers);
+    const totalCustomers = allCustomers.length;
+    const newCustomersThisMonth = allCustomers.filter(
+      (c) => new Date(c.createdAt) >= monthStart,
+    ).length;
+
+    // Products
+    const allProducts = await db.select().from(products);
+    const totalProducts = allProducts.length;
+    const activeProducts = allProducts.filter(
+      (p) => p.status === "active",
+    ).length;
+
+    // Out of stock products
+    const outOfStockVariants = await db
+      .select({
+        productId: productVariants.productId,
+      })
+      .from(productVariants)
+      .where(eq(productVariants.inventory, 0));
+
+    const uniqueOutOfStockProducts = new Set(
+      outOfStockVariants.map((v) => v.productId),
+    ).size;
+
+    // Refunds
+    const refundData = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(refunds);
+    const totalRefunds = Number(refundData[0]?.count || 0);
+    const refundRate = totalOrders > 0 ? (totalRefunds / totalOrders) * 100 : 0;
+
+    // Reviews
+    const reviewData = await db
+      .select({
+        rating: reviews.rating,
+        count: sql<number>`count(*)`,
+      })
+      .from(reviews)
+      .where(eq(reviews.status, "approved"))
+      .groupBy(reviews.rating);
+
+    const totalReviews = reviewData.reduce(
+      (sum, r) => sum + Number(r.count),
+      0,
+    );
+    const averageRating =
+      totalReviews > 0
+        ? reviewData.reduce(
+            (sum, r) => sum + Number(r.rating) * Number(r.count),
+            0,
+          ) / totalReviews
+        : 0;
+
+    return {
+      totalRevenue,
+      monthlyRevenue,
+      averageOrderValue,
+      totalOrders,
+      ordersToday,
+      ordersThisWeek,
+      ordersThisMonth,
+      totalCustomers,
+      newCustomersThisMonth,
+      totalProducts,
+      activeProducts,
+      pendingOrders: statusMap.pending || 0,
+      shippedOrders: statusMap.shipped || 0,
+      deliveredOrders: statusMap.delivered || 0,
+      outOfStockProducts: uniqueOutOfStockProducts,
+      totalRefunds,
+      refundRate,
+      averageRating,
+      totalReviews,
     };
   }
 }

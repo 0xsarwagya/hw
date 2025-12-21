@@ -17,7 +17,7 @@ function HomepageHeader() {
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"
-            to="/introduction"
+            to="/docs/introduction"
           >
             Get Started
           </Link>
@@ -47,7 +47,9 @@ export default function Home() {
                     Learn about the modular architecture, component
                     interactions, and cross-module dependencies.
                   </p>
-                  <Link to="/architecture/overview">View Architecture →</Link>
+                  <Link to="/docs/architecture/overview">
+                    View Architecture →
+                  </Link>
                 </div>
               </div>
             </div>
@@ -61,7 +63,9 @@ export default function Home() {
                     Secure admin authentication with 2FA, session management,
                     and activity logging.
                   </p>
-                  <Link to="/authentication/admin-auth">View Auth Docs →</Link>
+                  <Link to="/docs/authentication/admin-auth">
+                    View Auth Docs →
+                  </Link>
                 </div>
               </div>
             </div>
@@ -75,7 +79,9 @@ export default function Home() {
                     Complete API documentation for admin and storefront
                     endpoints.
                   </p>
-                  <Link to="/api-reference/admin-api">View API Docs →</Link>
+                  <Link to="/docs/api-reference/admin-api">
+                    View API Docs →
+                  </Link>
                 </div>
               </div>
             </div>

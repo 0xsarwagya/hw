@@ -247,6 +247,7 @@ export const endpoints = {
     trigger: (jobName: string) => `/admin/jobs/${jobName}/trigger`,
   },
   dashboards: {
+    overview: "/admin/dashboards/overview",
     performance: "/admin/dashboards/performance",
     operations: "/admin/dashboards/operations",
     customerSupport: "/admin/dashboards/customer-support",

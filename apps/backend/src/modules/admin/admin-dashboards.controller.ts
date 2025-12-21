@@ -10,6 +10,7 @@ import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { CustomerSupportDashboardResponseDto } from "./dto/dashboard-customer-support.dto";
 import { OperationsDashboardResponseDto } from "./dto/dashboard-operations.dto";
+import { OverviewDashboardResponseDto } from "./dto/dashboard-overview.dto";
 import { PerformanceDashboardResponseDto } from "./dto/dashboard-performance.dto";
 import { ProductMerchandisingDashboardResponseDto } from "./dto/dashboard-product-merchandising.dto";
 import { DashboardService } from "./services/dashboard.service";
@@ -80,5 +81,20 @@ export class AdminDashboardsController {
   })
   async getProductMerchandisingDashboard(): Promise<ProductMerchandisingDashboardResponseDto> {
     return this.dashboardService.getProductMerchandisingDashboard();
+  }
+
+  @Get("overview")
+  @ApiOperation({
+    summary: "Get Overview Dashboard data",
+    description:
+      "Returns aggregated key metrics for the main dashboard overview including revenue, orders, customers, products, and status summaries",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Overview dashboard data",
+    type: OverviewDashboardResponseDto,
+  })
+  async getOverviewDashboard(): Promise<OverviewDashboardResponseDto> {
+    return this.dashboardService.getOverviewDashboard();
   }
 }
