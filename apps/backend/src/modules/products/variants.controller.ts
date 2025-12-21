@@ -31,8 +31,8 @@ import { VariantResponseDto } from "./dto/variant-response.dto";
 import { ProductsService } from "./products.service";
 import { VariantsService } from "./variants.service";
 
-@ApiTags("product-variants")
-@Controller("products/:productId/variants")
+@ApiTags("store")
+@Controller("store/products/:productId/variants")
 export class VariantsController {
   constructor(
     private readonly variantsService: VariantsService,

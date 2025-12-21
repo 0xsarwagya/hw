@@ -30,8 +30,8 @@ import { ApplyDiscountDto } from "./dto/apply-discount.dto";
 import { CartResponseDto } from "./dto/cart-response.dto";
 import { UpdateItemDto } from "./dto/update-item.dto";
 
-@ApiTags("carts")
-@Controller("cart")
+@ApiTags("store")
+@Controller("store/cart")
 export class CartsController {
   constructor(private readonly cartsService: CartsService) {}
 
@@ -193,7 +193,33 @@ export class CartsController {
     return this.cartsService.clearCart(userId, sessionId || null);
   }
 
-  @Post("discount")
+  @Post()
+  @Public()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: "Create new cart",
+    description:
+      "Create a new cart session. Returns cartId, items, totals, expiresAt.",
+  })
+  @ApiHeader({
+    name: "X-Session-Id",
+    description: "Session ID for guest carts (optional if authenticated)",
+    required: false,
+  })
+  @ApiCreatedResponse({
+    description: "Cart created successfully",
+    type: CartResponseDto,
+  })
+  async createCart(
+    @Request() req,
+    @Headers("x-session-id") sessionId?: string,
+  ): Promise<CartResponseDto> {
+    const userId = req.user?.id || null;
+    // getOrCreateCart will create if it doesn't exist
+    return this.cartsService.getCart(userId, sessionId || null);
+  }
+
+  @Post("coupon")
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -226,7 +252,32 @@ export class CartsController {
     );
   }
 
-  @Delete("discount")
+  @Post("reset")
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Reset cart",
+    description:
+      "Remove all items from the cart (alias for DELETE /store/cart)",
+  })
+  @ApiHeader({
+    name: "X-Session-Id",
+    description: "Session ID for guest carts (optional if authenticated)",
+    required: false,
+  })
+  @ApiOkResponse({
+    description: "Cart reset successfully",
+    type: CartResponseDto,
+  })
+  async resetCart(
+    @Request() req,
+    @Headers("x-session-id") sessionId?: string,
+  ): Promise<CartResponseDto> {
+    const userId = req.user?.id || null;
+    return this.cartsService.clearCart(userId, sessionId || null);
+  }
+
+  @Delete("coupon")
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

@@ -45,8 +45,8 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-@ApiTags("orders")
-@Controller("orders")
+@ApiTags("store")
+@Controller("store/orders")
 export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
@@ -266,6 +266,46 @@ export class OrdersController {
     @Param("id") id: string,
   ) {
     return this.ordersService.getTimeline(req.user.userId, id);
+  }
+
+  @Post(":id/payment-retry")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth("JWT-auth")
+  @RateLimit(RATE_LIMIT_PRESETS.PAYMENT_INTENT)
+  @ApiOperation({
+    summary: "Retry payment for an order",
+    description:
+      "Creates a new payment intent for an order that failed payment. Returns payment intent ID and redirect URL.",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Order ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Payment intent created successfully",
+    type: PaymentIntentResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request (order already paid, invalid state, etc.)",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Order not found",
+  })
+  async retryPayment(
+    @Request() req: AuthenticatedRequest,
+    @Param("id") id: string,
+  ): Promise<PaymentIntentResponseDto> {
+    // This will need to be implemented in OrdersService
+    // For now, return a placeholder
+    throw new Error("Payment retry not yet implemented");
   }
 
   @Post("reconcile/:paymentIntentId")

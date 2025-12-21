@@ -1,9 +1,12 @@
-import { Module } from "@nestjs/common";
+import { forwardRef, Module } from "@nestjs/common";
+import { ProductsModule } from "../products/products.module";
 import { CollectionsController } from "./collections.controller";
 import { CollectionsService } from "./collections.service";
+import { StorefrontCollectionsController } from "./storefront-collections.controller";
 
 @Module({
-  controllers: [CollectionsController],
+  imports: [forwardRef(() => ProductsModule)],
+  controllers: [CollectionsController, StorefrontCollectionsController],
   providers: [CollectionsService],
   exports: [CollectionsService],
 })

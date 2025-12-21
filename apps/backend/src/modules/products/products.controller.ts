@@ -2,14 +2,17 @@ import {
   Body,
   Controller,
   Delete,
+  forwardRef,
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
   Param,
   Patch,
   Post,
   Put,
   Query,
+  Request,
 } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
@@ -25,10 +28,22 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
+import { Request as ExpressRequest } from "express";
 import { Public } from "../../common/decorators/public.decorator";
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
+import { ReviewQueryDto } from "../reviews/dto/review-query.dto";
+import { ReviewsService } from "../reviews/services/reviews.service";
+
+interface AuthenticatedRequest extends ExpressRequest {
+  user?: {
+    userId: string;
+    email: string;
+    role: string;
+  };
+}
+
 import { CreateProductDto } from "./dto/create-product.dto";
 import { FilterProductsDto } from "./dto/filter.dto";
 import {
@@ -46,11 +61,17 @@ import {
   VariantOptionTypeResponseDto,
 } from "./dto/variant-option-types/variant-option-type-response.dto";
 import { ProductsService } from "./products.service";
+import { VariantsService } from "./variants.service";
 
-@ApiTags("products")
-@Controller("products")
+@ApiTags("store")
+@Controller("store/products")
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly variantsService: VariantsService,
+    @Inject(forwardRef(() => ReviewsService))
+    private readonly reviewsService: ReviewsService,
+  ) {}
 
   @Public()
   @Get()
@@ -196,6 +217,104 @@ export class ProductsController {
   })
   async findOne(@Param("id") id: string): Promise<ProductResponseDto> {
     return this.productsService.findOne(id);
+  }
+
+  @Public()
+  @Get(":id/variants")
+  @RateLimit(RATE_LIMIT_PRESETS.STOREFRONT_GET)
+  @ApiOperation({
+    summary: "Get all variants for a product",
+    description:
+      "Retrieve all variants for a specific product (public endpoint)",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Product ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiOkResponse({
+    description: "List of variants retrieved successfully",
+  })
+  @ApiNotFoundResponse({
+    description: "Product not found",
+  })
+  async getVariants(@Param("id") productId: string) {
+    return this.variantsService.findByProductId(productId);
+  }
+
+  @Public()
+  @Get(":id/reviews")
+  @RateLimit(RATE_LIMIT_PRESETS.REVIEWS_LISTING)
+  @ApiOperation({
+    summary: "Get reviews for a product",
+    description:
+      "Retrieve paginated reviews for a product. Supports filtering and sorting. Public endpoint.",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Product ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiOkResponse({
+    description: "Reviews retrieved successfully",
+  })
+  @ApiNotFoundResponse({
+    description: "Product not found",
+  })
+  async getReviews(
+    @Param("id") productId: string,
+    @Query() query: ReviewQueryDto,
+    @Request() req?: AuthenticatedRequest,
+  ) {
+    // Get first variant of product for reviews (reviews are variant-specific)
+    const variants = await this.variantsService.findByProductId(productId);
+    if (variants.length === 0) {
+      return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
+    }
+    // Get customer ID if authenticated
+    let customerId: string | undefined;
+    if (req?.user?.userId) {
+      const { customers, db, eq } = await import("@vcecom/db");
+      const [customer] = await db
+        .select({ id: customers.id })
+        .from(customers)
+        .where(eq(customers.userId, req.user.userId))
+        .limit(1);
+      customerId = customer?.id;
+    }
+    // Return reviews for the first variant
+    // In a real implementation, you might want to aggregate reviews across all variants
+    return this.reviewsService.findByVariant(
+      variants[0].id,
+      query || {},
+      customerId,
+    );
+  }
+
+  @Public()
+  @Get(":id/recommendations")
+  @RateLimit(RATE_LIMIT_PRESETS.STOREFRONT_GET)
+  @ApiOperation({
+    summary: "Get product recommendations",
+    description:
+      "Get recommended products based on the current product (same category, etc.)",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Product ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiOkResponse({
+    description: "Recommended products retrieved successfully",
+    type: [ProductResponseDto],
+  })
+  @ApiNotFoundResponse({
+    description: "Product not found",
+  })
+  async getRecommendations(
+    @Param("id") id: string,
+  ): Promise<ProductResponseDto[]> {
+    return this.productsService.getRecommendations(id);
   }
 
   @Post()

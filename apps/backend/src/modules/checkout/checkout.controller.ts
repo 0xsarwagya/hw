@@ -26,9 +26,14 @@ import {
   PaymentChargeService,
 } from "../payments/services/payment-charge.service";
 import { CheckoutStore } from "../redis-store/stores/checkout-store";
+import { CheckoutService } from "./checkout.service";
 import {
+  CheckoutAddressDto,
+  CheckoutConfirmDto,
+  CheckoutShippingDto,
   PaymentMethodWithFeeDto,
   SelectPaymentMethodDto,
+  StartCheckoutDto,
 } from "./dto/checkout.dto";
 
 @ApiTags("store")
@@ -39,7 +44,113 @@ export class CheckoutController {
     private readonly cartsService: CartsService,
     private readonly paymentChargeService: PaymentChargeService,
     private readonly checkoutStore: CheckoutStore,
+    private readonly checkoutService: CheckoutService,
   ) {}
+
+  @Post("start")
+  @RateLimit(RATE_LIMIT_PRESETS.PAYMENT_INTENT)
+  @ApiOperation({
+    summary: "Start checkout",
+    description:
+      "Creates checkout session, freezes cart, validates availability. Returns checkout session ID.",
+  })
+  @ApiHeader({
+    name: "X-Session-Id",
+    description: "Session ID for guest checkout (required for guest checkout)",
+    required: false,
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Checkout started successfully",
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request (empty cart, etc.)",
+  })
+  @ApiResponse({
+    status: 409,
+    description: "Conflict (cart already being checked out)",
+  })
+  async startCheckout(
+    @Request() req: Request & {
+      user?: { userId: string; email: string; role: string };
+    },
+    @Body() dto: StartCheckoutDto,
+    @Headers("x-session-id") sessionId?: string,
+  ) {
+    const userId = req.user?.userId || null;
+    return this.checkoutService.startCheckout(userId, sessionId || null, dto);
+  }
+
+  @Post("address")
+  @RateLimit(RATE_LIMIT_PRESETS.PAYMENT_INTENT)
+  @ApiOperation({
+    summary: "Apply shipping address to checkout",
+    description:
+      "Validates and stores shipping address in checkout session. Validates serviceability via Shiprocket.",
+  })
+  @ApiHeader({
+    name: "X-Session-Id",
+    description: "Session ID for guest checkout (required for guest checkout)",
+    required: false,
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Address applied successfully",
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request (invalid address, not serviceable, etc.)",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Checkout session not found",
+  })
+  async applyAddress(
+    @Request() req: Request & {
+      user?: { userId: string; email: string; role: string };
+    },
+    @Body() dto: CheckoutAddressDto,
+    @Headers("x-session-id") sessionId?: string,
+  ) {
+    const userId = req.user?.userId || null;
+    return this.checkoutService.applyAddress(userId, sessionId || null, dto);
+  }
+
+  @Post("shipping")
+  @RateLimit(RATE_LIMIT_PRESETS.PAYMENT_INTENT)
+  @ApiOperation({
+    summary: "Select shipping method",
+    description:
+      "Selects shipping method and calculates delivery charges. Includes COD eligibility check and payment fee pre-computation.",
+  })
+  @ApiHeader({
+    name: "X-Session-Id",
+    description: "Session ID for guest checkout (required for guest checkout)",
+    required: false,
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Shipping method selected successfully",
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request (invalid method, etc.)",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Checkout session or shipping method not found",
+  })
+  async selectShipping(
+    @Request() req: Request & {
+      user?: { userId: string; email: string; role: string };
+    },
+    @Body() dto: CheckoutShippingDto,
+    @Headers("x-session-id") sessionId?: string,
+  ) {
+    const userId = req.user?.userId || null;
+    return this.checkoutService.selectShipping(userId, sessionId || null, dto);
+  }
 
   @Get("payment-methods")
   @RateLimit(RATE_LIMIT_PRESETS.STOREFRONT_GET)
@@ -269,5 +380,40 @@ export class CheckoutController {
       fee,
       breakdown,
     };
+  }
+
+  @Post("confirm")
+  @RateLimit(RATE_LIMIT_PRESETS.PAYMENT_INTENT)
+  @ApiOperation({
+    summary: "Confirm order",
+    description:
+      "Final step: creates order, locks inventory, generates payment intent. Returns orderId, paymentIntentId, and redirectUrl.",
+  })
+  @ApiHeader({
+    name: "X-Session-Id",
+    description: "Session ID for guest checkout (required for guest checkout)",
+    required: false,
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Order confirmed successfully",
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request (invalid session, insufficient inventory, etc.)",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Checkout session not found",
+  })
+  async confirmCheckout(
+    @Request() req: Request & {
+      user?: { userId: string; email: string; role: string };
+    },
+    @Body() dto: CheckoutConfirmDto,
+    @Headers("x-session-id") sessionId?: string,
+  ) {
+    const userId = req.user?.userId || null;
+    return this.checkoutService.confirmCheckout(userId, sessionId || null, dto);
   }
 }
