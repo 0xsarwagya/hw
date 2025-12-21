@@ -45,6 +45,7 @@ import {
 import { StorageService } from "../storage/storage.service";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { FilterProductsDto, SortField, SortOrder } from "./dto/filter.dto";
+import { ProductResponseDto } from "./dto/product-response.dto";
 import { QueryProductsDto } from "./dto/query-products.dto";
 import {
   SearchProductsDto,
@@ -1707,5 +1708,54 @@ export class ProductsService {
       .where(eq(variantOptionValues.id, valueId));
 
     return { success: true };
+  }
+
+  /**
+   * Get product recommendations based on the current product
+   * Returns products from the same category, excluding the current product
+   */
+  async getRecommendations(productId: string): Promise<ProductResponseDto[]> {
+    // Get the current product
+    const [product] = await db
+      .select({
+        id: products.id,
+        categoryId: products.categoryId,
+      })
+      .from(products)
+      .where(eq(products.id, productId))
+      .limit(1);
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${productId} not found`);
+    }
+
+    // If product has no category, return empty array
+    if (!product.categoryId) {
+      return [];
+    }
+
+    // Get up to 8 products from the same category, excluding the current product
+    const recommendedProducts = await db
+      .select()
+      .from(products)
+      .where(
+        and(
+          eq(products.categoryId, product.categoryId),
+          eq(products.status, "active"),
+          sql`${products.id} != ${productId}`,
+        ),
+      )
+      .orderBy(desc(products.createdAt))
+      .limit(8);
+
+    // Get first images for recommended products
+    const productIds = recommendedProducts.map((p) => p.id);
+    const firstImages = await this.getFirstImagesForProducts(productIds);
+
+    // Convert to ProductResponseDto format
+    return recommendedProducts.map((p) => ({
+      ...this.enrichProductWithGst(p),
+      thumbnailUrl: firstImages.get(p.id) || null,
+    }));
   }
 }

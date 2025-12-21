@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
 } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
@@ -25,6 +26,8 @@ import { Public } from "../../common/decorators/public.decorator";
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
+import { QueryProductsDto } from "../products/dto/query-products.dto";
+import { ProductsService } from "../products/products.service";
 import { CategoriesService } from "./categories.service";
 import {
   CategoryResponseDto,
@@ -33,10 +36,13 @@ import {
 import { CreateCategoryDto } from "./dto/create-category.dto";
 import { UpdateCategoryDto } from "./dto/update-category.dto";
 
-@ApiTags("categories")
-@Controller("categories")
+@ApiTags("store")
+@Controller("store/categories")
 export class CategoriesController {
-  constructor(private readonly categoriesService: CategoriesService) {}
+  constructor(
+    private readonly categoriesService: CategoriesService,
+    private readonly productsService: ProductsService,
+  ) {}
 
   @Public()
   @Get()
@@ -217,5 +223,36 @@ export class CategoriesController {
   })
   async remove(@Param("id") id: string) {
     return this.categoriesService.remove(id);
+  }
+
+  @Public()
+  @Get(":id/products")
+  @RateLimit(RATE_LIMIT_PRESETS.STOREFRONT_GET)
+  @ApiOperation({
+    summary: "Get products in a category",
+    description:
+      "Retrieve a paginated list of products in a specific category (public endpoint)",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Category ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiOkResponse({
+    description: "List of products retrieved successfully",
+  })
+  @ApiNotFoundResponse({
+    description: "Category not found",
+  })
+  async getProducts(
+    @Param("id") categoryId: string,
+    @Query() query: QueryProductsDto,
+  ) {
+    // Set categoryId in query
+    const categoryQuery: QueryProductsDto = {
+      ...query,
+      categoryId,
+    };
+    return this.productsService.findAll(categoryQuery);
   }
 }

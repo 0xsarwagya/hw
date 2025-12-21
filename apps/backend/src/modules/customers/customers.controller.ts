@@ -6,7 +6,9 @@ import {
   HttpStatus,
   Post,
   Put,
+  Query,
   Request,
+  UseGuards,
 } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
@@ -14,13 +16,19 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
+import { Request as ExpressRequest } from "express";
 import { Public } from "../../common/decorators/public.decorator";
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
+import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
+import { OrderStatus } from "../orders/dto/update-order-status.dto";
+import { OrdersService } from "../orders/orders.service";
+import { AddressesService } from "./addresses.service";
 import { CustomersService } from "./customers.service";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { ClaimAccountDto } from "./dto/claim-account.dto";
@@ -28,10 +36,22 @@ import { CustomerProfileDto } from "./dto/customer-profile.dto";
 import { RegisterCustomerDto } from "./dto/register-customer.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 
-@ApiTags("customers")
-@Controller("customers")
+interface AuthenticatedRequest extends ExpressRequest {
+  user: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
+
+@ApiTags("store")
+@Controller("store/customers")
 export class CustomersController {
-  constructor(private readonly customersService: CustomersService) {}
+  constructor(
+    private readonly customersService: CustomersService,
+    private readonly ordersService: OrdersService,
+    private readonly addressesService: AddressesService,
+  ) {}
 
   @Public()
   @Post("register")
@@ -162,5 +182,52 @@ export class CustomersController {
       claimAccountDto.token,
       claimAccountDto.newPassword,
     );
+  }
+
+  @Get("orders")
+  @UseGuards(JwtAuthGuard)
+  @Roles("customer")
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({
+    summary: "Get customer orders",
+    description:
+      "Returns all orders for the authenticated customer. Optionally filter by status.",
+  })
+  @ApiQuery({
+    name: "status",
+    required: false,
+    enum: OrderStatus,
+    description: "Filter orders by status",
+    example: "pending",
+  })
+  @ApiOkResponse({
+    description: "List of orders",
+  })
+  @ApiUnauthorizedResponse({
+    description: "Unauthorized",
+  })
+  async getOrders(
+    @Request() req: AuthenticatedRequest,
+    @Query("status") status?: OrderStatus,
+  ) {
+    return this.ordersService.findAll(req.user.id, status);
+  }
+
+  @Get("addresses")
+  @UseGuards(JwtAuthGuard)
+  @Roles("customer")
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({
+    summary: "Get customer addresses",
+    description: "Get all addresses for the currently authenticated customer",
+  })
+  @ApiOkResponse({
+    description: "List of addresses",
+  })
+  @ApiUnauthorizedResponse({
+    description: "Unauthorized",
+  })
+  async getAddresses(@Request() req: AuthenticatedRequest) {
+    return this.addressesService.findAll(req.user.id);
   }
 }

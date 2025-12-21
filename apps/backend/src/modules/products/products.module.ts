@@ -1,7 +1,8 @@
-import { Module } from "@nestjs/common";
+import { forwardRef, Module } from "@nestjs/common";
 import { ScheduleModule } from "@nestjs/schedule";
 import { NotificationsModule } from "../notifications/notifications.module";
 import { RedisStoreModule } from "../redis-store/redis-store.module";
+import { ReviewsModule } from "../reviews/reviews.module";
 import { StorageModule } from "../storage/storage.module";
 import { MediaHealthController } from "./controllers/media-health.controller";
 import { ProductsController } from "./products.controller";
@@ -11,6 +12,7 @@ import { MediaCacheInvalidationService } from "./services/media-cache-invalidati
 import { MediaConsistencyService } from "./services/media-consistency.service";
 import { MediaConsistencyWorker } from "./services/media-consistency-worker.service";
 import { MediaTransactionService } from "./services/media-transaction.service";
+import { StorefrontSearchController } from "./storefront-search.controller";
 import { VariantsController } from "./variants.controller";
 import { VariantsService } from "./variants.service";
 
@@ -20,8 +22,14 @@ import { VariantsService } from "./variants.service";
     ScheduleModule,
     RedisStoreModule,
     NotificationsModule,
+    forwardRef(() => ReviewsModule),
   ],
-  controllers: [ProductsController, VariantsController, MediaHealthController],
+  controllers: [
+    ProductsController,
+    VariantsController,
+    MediaHealthController,
+    StorefrontSearchController,
+  ],
   providers: [
     ProductsService,
     VariantsService,

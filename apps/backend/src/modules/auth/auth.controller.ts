@@ -33,8 +33,8 @@ import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { UserProfileDto } from "./dto/user-profile.dto";
 
-@ApiTags("auth")
-@Controller("auth")
+@ApiTags("store")
+@Controller("store/auth")
 export class AuthController {
   constructor(private authService: AuthService) {}
 
@@ -178,7 +178,7 @@ export class AuthController {
     return { message: "Logged out successfully" };
   }
 
-  @Get("profile")
+  @Get("me")
   @ApiBearerAuth("JWT-auth")
   @ApiOperation({
     summary: "Get current user profile",
@@ -192,6 +192,28 @@ export class AuthController {
     description: "Authentication required",
   })
   async getProfile(@Request() req): Promise<UserProfileDto> {
+    return {
+      id: req.user.id,
+      email: req.user.email,
+      role: req.user.role,
+    };
+  }
+
+  @Get("profile")
+  @ApiBearerAuth("JWT-auth")
+  @ApiOperation({
+    summary: "Get current user profile (legacy endpoint)",
+    description:
+      "Get the profile of the currently authenticated user. Use /store/auth/me instead.",
+  })
+  @ApiOkResponse({
+    description: "User profile retrieved successfully",
+    type: UserProfileDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: "Authentication required",
+  })
+  async getProfileLegacy(@Request() req): Promise<UserProfileDto> {
     return {
       id: req.user.id,
       email: req.user.email,

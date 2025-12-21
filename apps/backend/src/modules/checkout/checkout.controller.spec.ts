@@ -7,6 +7,7 @@ import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import { ContextService } from "../../common/logging/context.service";
 import { getCommonTestProviders } from "../../common/testing/test-helpers";
 import { PaymentMethod } from "@vcecom/db";
+import { CheckoutService } from "./checkout.service";
 
 describe("CheckoutController", () => {
   let controller: CheckoutController;
@@ -81,6 +82,13 @@ describe("CheckoutController", () => {
       storeCheckoutMetadata: jest.fn(),
     };
 
+    const mockCheckoutService = {
+      startCheckout: jest.fn(),
+      applyAddress: jest.fn(),
+      selectShipping: jest.fn(),
+      confirmCheckout: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CheckoutController],
       providers: [
@@ -95,6 +103,10 @@ describe("CheckoutController", () => {
         {
           provide: CheckoutStore,
           useValue: mockCheckoutStore,
+        },
+        {
+          provide: CheckoutService,
+          useValue: mockCheckoutService,
         },
         ...getCommonTestProviders(),
       ],
