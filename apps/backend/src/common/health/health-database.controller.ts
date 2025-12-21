@@ -4,7 +4,7 @@ import { db, sql } from "@vcecom/db";
 import { DatabaseService } from "../../modules/database/database.service";
 import { Public } from "../decorators/public.decorator";
 
-@ApiTags("health")
+@ApiTags("admin")
 @Controller("_health")
 @Public()
 export class HealthDatabaseController {

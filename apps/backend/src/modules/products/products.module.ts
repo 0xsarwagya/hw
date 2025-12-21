@@ -4,6 +4,7 @@ import { NotificationsModule } from "../notifications/notifications.module";
 import { RedisStoreModule } from "../redis-store/redis-store.module";
 import { ReviewsModule } from "../reviews/reviews.module";
 import { StorageModule } from "../storage/storage.module";
+import { AdminProductsController } from "./admin-products.controller";
 import { MediaHealthController } from "./controllers/media-health.controller";
 import { ProductsController } from "./products.controller";
 import { ProductsService } from "./products.service";
@@ -29,6 +30,7 @@ import { VariantsService } from "./variants.service";
     VariantsController,
     MediaHealthController,
     StorefrontSearchController,
+    AdminProductsController,
   ],
   providers: [
     ProductsService,

@@ -21,9 +21,7 @@ import {
 } from "@nestjs/swagger";
 import { Public } from "../../common/decorators/public.decorator";
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
-import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { RolesGuard } from "../../common/guards/roles.guard";
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { OrderResponseDto } from "./dto/order-response.dto";
@@ -50,7 +48,7 @@ interface AuthenticatedRequest extends Request {
 export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
-    private readonly reconciliationService: ReconciliationService,
+    readonly _reconciliationService: ReconciliationService,
   ) {}
 
   @Post()
@@ -306,49 +304,5 @@ export class OrdersController {
     // This will need to be implemented in OrdersService
     // For now, return a placeholder
     throw new Error("Payment retry not yet implemented");
-  }
-
-  @Post("reconcile/:paymentIntentId")
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("admin")
-  @ApiOperation({
-    summary: "Reconcile payment intent (admin only)",
-    description:
-      "Manually reprocess a payment intent to create an order. Safe to call multiple times - idempotent. Use this for recovery after failures.",
-  })
-  @ApiParam({
-    name: "paymentIntentId",
-    description: "Payment intent ID from provider (e.g., Razorpay order ID)",
-    example: "order_abc123",
-  })
-  @ApiResponse({
-    status: 200,
-    description: "Order created or found",
-    type: OrderResponseDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: "Bad request (payment not confirmed, invalid state, etc.)",
-  })
-  @ApiResponse({
-    status: 401,
-    description: "Unauthorized",
-  })
-  @ApiResponse({
-    status: 403,
-    description: "Forbidden (admin role required)",
-  })
-  @ApiResponse({
-    status: 404,
-    description: "Payment intent or checkout session not found",
-  })
-  async reconcile(
-    @Param("paymentIntentId") paymentIntentId: string,
-    @Query("provider") provider?: string,
-  ): Promise<OrderResponseDto | null> {
-    return this.reconciliationService.reprocessPaymentIntent(
-      paymentIntentId,
-      provider || "razorpay",
-    );
   }
 }

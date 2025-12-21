@@ -12,8 +12,8 @@ import {
   StateSuggestionDto,
 } from "./dto/autocomplete-response.dto";
 
-@ApiTags("address-autocomplete")
-@Controller("address-autocomplete")
+@ApiTags("store")
+@Controller("store/address-autocomplete")
 export class AddressAutocompleteController {
   constructor(
     private readonly autocompleteService: AddressAutocompleteService,

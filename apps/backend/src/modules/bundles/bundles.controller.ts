@@ -32,7 +32,7 @@ import { BundleDefinitionService } from "./services/bundle-definition.service";
 import { BundleSetItemsService } from "./services/bundle-set-items.service";
 import { BundleSetsService } from "./services/bundle-sets.service";
 
-@ApiTags("admin/bundles")
+@ApiTags("admin")
 @Controller("admin/bundles")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth("JWT-auth")

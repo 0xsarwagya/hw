@@ -13,32 +13,33 @@ export const endpoints = {
   },
   products: {
     list: "/admin/products",
-    detail: (id: string) => `/products/${id}`,
-    create: "/products",
-    update: (id: string) => `/products/${id}`,
-    delete: (id: string) => `/products/${id}`,
-    collections: (id: string) => `/products/${id}/collections`,
+    detail: (id: string) => `/admin/products/${id}`,
+    create: "/admin/products",
+    update: (id: string) => `/admin/products/${id}`,
+    delete: (id: string) => `/admin/products/${id}`,
+    collections: (id: string) => `/admin/products/${id}/collections`,
     images: {
-      list: (id: string) => `/products/${id}/images`,
-      add: (id: string) => `/products/${id}/images`,
-      delete: (imageId: string) => `/products/images/${imageId}`,
-      updateOrder: (imageId: string) => `/products/images/${imageId}/order`,
-      update: (imageId: string) => `/products/images/${imageId}`,
-      replace: (imageId: string) => `/products/images/${imageId}/replace`,
+      list: (id: string) => `/admin/products/${id}/images`,
+      add: (id: string) => `/admin/products/${id}/images`,
+      delete: (imageId: string) => `/admin/products/images/${imageId}`,
+      updateOrder: (imageId: string) =>
+        `/admin/products/images/${imageId}/order`,
+      update: (imageId: string) => `/admin/products/images/${imageId}`,
+      replace: (imageId: string) => `/admin/products/images/${imageId}/replace`,
     },
     variantImages: {
       list: (productId: string, variantId: string) =>
-        `/products/${productId}/variants/${variantId}/images`,
+        `/admin/products/${productId}/variants/${variantId}/images`,
     },
     variants: {
-      list: (productId: string) => `/products/${productId}/variants`,
+      list: (productId: string) => `/admin/products/${productId}/variants`,
       detail: (productId: string, variantId: string) =>
-        `/products/${productId}/variants/${variantId}`,
-      create: (productId: string) => `/products/${productId}/variants`,
+        `/admin/products/${productId}/variants/${variantId}`,
+      create: (productId: string) => `/admin/products/${productId}/variants`,
       update: (productId: string, variantId: string) =>
-        `/products/${productId}/variants/${variantId}`,
+        `/admin/products/${productId}/variants/${variantId}`,
       delete: (productId: string, variantId: string) =>
-        `/products/${productId}/variants/${variantId}`,
+        `/admin/products/${productId}/variants/${variantId}`,
     },
   },
   storage: {
@@ -62,34 +63,51 @@ export const endpoints = {
     health: "/admin/inventory/health",
     settings: "/admin/inventory/settings",
     variantsIndex: "/admin/inventory/variants/index",
-    metrics: "/inventory/metrics", // Keep for backward compatibility
+    metrics: "/admin/inventory/metrics",
   },
   admin: {
     stats: "/admin/stats",
   },
   orders: {
     list: "/admin/orders",
-    detail: (id: string) => `/orders/${id}`, // Use regular orders endpoint with admin auth
-    timeline: (id: string) => `/orders/${id}/timeline`,
-    tracking: (id: string) => `/orders/${id}/tracking`,
+    detail: (id: string) => `/admin/orders/${id}`,
+    timeline: (id: string) => `/admin/orders/${id}/timeline`,
+    tracking: (id: string) => `/admin/orders/${id}/tracking`,
     reconcile: (paymentIntentId: string) =>
-      `/orders/reconcile/${paymentIntentId}`,
-    markPaid: (id: string) => `/orders/${id}/mark-paid`,
-    refund: (id: string) => `/orders/${id}/refund`,
-    refunds: (id: string) => `/orders/${id}/refunds`,
-    notes: (id: string) => `/api/orders/${id}/notes`,
-    updateAddress: (id: string) => `/api/orders/${id}/addresses`,
+      `/admin/orders/reconcile/${paymentIntentId}`,
+    markPaid: (id: string) => `/admin/orders/${id}/mark-paid`,
+    refund: (id: string) => `/admin/orders/${id}/refund`,
+    refunds: (id: string) => `/admin/orders/${id}/refunds`,
+    notes: (id: string) => `/admin/orders/${id}/notes`,
+    updateAddress: (id: string) => `/admin/orders/${id}/addresses`,
   },
   shipping: {
-    shiprocketStatus: "/shipping/shiprocket/status",
-    shiprocketInitialize: "/shipping/shiprocket/initialize",
-    createShipment: "/shipping/shiprocket/shipments",
-    pickupLocations: "/api/shipping/shiprocket/pickup-locations",
-    courierServiceability: "/api/shipping/shiprocket/courier-serviceability",
-    trackShipment: (awb: string) => `/shipping/shiprocket/tracking/${awb}`,
-    cancelShipment: (awb: string) => `/shipping/shiprocket/cancel/${awb}`,
-    listShipments: "/shipping/shipments",
-    getShipment: (id: string) => `/shipping/shipments/${id}`,
+    shiprocketStatus: "/admin/shipping/shiprocket/status",
+    shiprocketInitialize: "/admin/shipping/shiprocket/initialize",
+    createShipment: "/admin/shipping/shiprocket/shipments",
+    pickupLocations: "/admin/shipping/shiprocket/pickup-locations",
+    courierServiceability: "/admin/shipping/shiprocket/courier-serviceability",
+    trackShipment: (awb: string) =>
+      `/admin/shipping/shiprocket/tracking/${awb}`,
+    cancelShipment: (awb: string) => `/admin/shipping/shiprocket/cancel/${awb}`,
+    listShipments: "/admin/shipping/shipments",
+    getShipment: (id: string) => `/admin/shipping/shipments/${id}`,
+  },
+  payments: {
+    razorpay: {
+      status: "/admin/payments/razorpay/status",
+      initialize: "/admin/payments/razorpay/initialize",
+      getPayment: (paymentId: string) =>
+        `/admin/payments/razorpay/payments/${paymentId}`,
+      getOrder: (orderId: string) =>
+        `/admin/payments/razorpay/orders/${orderId}`,
+    },
+  },
+  invoices: {
+    generate: (orderId: string) => `/admin/invoices/orders/${orderId}/generate`,
+    get: (invoiceId: string) => `/admin/invoices/${invoiceId}`,
+    getByOrder: (orderId: string) => `/admin/invoices/orders/${orderId}`,
+    download: (invoiceId: string) => `/admin/invoices/${invoiceId}/download`,
   },
   paymentCharges: {
     list: "/admin/payment-charges",
@@ -171,28 +189,28 @@ export const endpoints = {
     },
   },
   categories: {
-    list: "/categories",
-    tree: "/categories/tree",
-    detail: (id: string) => `/categories/${id}`,
-    create: "/categories",
-    update: (id: string) => `/categories/${id}`,
-    delete: (id: string) => `/categories/${id}`,
+    list: "/admin/categories",
+    tree: "/admin/categories/tree",
+    detail: (id: string) => `/admin/categories/${id}`,
+    create: "/admin/categories",
+    update: (id: string) => `/admin/categories/${id}`,
+    delete: (id: string) => `/admin/categories/${id}`,
   },
   variantOptionTypes: {
-    list: "/products/variant-option-types",
-    create: "/products/variant-option-types",
+    list: "/admin/products/variant-option-types",
+    create: "/admin/products/variant-option-types",
     product: {
       list: (productId: string) =>
-        `/products/${productId}/variant-option-types`,
+        `/admin/products/${productId}/variant-option-types`,
       create: (productId: string) =>
-        `/products/${productId}/variant-option-types`,
+        `/admin/products/${productId}/variant-option-types`,
       delete: (productId: string, optionTypeId: string) =>
-        `/products/${productId}/variant-option-types/${optionTypeId}`,
+        `/admin/products/${productId}/variant-option-types/${optionTypeId}`,
       values: {
         create: (productId: string, optionTypeId: string) =>
-          `/products/${productId}/variant-option-types/${optionTypeId}/values`,
+          `/admin/products/${productId}/variant-option-types/${optionTypeId}/values`,
         delete: (productId: string, optionTypeId: string, valueId: string) =>
-          `/products/${productId}/variant-option-types/${optionTypeId}/values/${valueId}`,
+          `/admin/products/${productId}/variant-option-types/${optionTypeId}/values/${valueId}`,
       },
     },
   },
@@ -217,5 +235,15 @@ export const endpoints = {
     scan: "/admin/media/health/scan",
     fix: (action: string) => `/admin/media/health/fix/${action}`,
     auditLogs: "/admin/media/health/audit-logs",
+  },
+  redis: {
+    health: "/admin/redis/health",
+    stats: "/admin/redis/stats",
+    keys: "/admin/redis/keys",
+  },
+  jobs: {
+    list: "/admin/jobs",
+    history: (jobName: string) => `/admin/jobs/${jobName}/history`,
+    trigger: (jobName: string) => `/admin/jobs/${jobName}/trigger`,
   },
 } as const;

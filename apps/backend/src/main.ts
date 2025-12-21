@@ -28,7 +28,11 @@ try {
 // Now import everything else after .env is loaded
 import { ExecutionContext } from "@nestjs/common";
 import { NestFactory, Reflector } from "@nestjs/core";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import {
+  DocumentBuilder,
+  SwaggerDocumentOptions,
+  SwaggerModule,
+} from "@nestjs/swagger";
 import cookieParser from "cookie-parser";
 import { AppModule } from "./app.module";
 import {
@@ -46,6 +50,7 @@ import { BuildInfoInterceptor } from "./common/interceptors/build-info.intercept
 import { RateLimitInterceptor } from "./common/interceptors/rate-limit.interceptor";
 import { ContextService } from "./common/logging/context.service";
 import { createPinoConfig } from "./common/logging/pino.config";
+import { filterSwaggerTags } from "./common/swagger/tag-filter";
 
 // Setup unhandled rejection and exception handlers
 // These will use Pino logger once the app is bootstrapped
@@ -198,20 +203,21 @@ async function bootstrap() {
       },
       "JWT-auth",
     )
-    .addTag("auth", "Authentication endpoints")
-    .addTag("categories", "Category management endpoints")
-    .addTag("products", "Product management endpoints")
-    .addTag("product-variants", "Product variant management endpoints")
-    .addTag("customers", "Customer management endpoints")
-    .addTag("carts", "Shopping cart endpoints")
-    .addTag("orders", "Order management endpoints")
-    .addTag("payments", "Payment processing endpoints")
-    .addTag("shipping", "Shipping integration endpoints")
     .addTag("admin", "Admin dashboard endpoints")
+    .addTag("store", "Storefront API endpoints")
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("api/docs", app, document, {
+  // Disable auto-tag generation from controller names
+  const swaggerOptions: SwaggerDocumentOptions = {
+    autoTagControllers: false,
+  };
+
+  const document = SwaggerModule.createDocument(app, config, swaggerOptions);
+
+  // Filter document to only include "admin" and "store" tags
+  const filteredDocument = filterSwaggerTags(document);
+
+  SwaggerModule.setup("api/docs", app, filteredDocument, {
     swaggerOptions: {
       persistAuthorization: true,
     },

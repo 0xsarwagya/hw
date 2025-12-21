@@ -1,9 +1,12 @@
 "use client";
 
-import { AlertCircle, Clock, Database, FileText } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { Database, FileText, Play } from "lucide-react";
+import { useState } from "react";
 import { EmptyState } from "@/components/common/empty-state";
 import { AdminPageLayout } from "@/components/layout/admin-page-layout";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -11,198 +14,465 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  JobExecution,
+  JobStatus,
+  useBackgroundJobs,
+  useJobHistory,
+  useTriggerJob,
+} from "@/hooks/admin/use-background-jobs";
+import {
+  RedisHealthStatus,
+  useRedisHealth,
+  useRedisKeys,
+} from "@/hooks/admin/use-redis-health";
 
 /**
  * System logs and monitoring page
- *
- * Note: Backend needs to implement log aggregation endpoints.
- * Currently shows structure ready for when backend APIs are available.
  */
 export function SystemLogsPageClient() {
-  // TODO: Replace with actual log data from API
-  const errorLogs: Array<{
-    id: string;
-    level: "error" | "warn" | "info";
-    message: string;
-    timestamp: Date | string;
-    endpoint?: string;
-    userId?: string;
-  }> = [];
-
-  const slowQueries: Array<{
-    id: string;
-    query: string;
-    duration: number;
-    timestamp: Date | string;
-  }> = [];
+  const { data: redisHealth, isLoading: isLoadingRedis } = useRedisHealth();
+  const { data: redisKeys } = useRedisKeys();
+  const { data: jobsData, isLoading: isLoadingJobs } = useBackgroundJobs();
+  const jobs = jobsData?.jobs || [];
 
   return (
     <AdminPageLayout
       title="System Logs"
       description="View system logs, errors, and performance metrics"
     >
-      <Tabs defaultValue="errors" className="space-y-4">
+      <Tabs defaultValue="redis" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="errors">Error Logs</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="redis">Redis Health</TabsTrigger>
           <TabsTrigger value="jobs">Background Jobs</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="errors" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5" />
-                <CardTitle>Recent Errors</CardTitle>
-              </div>
-              <CardDescription>
-                Recent backend errors and exceptions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {errorLogs.length === 0 ? (
-                <EmptyState
-                  type="default"
-                  title="No errors"
-                  description="No errors logged in the recent period."
-                  icon={<AlertCircle className="h-12 w-12" />}
-                />
-              ) : (
-                <div className="space-y-2">
-                  {errorLogs.map((log) => (
-                    <div
-                      key={log.id}
-                      className="rounded-lg border p-4 hover:bg-muted/50"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge
-                              variant={
-                                log.level === "error"
-                                  ? "destructive"
-                                  : "secondary"
-                              }
-                            >
-                              {log.level}
-                            </Badge>
-                            {log.endpoint && (
-                              <span className="text-xs text-muted-foreground font-mono">
-                                {log.endpoint}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm">{log.message}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(log.timestamp).toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="performance" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                <CardTitle>Slow Queries & Endpoints</CardTitle>
-              </div>
-              <CardDescription>
-                Endpoints and queries taking longer than expected
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {slowQueries.length === 0 ? (
-                <EmptyState
-                  type="default"
-                  title="No slow queries"
-                  description="All queries are performing within acceptable limits."
-                  icon={<Clock className="h-12 w-12" />}
-                />
-              ) : (
-                <div className="space-y-2">
-                  {slowQueries.map((query) => (
-                    <div
-                      key={query.id}
-                      className="rounded-lg border p-4 hover:bg-muted/50"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="text-sm font-mono mb-1">
-                            {query.query}
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary">
-                              {query.duration}ms
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(query.timestamp).toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="redis" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Database className="h-5 w-5" />
-                <CardTitle>Redis Health</CardTitle>
-              </div>
-              <CardDescription>
-                Redis connection status and metrics
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md bg-muted/50 p-4">
-                <p className="text-sm text-muted-foreground">
-                  <strong>Note:</strong> Redis health monitoring requires
-                  backend API implementation. This will show Redis connection
-                  status, memory usage, and key statistics.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <RedisHealthTab
+            health={redisHealth}
+            keys={redisKeys}
+            isLoading={isLoadingRedis}
+          />
         </TabsContent>
 
         <TabsContent value="jobs" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                <CardTitle>Background Jobs</CardTitle>
-              </div>
-              <CardDescription>
-                History of background job executions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md bg-muted/50 p-4">
-                <p className="text-sm text-muted-foreground">
-                  <strong>Note:</strong> Background job history requires backend
-                  API implementation. This will show shipping jobs, media
-                  consistency jobs, and other background tasks.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <BackgroundJobsTab jobs={jobs} isLoading={isLoadingJobs} />
         </TabsContent>
       </Tabs>
     </AdminPageLayout>
   );
+}
+
+function RedisHealthTab({
+  health,
+  keys,
+  isLoading,
+}: {
+  health?: RedisHealthStatus;
+  keys?: Record<string, number>;
+  isLoading: boolean;
+}) {
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Redis Health</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-muted-foreground">Loading...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!health) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Redis Health</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EmptyState
+            type="default"
+            title="No data available"
+            description="Unable to fetch Redis health data."
+            icon={<Database className="h-12 w-12" />}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const statusColor =
+    health.status === "healthy"
+      ? "bg-green-500"
+      : health.status === "degraded"
+        ? "bg-yellow-500"
+        : "bg-red-500";
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            <CardTitle>Redis Health</CardTitle>
+          </div>
+          <CardDescription>Redis connection status and metrics</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Connection Status */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Connection Status</span>
+              <div className="flex items-center gap-2">
+                <div className={`h-2 w-2 rounded-full ${statusColor}`} />
+                <span className="text-sm capitalize">{health.status}</span>
+              </div>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Status: {health.connection.status}
+              {health.connection.latency && (
+                <span className="ml-2">
+                  • Latency: {health.connection.latency}ms
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Memory Usage */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Memory Usage</span>
+              <span className="text-sm text-muted-foreground">
+                {health.memory.percentage.toFixed(1)}%
+              </span>
+            </div>
+            <Progress value={health.memory.percentage} className="h-2" />
+            <div className="text-xs text-muted-foreground mt-1">
+              {formatBytes(health.memory.used)} /{" "}
+              {health.memory.total > 0
+                ? formatBytes(health.memory.total)
+                : "Unlimited"}
+            </div>
+          </div>
+
+          {/* Clients */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="text-sm font-medium">Connected Clients</div>
+              <div className="text-2xl font-bold">
+                {health.clients.connected}
+              </div>
+            </div>
+            <div>
+              <div className="text-sm font-medium">Blocked Clients</div>
+              <div className="text-2xl font-bold">{health.clients.blocked}</div>
+            </div>
+          </div>
+
+          {/* Keyspace */}
+          <div>
+            <div className="text-sm font-medium mb-2">Keyspace</div>
+            <div className="text-2xl font-bold mb-2">
+              {health.keyspace.totalKeys.toLocaleString()} keys
+            </div>
+            {keys && Object.keys(keys).length > 0 && (
+              <div className="space-y-1">
+                {Object.entries(keys).map(([pattern, count]) => (
+                  <div
+                    key={pattern}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <span className="text-muted-foreground font-mono text-xs">
+                      {pattern}
+                    </span>
+                    <span className="font-medium">
+                      {count.toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Replication */}
+          {health.replication && (
+            <div>
+              <div className="text-sm font-medium mb-2">Replication</div>
+              <div className="text-sm text-muted-foreground">
+                Role:{" "}
+                <span className="capitalize">{health.replication.role}</span>
+                {health.replication.connectedSlaves !== undefined && (
+                  <span className="ml-2">
+                    • Connected Slaves: {health.replication.connectedSlaves}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function BackgroundJobsTab({
+  jobs,
+  isLoading,
+}: {
+  jobs: JobStatus[];
+  isLoading: boolean;
+}) {
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Background Jobs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-muted-foreground">Loading...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (jobs.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Background Jobs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EmptyState
+            type="default"
+            title="No jobs found"
+            description="No background jobs are configured."
+            icon={<FileText className="h-12 w-12" />}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {jobs.map((job) => (
+        <JobCard key={job.name} job={job} />
+      ))}
+    </div>
+  );
+}
+
+function JobCard({ job }: { job: JobStatus }) {
+  const [showHistory, setShowHistory] = useState(false);
+  const { data: historyData } = useJobHistory(showHistory ? job.name : "");
+  const triggerJob = useTriggerJob();
+
+  const statusColor =
+    job.status === "running"
+      ? "bg-blue-500"
+      : job.status === "error"
+        ? "bg-red-500"
+        : "bg-gray-500";
+
+  const successRate =
+    job.executionCount > 0
+      ? ((job.successCount / job.executionCount) * 100).toFixed(1)
+      : "0";
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className={`h-2 w-2 rounded-full ${statusColor}`} />
+            <CardTitle className="text-lg">{job.name}</CardTitle>
+          </div>
+          <div className="flex items-center gap-2">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowHistory(true)}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  History
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Execution History: {job.name}</DialogTitle>
+                  <DialogDescription>
+                    Recent execution history for this background job
+                  </DialogDescription>
+                </DialogHeader>
+                <JobHistoryContent history={historyData?.history || []} />
+              </DialogContent>
+            </Dialog>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => triggerJob.mutate({ jobName: job.name })}
+              disabled={triggerJob.isPending}
+            >
+              <Play className="h-4 w-4 mr-2" />
+              Trigger
+            </Button>
+          </div>
+        </div>
+        <CardDescription>{job.description}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <div className="text-sm text-muted-foreground">Schedule</div>
+            <div className="text-sm font-medium font-mono">{job.schedule}</div>
+          </div>
+          <div>
+            <div className="text-sm text-muted-foreground">Status</div>
+            <Badge
+              variant={job.status === "error" ? "destructive" : "secondary"}
+            >
+              {job.status}
+            </Badge>
+          </div>
+          <div>
+            <div className="text-sm text-muted-foreground">Last Run</div>
+            <div className="text-sm font-medium">
+              {job.lastRun
+                ? formatDistanceToNow(new Date(job.lastRun), {
+                    addSuffix: true,
+                  })
+                : "Never"}
+            </div>
+          </div>
+          <div>
+            <div className="text-sm text-muted-foreground">Next Run</div>
+            <div className="text-sm font-medium">
+              {job.nextRun
+                ? formatDistanceToNow(new Date(job.nextRun), {
+                    addSuffix: true,
+                  })
+                : "Unknown"}
+            </div>
+          </div>
+        </div>
+
+        {job.lastDuration !== undefined && (
+          <div>
+            <div className="text-sm text-muted-foreground mb-1">
+              Last Duration
+            </div>
+            <div className="text-sm font-medium">{job.lastDuration}ms</div>
+          </div>
+        )}
+
+        {job.lastError && (
+          <div>
+            <div className="text-sm text-muted-foreground mb-1">Last Error</div>
+            <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+              {job.lastError}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-3 gap-4 pt-2 border-t">
+          <div>
+            <div className="text-sm text-muted-foreground">
+              Total Executions
+            </div>
+            <div className="text-lg font-bold">{job.executionCount}</div>
+          </div>
+          <div>
+            <div className="text-sm text-muted-foreground">Success</div>
+            <div className="text-lg font-bold text-green-600">
+              {job.successCount}
+            </div>
+          </div>
+          <div>
+            <div className="text-sm text-muted-foreground">Success Rate</div>
+            <div className="text-lg font-bold">{successRate}%</div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function JobHistoryContent({ history }: { history: JobExecution[] }) {
+  if (history.length === 0) {
+    return (
+      <div className="py-8 text-center text-muted-foreground">
+        No execution history available
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 max-h-[400px] overflow-y-auto">
+      {history.map((execution) => {
+        const startTime =
+          execution.startTime instanceof Date
+            ? execution.startTime
+            : new Date(execution.startTime);
+        return (
+          <div
+            key={`${execution.jobName}-${startTime.toISOString()}`}
+            className="border rounded-lg p-3 hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant={
+                    execution.status === "success"
+                      ? "default"
+                      : execution.status === "failure"
+                        ? "destructive"
+                        : "secondary"
+                  }
+                >
+                  {execution.status}
+                </Badge>
+                <span className="text-sm text-muted-foreground">
+                  {formatDistanceToNow(startTime, {
+                    addSuffix: true,
+                  })}
+                </span>
+              </div>
+              {execution.duration && (
+                <span className="text-sm font-medium">
+                  {execution.duration}ms
+                </span>
+              )}
+            </div>
+            {execution.error && (
+              <div className="text-sm text-red-600 mt-2 bg-red-50 p-2 rounded">
+                {execution.error}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 }

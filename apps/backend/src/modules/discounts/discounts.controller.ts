@@ -34,7 +34,7 @@ import {
 } from "./services/admin-drift-report.service";
 import { DiscountProfiler } from "./services/discount-profiler.service";
 
-@ApiTags("admin/discounts")
+@ApiTags("admin")
 @Controller("admin/discounts")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth("JWT-auth")
@@ -262,8 +262,8 @@ export class DiscountsController {
   }
 }
 
-@ApiTags("discounts")
-@Controller("discounts")
+@ApiTags("store")
+@Controller("store/discounts")
 export class PublicDiscountsController {
   constructor(private readonly discountsService: DiscountsService) {}
 

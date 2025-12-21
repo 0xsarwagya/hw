@@ -4,7 +4,7 @@ import { PinoLogger } from "nestjs-pino";
 import { Public } from "../decorators/public.decorator";
 import { ContextService } from "../logging/context.service";
 
-@ApiTags("health")
+@ApiTags("admin")
 @Controller("_health")
 @Public()
 export class HealthLoggerController {

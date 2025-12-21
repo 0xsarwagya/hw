@@ -116,4 +116,53 @@ export class OrderStatusService {
       items,
     } as OrderResponseDto;
   }
+
+  /**
+   * Update order status (admin - no user validation)
+   */
+  async updateStatusForAdmin(
+    orderId: string,
+    updateStatusDto: UpdateOrderStatusDto,
+  ): Promise<OrderResponseDto> {
+    // Get current order (no customer validation for admin)
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, orderId))
+      .limit(1);
+
+    if (!order) {
+      throw new NotFoundException("Order not found");
+    }
+
+    // Validate status transition
+    this.validateStatusTransition(order.status, updateStatusDto.status);
+
+    // Update order status
+    const [updatedOrder] = await db
+      .update(orders)
+      .set({
+        status: updateStatusDto.status,
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, orderId))
+      .returning();
+
+    // Get order items
+    const items = await db
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.orderId, orderId));
+
+    const gstBreakdown = await this.gstService.calculateOrderGstBreakdown(
+      orderId,
+      updatedOrder.shippingAddressId,
+    );
+
+    return {
+      ...updatedOrder,
+      gstBreakdown,
+      items,
+    } as OrderResponseDto;
+  }
 }

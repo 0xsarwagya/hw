@@ -24,7 +24,7 @@ import {
 import { MediaAuditService } from "../services/media-audit.service";
 import { MediaConsistencyService } from "../services/media-consistency.service";
 
-@ApiTags("admin-media-health")
+@ApiTags("admin")
 @Controller("admin/media/health")
 @Roles("admin")
 @ApiBearerAuth("JWT-auth")

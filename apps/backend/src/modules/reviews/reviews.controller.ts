@@ -46,8 +46,8 @@ import { UpdateReviewDto } from "./dto/update-review.dto";
 import { ReviewAggregationService } from "./services/review-aggregation.service";
 import { ReviewsService } from "./services/reviews.service";
 
-@ApiTags("reviews")
-@Controller("products")
+@ApiTags("store")
+@Controller("store/products")
 export class ReviewsController {
   constructor(
     private readonly reviewsService: ReviewsService,

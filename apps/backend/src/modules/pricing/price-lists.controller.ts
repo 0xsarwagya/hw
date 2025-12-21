@@ -32,7 +32,7 @@ import {
 } from "./services/admin-pricing-drift-report.service";
 import { PriceListService } from "./services/price-list.service";
 
-@ApiTags("admin/price-lists")
+@ApiTags("admin")
 @Controller("admin/price-lists")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth("JWT-auth")

@@ -63,7 +63,7 @@ const ALLOWED_MIME_TYPES = [
   "image/gif",
 ];
 
-@ApiTags("storage")
+@ApiTags("admin")
 @Controller("admin/storage")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth("JWT-auth")

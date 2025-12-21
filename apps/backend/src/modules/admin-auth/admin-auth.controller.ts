@@ -36,7 +36,7 @@ import { AdminLoginDto } from "./dto/admin-login.dto";
 import { Verify2FALoginDto } from "./dto/verify-2fa-login.dto";
 import { AdminLoginRateLimitGuard } from "./guards/rate-limit.guard";
 
-@ApiTags("admin-auth")
+@ApiTags("admin")
 @Controller("admin/auth")
 export class AdminAuthController {
   constructor(
