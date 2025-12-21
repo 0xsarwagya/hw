@@ -1,0 +1,318 @@
+
+> @vestcodes/vcecom@0.0.0 test /Users/sarwagya/Desktop/personal/vestcodes/ecommerce
+> turbo run test
+
+• Packages in scope: @vcecom/db, @vcecom/typescript-config, @vestcodes/vcecom-admin, @vestcodes/vcecom-backend, @vestcodes/vcecom-docs
+• Running test in 5 packages
+• Remote caching disabled
+@vcecom/db:test: cache hit, replaying logs c5febfbe352d39b9
+@vcecom/db:test: 
+@vcecom/db:test: 
+@vcecom/db:test: > @vcecom/db@0.0.0 test /Users/sarwagya/Desktop/personal/vestcodes/ecommerce/packages/db
+@vcecom/db:test: > echo 'Skipping DB tests' && exit 0
+@vcecom/db:test: 
+@vcecom/db:test: Skipping DB tests
+@vcecom/db:build: cache hit, replaying logs 9b1169b74aa26cc0
+@vcecom/db:build: 
+@vcecom/db:build: 
+@vcecom/db:build: > @vcecom/db@0.0.0 build /Users/sarwagya/Desktop/personal/vestcodes/ecommerce/packages/db
+@vcecom/db:build: > tsc
+@vcecom/db:build: 
+@vcecom/db:build: 
+@vcecom/db:build: > @vcecom/db@0.0.0 postbuild /Users/sarwagya/Desktop/personal/vestcodes/ecommerce/packages/db
+@vcecom/db:build: > pnpm db:seed || true
+@vcecom/db:build: 
+@vcecom/db:build: 
+@vcecom/db:build: > @vcecom/db@0.0.0 db:seed /Users/sarwagya/Desktop/personal/vestcodes/ecommerce/packages/db
+@vcecom/db:build: > node dist/seed.js
+@vcecom/db:build: 
+@vcecom/db:build: [dotenv@17.2.3] injecting env (25) from ../../.env [2m-- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops[0m
+@vcecom/db:build: ✅ Users already exist, skipping seed
+@vestcodes/vcecom-backend:test: cache miss, executing 15d8a7625f05db60
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test: > @vestcodes/vcecom-backend@0.0.1 test /Users/sarwagya/Desktop/personal/vestcodes/ecommerce/apps/backend
+@vestcodes/vcecom-backend:test: > node scripts/generate-build-info.js && jest
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test: ✅ Generated build-info.ts
+@vestcodes/vcecom-backend:test:    Version: 2025.12.21
+@vestcodes/vcecom-backend:test:    Commit: a2a868e
+@vestcodes/vcecom-backend:test:    Build Date: 2025-12-20T23:58:58.469Z
+@vestcodes/vcecom-backend:test: (node:95258) Warning: `--localstorage-file` was provided without a valid path
+@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@vestcodes/vcecom-backend:test: FAIL src/modules/payments/services/payment-charge.service.spec.ts
+@vestcodes/vcecom-backend:test:   ● PaymentChargeService › validateCodEligibility › should allow COD when cart total is below max amount
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     expect(received).toBe(expected) // Object.is equality
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     Expected: true
+@vestcodes/vcecom-backend:test:     Received: undefined
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       624 |       );
+@vestcodes/vcecom-backend:test:       625 |
+@vestcodes/vcecom-backend:test:     > 626 |       expect(result.eligible).toBe(true);
+@vestcodes/vcecom-backend:test:           |                               ^
+@vestcodes/vcecom-backend:test:       627 |     });
+@vestcodes/vcecom-backend:test:       628 |
+@vestcodes/vcecom-backend:test:       629 |     it("should disallow COD when cart total exceeds max amount", () => {
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/payments/services/payment-charge.service.spec.ts:626:31)
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:   ● PaymentChargeService › validateCodEligibility › should disallow COD when cart total exceeds max amount
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     expect(received).toBe(expected) // Object.is equality
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     Expected: false
+@vestcodes/vcecom-backend:test:     Received: undefined
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       656 |       );
+@vestcodes/vcecom-backend:test:       657 |
+@vestcodes/vcecom-backend:test:     > 658 |       expect(result.eligible).toBe(false);
+@vestcodes/vcecom-backend:test:           |                               ^
+@vestcodes/vcecom-backend:test:       659 |       expect(result.reason).toContain("COD not available for orders above");
+@vestcodes/vcecom-backend:test:       660 |     });
+@vestcodes/vcecom-backend:test:       661 |
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/payments/services/payment-charge.service.spec.ts:658:31)
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:   ● PaymentChargeService › validateCodEligibility › should allow COD when max amount is not set
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     expect(received).toBe(expected) // Object.is equality
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     Expected: true
+@vestcodes/vcecom-backend:test:     Received: undefined
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       689 |       );
+@vestcodes/vcecom-backend:test:       690 |
+@vestcodes/vcecom-backend:test:     > 691 |       expect(result.eligible).toBe(true);
+@vestcodes/vcecom-backend:test:           |                               ^
+@vestcodes/vcecom-backend:test:       692 |     });
+@vestcodes/vcecom-backend:test:       693 |   });
+@vestcodes/vcecom-backend:test:       694 | });
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/payments/services/payment-charge.service.spec.ts:691:31)
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test: (node:95256) Warning: `--localstorage-file` was provided without a valid path
+@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@vestcodes/vcecom-backend:test: (node:95257) Warning: `--localstorage-file` was provided without a valid path
+@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@vestcodes/vcecom-backend:test: (node:95255) Warning: `--localstorage-file` was provided without a valid path
+@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@vestcodes/vcecom-backend:test: (node:95253) Warning: `--localstorage-file` was provided without a valid path
+@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@vestcodes/vcecom-backend:test: FAIL src/modules/checkout/checkout.controller.spec.ts
+@vestcodes/vcecom-backend:test:   ● CheckoutController › getPaymentMethods › should return payment methods with calculated fees for authenticated user
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     expect(jest.fn()).toHaveBeenCalledWith(...expected)
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     Expected: 100000, "INR", Any<Array>
+@vestcodes/vcecom-backend:test:     Received: 100000, "INR", [{"metadata": null, "price": 500, "productVariantId": "variant-1", "quantity": 2}], {}
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     Number of calls: 1
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       168 |       expect(result).toEqual({ methods: mockMethods });
+@vestcodes/vcecom-backend:test:       169 |       expect(cartsService.getCart).toHaveBeenCalledWith(mockUserId, null);
+@vestcodes/vcecom-backend:test:     > 170 |       expect(paymentChargeService.getAvailableMethods).toHaveBeenCalledWith(
+@vestcodes/vcecom-backend:test:           |                                                        ^
+@vestcodes/vcecom-backend:test:       171 |         100000, // cart total in paise
+@vestcodes/vcecom-backend:test:       172 |         "INR",
+@vestcodes/vcecom-backend:test:       173 |         expect.any(Array),
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/checkout/checkout.controller.spec.ts:170:56)
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test: (node:95261) Warning: `--localstorage-file` was provided without a valid path
+@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@vestcodes/vcecom-backend:test: PASS src/modules/orders/orders.service.spec.ts
+@vestcodes/vcecom-backend:test: (node:95254) Warning: `--localstorage-file` was provided without a valid path
+@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@vestcodes/vcecom-backend:test: FAIL src/modules/orders/__tests__/orders.service.payment-fees.spec.ts
+@vestcodes/vcecom-backend:test:   ● OrdersService - Payment Fees Integration › create - Payment Fees Integration › should include payment fee in payment intent amount
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     TypeError: Cannot read properties of undefined (reading 'get')
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       627 |       // Replace PaymentsService in module
+@vestcodes/vcecom-backend:test:       628 |       const module = service["module"] as TestingModule;
+@vestcodes/vcecom-backend:test:     > 629 |       const paymentsService = module.get("PaymentsService");
+@vestcodes/vcecom-backend:test:           |                                      ^
+@vestcodes/vcecom-backend:test:       630 |       if (paymentsService) {
+@vestcodes/vcecom-backend:test:       631 |         Object.assign(paymentsService, mockPaymentsService);
+@vestcodes/vcecom-backend:test:       632 |       }
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/__tests__/orders.service.payment-fees.spec.ts:629:38)
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test: PASS src/modules/orders/__tests__/orders.service.guest-checkout.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/bundles/__tests__/bundle-eligibility.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/redis-store/stores/checkout-store.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/carts/__tests__/carts.service.bundle.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/storage/storage.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/admin/admin.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/products/products.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/storage/storage.controller.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/discounts/discounts.controller.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/shipping/shipping.controller.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/discounts/discount-validation.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/customers/customers.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/carts/carts.controller.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/bundles/__tests__/bundles.controller.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/logging/context.middleware.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/orders/services/refunds.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/orders/services/order-payment.service.spec.ts
+@vestcodes/vcecom-backend:test: (node:95260) Warning: `--localstorage-file` was provided without a valid path
+@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@vestcodes/vcecom-backend:test: PASS src/modules/payments/payments.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/invoices/invoices.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/shipping/nimbus-post-config.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/redis-store/stores/inventory-store.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/orders/reconciliation.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/shipping/nimbus-post.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/health/health-tracing.controller.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/utils/discount.utils.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/admin-auth/admin-activity.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/admin-auth/admin-auth.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/health/health-logger.controller.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/customers/gstin-verification.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/logging/context-extractor.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/orders/services/order-address.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/bundles/__tests__/bundle-sets.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/bundles/__tests__/bundle-definition.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/redis-store/stores/cart-store.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/admin-auth/guards/rate-limit.guard.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/admin-auth/interceptors/activity-logging.interceptor.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/logging/context.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/shipping/shiprocket-config.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/filters/global-exception.filter.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/shipping/shipping-rules.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/orders/services/order-notes.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/guards/roles.guard.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/redis-store/redis-store.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/storage/services/image-compression.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/admin-auth/admin-sessions.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/admin-auth/admin-mfa.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/bundles/__tests__/bundle-set-items.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/app.controller.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/discounts/engine/discount-engine.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/redis-store/services/inventory-recovery.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/bundles/__tests__/bundle-warmup.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/pricing/__tests__/bundle-pricing.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/validators/gstin.validator.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/auth/auth.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/redis-store/stores/idempotency-store.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/utils/pagination.utils.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/address-autocomplete/address-autocomplete.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/guards/jwt-auth.guard.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/payments/razorpay-config.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/customers/addresses.service.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/utils/search.utils.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/utils/gst.utils.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/logging/__tests__/logging-format.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/utils/address.utils.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/utils/pincode.utils.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/data/indian-states.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/utils/phone.utils.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/common/utils/gstin.utils.spec.ts
+@vestcodes/vcecom-backend:test: PASS src/modules/shipping/services/shipments.service.spec.ts
+@vestcodes/vcecom-backend:test: (node:95259) Warning: `--localstorage-file` was provided without a valid path
+@vestcodes/vcecom-backend:test: (Use `node --trace-warnings ...` to show where the warning was created)
+@vestcodes/vcecom-backend:test: PASS src/modules/shipping/shiprocket.service.spec.ts
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test: Summary of all failing tests
+@vestcodes/vcecom-backend:test: FAIL modules/payments/services/payment-charge.service.spec.ts
+@vestcodes/vcecom-backend:test:   ● PaymentChargeService › validateCodEligibility › should allow COD when cart total is below max amount
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     expect(received).toBe(expected) // Object.is equality
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     Expected: true
+@vestcodes/vcecom-backend:test:     Received: undefined
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       624 |       );
+@vestcodes/vcecom-backend:test:       625 |
+@vestcodes/vcecom-backend:test:     > 626 |       expect(result.eligible).toBe(true);
+@vestcodes/vcecom-backend:test:           |                               ^
+@vestcodes/vcecom-backend:test:       627 |     });
+@vestcodes/vcecom-backend:test:       628 |
+@vestcodes/vcecom-backend:test:       629 |     it("should disallow COD when cart total exceeds max amount", () => {
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/payments/services/payment-charge.service.spec.ts:626:31)
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:   ● PaymentChargeService › validateCodEligibility › should disallow COD when cart total exceeds max amount
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     expect(received).toBe(expected) // Object.is equality
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     Expected: false
+@vestcodes/vcecom-backend:test:     Received: undefined
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       656 |       );
+@vestcodes/vcecom-backend:test:       657 |
+@vestcodes/vcecom-backend:test:     > 658 |       expect(result.eligible).toBe(false);
+@vestcodes/vcecom-backend:test:           |                               ^
+@vestcodes/vcecom-backend:test:       659 |       expect(result.reason).toContain("COD not available for orders above");
+@vestcodes/vcecom-backend:test:       660 |     });
+@vestcodes/vcecom-backend:test:       661 |
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/payments/services/payment-charge.service.spec.ts:658:31)
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:   ● PaymentChargeService › validateCodEligibility › should allow COD when max amount is not set
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     expect(received).toBe(expected) // Object.is equality
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     Expected: true
+@vestcodes/vcecom-backend:test:     Received: undefined
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       689 |       );
+@vestcodes/vcecom-backend:test:       690 |
+@vestcodes/vcecom-backend:test:     > 691 |       expect(result.eligible).toBe(true);
+@vestcodes/vcecom-backend:test:           |                               ^
+@vestcodes/vcecom-backend:test:       692 |     });
+@vestcodes/vcecom-backend:test:       693 |   });
+@vestcodes/vcecom-backend:test:       694 | });
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/payments/services/payment-charge.service.spec.ts:691:31)
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test: FAIL modules/checkout/checkout.controller.spec.ts
+@vestcodes/vcecom-backend:test:   ● CheckoutController › getPaymentMethods › should return payment methods with calculated fees for authenticated user
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     expect(jest.fn()).toHaveBeenCalledWith(...expected)
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     Expected: 100000, "INR", Any<Array>
+@vestcodes/vcecom-backend:test:     Received: 100000, "INR", [{"metadata": null, "price": 500, "productVariantId": "variant-1", "quantity": 2}], {}
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     Number of calls: 1
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       168 |       expect(result).toEqual({ methods: mockMethods });
+@vestcodes/vcecom-backend:test:       169 |       expect(cartsService.getCart).toHaveBeenCalledWith(mockUserId, null);
+@vestcodes/vcecom-backend:test:     > 170 |       expect(paymentChargeService.getAvailableMethods).toHaveBeenCalledWith(
+@vestcodes/vcecom-backend:test:           |                                                        ^
+@vestcodes/vcecom-backend:test:       171 |         100000, // cart total in paise
+@vestcodes/vcecom-backend:test:       172 |         "INR",
+@vestcodes/vcecom-backend:test:       173 |         expect.any(Array),
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/checkout/checkout.controller.spec.ts:170:56)
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test: FAIL modules/orders/__tests__/orders.service.payment-fees.spec.ts
+@vestcodes/vcecom-backend:test:   ● OrdersService - Payment Fees Integration › create - Payment Fees Integration › should include payment fee in payment intent amount
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:     TypeError: Cannot read properties of undefined (reading 'get')
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       627 |       // Replace PaymentsService in module
+@vestcodes/vcecom-backend:test:       628 |       const module = service["module"] as TestingModule;
+@vestcodes/vcecom-backend:test:     > 629 |       const paymentsService = module.get("PaymentsService");
+@vestcodes/vcecom-backend:test:           |                                      ^
+@vestcodes/vcecom-backend:test:       630 |       if (paymentsService) {
+@vestcodes/vcecom-backend:test:       631 |         Object.assign(paymentsService, mockPaymentsService);
+@vestcodes/vcecom-backend:test:       632 |       }
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test:       at Object.<anonymous> (modules/orders/__tests__/orders.service.payment-fees.spec.ts:629:38)
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test: 
+@vestcodes/vcecom-backend:test: Test Suites: 3 failed, 3 skipped, 71 passed, 74 of 77 total
+@vestcodes/vcecom-backend:test: Tests:       5 failed, 113 skipped, 952 passed, 1070 total
+@vestcodes/vcecom-backend:test: Snapshots:   0 total
+@vestcodes/vcecom-backend:test: Time:        3.726 s
+@vestcodes/vcecom-backend:test: Ran all test suites.
+@vestcodes/vcecom-backend:test:  ELIFECYCLE  Test failed. See above for more details.
+
+ Tasks:    2 successful, 3 total
+Cached:    2 cached, 3 total
+  Time:    4.479s 
+Failed:    @vestcodes/vcecom-backend#test
+
+ ELIFECYCLE  Test failed. See above for more details.

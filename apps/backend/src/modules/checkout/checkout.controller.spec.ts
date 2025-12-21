@@ -171,6 +171,7 @@ describe("CheckoutController", () => {
         100000, // cart total in paise
         "INR",
         expect.any(Array),
+        expect.any(Object), // context parameter
       );
     });
 
