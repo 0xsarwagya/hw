@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useVerifyPayment } from "@/hooks/use-payments";
-import { getAuthToken } from "@/lib/utils/storage";
+import { getToken } from "@/lib/utils/storage";
 
 interface PaymentGatewayClientProps {
   paymentIntentId: string;
@@ -81,7 +81,7 @@ export function PaymentGatewayClient({
     const maxAttempts = 20; // 20 attempts = 20 seconds max
     const pollInterval = 1000; // 1 second
 
-    const token = getAuthToken();
+    const token = getToken();
     const ordersEndpoint = token ? "/store/orders" : "/store/orders"; // Guest users might not have orders endpoint
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -236,7 +236,7 @@ export function PaymentGatewayClient({
         // Handle payment failure
         razorpay.on(
           "payment.failed",
-          (response: { error: { description: string } }) => {
+          (response: { error?: { description?: string } }) => {
             setError(
               response.error?.description ||
                 "Payment failed. Please try again.",
@@ -265,7 +265,13 @@ export function PaymentGatewayClient({
     return () => {
       // Script cleanup is handled by browser
     };
-  }, [paymentIntentId, checkoutSessionId, router, verifyPaymentMutation, waitForOrderCreation]);
+  }, [
+    paymentIntentId,
+    checkoutSessionId,
+    router,
+    verifyPaymentMutation,
+    waitForOrderCreation,
+  ]);
 
   if (error) {
     return (
