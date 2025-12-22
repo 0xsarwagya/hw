@@ -227,7 +227,9 @@ export class PaymentChargeService {
         fee: fee / 100, // Convert from paise to rupees
         breakdown: {
           ...breakdown,
-          flatAmount: breakdown.flatAmount ? breakdown.flatAmount / 100 : undefined,
+          flatAmount: breakdown.flatAmount
+            ? breakdown.flatAmount / 100
+            : undefined,
           calculatedFee: breakdown.calculatedFee / 100,
           mixMin: breakdown.mixMin ? breakdown.mixMin / 100 : undefined,
           mixCap: breakdown.mixCap ? breakdown.mixCap / 100 : undefined,

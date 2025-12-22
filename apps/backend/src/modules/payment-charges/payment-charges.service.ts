@@ -29,9 +29,9 @@ export class PaymentChargesService {
       .select()
       .from(paymentMethodCharges)
       .orderBy(paymentMethodCharges.method);
-    
+
     // Convert paise to rupees for response
-    return charges.map(charge => ({
+    return charges.map((charge) => ({
       ...charge,
       flatAmount: charge.flatAmount / 100,
       mixCap: charge.mixCap ? charge.mixCap / 100 : null,
@@ -67,9 +67,14 @@ export class PaymentChargesService {
 
     // Convert rupees to paise for storage (database stores in paise)
     const flatAmountInPaise = Math.round(dto.flatAmount * 100);
-    const mixCapInPaise = dto.mixCap !== undefined ? Math.round(dto.mixCap * 100) : null;
-    const mixMinInPaise = dto.mixMin !== undefined ? Math.round(dto.mixMin * 100) : null;
-    const codMaxAmountInPaise = dto.codMaxAmount !== undefined ? Math.round(dto.codMaxAmount * 100) : null;
+    const mixCapInPaise =
+      dto.mixCap !== undefined ? Math.round(dto.mixCap * 100) : null;
+    const mixMinInPaise =
+      dto.mixMin !== undefined ? Math.round(dto.mixMin * 100) : null;
+    const codMaxAmountInPaise =
+      dto.codMaxAmount !== undefined
+        ? Math.round(dto.codMaxAmount * 100)
+        : null;
 
     const [charge] = await db
       .insert(paymentMethodCharges)
@@ -123,7 +128,9 @@ export class PaymentChargesService {
       flatAmount: existingDb.flatAmount / 100,
       mixCap: existingDb.mixCap ? existingDb.mixCap / 100 : null,
       mixMin: existingDb.mixMin ? existingDb.mixMin / 100 : null,
-      codMaxAmount: existingDb.codMaxAmount ? existingDb.codMaxAmount / 100 : null,
+      codMaxAmount: existingDb.codMaxAmount
+        ? existingDb.codMaxAmount / 100
+        : null,
     };
 
     // If charge type is being updated, validate the new type
@@ -142,20 +149,21 @@ export class PaymentChargesService {
       ...(dto.chargeType && {
         chargeType: dto.chargeType as unknown as ChargeType,
       }),
-      ...(dto.flatAmount !== undefined && { 
-        flatAmount: Math.round(dto.flatAmount * 100) 
+      ...(dto.flatAmount !== undefined && {
+        flatAmount: Math.round(dto.flatAmount * 100),
       }),
       ...(dto.percentage !== undefined && { percentage: dto.percentage }),
-      ...(dto.mixCap !== undefined && { 
-        mixCap: dto.mixCap !== null ? Math.round(dto.mixCap * 100) : null 
+      ...(dto.mixCap !== undefined && {
+        mixCap: dto.mixCap !== null ? Math.round(dto.mixCap * 100) : null,
       }),
-      ...(dto.mixMin !== undefined && { 
-        mixMin: dto.mixMin !== null ? Math.round(dto.mixMin * 100) : null 
+      ...(dto.mixMin !== undefined && {
+        mixMin: dto.mixMin !== null ? Math.round(dto.mixMin * 100) : null,
       }),
       ...(dto.isTaxable !== undefined && { isTaxable: dto.isTaxable }),
       ...(dto.currency && { currency: dto.currency }),
       ...(dto.codMaxAmount !== undefined && {
-        codMaxAmount: dto.codMaxAmount !== null ? Math.round(dto.codMaxAmount * 100) : null,
+        codMaxAmount:
+          dto.codMaxAmount !== null ? Math.round(dto.codMaxAmount * 100) : null,
       }),
       ...(dto.codDisallowHighValue !== undefined && {
         codDisallowHighValue: dto.codDisallowHighValue,
@@ -222,7 +230,9 @@ export class PaymentChargesService {
       fee: fee / 100,
       breakdown: {
         ...breakdown,
-        flatAmount: breakdown.flatAmount ? breakdown.flatAmount / 100 : undefined,
+        flatAmount: breakdown.flatAmount
+          ? breakdown.flatAmount / 100
+          : undefined,
         calculatedFee: breakdown.calculatedFee / 100,
         mixMin: breakdown.mixMin ? breakdown.mixMin / 100 : undefined,
         mixCap: breakdown.mixCap ? breakdown.mixCap / 100 : undefined,

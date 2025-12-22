@@ -49,8 +49,8 @@ import {
   isLikelySku,
   parseSearchQuery,
 } from "../../common/utils/search.utils";
-import { PriceListService } from "../pricing/services/price-list.service";
 import { calculatePriceAfterOverride } from "../pricing/engine/override-strategies/price-override.strategy";
+import { PriceListService } from "../pricing/services/price-list.service";
 import { StorageService } from "../storage/storage.service";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { FilterProductsDto, SortField, SortOrder } from "./dto/filter.dto";
@@ -512,14 +512,14 @@ export class ProductsService {
     );
 
     const enrichedProduct = this.enrichProductWithGst(product);
-    
+
     // Get pricelist prices for this product
     const pricelistPrices = await this.getPricelistPricesForProduct(
-      id, 
+      id,
       enrichedProduct.priceIncludingGst,
-      product.categoryId
+      product.categoryId,
     );
-    
+
     return {
       ...enrichedProduct,
       images: resolvedImages.length > 0 ? resolvedImages : null,
@@ -535,7 +535,15 @@ export class ProductsService {
     productId: string,
     basePrice: number,
     categoryId: string | null = null,
-  ): Promise<Array<{ priceListId: string; priceListName: string; price: number; overrideType: string; overrideValue: number }>> {
+  ): Promise<
+    Array<{
+      priceListId: string;
+      priceListName: string;
+      price: number;
+      overrideType: string;
+      overrideValue: number;
+    }>
+  > {
     if (!this.priceListService) {
       return [];
     }
@@ -543,28 +551,34 @@ export class ProductsService {
     try {
       // Get active pricelists
       const activePriceLists = await this.priceListService.findActive();
-      
-      const pricelistPrices: Array<{ priceListId: string; priceListName: string; price: number; overrideType: string; overrideValue: number }> = [];
+
+      const pricelistPrices: Array<{
+        priceListId: string;
+        priceListName: string;
+        price: number;
+        overrideType: string;
+        overrideValue: number;
+      }> = [];
 
       for (const priceList of activePriceLists) {
         // Find product-level or category-level items for this product
         const applicableItem = priceList.items.find(
-          (item) => item.productId === productId || (item.categoryId && item.categoryId === productId)
+          (item) =>
+            item.productId === productId ||
+            (item.categoryId && item.categoryId === productId),
         );
 
         if (applicableItem) {
           // Calculate price after override
-          const priceAfterOverride = calculatePriceAfterOverride(
-            basePrice,
-            {
-              priceListId: priceList.id,
-              priceListName: priceList.name,
-              priority: priceList.priority,
-              overrideType: applicableItem.overrideType,
-              overrideValue: applicableItem.overrideValue,
-              specificity: applicableItem.productId === productId ? "PRODUCT" : "CATEGORY",
-            }
-          );
+          const priceAfterOverride = calculatePriceAfterOverride(basePrice, {
+            priceListId: priceList.id,
+            priceListName: priceList.name,
+            priority: priceList.priority,
+            overrideType: applicableItem.overrideType,
+            overrideValue: applicableItem.overrideValue,
+            specificity:
+              applicableItem.productId === productId ? "PRODUCT" : "CATEGORY",
+          });
 
           // Apply GST calculation if needed (assuming same GST rate)
           // For now, use the price after override directly
