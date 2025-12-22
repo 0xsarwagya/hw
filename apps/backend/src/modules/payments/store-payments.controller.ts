@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   Headers,
   Post,
   RawBodyRequest,
@@ -36,6 +37,86 @@ import { PaymentsService } from "./payments.service";
 @Controller("store/payments")
 export class StorePaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
+
+  @Get("razorpay/status")
+  @SetMetadata(IS_PUBLIC_KEY, true)
+  @ApiOperation({
+    summary: "Get Razorpay initialization status",
+    description:
+      "Public endpoint to check if Razorpay is initialized. Useful for debugging payment issues.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Razorpay status",
+    schema: {
+      type: "object",
+      properties: {
+        initialized: {
+          type: "boolean",
+          example: true,
+        },
+        message: {
+          type: "string",
+          example: "Razorpay is initialized",
+        },
+      },
+    },
+  })
+  getRazorpayStatus() {
+    const isInitialized = this.paymentsService.isInitialized();
+    return {
+      initialized: isInitialized,
+      message: isInitialized
+        ? "Razorpay is initialized"
+        : "Razorpay is not initialized. Check RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables.",
+    };
+  }
+
+  @Post("razorpay/test")
+  @SetMetadata(IS_PUBLIC_KEY, true)
+  @ApiOperation({
+    summary: "Test Razorpay API call (for debugging)",
+    description:
+      "Tests creating a Razorpay order with a small amount. Useful for debugging payment issues.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Test result",
+  })
+  async testRazorpay() {
+    try {
+      const razorpay = this.paymentsService.getRazorpayInstance();
+      console.log("[Test] Creating test Razorpay order...");
+
+      const testOrder = await razorpay.orders.create({
+        amount: 100, // 1 rupee in paise (minimum)
+        currency: "INR",
+        receipt: `test-${Date.now()}`,
+      });
+
+      console.log("[Test] Razorpay order created:", testOrder.id);
+
+      return {
+        success: true,
+        orderId: testOrder.id,
+        message: "Razorpay API call successful",
+      };
+    } catch (error) {
+      console.error("[Test] Razorpay API call failed:", error);
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? {
+                name: error.name,
+                message: error.message,
+                stack: error.stack,
+              }
+            : String(error),
+        message: "Razorpay API call failed",
+      };
+    }
+  }
 
   @Post("razorpay/orders")
   @UseGuards(JwtAuthGuard, RolesGuard)

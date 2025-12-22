@@ -207,9 +207,13 @@ describe("CheckoutController", () => {
       cartsService.getCart.mockResolvedValue(mockCart);
       paymentChargeService.getAvailableMethods.mockResolvedValue(mockMethods);
 
-      const req = {} as any;
+      const req = {
+        headers: {
+          "x-session-id": mockSessionId,
+        },
+      } as any;
 
-      const result = await controller.getPaymentMethods(req, mockSessionId);
+      const result = await controller.getPaymentMethods(req);
 
       expect(result).toEqual({ methods: mockMethods });
       expect(cartsService.getCart).toHaveBeenCalledWith(null, mockSessionId);

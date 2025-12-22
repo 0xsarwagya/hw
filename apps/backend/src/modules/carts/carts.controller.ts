@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -24,6 +23,7 @@ import {
 import { Public } from "../../common/decorators/public.decorator";
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
+import { extractSessionId } from "../../common/utils/session.utils";
 import { CartsService } from "./carts.service";
 import { AddItemDto } from "./dto/add-item.dto";
 import { ApplyDiscountDto } from "./dto/apply-discount.dto";
@@ -51,12 +51,10 @@ export class CartsController {
     description: "Cart retrieved successfully",
     type: CartResponseDto,
   })
-  async getCart(
-    @Request() req,
-    @Headers("x-session-id") sessionId?: string,
-  ): Promise<CartResponseDto> {
+  async getCart(@Request() req): Promise<CartResponseDto> {
     const userId = req.user?.id || null;
-    return this.cartsService.getCart(userId, sessionId || null);
+    const sessionId = extractSessionId(req);
+    return this.cartsService.getCart(userId, sessionId);
   }
 
   @Post("items")
@@ -86,10 +84,10 @@ export class CartsController {
   async addItem(
     @Request() req,
     @Body() addItemDto: AddItemDto,
-    @Headers("x-session-id") sessionId?: string,
   ): Promise<CartResponseDto> {
     const userId = req.user?.id || null;
-    return this.cartsService.addItem(userId, sessionId || null, addItemDto);
+    const sessionId = extractSessionId(req);
+    return this.cartsService.addItem(userId, sessionId, addItemDto);
   }
 
   @Put("items/:id")
@@ -124,15 +122,10 @@ export class CartsController {
     @Request() req,
     @Param("id") id: string,
     @Body() updateDto: UpdateItemDto,
-    @Headers("x-session-id") sessionId?: string,
   ): Promise<CartResponseDto> {
     const userId = req.user?.id || null;
-    return this.cartsService.updateItem(
-      userId,
-      sessionId || null,
-      id,
-      updateDto,
-    );
+    const sessionId = extractSessionId(req);
+    return this.cartsService.updateItem(userId, sessionId, id, updateDto);
   }
 
   @Delete("items/:id")
@@ -163,10 +156,10 @@ export class CartsController {
   async removeItem(
     @Request() req,
     @Param("id") id: string,
-    @Headers("x-session-id") sessionId?: string,
   ): Promise<CartResponseDto> {
     const userId = req.user?.id || null;
-    return this.cartsService.removeItem(userId, sessionId || null, id);
+    const sessionId = extractSessionId(req);
+    return this.cartsService.removeItem(userId, sessionId, id);
   }
 
   @Delete()
@@ -185,12 +178,10 @@ export class CartsController {
     description: "Cart cleared successfully",
     type: CartResponseDto,
   })
-  async clearCart(
-    @Request() req,
-    @Headers("x-session-id") sessionId?: string,
-  ): Promise<CartResponseDto> {
+  async clearCart(@Request() req): Promise<CartResponseDto> {
     const userId = req.user?.id || null;
-    return this.cartsService.clearCart(userId, sessionId || null);
+    const sessionId = extractSessionId(req);
+    return this.cartsService.clearCart(userId, sessionId);
   }
 
   @Post()
@@ -210,13 +201,11 @@ export class CartsController {
     description: "Cart created successfully",
     type: CartResponseDto,
   })
-  async createCart(
-    @Request() req,
-    @Headers("x-session-id") sessionId?: string,
-  ): Promise<CartResponseDto> {
+  async createCart(@Request() req): Promise<CartResponseDto> {
     const userId = req.user?.id || null;
+    const sessionId = extractSessionId(req);
     // getOrCreateCart will create if it doesn't exist
-    return this.cartsService.getCart(userId, sessionId || null);
+    return this.cartsService.getCart(userId, sessionId);
   }
 
   @Post("coupon")
@@ -242,12 +231,12 @@ export class CartsController {
   async applyDiscount(
     @Request() req,
     @Body() applyDiscountDto: ApplyDiscountDto,
-    @Headers("x-session-id") sessionId?: string,
   ): Promise<CartResponseDto> {
     const userId = req.user?.id || null;
+    const sessionId = extractSessionId(req);
     return this.cartsService.applyDiscount(
       userId,
-      sessionId || null,
+      sessionId,
       applyDiscountDto.code,
     );
   }
@@ -269,12 +258,10 @@ export class CartsController {
     description: "Cart reset successfully",
     type: CartResponseDto,
   })
-  async resetCart(
-    @Request() req,
-    @Headers("x-session-id") sessionId?: string,
-  ): Promise<CartResponseDto> {
+  async resetCart(@Request() req): Promise<CartResponseDto> {
     const userId = req.user?.id || null;
-    return this.cartsService.clearCart(userId, sessionId || null);
+    const sessionId = extractSessionId(req);
+    return this.cartsService.clearCart(userId, sessionId);
   }
 
   @Delete("coupon")
@@ -294,11 +281,9 @@ export class CartsController {
     description: "Discount removed successfully",
     type: CartResponseDto,
   })
-  async removeDiscount(
-    @Request() req,
-    @Headers("x-session-id") sessionId?: string,
-  ): Promise<CartResponseDto> {
+  async removeDiscount(@Request() req): Promise<CartResponseDto> {
     const userId = req.user?.id || null;
-    return this.cartsService.removeDiscount(userId, sessionId || null);
+    const sessionId = extractSessionId(req);
+    return this.cartsService.removeDiscount(userId, sessionId);
   }
 }

@@ -35,14 +35,15 @@ export function InventoryDetailSkeleton() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-4">
-            {Array.from({ length: 3 }, (_, i) => `stat-skeleton-${i}`).map(
-              (key) => (
-                <div key={key}>
-                  <Skeleton className="h-4 w-24 mb-2" />
-                  <Skeleton className="h-8 w-16" />
-                </div>
-              ),
-            )}
+            {Array.from(
+              { length: 3 },
+              (_, i) => `stat-skeleton-${i.toString()}`,
+            ).map((key) => (
+              <div key={key}>
+                <Skeleton className="h-4 w-24 mb-2" />
+                <Skeleton className="h-8 w-16" />
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -51,11 +52,12 @@ export function InventoryDetailSkeleton() {
       <Card>
         <CardHeader>
           <div className="flex gap-4">
-            {Array.from({ length: 4 }, (_, i) => `tab-skeleton-${i}`).map(
-              (key) => (
-                <Skeleton key={key} className="h-9 w-24" />
-              ),
-            )}
+            {Array.from(
+              { length: 4 },
+              (_, i) => `tab-skeleton-${i.toString()}`,
+            ).map((key) => (
+              <Skeleton key={key} className="h-9 w-24" />
+            ))}
           </div>
         </CardHeader>
         <CardContent>

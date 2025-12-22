@@ -5,19 +5,18 @@
 
 export interface BundleSetItem {
   id: string;
-  bundleSetId: string;
-  productVariantId: string;
-  quantity: number;
+  variantId: string;
   createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface BundleSet {
   id: string;
   bundleId: string;
-  name: string;
-  minSelections: number;
-  maxSelections: number;
+  title: string;
+  description?: string;
+  minQuantity: number;
+  maxQuantity: number;
+  sortOrder: number;
   items: BundleSetItem[];
   createdAt: Date;
   updatedAt: Date;
@@ -28,6 +27,7 @@ export interface Bundle {
   title: string;
   description: string | null;
   isActive: boolean;
+  allowMixAndMatch: boolean;
   sets: BundleSet[];
   createdAt: Date;
   updatedAt: Date;
@@ -50,19 +50,20 @@ export interface CreateBundleInput {
   title: string;
   description?: string | null;
   isActive?: boolean;
+  allowMixAndMatch?: boolean;
 }
 
 export type UpdateBundleInput = Partial<CreateBundleInput>;
 
 export interface CreateBundleSetInput {
-  name: string;
-  minSelections: number;
-  maxSelections: number;
+  title: string;
+  description?: string;
+  minQuantity: number;
+  maxQuantity: number;
 }
 
 export type UpdateBundleSetInput = Partial<CreateBundleSetInput>;
 
 export interface AddBundleSetItemInput {
-  productVariantId: string;
-  quantity: number;
+  variantId: string;
 }

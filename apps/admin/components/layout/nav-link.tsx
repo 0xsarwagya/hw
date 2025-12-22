@@ -22,8 +22,22 @@ export function NavLink({
   isChild = false,
 }: NavLinkProps) {
   const pathname = usePathname();
-  const isActive =
-    pathname === href || (href !== "/" && pathname.startsWith(href));
+
+  // Only match exact paths or direct children (one level deep)
+  // This prevents multiple sidebar items from being highlighted
+  let isActive = false;
+
+  if (pathname === href) {
+    // Exact match
+    isActive = true;
+  } else if (href !== "/" && pathname.startsWith(`${href}/`)) {
+    // Check if it's a direct child (only one level deeper)
+    // e.g., /orders matches /orders/123 but not /orders/123/details
+    const pathAfterHref = pathname.slice(href.length + 1);
+    const segments = pathAfterHref.split("/").filter(Boolean);
+    // Only match if there's exactly one segment (direct child)
+    isActive = segments.length === 1;
+  }
 
   return (
     <Link

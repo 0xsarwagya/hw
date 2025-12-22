@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -82,6 +83,9 @@ export const orders = pgTable(
      * Used for refunds and historical accuracy
      */
     pricingSnapshot: jsonb("pricing_snapshot"),
+    archived: boolean("archived").notNull().default(false),
+    archivedAt: timestamp("archived_at"),
+    archivedBy: uuid("archived_by").references(() => customers.id),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -101,6 +105,7 @@ export const orders = pgTable(
     paymentMethodIdx: index("orders_payment_method_idx").on(
       table.paymentMethod,
     ),
+    archivedIdx: index("orders_archived_idx").on(table.archived),
   }),
 );
 

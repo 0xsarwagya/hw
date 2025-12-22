@@ -23,7 +23,14 @@ export class BundleCacheStore implements IBundleCacheStore, OnModuleInit {
   }
 
   async onModuleInit() {
-    this.client = await this.redisStoreService.getClient();
+    try {
+      this.client = await this.redisStoreService.getClient();
+    } catch (error) {
+      this.logger.warn(
+        `Redis client not available during initialization - will retry when Redis is available: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      // Don't throw - allow app to start without Redis
+    }
   }
 
   /**

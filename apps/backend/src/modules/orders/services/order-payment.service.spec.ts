@@ -128,10 +128,13 @@ describe("OrderPaymentService", () => {
           }),
         });
 
-      (db.update as jest.Mock).mockReturnValue({
+      // Mock update to handle both payment and order updates
+      (db.update as jest.Mock).mockImplementation(() => {
+        return {
         set: jest.fn().mockReturnValue({
           where: jest.fn().mockResolvedValue(undefined),
         }),
+        };
       });
 
       // Act
@@ -144,18 +147,52 @@ describe("OrderPaymentService", () => {
 
       // Assert
       expect(result).toEqual(mockOrder);
+      
+      // Verify payment status update
       expect(db.update).toHaveBeenCalledWith(payments);
+      const paymentUpdateCall = (db.update as jest.Mock).mock.results[0].value;
+      expect(paymentUpdateCall.set).toHaveBeenCalledWith({
+        status: "captured",
+        updatedAt: expect.any(Date),
+      });
+      
+      // Verify order status update (should update to "confirmed" if pending)
+      expect(db.update).toHaveBeenCalledWith(orders);
+      const orderUpdateCall = (db.update as jest.Mock).mock.results[1].value;
+      expect(orderUpdateCall.set).toHaveBeenCalledWith({
+        status: "confirmed",
+        updatedAt: expect.any(Date),
+      });
+      
+      // Verify update was called twice (payment + order)
+      expect(db.update).toHaveBeenCalledTimes(2);
+      
+      // Verify timeline event
       expect(timelineService.addEvent).toHaveBeenCalledWith(mockOrderId, {
         type: "order_marked_paid",
         title: "Order Marked as Paid",
-        description: "COD order marked as paid by admin",
+        description: `COD order marked as paid by admin (${mockAdminName})`,
         actor: "admin",
         actorId: mockAdminId,
         actorName: mockAdminName,
         actorEmail: mockAdminEmail,
         timestamp: expect.any(Date),
       });
-      expect(logger.info).toHaveBeenCalled();
+      
+      // Verify logging
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderId: mockOrderId,
+          adminId: mockAdminId,
+          adminName: mockAdminName,
+          adminEmail: mockAdminEmail,
+          paymentId: mockPaymentId,
+          paymentMethod: COD_PAYMENT_METHOD,
+          previousStatus: "pending",
+          orderStatus: mockOrder.status,
+        }),
+        "COD order marked as paid by admin",
+      );
     });
 
     it("should throw NotFoundException when order does not exist", async () => {
@@ -257,6 +294,59 @@ describe("OrderPaymentService", () => {
       ).rejects.toThrow(
         `Order payment method is ${nonCodPayment.method}, not COD. Only COD orders can be marked as paid manually.`,
       );
+    });
+
+    it("should accept uppercase COD payment method", async () => {
+      // Arrange - test case-insensitive COD detection
+      const uppercaseCodPayment = {
+        ...mockCodPayment,
+        method: "COD", // Uppercase COD
+      };
+
+      (db.select as jest.Mock)
+        .mockReturnValueOnce({
+          from: jest.fn().mockReturnValue({
+            where: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue([mockOrder]),
+            }),
+          }),
+        })
+        .mockReturnValueOnce({
+          from: jest.fn().mockReturnValue({
+            where: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue([uppercaseCodPayment]),
+            }),
+          }),
+        })
+        .mockReturnValueOnce({
+          from: jest.fn().mockReturnValue({
+            where: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue([mockOrder]),
+            }),
+          }),
+        });
+
+      // Mock update to handle both payment and order updates
+      (db.update as jest.Mock).mockImplementation(() => {
+        return {
+          set: jest.fn().mockReturnValue({
+            where: jest.fn().mockResolvedValue(undefined),
+          }),
+        };
+      });
+
+      // Act
+      const result = await service.markAsPaid(
+        mockOrderId,
+        mockAdminId,
+        mockAdminName,
+        mockAdminEmail,
+      );
+
+      // Assert - should succeed with uppercase COD
+      expect(result).toEqual(mockOrder);
+      expect(db.update).toHaveBeenCalledWith(payments);
+      expect(db.update).toHaveBeenCalledWith(orders);
     });
 
     it("should throw BadRequestException when order is already paid", async () => {

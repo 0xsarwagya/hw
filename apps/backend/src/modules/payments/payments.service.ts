@@ -16,6 +16,7 @@ import {
   createErrorContext,
   createLogContext,
 } from "../../common/logging/logging.helper";
+import { Trace } from "../../common/tracing/trace.decorator";
 import { OrdersService } from "../orders/orders.service";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
 import {
@@ -53,10 +54,39 @@ export class PaymentsService implements OnModuleInit {
     const config = this.appConfigService.getRazorpayConfig();
 
     if (config.keyId && config.keySecret) {
-      this.razorpay = this.razorpayConfigService.initialize({
-        keyId: config.keyId,
-        keySecret: config.keySecret,
-      });
+      try {
+        this.razorpay = this.razorpayConfigService.initialize({
+          keyId: config.keyId,
+          keySecret: config.keySecret,
+          timeout: config.timeout,
+        });
+        this.logger.info(
+          {
+            keyId: `${config.keyId.substring(0, 10)}...`, // Log partial key for verification
+            initialized: true,
+            timeout: config.timeout,
+          },
+          "Razorpay initialized successfully with SDK-level timeout",
+        );
+      } catch (error) {
+        this.logger.error(
+          {
+            error: error instanceof Error ? error.message : String(error),
+            hasKeyId: !!config.keyId,
+            hasKeySecret: !!config.keySecret,
+            timeout: config.timeout,
+          },
+          "Failed to initialize Razorpay",
+        );
+      }
+    } else {
+      this.logger.warn(
+        {
+          hasKeyId: !!config.keyId,
+          hasKeySecret: !!config.keySecret,
+        },
+        "Razorpay not initialized - missing environment variables",
+      );
     }
   }
 
@@ -86,11 +116,13 @@ export class PaymentsService implements OnModuleInit {
    * Initialize Razorpay with custom configuration
    * @param keyId - Razorpay Key ID
    * @param keySecret - Razorpay Key Secret
+   * @param timeout - Optional timeout in milliseconds (default: 10000)
    */
-  initialize(keyId: string, keySecret: string): void {
+  initialize(keyId: string, keySecret: string, timeout?: number): void {
     this.razorpay = this.razorpayConfigService.initialize({
       keyId,
       keySecret,
+      timeout,
     });
   }
 
@@ -104,6 +136,7 @@ export class PaymentsService implements OnModuleInit {
    * @param notes - Additional notes (optional)
    * @returns Payment intent
    */
+  @Trace({ operation: "PaymentsService.createPaymentIntent" })
   async createPaymentIntent(
     checkoutSessionId: string,
     amount: number,
@@ -122,7 +155,44 @@ export class PaymentsService implements OnModuleInit {
       checkoutSessionId,
       async () => {
         // This function is called only if payment intent doesn't exist
+        // Check if Razorpay is initialized before proceeding
+        if (!this.isInitialized()) {
+          const config = this.appConfigService.getRazorpayConfig();
+          this.logger.error(
+            createErrorContext(
+              this.contextService,
+              "createPaymentIntent",
+              new Error("Razorpay is not initialized"),
+              {
+                checkoutSessionId,
+                hasKeyId: !!config.keyId,
+                hasKeySecret: !!config.keySecret,
+              },
+            ),
+            "Razorpay is not initialized - check environment variables",
+          );
+          console.error(
+            `[PaymentsService] Razorpay not initialized for checkoutSessionId=${checkoutSessionId}`,
+          );
+          throw new BadRequestException(
+            "Razorpay payment gateway is not configured. Please contact support.",
+          );
+        }
+
         const razorpay = this.getRazorpayInstance();
+
+        // Log Razorpay instance status for diagnostics
+        this.logger.debug(
+          createLogContext(this.contextService, "createPaymentIntent", {
+            checkoutSessionId,
+            razorpayInitialized: this.isInitialized(),
+            hasRazorpayInstance: !!razorpay,
+          }),
+          "Razorpay instance retrieved, proceeding with order creation",
+        );
+        console.log(
+          `[PaymentsService] Razorpay instance ready for checkoutSessionId=${checkoutSessionId}`,
+        );
 
         // Prepare Razorpay order options
         // CRITICAL: Amount MUST include payment fee (verified upstream in orders.service.ts)
@@ -151,16 +221,74 @@ export class PaymentsService implements OnModuleInit {
 
         try {
           // Create order in Razorpay
+          // Use INFO level so it's visible in logs
+          this.logger.info(
+            createLogContext(this.contextService, "createPaymentIntent", {
+              checkoutSessionId,
+              amount,
+              currency,
+              receipt: options.receipt,
+            }),
+            "Calling Razorpay API to create order",
+          );
+
+          // Add console.log as fallback to ensure we see the call
+          console.log(
+            `[PaymentsService] Calling Razorpay API: amount=${amount}, currency=${currency}, receipt=${options.receipt}`,
+          );
+          console.log(`[PaymentsService] Razorpay instance:`, {
+            initialized: this.isInitialized(),
+            hasInstance: !!razorpay,
+          });
+
+          // Razorpay SDK now handles timeout at SDK level (configured during initialization)
+          // The SDK will automatically timeout requests based on the timeout value set
+          // This is more reliable than wrapping promises
+          // Start the Razorpay API call - SDK handles timeout internally
           const razorpayOrder = await razorpay.orders.create(options);
+
+          this.logger.info(
+            createLogContext(this.contextService, "createPaymentIntent", {
+              checkoutSessionId,
+              razorpayOrderId: razorpayOrder.id,
+              razorpayOrderAmount: razorpayOrder.amount,
+            }),
+            "Razorpay order created successfully",
+          );
+
+          console.log(
+            `[PaymentsService] Razorpay order created: ${razorpayOrder.id}`,
+          );
+
+          // Verify Razorpay order ID exists
+          if (!razorpayOrder.id || razorpayOrder.id === "") {
+            this.logger.error(
+              createErrorContext(
+                this.contextService,
+                "createPaymentIntent",
+                new Error("Razorpay order ID is empty"),
+                { checkoutSessionId, razorpayOrder },
+              ),
+              "Razorpay order created but ID is empty",
+            );
+            throw new BadRequestException(
+              "Razorpay order creation returned empty order ID",
+            );
+          }
 
           // Verify Razorpay order amount matches expected amount
           if (razorpayOrder.amount !== amount) {
             this.logger.error(
-              {
-                checkoutSessionId,
-                expectedAmount: amount,
-                razorpayAmount: razorpayOrder.amount,
-              },
+              createErrorContext(
+                this.contextService,
+                "createPaymentIntent",
+                new Error("Razorpay order amount mismatch"),
+                {
+                  checkoutSessionId,
+                  expectedAmount: amount,
+                  razorpayAmount: razorpayOrder.amount,
+                },
+              ),
               "Razorpay order amount mismatch - fee may not be included",
             );
             throw new BadRequestException(
@@ -179,9 +307,100 @@ export class PaymentsService implements OnModuleInit {
 
           return intent;
         } catch (error) {
-          throw new BadRequestException(
-            `Failed to create Razorpay order: ${error instanceof Error ? error.message : "Unknown error"}`,
+          // Log the full error details for debugging
+          // Use console.error as fallback to ensure error is visible
+          const errorDetails =
+            error instanceof Error
+              ? {
+                  name: error.name,
+                  message: error.message,
+                  stack: error.stack,
+                }
+              : { type: typeof error, value: String(error) };
+
+          // Determine error type for better diagnostics
+          // Razorpay SDK errors can be timeout, network, or API errors
+          const isTimeoutError =
+            error instanceof Error &&
+            (error.name === "TimeoutError" ||
+              error.name === "ETIMEDOUT" ||
+              error.message.includes("timed out") ||
+              error.message.includes("timeout") ||
+              (error as any).code === "ETIMEDOUT");
+          const isNetworkError =
+            error instanceof Error &&
+            (error.message.includes("ECONNREFUSED") ||
+              error.message.includes("ENOTFOUND") ||
+              error.message.includes("ETIMEDOUT") ||
+              error.message.includes("network") ||
+              error.message.includes("ECONNRESET") ||
+              (error as any).code === "ECONNREFUSED" ||
+              (error as any).code === "ENOTFOUND" ||
+              (error as any).code === "ECONNRESET");
+          const isRazorpayApiError =
+            error instanceof Error &&
+            (error.message.includes("Razorpay") ||
+              error.message.includes("razorpay") ||
+              (error as any).statusCode !== undefined);
+
+          console.error(
+            `[PaymentsService] Razorpay API call failed:`,
+            errorDetails,
+            {
+              checkoutSessionId,
+              amount,
+              currency,
+              receipt: options.receipt,
+              razorpayInitialized: this.isInitialized(),
+              isTimeoutError,
+              isNetworkError,
+              isRazorpayApiError,
+              errorType: error instanceof Error ? error.name : typeof error,
+              errorCode: (error as any).code,
+              statusCode: (error as any).statusCode,
+            },
           );
+
+          this.logger.error(
+            createErrorContext(
+              this.contextService,
+              "createPaymentIntent",
+              error,
+              {
+                checkoutSessionId,
+                amount,
+                currency,
+                receipt: options.receipt,
+                razorpayInitialized: this.isInitialized(),
+                isTimeoutError,
+                isNetworkError,
+                isRazorpayApiError,
+                errorType: error instanceof Error ? error.name : typeof error,
+                errorCode: (error as any).code,
+                statusCode: (error as any).statusCode,
+              },
+            ),
+            `Failed to create Razorpay order${isTimeoutError ? " (timeout)" : isNetworkError ? " (network error)" : isRazorpayApiError ? " (Razorpay API error)" : ""}`,
+          );
+
+          // Provide more detailed error message with actionable information
+          let errorMessage: string;
+          if (isTimeoutError) {
+            const timeoutMs = this.appConfigService.getRazorpayConfig().timeout;
+            errorMessage = `Razorpay API call timed out after ${timeoutMs}ms. This may indicate a network issue, Razorpay service unavailability, or invalid API credentials. Please verify your RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are correct and try again. CheckoutSessionId: ${checkoutSessionId}`;
+          } else if (isNetworkError) {
+            errorMessage = `Network error while connecting to Razorpay API. Please check your internet connection and ensure Razorpay services are accessible. CheckoutSessionId: ${checkoutSessionId}`;
+          } else if (isRazorpayApiError) {
+            // Razorpay API returned an error (e.g., invalid credentials, invalid amount, etc.)
+            errorMessage = `Razorpay API error: ${error instanceof Error ? error.message : String(error)}. Please verify your Razorpay configuration and try again. CheckoutSessionId: ${checkoutSessionId}`;
+          } else if (error instanceof Error) {
+            errorMessage = `Failed to create Razorpay order: ${error.message}. CheckoutSessionId: ${checkoutSessionId}`;
+          } else {
+            errorMessage = `Unknown error occurred while creating Razorpay order. CheckoutSessionId: ${checkoutSessionId}`;
+          }
+
+          // Always throw to ensure error propagation
+          throw new BadRequestException(errorMessage);
         }
       },
     );
@@ -216,17 +435,35 @@ export class PaymentsService implements OnModuleInit {
    * @returns Razorpay order response
    * @deprecated Use createPaymentIntent with checkoutSessionId instead
    */
+  @Trace({ operation: "PaymentsService.createRazorpayOrder" })
   async createRazorpayOrder(
     createRazorpayOrderDto: CreateRazorpayOrderDto,
   ): Promise<RazorpayOrderResponseDto> {
     const razorpay = this.getRazorpayInstance();
 
     // Verify order exists in our system
-    const [order] = await db
-      .select()
-      .from(orders)
-      .where(eq(orders.id, createRazorpayOrderDto.orderId))
-      .limit(1);
+    let order: typeof orders.$inferSelect | undefined;
+    try {
+      const orderResult = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, createRazorpayOrderDto.orderId))
+        .limit(1);
+      order = orderResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "PaymentsService.createRazorpayOrder.selectOrder",
+          error,
+          { orderId: createRazorpayOrderDto.orderId },
+        ),
+        "Failed to fetch order",
+      );
+      throw new NotFoundException(
+        `Order with ID ${createRazorpayOrderDto.orderId} not found`,
+      );
+    }
 
     if (!order) {
       throw new NotFoundException(
@@ -259,13 +496,26 @@ export class PaymentsService implements OnModuleInit {
       const razorpayOrder = await razorpay.orders.create(options);
 
       // Update our order with Razorpay order ID
-      await db
-        .update(orders)
-        .set({
-          razorpayOrderId: razorpayOrder.id,
-          updatedAt: new Date(),
-        })
-        .where(eq(orders.id, order.id));
+      try {
+        await db
+          .update(orders)
+          .set({
+            razorpayOrderId: razorpayOrder.id,
+            updatedAt: new Date(),
+          })
+          .where(eq(orders.id, order.id));
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "PaymentsService.createRazorpayOrder.updateOrder",
+            error,
+            { orderId: order.id, razorpayOrderId: razorpayOrder.id },
+          ),
+          "Failed to update order with Razorpay order ID",
+        );
+        // Continue - payment intent is created, order update failure is logged
+      }
 
       // Update checkout session with payment intent and transition state
       // Note: In the current flow, order is created before payment intent.
@@ -313,6 +563,7 @@ export class PaymentsService implements OnModuleInit {
    * @param verifyPaymentDto - Payment verification data
    * @returns Verification result
    */
+  @Trace({ operation: "PaymentsService.verifyPayment" })
   async verifyPayment(
     verifyPaymentDto: VerifyPaymentDto,
   ): Promise<{ verified: boolean; message: string }> {
@@ -367,6 +618,7 @@ export class PaymentsService implements OnModuleInit {
    * @param orderId - Razorpay order ID
    * @returns Order details
    */
+  @Trace({ operation: "PaymentsService.getRazorpayOrderDetails" })
   async getRazorpayOrderDetails(orderId: string) {
     const razorpay = this.getRazorpayInstance();
 
@@ -386,6 +638,7 @@ export class PaymentsService implements OnModuleInit {
    * @param signature - Webhook signature for verification
    * @returns Processing result
    */
+  @Trace({ operation: "PaymentsService.handleWebhook" })
   async handleWebhook(
     webhookEvent: RazorpayWebhookEventDto,
     signature: string,
@@ -730,48 +983,118 @@ export class PaymentsService implements OnModuleInit {
     orderId: string,
   ): Promise<void> {
     // Check if payment already exists (idempotent webhook processing)
-    const [existingPayment] = await db
-      .select()
-      .from(payments)
-      .where(eq(payments.razorpayPaymentId, paymentEntity.id))
-      .limit(1);
+    let existingPayment: typeof payments.$inferSelect | undefined;
+    try {
+      const paymentResult = await db
+        .select()
+        .from(payments)
+        .where(eq(payments.razorpayPaymentId, paymentEntity.id))
+        .limit(1);
+      existingPayment = paymentResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "PaymentsService.createPaymentRecord.selectPayment",
+          error,
+          { razorpayPaymentId: paymentEntity.id, orderId },
+        ),
+        "Failed to check existing payment",
+      );
+      // Continue - will try to create new payment record
+    }
 
     if (existingPayment) {
       // Update existing payment (idempotent)
-      await db
-        .update(payments)
-        .set({
-          status: "captured",
-          updatedAt: new Date(),
-        })
-        .where(eq(payments.id, existingPayment.id));
+      try {
+        await db
+          .update(payments)
+          .set({
+            status: "captured",
+            updatedAt: new Date(),
+          })
+          .where(eq(payments.id, existingPayment.id));
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "PaymentsService.createPaymentRecord.updatePayment",
+            error,
+            { paymentId: existingPayment.id },
+          ),
+          "Failed to update payment record",
+        );
+        throw error;
+      }
     } else {
       // Create new payment record
-      await db.insert(payments).values({
-        orderId,
-        razorpayPaymentId: paymentEntity.id,
-        razorpayOrderId: paymentEntity.order_id,
-        amount: paymentEntity.amount / 100, // Convert from paise to rupees
-        status: "captured",
-        method: this.mapRazorpayMethodToEnum(paymentEntity.method),
-      });
+      try {
+        await db.insert(payments).values({
+          orderId,
+          razorpayPaymentId: paymentEntity.id,
+          razorpayOrderId: paymentEntity.order_id,
+          amount: paymentEntity.amount / 100, // Convert from paise to rupees
+          status: "captured",
+          method: this.mapRazorpayMethodToEnum(paymentEntity.method),
+        });
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "PaymentsService.createPaymentRecord.insertPayment",
+            error,
+            { orderId, razorpayPaymentId: paymentEntity.id },
+          ),
+          "Failed to create payment record",
+        );
+        throw error;
+      }
     }
 
     // Update order status to confirmed if payment is captured
-    const [order] = await db
-      .select()
-      .from(orders)
-      .where(eq(orders.id, orderId))
-      .limit(1);
+    let order: typeof orders.$inferSelect | undefined;
+    try {
+      const orderResult = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+      order = orderResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "PaymentsService.createPaymentRecord.selectOrder",
+          error,
+          { orderId },
+        ),
+        "Failed to fetch order for status update",
+      );
+      // Don't throw - payment record is created, order status update can fail
+      return;
+    }
 
     if (order && order.status === "pending") {
-      await db
-        .update(orders)
-        .set({
-          status: "confirmed",
-          updatedAt: new Date(),
-        })
-        .where(eq(orders.id, orderId));
+      try {
+        await db
+          .update(orders)
+          .set({
+            status: "confirmed",
+            updatedAt: new Date(),
+          })
+          .where(eq(orders.id, orderId));
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "PaymentsService.createPaymentRecord.updateOrderStatus",
+            error,
+            { orderId },
+          ),
+          "Failed to update order status to confirmed",
+        );
+        // Don't throw - payment is captured, status update failure is logged
+      }
     }
   }
 
@@ -860,11 +1183,27 @@ export class PaymentsService implements OnModuleInit {
     }
 
     // Find order by Razorpay order ID
-    const [order] = await db
-      .select()
-      .from(orders)
-      .where(eq(orders.razorpayOrderId, paymentIntentId))
-      .limit(1);
+    let order: typeof orders.$inferSelect | undefined;
+    try {
+      const orderResult = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.razorpayOrderId, paymentIntentId))
+        .limit(1);
+      order = orderResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "PaymentsService.handlePaymentFailed.selectOrder",
+          error,
+          { paymentIntentId },
+        ),
+        "Failed to find order by Razorpay order ID",
+      );
+      // Order not found, but payment intent was updated
+      return;
+    }
 
     if (!order) {
       // Order not found, but payment intent was updated
@@ -892,31 +1231,72 @@ export class PaymentsService implements OnModuleInit {
     }
 
     // Check if payment exists
-    const [existingPayment] = await db
-      .select()
-      .from(payments)
-      .where(eq(payments.razorpayPaymentId, paymentEntity.id))
-      .limit(1);
+    let existingPayment: typeof payments.$inferSelect | undefined;
+    try {
+      const paymentResult = await db
+        .select()
+        .from(payments)
+        .where(eq(payments.razorpayPaymentId, paymentEntity.id))
+        .limit(1);
+      existingPayment = paymentResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "PaymentsService.handlePaymentFailed.selectPayment",
+          error,
+          { razorpayPaymentId: paymentEntity.id, orderId: order.id },
+        ),
+        "Failed to check existing payment",
+      );
+      // Continue - will try to create new payment record
+    }
 
     if (existingPayment) {
       // Update payment status
-      await db
-        .update(payments)
-        .set({
-          status: "failed",
-          updatedAt: new Date(),
-        })
-        .where(eq(payments.id, existingPayment.id));
+      try {
+        await db
+          .update(payments)
+          .set({
+            status: "failed",
+            updatedAt: new Date(),
+          })
+          .where(eq(payments.id, existingPayment.id));
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "PaymentsService.handlePaymentFailed.updatePayment",
+            error,
+            { paymentId: existingPayment.id },
+          ),
+          "Failed to update payment status to failed",
+        );
+        // Don't throw - log and continue
+      }
     } else {
       // Create payment record with failed status
-      await db.insert(payments).values({
-        orderId: order.id,
-        razorpayPaymentId: paymentEntity.id,
-        razorpayOrderId: paymentEntity.order_id,
-        amount: paymentEntity.amount / 100,
-        status: "failed",
-        method: this.mapRazorpayMethodToEnum(paymentEntity.method),
-      });
+      try {
+        await db.insert(payments).values({
+          orderId: order.id,
+          razorpayPaymentId: paymentEntity.id,
+          razorpayOrderId: paymentEntity.order_id,
+          amount: paymentEntity.amount / 100,
+          status: "failed",
+          method: this.mapRazorpayMethodToEnum(paymentEntity.method),
+        });
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "PaymentsService.handlePaymentFailed.insertPayment",
+            error,
+            { orderId: order.id, razorpayPaymentId: paymentEntity.id },
+          ),
+          "Failed to create payment record with failed status",
+        );
+        // Don't throw - webhook processing should continue
+      }
     }
   }
 
@@ -932,40 +1312,96 @@ export class PaymentsService implements OnModuleInit {
     }
 
     // Find order by Razorpay order ID
-    const [order] = await db
-      .select()
-      .from(orders)
-      .where(eq(orders.razorpayOrderId, paymentEntity.order_id))
-      .limit(1);
+    let order: typeof orders.$inferSelect | undefined;
+    try {
+      const orderResult = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.razorpayOrderId, paymentEntity.order_id))
+        .limit(1);
+      order = orderResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "PaymentsService.handlePaymentAuthorized.selectOrder",
+          error,
+          { razorpayOrderId: paymentEntity.order_id },
+        ),
+        "Failed to find order by Razorpay order ID",
+      );
+      return;
+    }
 
     if (!order) {
       return;
     }
 
     // Create or update payment record with processing status
-    const [existingPayment] = await db
-      .select()
-      .from(payments)
-      .where(eq(payments.razorpayPaymentId, paymentEntity.id))
-      .limit(1);
+    let existingPayment: typeof payments.$inferSelect | undefined;
+    try {
+      const paymentResult = await db
+        .select()
+        .from(payments)
+        .where(eq(payments.razorpayPaymentId, paymentEntity.id))
+        .limit(1);
+      existingPayment = paymentResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "PaymentsService.handlePaymentAuthorized.selectPayment",
+          error,
+          { razorpayPaymentId: paymentEntity.id, orderId: order.id },
+        ),
+        "Failed to check existing payment",
+      );
+      // Continue - will try to create new payment record
+    }
 
     if (existingPayment) {
-      await db
-        .update(payments)
-        .set({
-          status: "processing",
-          updatedAt: new Date(),
-        })
-        .where(eq(payments.id, existingPayment.id));
+      try {
+        await db
+          .update(payments)
+          .set({
+            status: "processing",
+            updatedAt: new Date(),
+          })
+          .where(eq(payments.id, existingPayment.id));
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "PaymentsService.handlePaymentAuthorized.updatePayment",
+            error,
+            { paymentId: existingPayment.id },
+          ),
+          "Failed to update payment status to processing",
+        );
+        // Don't throw - log and continue
+      }
     } else {
-      await db.insert(payments).values({
-        orderId: order.id,
-        razorpayPaymentId: paymentEntity.id,
-        razorpayOrderId: paymentEntity.order_id,
-        amount: paymentEntity.amount / 100,
-        status: "processing",
-        method: this.mapRazorpayMethodToEnum(paymentEntity.method),
-      });
+      try {
+        await db.insert(payments).values({
+          orderId: order.id,
+          razorpayPaymentId: paymentEntity.id,
+          razorpayOrderId: paymentEntity.order_id,
+          amount: paymentEntity.amount / 100,
+          status: "processing",
+          method: this.mapRazorpayMethodToEnum(paymentEntity.method),
+        });
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "PaymentsService.handlePaymentAuthorized.insertPayment",
+            error,
+            { orderId: order.id, razorpayPaymentId: paymentEntity.id },
+          ),
+          "Failed to create payment record with processing status",
+        );
+        // Don't throw - webhook processing should continue
+      }
     }
   }
 
@@ -981,11 +1417,26 @@ export class PaymentsService implements OnModuleInit {
     }
 
     // Find order by Razorpay order ID
-    const [order] = await db
-      .select()
-      .from(orders)
-      .where(eq(orders.razorpayOrderId, orderEntity.id))
-      .limit(1);
+    let order: typeof orders.$inferSelect | undefined;
+    try {
+      const orderResult = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.razorpayOrderId, orderEntity.id))
+        .limit(1);
+      order = orderResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "PaymentsService.handleOrderPaid.selectOrder",
+          error,
+          { razorpayOrderId: orderEntity.id },
+        ),
+        "Failed to find order by Razorpay order ID",
+      );
+      return;
+    }
 
     if (!order) {
       return;

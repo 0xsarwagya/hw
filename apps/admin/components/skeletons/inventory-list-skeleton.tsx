@@ -32,7 +32,7 @@ export function InventoryListSkeleton() {
         <TableBody>
           {Array.from(
             { length: 10 },
-            (_, i) => `inventory-row-skeleton-${i}`,
+            (_, i) => `inventory-row-skeleton-${i.toString()}`,
           ).map((key) => (
             <TableRow key={key}>
               <TableCell>

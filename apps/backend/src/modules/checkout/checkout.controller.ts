@@ -3,7 +3,6 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   Post,
   Query,
   Request,
@@ -19,6 +18,7 @@ import { customers, db, eq } from "@vcecom/db";
 import { Public } from "../../common/decorators/public.decorator";
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
+import { extractSessionId } from "../../common/utils/session.utils";
 import { CartsService } from "../carts/carts.service";
 import { PaymentFeeBreakdownDto } from "../payments/dto/payment-charge.dto";
 import {
@@ -76,10 +76,10 @@ export class CheckoutController {
       user?: { userId: string; email: string; role: string };
     },
     @Body() dto: StartCheckoutDto,
-    @Headers("x-session-id") sessionId?: string,
   ) {
     const userId = req.user?.userId || null;
-    return this.checkoutService.startCheckout(userId, sessionId || null, dto);
+    const sessionId = extractSessionId(req);
+    return this.checkoutService.startCheckout(userId, sessionId, dto);
   }
 
   @Post("address")
@@ -111,10 +111,62 @@ export class CheckoutController {
       user?: { userId: string; email: string; role: string };
     },
     @Body() dto: CheckoutAddressDto,
-    @Headers("x-session-id") sessionId?: string,
   ) {
     const userId = req.user?.userId || null;
-    return this.checkoutService.applyAddress(userId, sessionId || null, dto);
+    const sessionId = extractSessionId(req);
+    return this.checkoutService.applyAddress(userId, sessionId, dto);
+  }
+
+  @Get("shipping-methods")
+  @RateLimit(RATE_LIMIT_PRESETS.STOREFRONT_GET)
+  @ApiOperation({
+    summary: "Get available shipping methods",
+    description:
+      "Returns all available shipping methods for the given checkout session and address. Methods are filtered based on zone, state, order value, and COD availability.",
+  })
+  @ApiHeader({
+    name: "X-Session-Id",
+    description: "Session ID for guest checkout (required for guest checkout)",
+    required: false,
+  })
+  @ApiQuery({
+    name: "checkoutSessionId",
+    description: "Checkout session ID",
+    required: false,
+  })
+  @ApiQuery({
+    name: "pincode",
+    description: "Shipping PIN code",
+    required: false,
+  })
+  @ApiQuery({
+    name: "state",
+    description: "Shipping state",
+    required: false,
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Shipping methods retrieved successfully",
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request (invalid session, etc.)",
+  })
+  async getShippingMethods(
+    @Request() req: Request & {
+      user?: { userId: string; email: string; role: string };
+    },
+    @Query("checkoutSessionId") checkoutSessionId?: string,
+    @Query("pincode") pincode?: string,
+    @Query("state") state?: string,
+  ) {
+    const userId = req.user?.userId || null;
+    const sessionId = extractSessionId(req);
+    return this.checkoutService.getAvailableShippingMethods(userId, sessionId, {
+      checkoutSessionId: checkoutSessionId || undefined,
+      pincode: pincode || undefined,
+      state: state || undefined,
+    });
   }
 
   @Post("shipping")
@@ -146,10 +198,10 @@ export class CheckoutController {
       user?: { userId: string; email: string; role: string };
     },
     @Body() dto: CheckoutShippingDto,
-    @Headers("x-session-id") sessionId?: string,
   ) {
     const userId = req.user?.userId || null;
-    return this.checkoutService.selectShipping(userId, sessionId || null, dto);
+    const sessionId = extractSessionId(req);
+    return this.checkoutService.selectShipping(userId, sessionId, dto);
   }
 
   @Get("payment-methods")
@@ -202,7 +254,6 @@ export class CheckoutController {
     @Request() req: Request & {
       user?: { userId: string; email: string; role: string };
     },
-    @Headers("x-session-id") sessionId?: string,
     @Query("checkoutSessionId") checkoutSessionId?: string,
     @Query("shippingAddressId") shippingAddressId?: string,
     @Query("country") country?: string,
@@ -210,9 +261,10 @@ export class CheckoutController {
     @Query("pincode") pincode?: string,
   ): Promise<{ methods: PaymentMethodWithFeeDto[] }> {
     const userId = req.user?.userId || null;
+    const sessionId = extractSessionId(req);
 
     // Get cart
-    const cart = await this.cartsService.getCart(userId, sessionId || null);
+    const cart = await this.cartsService.getCart(userId, sessionId);
     if (!cart || !cart.items || cart.items.length === 0) {
       // Return empty methods list instead of throwing error
       return { methods: [] };
@@ -324,16 +376,16 @@ export class CheckoutController {
       user?: { userId: string; email: string; role: string };
     },
     @Body() dto: SelectPaymentMethodDto,
-    @Headers("x-session-id") sessionId?: string,
   ): Promise<{
     success: boolean;
     fee: number;
     breakdown: PaymentFeeBreakdownDto;
   }> {
     const userId = req.user?.userId || null;
+    const sessionId = extractSessionId(req);
 
     // Get cart
-    const cart = await this.cartsService.getCart(userId, sessionId || null);
+    const cart = await this.cartsService.getCart(userId, sessionId);
     if (!cart || !cart.items || cart.items.length === 0) {
       throw new BadRequestException("Cart is empty");
     }
@@ -411,9 +463,9 @@ export class CheckoutController {
       user?: { userId: string; email: string; role: string };
     },
     @Body() dto: CheckoutConfirmDto,
-    @Headers("x-session-id") sessionId?: string,
   ) {
     const userId = req.user?.userId || null;
-    return this.checkoutService.confirmCheckout(userId, sessionId || null, dto);
+    const sessionId = extractSessionId(req);
+    return this.checkoutService.confirmCheckout(userId, sessionId, dto);
   }
 }

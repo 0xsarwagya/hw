@@ -27,7 +27,8 @@ function createPool(): Pool {
     connectionString: databaseUrl,
     // Connection pool settings
     max: 50, // Maximum number of clients in the pool (increased for better concurrency)
-    min: 5, // Minimum number of clients in the pool (increased for faster initial connections)
+    min: 0, // Minimum number of clients - set to 0 to avoid blocking during startup
+    // Connections will be created on-demand, preventing startup delays
     idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
     connectionTimeoutMillis: 10000, // Return an error after 10 seconds if connection could not be established
     // Allow pool to wait for connections when max is reached

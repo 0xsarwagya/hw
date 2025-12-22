@@ -32,7 +32,9 @@ import {
   AdminDriftReportService,
   DriftReportQuery,
 } from "./services/admin-drift-report.service";
+import { DiscountInvalidationService } from "./services/discount-invalidation.service";
 import { DiscountProfiler } from "./services/discount-profiler.service";
+import { RulesetRebuilder } from "./services/ruleset-rebuilder.service";
 
 @ApiTags("admin")
 @Controller("admin/discounts")
@@ -44,6 +46,8 @@ export class DiscountsController {
     private readonly discountsService: DiscountsService,
     private readonly adminDriftReportService: AdminDriftReportService,
     private readonly discountProfiler: DiscountProfiler,
+    private readonly invalidationService: DiscountInvalidationService,
+    private readonly rulesetRebuilder: RulesetRebuilder,
   ) {}
 
   @Post()
@@ -259,6 +263,56 @@ export class DiscountsController {
   })
   async getProfile() {
     return this.discountProfiler.getMetrics();
+  }
+
+  @Post("refresh-cache")
+  @ApiOperation({
+    summary: "Refresh discount cache (admin)",
+    description:
+      "Manually trigger a refresh of the discount cache in Redis. This rebuilds the discount ruleset bundle from the database.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Cache refreshed successfully",
+    schema: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          example: "Discount cache refreshed successfully",
+        },
+        version: { type: "number", example: 5 },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  @ApiResponse({
+    status: 500,
+    description: "Failed to refresh cache",
+  })
+  async refreshCache(): Promise<{ message: string; version?: number }> {
+    try {
+      // Rebuild bundle from database and get the new version number
+      const version = await this.rulesetRebuilder.rebuildFromDb();
+      return {
+        message: "Discount cache refreshed successfully",
+        version,
+      };
+    } catch (_error) {
+      // Fallback to invalidation service if direct rebuild fails
+      await this.invalidationService.invalidateAll();
+      return {
+        message:
+          "Discount cache refresh triggered (version may not be available)",
+      };
+    }
   }
 }
 

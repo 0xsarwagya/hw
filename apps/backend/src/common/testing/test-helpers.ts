@@ -6,29 +6,47 @@ import { ContextService } from "../logging/context.service";
 /**
  * Common test providers for services that require PinoLogger, ContextService, and AppConfigService
  */
-export const getCommonTestProviders = (): Provider[] => [
-  ContextService,
-  AppConfigService,
-  {
-    provide: PinoLogger,
-    useValue: {
-      info: jest.fn(),
-      error: jest.fn(),
-      warn: jest.fn(),
-      debug: jest.fn(),
-      log: jest.fn(),
-      logger: {
-        level: "info",
-        child: jest.fn().mockReturnThis(),
-      },
-    } as unknown as PinoLogger,
-  },
-];
+export const getCommonTestProviders = (): Provider[] => {
+  const mockChildLogger = {
+    debug: jest.fn(),
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    log: jest.fn(),
+  };
+
+  return [
+    ContextService,
+    AppConfigService,
+    {
+      provide: PinoLogger,
+      useValue: {
+        info: jest.fn(),
+        error: jest.fn(),
+        warn: jest.fn(),
+        debug: jest.fn(),
+        log: jest.fn(),
+        logger: {
+          level: "info",
+          child: jest.fn().mockReturnValue(mockChildLogger),
+        },
+      } as unknown as PinoLogger,
+    },
+  ];
+};
 
 /**
  * Mock PinoLogger for testing
  */
 export const createMockPinoLogger = () => {
+  const mockChildLogger = {
+    debug: jest.fn(),
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    log: jest.fn(),
+  };
+
   return {
     info: jest.fn(),
     error: jest.fn(),
@@ -37,7 +55,7 @@ export const createMockPinoLogger = () => {
     log: jest.fn(),
     logger: {
       level: "info",
-      child: jest.fn().mockReturnThis(),
+      child: jest.fn().mockReturnValue(mockChildLogger),
     },
   } as unknown as jest.Mocked<PinoLogger>;
 };

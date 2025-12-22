@@ -18,6 +18,7 @@ import {
   productVariants,
   sql,
 } from "@vcecom/db";
+import { getCommonTestProviders } from "../../common/testing/test-helpers";
 import { InvoicesService } from "./invoices.service";
 
 // Mock dependencies
@@ -114,7 +115,7 @@ describe("InvoicesService", () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [InvoicesService],
+      providers: [InvoicesService, ...getCommonTestProviders()],
     }).compile();
 
     service = module.get<InvoicesService>(InvoicesService);

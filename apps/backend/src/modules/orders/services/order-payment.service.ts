@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { db, eq, orders, payments } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
-import { COD_PAYMENT_METHOD } from "../../../common/constants/orders.constants";
+import { isCodPayment } from "../../../common/constants/orders.constants";
 import { TimelineEventType } from "../dto/order-timeline.dto";
 import { OrderTimelineService } from "./order-timeline.service";
 
@@ -54,8 +54,8 @@ export class OrderPaymentService {
       );
     }
 
-    // Verify payment method is COD
-    if (payment.method !== COD_PAYMENT_METHOD) {
+    // Verify payment method is COD (case-insensitive)
+    if (!isCodPayment(payment.method)) {
       throw new BadRequestException(
         `Order payment method is ${payment.method}, not COD. Only COD orders can be marked as paid manually.`,
       );
@@ -66,7 +66,7 @@ export class OrderPaymentService {
       throw new BadRequestException("Order is already marked as paid");
     }
 
-    // Update payment status
+    // Update payment status to captured
     await db
       .update(payments)
       .set({
@@ -75,11 +75,22 @@ export class OrderPaymentService {
       })
       .where(eq(payments.id, payment.id));
 
+    // Update order status to confirmed if it's still pending (consistent with online payment flow)
+    if (order.status === "pending") {
+      await db
+        .update(orders)
+        .set({
+          status: "confirmed",
+          updatedAt: new Date(),
+        })
+        .where(eq(orders.id, orderId));
+    }
+
     // Add timeline event
     await this.timelineService.addEvent(orderId, {
       type: TimelineEventType.ORDER_MARKED_PAID,
       title: "Order Marked as Paid",
-      description: `COD order marked as paid by admin`,
+      description: `COD order marked as paid by admin${adminName ? ` (${adminName})` : ""}`,
       actor: "admin",
       actorId: adminId,
       actorName: adminName,
@@ -102,9 +113,14 @@ export class OrderPaymentService {
       {
         orderId,
         adminId,
+        adminName,
+        adminEmail,
         paymentId: payment.id,
+        paymentMethod: payment.method,
+        previousStatus: payment.status,
+        orderStatus: updatedOrder.status,
       },
-      "Order marked as paid",
+      "COD order marked as paid by admin",
     );
 
     return updatedOrder;

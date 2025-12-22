@@ -6,10 +6,11 @@ import { BundleEligibilityService } from "./services/bundle-eligibility.service"
 import { BundleSetItemsService } from "./services/bundle-set-items.service";
 import { BundleSetsService } from "./services/bundle-sets.service";
 import { BundleWarmupService } from "./services/bundle-warmup.service";
+import { StorefrontBundlesController } from "./storefront-bundles.controller";
 
 @Module({
   imports: [RedisStoreModule],
-  controllers: [BundlesController],
+  controllers: [BundlesController, StorefrontBundlesController],
   providers: [
     BundleDefinitionService,
     BundleSetsService,

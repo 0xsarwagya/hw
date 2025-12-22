@@ -27,7 +27,7 @@ export function InventorySettingsSkeleton() {
             <div className="space-y-2">
               {Array.from(
                 { length: 3 },
-                (_, i) => `override-skeleton-${i}`,
+                (_, i) => `override-skeleton-${i.toString()}`,
               ).map((key) => (
                 <div key={key} className="flex items-center gap-4">
                   <Skeleton className="h-10 flex-1" />

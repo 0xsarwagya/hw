@@ -48,6 +48,7 @@ import { RulesetVersionManager } from "./services/ruleset-version-manager.servic
     RulesetRebuilder,
   ],
   exports: [
+    DiscountWarmupWorker,
     DiscountsService,
     DiscountValidationService,
     DiscountInvalidationService,

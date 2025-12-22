@@ -1,5 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { and, db, eq, inArray, products, productVariants, productImages } from "@vcecom/db";
+import { getCommonTestProviders } from "../../common/testing/test-helpers";
 import { ProductsService } from "./products.service";
 import { FilterProductsDto, SortField, SortOrder } from "./dto/filter.dto";
 import { SearchProductsDto, SearchSortBy } from "./dto/search.dto";
@@ -78,6 +79,7 @@ describe("ProductsService", () => {
           provide: MediaCacheInvalidationService,
           useValue: mockMediaCacheInvalidationService,
         },
+        ...getCommonTestProviders(),
       ],
     }).compile();
 

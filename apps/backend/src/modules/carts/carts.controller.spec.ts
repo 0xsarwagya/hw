@@ -70,7 +70,7 @@ describe("CartsController", () => {
 
       mockCartsService.applyDiscount.mockResolvedValue(mockCart);
 
-      const result = await controller.applyDiscount(req, applyDto, undefined);
+      const result = await controller.applyDiscount(req, applyDto);
 
       expect(result).toEqual(mockCart);
       expect(service.applyDiscount).toHaveBeenCalledWith(
@@ -81,7 +81,11 @@ describe("CartsController", () => {
     });
 
     it("should apply discount with session ID", async () => {
-      const req = {};
+      const req = {
+        headers: {
+          "x-session-id": "session-1",
+        },
+      };
       const applyDto: ApplyDiscountDto = { code: "SAVE20" };
       const mockCart = {
         id: "cart-1",
@@ -91,7 +95,7 @@ describe("CartsController", () => {
 
       mockCartsService.applyDiscount.mockResolvedValue(mockCart);
 
-      const result = await controller.applyDiscount(req, applyDto, "session-1");
+      const result = await controller.applyDiscount(req, applyDto);
 
       expect(result).toEqual(mockCart);
       expect(service.applyDiscount).toHaveBeenCalledWith(
@@ -115,14 +119,18 @@ describe("CartsController", () => {
 
       mockCartsService.removeDiscount.mockResolvedValue(mockCart);
 
-      const result = await controller.removeDiscount(req, undefined);
+      const result = await controller.removeDiscount(req);
 
       expect(result).toEqual(mockCart);
       expect(service.removeDiscount).toHaveBeenCalledWith("user-1", null);
     });
 
     it("should remove discount with session ID", async () => {
-      const req = {};
+      const req = {
+        headers: {
+          "x-session-id": "session-1",
+        },
+      };
       const mockCart = {
         id: "cart-1",
         discountCode: null,
@@ -131,7 +139,7 @@ describe("CartsController", () => {
 
       mockCartsService.removeDiscount.mockResolvedValue(mockCart);
 
-      const result = await controller.removeDiscount(req, "session-1");
+      const result = await controller.removeDiscount(req);
 
       expect(result).toEqual(mockCart);
       expect(service.removeDiscount).toHaveBeenCalledWith(null, "session-1");

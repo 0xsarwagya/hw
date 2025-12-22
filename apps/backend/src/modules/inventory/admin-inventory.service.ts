@@ -82,7 +82,14 @@ export class AdminInventoryService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    this.redisClient = await this.redisStoreService.getClient();
+    try {
+      this.redisClient = await this.redisStoreService.getClient();
+    } catch (error) {
+      this.logger.warn(
+        `Redis client not available during initialization - will retry when Redis is available: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      // Don't throw - allow app to start without Redis
+    }
   }
 
   /**
@@ -140,11 +147,26 @@ export class AdminInventoryService implements OnModuleInit {
 
       // Note: Total count is approximate when lowStock/outOfStock filters are applied
       // because those filters require Redis data enrichment
-      const [{ count }] = await db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(productVariants)
-        .innerJoin(products, eq(productVariants.productId, products.id))
-        .where(conditions.length > 0 ? and(...conditions) : undefined);
+      let countResult: Array<{ count: number }>;
+      try {
+        countResult = await db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(productVariants)
+          .innerJoin(products, eq(productVariants.productId, products.id))
+          .where(conditions.length > 0 ? and(...conditions) : undefined);
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "AdminInventoryService.listInventory.countVariants",
+            error,
+            { query },
+          ),
+          "Failed to count inventory variants",
+        );
+        throw error;
+      }
+      const count = countResult[0]?.count || 0;
 
       // Apply sorting (committed requires enrichment, so handle separately)
       const sortBy = query.sortBy || "updatedAt";
@@ -167,10 +189,33 @@ export class AdminInventoryService implements OnModuleInit {
 
       // Get results (if sorting by committed, fetch more to account for filtering)
       const fetchLimit = needsMemorySort ? Math.min(limit * 10, 1000) : limit;
-      const variants = await variantsQuery
-        .limit(fetchLimit)
-        .offset(needsMemorySort ? 0 : offset)
-        .orderBy(orderBy);
+      let variants: Array<{
+        variantId: string;
+        productId: string;
+        sku: string | null;
+        title: string;
+        size: string | null;
+        color: string | null;
+        inventory: number;
+        updatedAt: Date;
+      }>;
+      try {
+        variants = await variantsQuery
+          .limit(fetchLimit)
+          .offset(needsMemorySort ? 0 : offset)
+          .orderBy(orderBy);
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "AdminInventoryService.listInventory.selectVariants",
+            error,
+            { query, fetchLimit, offset },
+          ),
+          "Failed to fetch inventory variants",
+        );
+        throw error;
+      }
 
       // Enrich with Redis data (inventory, committed, available)
       const enrichedItems: (InventoryListItemDto | null)[] = await Promise.all(
@@ -193,6 +238,11 @@ export class AdminInventoryService implements OnModuleInit {
             return null;
           }
           if (query.outOfStock && available > 0) {
+            return null;
+          }
+
+          // Skip variants without SKU
+          if (!variant.sku) {
             return null;
           }
 
@@ -428,21 +478,56 @@ export class AdminInventoryService implements OnModuleInit {
 
         if (available <= threshold && available > 0) {
           // Get variant info for notification
-          const [variant] = await db
-            .select({
-              sku: productVariants.sku,
-              productId: productVariants.productId,
-            })
-            .from(productVariants)
-            .where(eq(productVariants.id, variantId))
-            .limit(1);
+          let variant:
+            | {
+                sku: string | null;
+                productId: string;
+              }
+            | undefined;
+          try {
+            const variantResult = await db
+              .select({
+                sku: productVariants.sku,
+                productId: productVariants.productId,
+              })
+              .from(productVariants)
+              .where(eq(productVariants.id, variantId))
+              .limit(1);
+            variant = variantResult[0];
+          } catch (error) {
+            this.logger.warn(
+              createErrorContext(
+                this.contextService,
+                "AdminInventoryService.adjustInventory.selectVariant",
+                error,
+                { variantId },
+              ),
+              "Failed to fetch variant for notification",
+            );
+            variant = undefined;
+          }
 
           if (variant) {
-            const [product] = await db
-              .select({ title: products.title })
-              .from(products)
-              .where(eq(products.id, variant.productId))
-              .limit(1);
+            let product: { title: string } | undefined;
+            try {
+              const productResult = await db
+                .select({ title: products.title })
+                .from(products)
+                .where(eq(products.id, variant.productId))
+                .limit(1);
+              product = productResult[0];
+            } catch (error) {
+              this.logger.warn(
+                createErrorContext(
+                  this.contextService,
+                  "AdminInventoryService.adjustInventory.selectProduct",
+                  error,
+                  { productId: variant.productId },
+                ),
+                "Failed to fetch product for notification",
+              );
+              product = undefined;
+            }
 
             await this.notificationsService.createFromEvent({
               adminId: null, // Broadcast to all admins

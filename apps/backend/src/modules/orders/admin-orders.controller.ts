@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  InternalServerErrorException,
   NotFoundException,
   Param,
   Patch,
@@ -19,10 +20,16 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { addresses, db, eq, orderItems, orders } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
+import { ContextService } from "../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../common/logging/logging.helper";
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { CreateOrderNoteDto } from "../admin/dto/create-order-note.dto";
@@ -31,12 +38,17 @@ import { MarkOrderPaidResponseDto } from "../admin/dto/mark-order-paid.dto";
 import { OrderNoteResponseDto } from "../admin/dto/order-note-response.dto";
 import { RefundResponseDto } from "../admin/dto/refund-response.dto";
 import { UpdateOrderAddressDto } from "../admin/dto/update-order-address.dto";
+import { CancelOrderDto } from "./dto/cancel-order.dto";
+import { DuplicateOrderDto } from "./dto/duplicate-order.dto";
 import { OrderResponseDto } from "./dto/order-response.dto";
 import { OrderTimelineDto } from "./dto/order-timeline.dto";
 import { OrderTrackingDto } from "./dto/order-tracking.dto";
 import { UpdateOrderStatusDto } from "./dto/update-order-status.dto";
 import { ReconciliationService } from "./reconciliation.service";
 import { OrderAddressService } from "./services/order-address.service";
+import { OrderArchiveService } from "./services/order-archive.service";
+import { OrderCancelService } from "./services/order-cancel.service";
+import { OrderDuplicateService } from "./services/order-duplicate.service";
 import { OrderNotesService } from "./services/order-notes.service";
 import { OrderPaymentService } from "./services/order-payment.service";
 import { OrderStatusService } from "./services/order-status.service";
@@ -65,6 +77,11 @@ export class AdminOrdersController {
     private readonly orderAddressService: OrderAddressService,
     private readonly timelineService: OrderTimelineService,
     private readonly statusService: OrderStatusService,
+    private readonly cancelService: OrderCancelService,
+    private readonly archiveService: OrderArchiveService,
+    private readonly duplicateService: OrderDuplicateService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
   ) {}
 
   @Get(":id")
@@ -88,73 +105,245 @@ export class AdminOrdersController {
     description: "Order not found",
   })
   async findOne(@Param("id") id: string): Promise<OrderResponseDto> {
-    const [order] = await db
-      .select()
-      .from(orders)
-      .where(eq(orders.id, id))
-      .limit(1);
+    try {
+      let order: typeof orders.$inferSelect | undefined;
+      try {
+        const orderResult = await db
+          .select()
+          .from(orders)
+          .where(eq(orders.id, id))
+          .limit(1);
+        order = orderResult[0];
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "AdminOrdersController.findOne.selectOrder",
+            error,
+            { orderId: id },
+          ),
+          "Failed to fetch order",
+        );
+        throw new NotFoundException("Order not found");
+      }
 
-    if (!order) {
-      throw new NotFoundException("Order not found");
-    }
+      if (!order) {
+        throw new NotFoundException("Order not found");
+      }
 
-    // Get order items with GST rates
-    const items = await db
-      .select({
-        id: orderItems.id,
-        orderId: orderItems.orderId,
-        productVariantId: orderItems.productVariantId,
-        quantity: orderItems.quantity,
-        price: orderItems.price,
-        gstRate: orderItems.gstRate,
-        gstAmount: orderItems.gstAmount,
-        createdAt: orderItems.createdAt,
-        updatedAt: orderItems.updatedAt,
-      })
-      .from(orderItems)
-      .where(eq(orderItems.orderId, id));
+      // Get order items with GST rates
+      let items: Array<{
+        id: string;
+        orderId: string;
+        productVariantId: string;
+        quantity: number;
+        price: number;
+        gstRate: number;
+        gstAmount: number;
+        createdAt: Date;
+        updatedAt: Date;
+      }>;
+      try {
+        items = await db
+          .select({
+            id: orderItems.id,
+            orderId: orderItems.orderId,
+            productVariantId: orderItems.productVariantId,
+            quantity: orderItems.quantity,
+            price: orderItems.price,
+            gstRate: orderItems.gstRate,
+            gstAmount: orderItems.gstAmount,
+            createdAt: orderItems.createdAt,
+            updatedAt: orderItems.updatedAt,
+          })
+          .from(orderItems)
+          .where(eq(orderItems.orderId, id));
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "AdminOrdersController.findOne.selectItems",
+            error,
+            { orderId: id },
+          ),
+          "Failed to fetch order items",
+        );
+        items = [];
+      }
 
-    // Get shipping address for GST calculation
-    const [shippingAddress] = await db
-      .select({ state: addresses.state })
-      .from(addresses)
-      .where(eq(addresses.id, order.shippingAddressId))
-      .limit(1);
+      // Get shipping address for GST calculation
+      let shippingAddress: { state: string } | undefined;
+      try {
+        const addressResult = await db
+          .select({ state: addresses.state })
+          .from(addresses)
+          .where(eq(addresses.id, order.shippingAddressId))
+          .limit(1);
+        shippingAddress = addressResult[0];
+      } catch (error) {
+        this.logger.warn(
+          createLogContext(
+            this.contextService,
+            "AdminOrdersController.findOne.selectAddress",
+            {
+              orderId: id,
+              shippingAddressId: order.shippingAddressId,
+              error: error instanceof Error ? error.message : String(error),
+            },
+          ),
+          "Failed to fetch shipping address, using default state",
+        );
+        shippingAddress = undefined;
+      }
 
-    // Calculate GST breakdown (using Maharashtra as seller state)
-    const sellerState = "Maharashtra";
-    const buyerState = shippingAddress?.state || "";
+      // Calculate GST breakdown (using Maharashtra as seller state)
+      const sellerState = "Maharashtra";
+      const buyerState = shippingAddress?.state || "";
 
-    let totalCgst = 0;
-    let totalSgst = 0;
-    let totalIgst = 0;
+      let totalCgst = 0;
+      let totalSgst = 0;
+      let totalIgst = 0;
 
-    for (const item of items) {
-      const itemSubtotal = item.price * item.quantity;
-      const gstBreakdown = calculateGstBreakdown(
-        itemSubtotal,
-        item.gstRate,
-        sellerState,
-        buyerState,
+      for (const item of items) {
+        try {
+          const itemSubtotal = item.price * item.quantity;
+          const gstBreakdown = calculateGstBreakdown(
+            itemSubtotal,
+            item.gstRate,
+            sellerState,
+            buyerState,
+          );
+          totalCgst += gstBreakdown.cgst;
+          totalSgst += gstBreakdown.sgst;
+          totalIgst += gstBreakdown.igst;
+        } catch (error) {
+          this.logger.warn(
+            createLogContext(
+              this.contextService,
+              "AdminOrdersController.findOne.calculateGst",
+              {
+                orderId: id,
+                itemId: item.id,
+                error: error instanceof Error ? error.message : String(error),
+              },
+            ),
+            "Failed to calculate GST for item, skipping",
+          );
+        }
+      }
+
+      const gstBreakdown = {
+        cgst: totalCgst,
+        sgst: totalSgst,
+        igst: totalIgst,
+        totalGst: order.gstAmount || 0,
+        isIntraState: sellerState === buyerState,
+      };
+
+      // Validate and parse payment fee breakdown
+      let paymentFeeBreakdown:
+        | {
+            method: string;
+            chargeType: string;
+            calculatedFee: number;
+            flatAmount?: number;
+            percentage?: number;
+            mixMin?: number;
+            mixCap?: number;
+          }
+        | null
+        | undefined = null;
+
+      if (order.paymentFeeBreakdown) {
+        try {
+          const parsed =
+            typeof order.paymentFeeBreakdown === "string"
+              ? JSON.parse(order.paymentFeeBreakdown)
+              : order.paymentFeeBreakdown;
+
+          if (
+            parsed &&
+            typeof parsed === "object" &&
+            "method" in parsed &&
+            "chargeType" in parsed &&
+            "calculatedFee" in parsed &&
+            typeof parsed.method === "string" &&
+            typeof parsed.chargeType === "string" &&
+            typeof parsed.calculatedFee === "number"
+          ) {
+            paymentFeeBreakdown = parsed as {
+              method: string;
+              chargeType: string;
+              calculatedFee: number;
+              flatAmount?: number;
+              percentage?: number;
+              mixMin?: number;
+              mixCap?: number;
+            };
+          }
+        } catch (error) {
+          this.logger.warn(
+            createLogContext(
+              this.contextService,
+              "AdminOrdersController.findOne.parsePaymentFeeBreakdown",
+              {
+                orderId: id,
+                error: error instanceof Error ? error.message : String(error),
+              },
+            ),
+            "Failed to parse payment fee breakdown",
+          );
+        }
+      }
+
+      return {
+        id: order.id,
+        customerId: order.customerId,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        subtotal: order.subtotal || 0,
+        gstAmount: order.gstAmount || 0,
+        gstBreakdown,
+        shippingCost: order.shippingCost || 0,
+        paymentFee: order.paymentFee || undefined,
+        paymentMethod: order.paymentMethod || null,
+        paymentFeeBreakdown,
+        total: order.total || 0,
+        razorpayOrderId: order.razorpayOrderId || null,
+        shippingProvider: order.shippingProvider || null,
+        shippingAddressId: order.shippingAddressId,
+        billingAddressId: order.billingAddressId,
+        items,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        archived: order.archived || false,
+        archivedAt: order.archivedAt || null,
+        archivedBy: order.archivedBy || null,
+        ...(order.discountCode !== null && order.discountCode !== undefined
+          ? { discountCode: order.discountCode }
+          : {}),
+        ...(order.discountAmount !== null && order.discountAmount !== undefined
+          ? { discountAmount: order.discountAmount }
+          : {}),
+      } as OrderResponseDto & {
+        discountCode?: string | null;
+        discountAmount?: number;
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "AdminOrdersController.findOne",
+          error,
+          { orderId: id },
+        ),
+        "Failed to get order",
       );
-      totalCgst += gstBreakdown.cgst;
-      totalSgst += gstBreakdown.sgst;
-      totalIgst += gstBreakdown.igst;
+      throw new InternalServerErrorException("Failed to retrieve order");
     }
-
-    const gstBreakdown = {
-      cgst: totalCgst,
-      sgst: totalSgst,
-      igst: totalIgst,
-      totalGst: order.gstAmount,
-      isIntraState: sellerState === buyerState,
-    };
-
-    return {
-      ...order,
-      gstBreakdown,
-      items,
-    } as OrderResponseDto;
   }
 
   @Get(":id/timeline")
@@ -474,5 +663,169 @@ export class AdminOrdersController {
       paymentIntentId,
       provider || "razorpay",
     );
+  }
+
+  @Post(":id/cancel")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_MUTATE)
+  @ApiOperation({
+    summary: "Cancel order (admin)",
+    description:
+      "Cancels an order. Admins can cancel orders in any status except cancelled or refunded. Inventory will be released back to available stock.",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Order ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Order cancelled successfully",
+    type: OrderResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      "Bad request (order cannot be cancelled, invalid status, etc.)",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Order not found",
+  })
+  async cancelOrder(
+    @Request() req: AuthenticatedRequest,
+    @Param("id") id: string,
+    @Body() cancelDto: CancelOrderDto,
+  ): Promise<OrderResponseDto> {
+    return this.cancelService.cancelOrderForAdmin(
+      id,
+      cancelDto,
+      req.user.userId,
+    );
+  }
+
+  @Post(":id/archive")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_MUTATE)
+  @ApiOperation({
+    summary: "Archive order (admin)",
+    description:
+      "Archives an order. Archived orders are hidden from default order lists but can be accessed with filters.",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Order ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Order archived successfully",
+    type: OrderResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request (order already archived, etc.)",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Order not found",
+  })
+  async archiveOrder(
+    @Request() req: AuthenticatedRequest,
+    @Param("id") id: string,
+  ): Promise<OrderResponseDto> {
+    return this.archiveService.archiveOrderForAdmin(id, req.user.userId);
+  }
+
+  @Post(":id/unarchive")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_MUTATE)
+  @ApiOperation({
+    summary: "Unarchive order (admin)",
+    description:
+      "Unarchives an order, making it visible in default order lists again.",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Order ID",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Order unarchived successfully",
+    type: OrderResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request (order not archived, etc.)",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Order not found",
+  })
+  async unarchiveOrder(@Param("id") id: string): Promise<OrderResponseDto> {
+    return this.archiveService.unarchiveOrderForAdmin(id);
+  }
+
+  @Post(":id/duplicate")
+  @RateLimit(RATE_LIMIT_PRESETS.ADMIN_MUTATE)
+  @ApiOperation({
+    summary: "Duplicate order (admin)",
+    description:
+      "Creates a new order based on an existing order with the same items. New order will have status 'pending' and can be checked out normally.",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Order ID to duplicate",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Order duplicated successfully",
+    type: OrderResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      "Bad request (insufficient inventory, invalid addresses, etc.)",
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Order not found",
+  })
+  async duplicateOrder(
+    @Param("id") id: string,
+    @Body() duplicateDto: DuplicateOrderDto,
+  ): Promise<OrderResponseDto> {
+    return this.duplicateService.duplicateOrderForAdmin(id, duplicateDto);
   }
 }

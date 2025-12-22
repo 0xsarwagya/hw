@@ -11,6 +11,9 @@ import { OrdersController } from "./orders.controller";
 import { OrdersService } from "./orders.service";
 import { ReconciliationService } from "./reconciliation.service";
 import { OrderAddressService } from "./services/order-address.service";
+import { OrderArchiveService } from "./services/order-archive.service";
+import { OrderCancelService } from "./services/order-cancel.service";
+import { OrderDuplicateService } from "./services/order-duplicate.service";
 import { OrderGstService } from "./services/order-gst.service";
 import { OrderNotesService } from "./services/order-notes.service";
 import { OrderPaymentService } from "./services/order-payment.service";
@@ -44,6 +47,9 @@ import { RefundsService } from "./services/refunds.service";
     RefundsService,
     OrderPaymentService,
     OrderAddressService,
+    OrderCancelService,
+    OrderArchiveService,
+    OrderDuplicateService,
   ],
   exports: [
     OrdersService,
@@ -57,6 +63,9 @@ import { RefundsService } from "./services/refunds.service";
     RefundsService,
     OrderPaymentService,
     OrderAddressService,
+    OrderCancelService,
+    OrderArchiveService,
+    OrderDuplicateService,
   ],
 })
 export class OrdersModule {}

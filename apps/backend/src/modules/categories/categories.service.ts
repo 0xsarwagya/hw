@@ -1,14 +1,22 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
 import { categories, db, eq } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../common/logging/context.service";
+import { createErrorContext } from "../../common/logging/logging.helper";
 import { CreateCategoryDto } from "./dto/create-category.dto";
 import { UpdateCategoryDto } from "./dto/update-category.dto";
 
 @Injectable()
 export class CategoriesService {
+  constructor(
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {}
   /**
    * Generate a slug from a name
    */
@@ -32,13 +40,26 @@ export class CategoriesService {
     let counter = 1;
 
     while (true) {
-      const [existing] = await db
-        .select()
-        .from(categories)
-        .where(
-          excludeId ? eq(categories.slug, slug) : eq(categories.slug, slug),
-        )
-        .limit(1);
+      let existing: typeof categories.$inferSelect | undefined;
+      try {
+        const existingResult = await db
+          .select()
+          .from(categories)
+          .where(eq(categories.slug, slug))
+          .limit(1);
+        existing = existingResult[0];
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "CategoriesService.ensureUniqueSlug.selectExisting",
+            error,
+            { slug },
+          ),
+          "Failed to check slug uniqueness",
+        );
+        throw new InternalServerErrorException("Failed to validate slug");
+      }
 
       if (!existing || existing.id === excludeId) {
         break;
@@ -57,11 +78,28 @@ export class CategoriesService {
   async create(createCategoryDto: CreateCategoryDto) {
     // Validate parent exists if provided
     if (createCategoryDto.parentId) {
-      const [parent] = await db
-        .select()
-        .from(categories)
-        .where(eq(categories.id, createCategoryDto.parentId))
-        .limit(1);
+      let parent: typeof categories.$inferSelect | undefined;
+      try {
+        const parentResult = await db
+          .select()
+          .from(categories)
+          .where(eq(categories.id, createCategoryDto.parentId))
+          .limit(1);
+        parent = parentResult[0];
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "CategoriesService.create.selectParent",
+            error,
+            { parentId: createCategoryDto.parentId },
+          ),
+          "Failed to validate parent category",
+        );
+        throw new BadRequestException(
+          `Parent category with ID ${createCategoryDto.parentId} not found`,
+        );
+      }
 
       if (!parent) {
         throw new BadRequestException(
@@ -76,16 +114,35 @@ export class CategoriesService {
       : await this.ensureUniqueSlug(this.generateSlug(createCategoryDto.name));
 
     // Create category
-    const [newCategory] = await db
-      .insert(categories)
-      .values({
-        name: createCategoryDto.name,
-        slug,
-        parentId: createCategoryDto.parentId || null,
-        description: createCategoryDto.description || null,
-        imageUrl: createCategoryDto.imageUrl || null,
-      })
-      .returning();
+    let newCategory: typeof categories.$inferSelect | undefined;
+    try {
+      const categoryResult = await db
+        .insert(categories)
+        .values({
+          name: createCategoryDto.name,
+          slug,
+          parentId: createCategoryDto.parentId || null,
+          description: createCategoryDto.description || null,
+          imageUrl: createCategoryDto.imageUrl || null,
+        })
+        .returning();
+      newCategory = categoryResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CategoriesService.create.insertCategory",
+          error,
+          { createCategoryDto },
+        ),
+        "Failed to create category",
+      );
+      throw new InternalServerErrorException("Failed to create category");
+    }
+
+    if (!newCategory) {
+      throw new InternalServerErrorException("Failed to create category");
+    }
 
     return newCategory;
   }
@@ -94,14 +151,41 @@ export class CategoriesService {
    * Get all categories
    */
   async findAll() {
-    return db.select().from(categories);
+    try {
+      return await db.select().from(categories);
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CategoriesService.findAll.selectCategories",
+          error,
+          {},
+        ),
+        "Failed to fetch categories",
+      );
+      throw new InternalServerErrorException("Failed to fetch categories");
+    }
   }
 
   /**
    * Get category tree (hierarchical structure)
    */
   async findTree() {
-    const allCategories = await db.select().from(categories);
+    let allCategories: Array<typeof categories.$inferSelect>;
+    try {
+      allCategories = await db.select().from(categories);
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CategoriesService.findTree.selectCategories",
+          error,
+          {},
+        ),
+        "Failed to fetch categories for tree",
+      );
+      throw new InternalServerErrorException("Failed to fetch category tree");
+    }
 
     // Type for category with children
     type CategoryWithChildren = (typeof allCategories)[0] & {
@@ -143,11 +227,26 @@ export class CategoriesService {
    * Get category by ID
    */
   async findOne(id: string) {
-    const [category] = await db
-      .select()
-      .from(categories)
-      .where(eq(categories.id, id))
-      .limit(1);
+    let category: typeof categories.$inferSelect | undefined;
+    try {
+      const categoryResult = await db
+        .select()
+        .from(categories)
+        .where(eq(categories.id, id))
+        .limit(1);
+      category = categoryResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CategoriesService.findOne.selectCategory",
+          error,
+          { id },
+        ),
+        "Failed to fetch category",
+      );
+      throw new NotFoundException(`Category with ID ${id} not found`);
+    }
 
     if (!category) {
       throw new NotFoundException(`Category with ID ${id} not found`);
@@ -160,11 +259,26 @@ export class CategoriesService {
    * Get category by slug
    */
   async findBySlug(slug: string) {
-    const [category] = await db
-      .select()
-      .from(categories)
-      .where(eq(categories.slug, slug))
-      .limit(1);
+    let category: typeof categories.$inferSelect | undefined;
+    try {
+      const categoryResult = await db
+        .select()
+        .from(categories)
+        .where(eq(categories.slug, slug))
+        .limit(1);
+      category = categoryResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CategoriesService.findBySlug.selectCategory",
+          error,
+          { slug },
+        ),
+        "Failed to fetch category by slug",
+      );
+      throw new NotFoundException(`Category with slug '${slug}' not found`);
+    }
 
     if (!category) {
       throw new NotFoundException(`Category with slug '${slug}' not found`);
@@ -178,11 +292,26 @@ export class CategoriesService {
    */
   async update(id: string, updateCategoryDto: UpdateCategoryDto) {
     // Check if category exists
-    const [existing] = await db
-      .select()
-      .from(categories)
-      .where(eq(categories.id, id))
-      .limit(1);
+    let existing: typeof categories.$inferSelect | undefined;
+    try {
+      const existingResult = await db
+        .select()
+        .from(categories)
+        .where(eq(categories.id, id))
+        .limit(1);
+      existing = existingResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CategoriesService.update.selectExisting",
+          error,
+          { id },
+        ),
+        "Failed to fetch category",
+      );
+      throw new NotFoundException(`Category with ID ${id} not found`);
+    }
 
     if (!existing) {
       throw new NotFoundException(`Category with ID ${id} not found`);
@@ -194,11 +323,28 @@ export class CategoriesService {
         throw new BadRequestException("Category cannot be its own parent");
       }
 
-      const [parent] = await db
-        .select()
-        .from(categories)
-        .where(eq(categories.id, updateCategoryDto.parentId))
-        .limit(1);
+      let parent: typeof categories.$inferSelect | undefined;
+      try {
+        const parentResult = await db
+          .select()
+          .from(categories)
+          .where(eq(categories.id, updateCategoryDto.parentId))
+          .limit(1);
+        parent = parentResult[0];
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "CategoriesService.update.selectParent",
+            error,
+            { parentId: updateCategoryDto.parentId },
+          ),
+          "Failed to validate parent category",
+        );
+        throw new BadRequestException(
+          `Parent category with ID ${updateCategoryDto.parentId} not found`,
+        );
+      }
 
       if (!parent) {
         throw new BadRequestException(

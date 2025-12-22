@@ -1,11 +1,42 @@
+import { trace } from "@opentelemetry/api";
 import pino from "pino";
 import { BUILD_INFO } from "../../build-info.js";
+
+/**
+ * Extract trace and span IDs from OpenTelemetry context
+ * Returns empty object if tracing is not initialized or no active span exists
+ */
+function extractTraceContext(): { traceId?: string; spanId?: string } {
+  try {
+    const activeSpan = trace.getActiveSpan();
+    if (!activeSpan) {
+      return {};
+    }
+
+    const spanContext = activeSpan.spanContext();
+    if (
+      !spanContext.traceId ||
+      spanContext.traceId === "00000000000000000000000000000000"
+    ) {
+      return {};
+    }
+
+    return {
+      traceId: spanContext.traceId,
+      spanId: spanContext.spanId,
+    };
+  } catch {
+    // Tracing not initialized or error accessing context
+    return {};
+  }
+}
 
 /**
  * Pino logger configuration
  * - Pretty format enabled by default (can be disabled with LOG_PRETTY=false)
  * - JSON format when LOG_PRETTY=false
  * - Redaction for sensitive data
+ * - Automatically includes OpenTelemetry trace/span IDs
  * @param redisStream - Optional Redis stream for duplicating logs
  */
 export function createPinoConfig(redisStream?: pino.StreamEntry) {
@@ -24,6 +55,15 @@ export function createPinoConfig(redisStream?: pino.StreamEntry) {
     formatters: {
       level: (label) => {
         return { level: label };
+      },
+      // Automatically add trace/span IDs to all log entries
+      log: (object) => {
+        const traceContext = extractTraceContext();
+        return {
+          ...object,
+          ...(traceContext.traceId && { traceId: traceContext.traceId }),
+          ...(traceContext.spanId && { spanId: traceContext.spanId }),
+        };
       },
     },
     // Redaction paths for sensitive data

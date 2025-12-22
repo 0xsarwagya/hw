@@ -20,16 +20,31 @@ export class DatabaseService implements OnModuleInit, OnApplicationShutdown {
 
   async onModuleInit() {
     // Log pool status on startup
-    const stats = getPoolStats();
-    if (stats) {
-      this.logger.info(
-        createLogContext(this.contextService, "databasePoolInit", {
-          totalConnections: stats.totalCount,
-          idleConnections: stats.idleCount,
-          waitingConnections: stats.waitingCount,
-        }),
-        "Database connection pool initialized",
+    // Note: getPoolStats() doesn't trigger pool creation - pool is created lazily
+    // This is safe to call during initialization
+    try {
+      const stats = getPoolStats();
+      if (stats) {
+        this.logger.info(
+          createLogContext(this.contextService, "databasePoolInit", {
+            totalConnections: stats.totalCount,
+            idleConnections: stats.idleCount,
+            waitingConnections: stats.waitingCount,
+          }),
+          "Database connection pool initialized",
+        );
+      } else {
+        this.logger.info(
+          createLogContext(this.contextService, "databasePoolInit", {}),
+          "Database pool not yet created (lazy initialization)",
+        );
+      }
+    } catch (error) {
+      this.logger.warn(
+        createErrorContext(this.contextService, "databasePoolInit", error),
+        "Failed to get database pool stats - pool may not be initialized yet",
       );
+      // Don't throw - allow app to start
     }
   }
 

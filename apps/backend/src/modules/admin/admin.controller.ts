@@ -226,7 +226,7 @@ export class AdminController {
   async getOrders(
     @Query() query: AdminQueryOrdersDto,
   ): Promise<PaginatedOrdersResponseDto> {
-    return this.adminService.getAllOrders(query);
+    return await this.adminService.getAllOrders(query);
   }
 
   @Get("customers")

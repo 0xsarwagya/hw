@@ -1,5 +1,4 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { addressTypeEnum } from "@vcecom/db";
 import {
   IsEnum,
   IsNotEmpty,
@@ -8,18 +7,20 @@ import {
   MaxLength,
 } from "class-validator";
 
+const ADDRESS_TYPES = ["shipping", "billing", "both"] as const;
+
 export class CreateAddressDto {
   @ApiProperty({
     description: "Address type",
     example: "shipping",
-    enum: addressTypeEnum.enumValues,
+    enum: ADDRESS_TYPES,
     default: "shipping",
   })
   @IsOptional()
-  @IsEnum(addressTypeEnum.enumValues, {
-    message: `Type must be one of: ${addressTypeEnum.enumValues.join(", ")}`,
+  @IsEnum(ADDRESS_TYPES, {
+    message: `Type must be one of: ${ADDRESS_TYPES.join(", ")}`,
   })
-  type?: (typeof addressTypeEnum.enumValues)[number] = "shipping";
+  type?: (typeof ADDRESS_TYPES)[number] = "shipping";
 
   @ApiProperty({
     description: "Street address",

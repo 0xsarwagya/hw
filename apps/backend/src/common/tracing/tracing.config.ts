@@ -79,10 +79,47 @@ export function initializeTracing(): NodeSDK | null {
     sdk
       .shutdown()
       .then(() => {
-        console.log("Tracing terminated");
+        // Use early logger if available, otherwise console fallback
+        try {
+          const {
+            getEarlyLogger,
+            createBootstrapContext,
+          } = require("../logging/early-logger");
+          const logger = getEarlyLogger();
+          logger.info(
+            createBootstrapContext("tracingTerminated"),
+            "Tracing terminated",
+          );
+        } catch {
+          // Fallback to console if early logger not available
+          console.log("Tracing terminated");
+        }
       })
       .catch((error) => {
-        console.error("Error terminating tracing", error);
+        try {
+          const {
+            getEarlyLogger,
+            createBootstrapContext,
+          } = require("../logging/early-logger");
+          const logger = getEarlyLogger();
+          logger.error(
+            {
+              ...createBootstrapContext("tracingShutdownError"),
+              error:
+                error instanceof Error
+                  ? {
+                      name: error.name,
+                      message: error.message,
+                      stack: error.stack,
+                    }
+                  : { type: typeof error, value: String(error) },
+            },
+            "Error terminating tracing",
+          );
+        } catch {
+          // Fallback to console if early logger not available
+          console.error("Error terminating tracing", error);
+        }
       });
   });
 

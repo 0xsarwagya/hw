@@ -91,7 +91,29 @@ export const navigation: NavSection[] = [
     ],
   },
   {
-    label: "Catalog",
+    label: "Orders",
+    items: [
+      {
+        label: "Orders",
+        href: "/orders",
+        icon: ShoppingCart,
+        children: [
+          {
+            label: "All Orders",
+            href: "/orders",
+            icon: ShoppingCart,
+          },
+          {
+            label: "Abandoned Checkouts",
+            href: "/orders/abandoned",
+            icon: ShoppingBag,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    label: "Products",
     items: [
       {
         label: "Products",
@@ -121,6 +143,11 @@ export const navigation: NavSection[] = [
         icon: FolderOpen,
       },
       {
+        label: "Bundles",
+        href: "/bundles",
+        icon: Boxes,
+      },
+      {
         label: "Inventory",
         href: "/inventory",
         icon: Boxes,
@@ -142,36 +169,25 @@ export const navigation: NavSection[] = [
           },
         ],
       },
-    ],
-  },
-  {
-    label: "Sales",
-    items: [
       {
-        label: "Orders",
-        href: "/orders",
-        icon: ShoppingCart,
-        children: [
-          {
-            label: "All Orders",
-            href: "/orders",
-            icon: ShoppingCart,
-          },
-          {
-            label: "Abandoned Checkouts",
-            href: "/orders/abandoned",
-            icon: ShoppingBag,
-          },
-        ],
+        label: "Reviews",
+        href: "/reviews",
+        icon: Star,
       },
     ],
   },
   {
+    label: "Customers",
     items: [
       {
         label: "Customers",
         href: "/customers",
         icon: Users,
+      },
+      {
+        label: "Customer Groups",
+        href: "/customer-groups",
+        icon: UserCog,
       },
     ],
   },
@@ -188,37 +204,45 @@ export const navigation: NavSection[] = [
         href: "/price-lists",
         icon: DollarSign,
       },
+    ],
+  },
+  {
+    label: "Settings",
+    items: [
+      {
+        label: "Store Settings",
+        href: "/settings/store",
+        icon: Store,
+      },
+      {
+        label: "Currency",
+        href: "/settings/currency",
+        icon: DollarSign,
+      },
+      {
+        label: "Shipping Methods",
+        href: "/settings/shipping-methods",
+        icon: Truck,
+      },
       {
         label: "Payment Fees",
         href: "/settings/payment-fees",
         icon: CreditCard,
       },
       {
-        label: "Customer Groups",
-        href: "/customer-groups",
+        label: "Roles & Permissions",
+        href: "/settings/roles",
         icon: UserCog,
       },
-    ],
-  },
-  {
-    items: [
       {
-        label: "Bundles",
-        href: "/bundles",
-        icon: Boxes,
+        label: "Settings",
+        href: "/settings",
+        icon: Settings,
       },
     ],
   },
   {
-    items: [
-      {
-        label: "Reviews",
-        href: "/reviews",
-        icon: Star,
-      },
-    ],
-  },
-  {
+    label: "System",
     items: [
       {
         label: "Storage",
@@ -231,16 +255,6 @@ export const navigation: NavSection[] = [
         icon: Bell,
       },
       {
-        label: "Audit Logs",
-        href: "/audit-logs",
-        icon: FileSearch,
-      },
-    ],
-  },
-  {
-    label: "Settings",
-    items: [
-      {
         label: "Activity Logs",
         href: "/activity-logs",
         icon: BookOpen,
@@ -251,24 +265,9 @@ export const navigation: NavSection[] = [
         icon: FileText,
       },
       {
-        label: "Roles & Permissions",
-        href: "/settings/roles",
-        icon: UserCog,
-      },
-      {
-        label: "Store Settings",
-        href: "/settings/store",
-        icon: Store,
-      },
-      {
-        label: "Currency",
-        href: "/settings/currency",
-        icon: DollarSign,
-      },
-      {
-        label: "Settings",
-        href: "/settings",
-        icon: Settings,
+        label: "Audit Logs",
+        href: "/audit-logs",
+        icon: FileSearch,
       },
     ],
   },

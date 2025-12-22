@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
 import {
@@ -21,6 +22,9 @@ import {
   sql,
   tags,
 } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../common/logging/context.service";
+import { createErrorContext } from "../../common/logging/logging.helper";
 import {
   generatePaginationMetadata,
   normalizePaginationParams,
@@ -41,6 +45,10 @@ import { UpdateCollectionDto } from "./dto/update-collection.dto";
 
 @Injectable()
 export class CollectionsService {
+  constructor(
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {}
   /**
    * Generate a slug from a name
    */
@@ -64,11 +72,26 @@ export class CollectionsService {
     let counter = 1;
 
     while (true) {
-      const [existing] = await db
-        .select()
-        .from(collections)
-        .where(eq(collections.slug, slug))
-        .limit(1);
+      let existing: typeof collections.$inferSelect | undefined;
+      try {
+        const existingResult = await db
+          .select()
+          .from(collections)
+          .where(eq(collections.slug, slug))
+          .limit(1);
+        existing = existingResult[0];
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "CollectionsService.ensureUniqueSlug.selectExisting",
+            error,
+            { slug },
+          ),
+          "Failed to check slug uniqueness",
+        );
+        throw new InternalServerErrorException("Failed to validate slug");
+      }
 
       if (!existing || existing.id === excludeId) {
         break;
@@ -103,31 +126,64 @@ export class CollectionsService {
     }
 
     // Create collection
-    const [newCollection] = await db
-      .insert(collections)
-      .values({
-        name: createCollectionDto.name,
-        slug,
-        description: createCollectionDto.description || null,
-        imageUrl: createCollectionDto.imageUrl || null,
-        type: createCollectionDto.type || "manual",
-        rules: createCollectionDto.rules || null,
-        matchType: createCollectionDto.matchType || "all",
-        position: createCollectionDto.position || 0,
-      })
-      .returning({
-        id: collections.id,
-        name: collections.name,
-        slug: collections.slug,
-        description: collections.description,
-        imageUrl: collections.imageUrl,
-        type: collections.type,
-        rules: collections.rules,
-        matchType: collections.matchType,
-        position: collections.position,
-        createdAt: collections.createdAt,
-        updatedAt: collections.updatedAt,
-      });
+    let newCollection:
+      | {
+          id: string;
+          name: string;
+          slug: string;
+          description: string | null;
+          imageUrl: string | null;
+          type: "manual" | "automatic";
+          rules: unknown;
+          matchType: "all" | "any" | null;
+          position: number | null;
+          createdAt: Date;
+          updatedAt: Date;
+        }
+      | undefined;
+    try {
+      const collectionResult = await db
+        .insert(collections)
+        .values({
+          name: createCollectionDto.name,
+          slug,
+          description: createCollectionDto.description || null,
+          imageUrl: createCollectionDto.imageUrl || null,
+          type: createCollectionDto.type || "manual",
+          rules: createCollectionDto.rules || null,
+          matchType: createCollectionDto.matchType || "all",
+          position: createCollectionDto.position || 0,
+        })
+        .returning({
+          id: collections.id,
+          name: collections.name,
+          slug: collections.slug,
+          description: collections.description,
+          imageUrl: collections.imageUrl,
+          type: collections.type,
+          rules: collections.rules,
+          matchType: collections.matchType,
+          position: collections.position,
+          createdAt: collections.createdAt,
+          updatedAt: collections.updatedAt,
+        });
+      newCollection = collectionResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CollectionsService.create.insertCollection",
+          error,
+          { createCollectionDto },
+        ),
+        "Failed to create collection",
+      );
+      throw new InternalServerErrorException("Failed to create collection");
+    }
+
+    if (!newCollection) {
+      throw new InternalServerErrorException("Failed to create collection");
+    }
 
     return {
       ...newCollection,
@@ -163,10 +219,24 @@ export class CollectionsService {
     // Get total count
     const whereCondition =
       conditions.length > 0 ? and(...conditions) : undefined;
-    const totalResult = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(collections)
-      .where(whereCondition);
+    let totalResult: Array<{ count: number }>;
+    try {
+      totalResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(collections)
+        .where(whereCondition);
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CollectionsService.findAll.countCollections",
+          error,
+          { query },
+        ),
+        "Failed to count collections",
+      );
+      throw new InternalServerErrorException("Failed to fetch collections");
+    }
 
     const total = Number(totalResult[0]?.count || 0);
 
@@ -179,33 +249,60 @@ export class CollectionsService {
     }
 
     // Get collections with product count
-    const collectionsData = await db
-      .select({
-        id: collections.id,
-        name: collections.name,
-        slug: collections.slug,
-        description: collections.description,
-        imageUrl: collections.imageUrl,
-        type: collections.type,
-        rules: collections.rules,
-        matchType: collections.matchType,
-        position: collections.position,
-        createdAt: collections.createdAt,
-        updatedAt: collections.updatedAt,
-        productCount: sql<number>`count(${productCollections.id})`.as(
-          "product_count",
+    let collectionsData: Array<{
+      id: string;
+      name: string;
+      slug: string;
+      description: string | null;
+      imageUrl: string | null;
+      type: string;
+      rules: unknown;
+      matchType: string | null;
+      position: number | null;
+      createdAt: Date;
+      updatedAt: Date;
+      productCount: number;
+    }>;
+    try {
+      collectionsData = await db
+        .select({
+          id: collections.id,
+          name: collections.name,
+          slug: collections.slug,
+          description: collections.description,
+          imageUrl: collections.imageUrl,
+          type: collections.type,
+          rules: collections.rules,
+          matchType: collections.matchType,
+          position: collections.position,
+          createdAt: collections.createdAt,
+          updatedAt: collections.updatedAt,
+          productCount: sql<number>`count(${productCollections.id})`.as(
+            "product_count",
+          ),
+        })
+        .from(collections)
+        .leftJoin(
+          productCollections,
+          eq(collections.id, productCollections.collectionId),
+        )
+        .where(whereCondition)
+        .groupBy(collections.id)
+        .orderBy(collections.position, collections.createdAt)
+        .limit(limit)
+        .offset(offset);
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CollectionsService.findAll.selectCollections",
+          error,
+          { query },
         ),
-      })
-      .from(collections)
-      .leftJoin(
-        productCollections,
-        eq(collections.id, productCollections.collectionId),
-      )
-      .where(whereCondition)
-      .groupBy(collections.id)
-      .orderBy(collections.position, collections.createdAt)
-      .limit(limit)
-      .offset(offset);
+        "Failed to fetch collections",
+      );
+      throw new InternalServerErrorException("Failed to fetch collections");
+    }
 
     const pagination = generatePaginationMetadata(total, page, limit);
 

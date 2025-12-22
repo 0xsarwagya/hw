@@ -3,7 +3,9 @@ import { DiscountsController, PublicDiscountsController } from "./discounts.cont
 import { DiscountsService } from "./discounts.service";
 import { CreateDiscountDto, DiscountType, DiscountValueType } from "./dto/create-discount.dto";
 import { AdminDriftReportService } from "./services/admin-drift-report.service";
+import { DiscountInvalidationService } from "./services/discount-invalidation.service";
 import { DiscountProfiler } from "./services/discount-profiler.service";
+import { RulesetRebuilder } from "./services/ruleset-rebuilder.service";
 
 // Mock database to avoid DATABASE_URL requirement
 jest.mock("@vcecom/db", () => ({
@@ -56,6 +58,17 @@ describe("DiscountsController", () => {
     updateRulesetInfo: jest.fn(),
   };
 
+  const mockDiscountInvalidationService = {
+    invalidateDiscount: jest.fn(),
+    invalidateProduct: jest.fn(),
+    invalidateCategory: jest.fn(),
+    invalidateCollection: jest.fn(),
+  };
+
+  const mockRulesetRebuilder = {
+    rebuildFromDb: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [DiscountsController],
@@ -63,6 +76,8 @@ describe("DiscountsController", () => {
         DiscountsService,
         AdminDriftReportService,
         DiscountProfiler,
+        DiscountInvalidationService,
+        RulesetRebuilder,
       ],
     })
       .overrideProvider(DiscountsService)
@@ -71,6 +86,10 @@ describe("DiscountsController", () => {
       .useValue(mockAdminDriftReportService)
       .overrideProvider(DiscountProfiler)
       .useValue(mockDiscountProfiler)
+      .overrideProvider(DiscountInvalidationService)
+      .useValue(mockDiscountInvalidationService)
+      .overrideProvider(RulesetRebuilder)
+      .useValue(mockRulesetRebuilder)
       .compile();
 
     controller = module.get<DiscountsController>(DiscountsController);

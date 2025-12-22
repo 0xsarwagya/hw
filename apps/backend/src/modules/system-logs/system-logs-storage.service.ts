@@ -54,8 +54,12 @@ export class SystemLogsStorageService implements OnModuleInit {
       return;
     }
 
-    this.isStoringLog = true;
+    // Check if Redis is connected before trying to write
+    // If not connected and offline queue is enabled, commands will queue automatically
+    // But we still want to check connection status to avoid errors
     try {
+      // Check connection status - if not connected, the offline queue will handle it
+      // But we'll catch errors gracefully
       const date = new Date(entry.timestamp);
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -64,7 +68,9 @@ export class SystemLogsStorageService implements OnModuleInit {
 
       const key = `logs:system:${year}${month}${day}:${hour}`;
 
-      // Add log entry to list
+      this.isStoringLog = true;
+
+      // Add log entry to list - will queue if Redis isn't connected yet
       await this.client.lpush(key, JSON.stringify(entry));
 
       // Trim list to max records per hour
@@ -72,10 +78,10 @@ export class SystemLogsStorageService implements OnModuleInit {
 
       // Set TTL (24 hours)
       await this.client.expire(key, this.ttlHours * 60 * 60);
-    } catch (error) {
-      // Use console.error to avoid recursive logging - don't use logger here
-      // This prevents infinite recursion when logging system fails
-      console.error("Failed to store system log:", error);
+    } catch (_error) {
+      // Silently fail - log storage shouldn't break the app
+      // Don't log errors here to prevent recursion
+      // Commands will be queued if Redis isn't connected yet (with enableOfflineQueue: true)
     } finally {
       this.isStoringLog = false;
     }

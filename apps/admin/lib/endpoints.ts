@@ -253,4 +253,11 @@ export const endpoints = {
     customerSupport: "/admin/dashboards/customer-support",
     productMerchandising: "/admin/dashboards/product-merchandising",
   },
+  shippingMethods: {
+    list: "/admin/shipping-methods",
+    detail: (id: string) => `/admin/shipping-methods/${id}`,
+    create: "/admin/shipping-methods",
+    update: (id: string) => `/admin/shipping-methods/${id}`,
+    delete: (id: string) => `/admin/shipping-methods/${id}`,
+  },
 } as const;

@@ -3,7 +3,14 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { addresses } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../common/logging/logging.helper";
+import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
 import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import { OrderResponseDto } from "./dto/order-response.dto";
@@ -15,6 +22,7 @@ export class ReconciliationService {
     private readonly checkoutStore: CheckoutStore,
     private readonly ordersService: OrdersService,
     private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
   ) {}
 
   /**
@@ -45,11 +53,29 @@ export class ReconciliationService {
       // Fetch and return existing order directly from database
       // (bypassing user check since this is admin reconciliation)
       const { db, eq, orders, orderItems } = await import("@vcecom/db");
-      const [order] = await db
-        .select()
-        .from(orders)
-        .where(eq(orders.id, existingOrderId))
-        .limit(1);
+
+      let order: typeof orders.$inferSelect | undefined;
+      try {
+        const orderResult = await db
+          .select()
+          .from(orders)
+          .where(eq(orders.id, existingOrderId))
+          .limit(1);
+        order = orderResult[0];
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "ReconciliationService.reprocessPaymentIntent.selectOrder",
+            error,
+            { existingOrderId, paymentIntentId },
+          ),
+          "Failed to fetch existing order",
+        );
+        throw new NotFoundException(
+          `Order ${existingOrderId} not found for payment intent ${paymentIntentId}`,
+        );
+      }
 
       if (!order) {
         throw new NotFoundException(
@@ -57,23 +83,206 @@ export class ReconciliationService {
         );
       }
 
-      // Get order items
-      const orderItemsResult = await db
-        .select()
-        .from(orderItems)
-        .where(eq(orderItems.orderId, order.id));
+      // Get order items with explicit field selection
+      let items: Array<{
+        id: string;
+        orderId: string;
+        productVariantId: string;
+        quantity: number;
+        price: number;
+        gstRate: number;
+        gstAmount: number;
+        createdAt: Date;
+        updatedAt: Date;
+      }>;
+      try {
+        items = await db
+          .select({
+            id: orderItems.id,
+            orderId: orderItems.orderId,
+            productVariantId: orderItems.productVariantId,
+            quantity: orderItems.quantity,
+            price: orderItems.price,
+            gstRate: orderItems.gstRate,
+            gstAmount: orderItems.gstAmount,
+            createdAt: orderItems.createdAt,
+            updatedAt: orderItems.updatedAt,
+          })
+          .from(orderItems)
+          .where(eq(orderItems.orderId, order.id));
+      } catch (error) {
+        this.logger.warn(
+          createLogContext(
+            this.contextService,
+            "ReconciliationService.reprocessPaymentIntent.selectItems",
+            {
+              orderId: existingOrderId,
+              error: error instanceof Error ? error.message : String(error),
+            },
+          ),
+          "Failed to fetch order items",
+        );
+        items = [];
+      }
+
+      // Get shipping address for GST calculation
+      let shippingAddress: { state: string } | undefined;
+      try {
+        const addressResult = await db
+          .select({ state: addresses.state })
+          .from(addresses)
+          .where(eq(addresses.id, order.shippingAddressId))
+          .limit(1);
+        shippingAddress = addressResult[0];
+      } catch (error) {
+        this.logger.warn(
+          createLogContext(
+            this.contextService,
+            "ReconciliationService.reprocessPaymentIntent.selectAddress",
+            {
+              orderId: existingOrderId,
+              shippingAddressId: order.shippingAddressId,
+              error: error instanceof Error ? error.message : String(error),
+            },
+          ),
+          "Failed to fetch shipping address, using default state",
+        );
+        shippingAddress = undefined;
+      }
+
+      // Calculate GST breakdown
+      const sellerState = "Maharashtra";
+      const buyerState = shippingAddress?.state || "";
+
+      let totalCgst = 0;
+      let totalSgst = 0;
+      let totalIgst = 0;
+
+      for (const item of items) {
+        try {
+          const itemSubtotal = item.price * item.quantity;
+          const gstBreakdown = calculateGstBreakdown(
+            itemSubtotal,
+            item.gstRate,
+            sellerState,
+            buyerState,
+          );
+          totalCgst += gstBreakdown.cgst;
+          totalSgst += gstBreakdown.sgst;
+          totalIgst += gstBreakdown.igst;
+        } catch (error) {
+          this.logger.warn(
+            createLogContext(
+              this.contextService,
+              "ReconciliationService.reprocessPaymentIntent.calculateGst",
+              {
+                orderId: existingOrderId,
+                itemId: item.id,
+                error: error instanceof Error ? error.message : String(error),
+              },
+            ),
+            "Failed to calculate GST for item, skipping",
+          );
+        }
+      }
+
+      const gstBreakdown = {
+        cgst: totalCgst,
+        sgst: totalSgst,
+        igst: totalIgst,
+        totalGst: order.gstAmount || 0,
+        isIntraState: sellerState === buyerState,
+      };
+
+      // Validate and parse payment fee breakdown
+      let paymentFeeBreakdown:
+        | {
+            method: string;
+            chargeType: string;
+            calculatedFee: number;
+            flatAmount?: number;
+            percentage?: number;
+            mixMin?: number;
+            mixCap?: number;
+          }
+        | null
+        | undefined = null;
+
+      if (order.paymentFeeBreakdown) {
+        try {
+          const parsed =
+            typeof order.paymentFeeBreakdown === "string"
+              ? JSON.parse(order.paymentFeeBreakdown)
+              : order.paymentFeeBreakdown;
+
+          if (
+            parsed &&
+            typeof parsed === "object" &&
+            "method" in parsed &&
+            "chargeType" in parsed &&
+            "calculatedFee" in parsed &&
+            typeof parsed.method === "string" &&
+            typeof parsed.chargeType === "string" &&
+            typeof parsed.calculatedFee === "number"
+          ) {
+            paymentFeeBreakdown = parsed as {
+              method: string;
+              chargeType: string;
+              calculatedFee: number;
+              flatAmount?: number;
+              percentage?: number;
+              mixMin?: number;
+              mixCap?: number;
+            };
+          }
+        } catch (error) {
+          this.logger.warn(
+            createLogContext(
+              this.contextService,
+              "ReconciliationService.reprocessPaymentIntent.parsePaymentFeeBreakdown",
+              {
+                orderId: existingOrderId,
+                error: error instanceof Error ? error.message : String(error),
+              },
+            ),
+            "Failed to parse payment fee breakdown",
+          );
+        }
+      }
 
       return {
-        ...order,
-        items: orderItemsResult,
-        gstBreakdown: {
-          cgst: 0,
-          sgst: 0,
-          igst: 0,
-          totalGst: order.gstAmount,
-          isIntraState: false,
-        },
-      } as OrderResponseDto;
+        id: order.id,
+        customerId: order.customerId,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        subtotal: order.subtotal || 0,
+        gstAmount: order.gstAmount || 0,
+        gstBreakdown,
+        shippingCost: order.shippingCost || 0,
+        paymentFee: order.paymentFee || undefined,
+        paymentMethod: order.paymentMethod || null,
+        paymentFeeBreakdown,
+        total: order.total || 0,
+        razorpayOrderId: order.razorpayOrderId || null,
+        shippingProvider: order.shippingProvider || null,
+        shippingAddressId: order.shippingAddressId,
+        billingAddressId: order.billingAddressId,
+        items,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        archived: order.archived || false,
+        archivedAt: order.archivedAt || null,
+        archivedBy: order.archivedBy || null,
+        ...(order.discountCode !== null && order.discountCode !== undefined
+          ? { discountCode: order.discountCode }
+          : {}),
+        ...(order.discountAmount !== null && order.discountAmount !== undefined
+          ? { discountAmount: order.discountAmount }
+          : {}),
+      } as OrderResponseDto & {
+        discountCode?: string | null;
+        discountAmount?: number;
+      };
     }
 
     // Find checkout session via payment intent

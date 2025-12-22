@@ -1,7 +1,7 @@
 {
   "id": "checkout/inventory-flow",
-  "title": "inventory-flow",
-  "description": "",
+  "title": "Checkout Inventory Flow",
+  "description": "The inventory flow during checkout ensures that products are reserved when checkout starts and committed when payment is confirmed. This prevents overselling and ensures inventory consistency.",
   "source": "@site/docs/checkout/inventory-flow.md",
   "sourceDirName": "checkout",
   "slug": "/checkout/inventory-flow",
@@ -11,12 +11,12 @@
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/checkout/inventory-flow.md",
   "tags": [],
   "version": "current",
-  "lastUpdatedBy": "Sarwagya Singh",
-  "lastUpdatedAt": 1766018217000,
+  "lastUpdatedBy": "Author",
+  "lastUpdatedAt": 1539502055000,
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
-    "title": "webhooks",
+    "title": "Checkout Webhooks",
     "permalink": "/docs/checkout/webhooks"
   },
   "next": {

@@ -1,9 +1,17 @@
 import { Injectable } from "@nestjs/common";
 import Razorpay from "razorpay";
 
+// Extend Razorpay config to include timeout (supported at runtime but not in TypeScript definitions)
+interface RazorpayConfigWithTimeout {
+  key_id: string;
+  key_secret: string;
+  timeout?: number;
+}
+
 export interface RazorpayConfig {
   keyId: string;
   keySecret: string;
+  timeout?: number; // Timeout in milliseconds (default: 10000)
 }
 
 @Injectable()
@@ -12,7 +20,7 @@ export class RazorpayConfigService {
 
   /**
    * Initialize Razorpay instance with API keys
-   * @param config - Razorpay configuration with keyId and keySecret
+   * @param config - Razorpay configuration with keyId, keySecret, and optional timeout
    * @returns Razorpay instance
    */
   initialize(config: RazorpayConfig): Razorpay {
@@ -22,10 +30,21 @@ export class RazorpayConfigService {
       );
     }
 
-    this.razorpayInstance = new Razorpay({
+    // Configure Razorpay with timeout (default: 10 seconds)
+    // This ensures SDK-level timeout handling, which is more reliable than wrapping promises
+    // Note: timeout is supported by Razorpay SDK at runtime but TypeScript definitions don't include it
+    const timeout = config.timeout ?? 10000;
+
+    const razorpayConfig: RazorpayConfigWithTimeout = {
       key_id: config.keyId,
       key_secret: config.keySecret,
-    });
+      timeout, // SDK-level timeout for all API requests (supported at runtime)
+    };
+
+    // Type assertion needed because Razorpay TypeScript definitions don't include timeout
+    // but it's supported at runtime by the SDK (see Razorpay SDK documentation)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.razorpayInstance = new Razorpay(razorpayConfig as any);
 
     return this.razorpayInstance;
   }

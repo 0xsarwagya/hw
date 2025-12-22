@@ -3,6 +3,7 @@ import * as path from "node:path";
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
 import {
@@ -17,7 +18,10 @@ import {
   productVariants,
   sql,
 } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
 import PDFDocument from "pdfkit";
+import { ContextService } from "../../common/logging/context.service";
+import { createErrorContext } from "../../common/logging/logging.helper";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { InvoiceResponseDto } from "./dto/invoice-response.dto";
 
@@ -29,7 +33,10 @@ export class InvoicesService {
     "invoices",
   );
 
-  constructor() {
+  constructor(
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {
     // Ensure invoices directory exists
     this.ensureInvoicesDirectory();
   }
@@ -63,12 +70,27 @@ export class InvoicesService {
     const prefix = `INV-${year}-`;
 
     // Get the last invoice number for this year
-    const [lastInvoice] = await db
-      .select({ invoiceNumber: invoices.invoiceNumber })
-      .from(invoices)
-      .where(sql`${invoices.invoiceNumber} LIKE ${`${prefix}%`}`)
-      .orderBy(sql`${invoices.invoiceNumber} DESC`)
-      .limit(1);
+    let lastInvoice: { invoiceNumber: string } | undefined;
+    try {
+      const invoiceResult = await db
+        .select({ invoiceNumber: invoices.invoiceNumber })
+        .from(invoices)
+        .where(sql`${invoices.invoiceNumber} LIKE ${`${prefix}%`}`)
+        .orderBy(sql`${invoices.invoiceNumber} DESC`)
+        .limit(1);
+      lastInvoice = invoiceResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "InvoicesService.generateInvoiceNumber.selectLastInvoice",
+          error,
+          { prefix },
+        ),
+        "Failed to fetch last invoice number, starting from 1",
+      );
+      // Continue with sequence = 1
+    }
 
     let sequence = 1;
     if (lastInvoice) {
@@ -106,11 +128,28 @@ export class InvoicesService {
    */
   async generateInvoice(orderId: string): Promise<InvoiceResponseDto> {
     // Check if invoice already exists
-    const [existingInvoice] = await db
-      .select()
-      .from(invoices)
-      .where(eq(invoices.orderId, orderId))
-      .limit(1);
+    let existingInvoice: typeof invoices.$inferSelect | undefined;
+    try {
+      const invoiceResult = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.orderId, orderId))
+        .limit(1);
+      existingInvoice = invoiceResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "InvoicesService.generateInvoice.selectExistingInvoice",
+          error,
+          { orderId },
+        ),
+        "Failed to check existing invoice",
+      );
+      throw new InternalServerErrorException(
+        "Failed to check existing invoice",
+      );
+    }
 
     if (existingInvoice) {
       return {
@@ -120,11 +159,26 @@ export class InvoicesService {
     }
 
     // Get order details
-    const [order] = await db
-      .select()
-      .from(orders)
-      .where(eq(orders.id, orderId))
-      .limit(1);
+    let order: typeof orders.$inferSelect | undefined;
+    try {
+      const orderResult = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+      order = orderResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "InvoicesService.generateInvoice.selectOrder",
+          error,
+          { orderId },
+        ),
+        "Failed to fetch order",
+      );
+      throw new NotFoundException("Order not found");
+    }
 
     if (!order) {
       throw new NotFoundException("Order not found");
@@ -142,60 +196,137 @@ export class InvoicesService {
     }
 
     // Get order items with product details
-    const orderItemsData = await db
-      .select({
-        id: orderItems.id,
-        quantity: orderItems.quantity,
-        price: orderItems.price,
-        gstRate: orderItems.gstRate,
-        gstAmount: orderItems.gstAmount,
-        productVariantId: orderItems.productVariantId,
-        productId: products.id,
-        productTitle: products.title,
-        productHsnCode: products.hsnCode,
-      })
-      .from(orderItems)
-      .leftJoin(
-        productVariants,
-        eq(orderItems.productVariantId, productVariants.id),
-      )
-      .leftJoin(products, eq(productVariants.productId, products.id))
-      .where(eq(orderItems.orderId, orderId));
+    let orderItemsData: Array<{
+      id: string;
+      quantity: number;
+      price: number;
+      gstRate: number;
+      gstAmount: number;
+      productVariantId: string;
+      productId: string | null;
+      productTitle: string | null;
+      productHsnCode: string | null;
+    }>;
+    try {
+      orderItemsData = await db
+        .select({
+          id: orderItems.id,
+          quantity: orderItems.quantity,
+          price: orderItems.price,
+          gstRate: orderItems.gstRate,
+          gstAmount: orderItems.gstAmount,
+          productVariantId: orderItems.productVariantId,
+          productId: products.id,
+          productTitle: products.title,
+          productHsnCode: products.hsnCode,
+        })
+        .from(orderItems)
+        .leftJoin(
+          productVariants,
+          eq(orderItems.productVariantId, productVariants.id),
+        )
+        .leftJoin(products, eq(productVariants.productId, products.id))
+        .where(eq(orderItems.orderId, orderId));
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "InvoicesService.generateInvoice.selectOrderItems",
+          error,
+          { orderId },
+        ),
+        "Failed to fetch order items",
+      );
+      throw new InternalServerErrorException("Failed to fetch order items");
+    }
 
     // Get customer details
-    const [customer] = await db
-      .select({
-        id: customers.id,
-        name: customers.name,
-        email: customers.email,
-        phone: customers.phone,
-        gstin: customers.gstin,
-      })
-      .from(customers)
-      .where(eq(customers.id, order.customerId))
-      .limit(1);
+    let customer:
+      | {
+          id: string;
+          name: string | null;
+          email: string;
+          phone: string | null;
+          gstin: string | null;
+        }
+      | undefined;
+    try {
+      const customerResult = await db
+        .select({
+          id: customers.id,
+          name: customers.name,
+          email: customers.email,
+          phone: customers.phone,
+          gstin: customers.gstin,
+        })
+        .from(customers)
+        .where(eq(customers.id, order.customerId))
+        .limit(1);
+      customer = customerResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "InvoicesService.generateInvoice.selectCustomer",
+          error,
+          { orderId, customerId: order.customerId },
+        ),
+        "Failed to fetch customer",
+      );
+      throw new NotFoundException("Customer not found");
+    }
 
     if (!customer) {
       throw new NotFoundException("Customer not found");
     }
 
     // Get billing address
-    const [billingAddress] = await db
-      .select()
-      .from(addresses)
-      .where(eq(addresses.id, order.billingAddressId))
-      .limit(1);
+    let billingAddress: typeof addresses.$inferSelect | undefined;
+    try {
+      const addressResult = await db
+        .select()
+        .from(addresses)
+        .where(eq(addresses.id, order.billingAddressId))
+        .limit(1);
+      billingAddress = addressResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "InvoicesService.generateInvoice.selectBillingAddress",
+          error,
+          { orderId, billingAddressId: order.billingAddressId },
+        ),
+        "Failed to fetch billing address",
+      );
+      throw new NotFoundException("Billing address not found");
+    }
 
     if (!billingAddress) {
       throw new NotFoundException("Billing address not found");
     }
 
     // Get shipping address for GST calculation
-    const [shippingAddress] = await db
-      .select()
-      .from(addresses)
-      .where(eq(addresses.id, order.shippingAddressId))
-      .limit(1);
+    let shippingAddress: typeof addresses.$inferSelect | undefined;
+    try {
+      const addressResult = await db
+        .select()
+        .from(addresses)
+        .where(eq(addresses.id, order.shippingAddressId))
+        .limit(1);
+      shippingAddress = addressResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "InvoicesService.generateInvoice.selectShippingAddress",
+          error,
+          { orderId, shippingAddressId: order.shippingAddressId },
+        ),
+        "Failed to fetch shipping address",
+      );
+      throw new NotFoundException("Shipping address not found");
+    }
 
     if (!shippingAddress) {
       throw new NotFoundException("Shipping address not found");
@@ -235,7 +366,12 @@ export class InvoicesService {
       invoiceNumber,
       order,
       orderItems: orderItemsData,
-      customer,
+      customer: {
+        name: customer.name || "N/A",
+        email: customer.email,
+        phone: customer.phone,
+        gstin: customer.gstin,
+      },
       billingAddress,
       shippingAddress,
       gstBreakdown,
@@ -243,14 +379,33 @@ export class InvoicesService {
     });
 
     // Save invoice to database
-    const [invoice] = await db
-      .insert(invoices)
-      .values({
-        invoiceNumber,
-        orderId: orderId,
-        pdfPath,
-      })
-      .returning();
+    let invoice: typeof invoices.$inferSelect | undefined;
+    try {
+      const invoiceResult = await db
+        .insert(invoices)
+        .values({
+          invoiceNumber,
+          orderId: orderId,
+          pdfPath,
+        })
+        .returning();
+      invoice = invoiceResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "InvoicesService.generateInvoice.insertInvoice",
+          error,
+          { orderId, invoiceNumber, pdfPath },
+        ),
+        "Failed to save invoice to database",
+      );
+      throw new InternalServerErrorException("Failed to save invoice");
+    }
+
+    if (!invoice) {
+      throw new InternalServerErrorException("Failed to create invoice");
+    }
 
     return {
       ...invoice,

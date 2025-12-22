@@ -10,23 +10,35 @@ config({ path: rootEnvPath });
 // Also try loading from apps/backend/.env as fallback
 const _envResult = config({ path: resolve(__dirname, "../.env") });
 
+import {
+  createBootstrapContext,
+  getEarlyLogger,
+} from "./common/logging/early-logger";
 // Initialize OpenTelemetry BEFORE any other imports
 import { initializeTracing } from "./common/tracing/tracing.config";
+
+// Get early logger for use before NestJS bootstrap
+const earlyLogger = getEarlyLogger();
 
 let tracingSdk: ReturnType<typeof initializeTracing>;
 try {
   tracingSdk = initializeTracing();
 } catch (error) {
-  console.error("[Tracing Init Error]", {
-    error: error instanceof Error ? error.message : String(error),
-    stack: error instanceof Error ? error.stack : undefined,
-  });
+  earlyLogger.error(
+    {
+      ...createBootstrapContext("tracingInit"),
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    },
+    "Failed to initialize OpenTelemetry tracing",
+  );
   // Continue without tracing if initialization fails
   tracingSdk = null;
 }
 
+import type { Server } from "node:http";
 // Now import everything else after .env is loaded
-import { ExecutionContext } from "@nestjs/common";
+import { ExecutionContext, INestApplication } from "@nestjs/common";
 import { NestFactory, Reflector } from "@nestjs/core";
 import {
   DocumentBuilder,
@@ -52,103 +64,502 @@ import { ContextService } from "./common/logging/context.service";
 import { createPinoConfig } from "./common/logging/pino.config";
 import { filterSwaggerTags } from "./common/swagger/tag-filter";
 
+// Add process exit listener to detect direct process.exit() calls
+const originalExit = process.exit.bind(process);
+process.exit = (code?: number | string | null): never => {
+  const stack = new Error().stack;
+  earlyLogger.fatal(
+    {
+      ...createBootstrapContext("processExit"),
+      exitCode: code,
+      stack,
+    },
+    `process.exit(${code}) called`,
+  );
+  // Call original exit - it never returns
+  originalExit(code);
+  // This line is unreachable but needed for type safety
+  throw new Error("process.exit should never return");
+};
+
 // Setup unhandled rejection and exception handlers
-// These will use Pino logger once the app is bootstrapped
-// For now, we use console as fallback since logger isn't available yet
+// Use early logger which includes OpenTelemetry trace context
 process.on(
   "unhandledRejection",
   (reason: unknown, promise: Promise<unknown>) => {
-    console.error("[Unhandled Rejection]", { promise, reason });
+    const errorContext = {
+      ...createBootstrapContext("unhandledRejection"),
+      promise: promise.toString(),
+    };
+
     if (reason instanceof Error) {
-      console.error("[Unhandled Rejection Stack]", reason.stack);
+      earlyLogger.fatal(
+        {
+          ...errorContext,
+          error: {
+            name: reason.name,
+            message: reason.message,
+            stack: reason.stack,
+          },
+        },
+        "Unhandled promise rejection",
+      );
+    } else {
+      earlyLogger.fatal(
+        {
+          ...errorContext,
+          reasonType: typeof reason,
+          reasonString: String(reason),
+        },
+        "Unhandled promise rejection (non-Error)",
+      );
     }
-    process.exit(1);
+
+    // Give time for logs to flush before exiting
+    setImmediate(() => {
+      setTimeout(() => {
+        earlyLogger.fatal(
+          createBootstrapContext("unhandledRejection"),
+          "Exiting process due to unhandled rejection",
+        );
+        process.exit(1);
+      }, 500);
+    });
   },
 );
 
 process.on("uncaughtException", (error: Error) => {
-  console.error("[Uncaught Exception] Message:", error.message);
-  console.error("[Uncaught Exception] Stack:", error.stack);
-  process.exit(1);
+  earlyLogger.fatal(
+    {
+      ...createBootstrapContext("uncaughtException"),
+      error: {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      },
+    },
+    "Uncaught exception",
+  );
+
+  // Give time for logs to flush before exiting
+  setImmediate(() => {
+    setTimeout(() => {
+      earlyLogger.fatal(
+        createBootstrapContext("uncaughtException"),
+        "Exiting process due to uncaught exception",
+      );
+      process.exit(1);
+    }, 500);
+  });
 });
 
 async function bootstrap() {
-  // Create a root logger instance for startup logging
-  const rootLogger = createPinoConfig();
-
-  const app = await NestFactory.create(AppModule, {
-    rawBody: true, // Enable raw body for webhook signature verification
-    logger: false, // Disable NestJS default logger, use only Pino
-  });
-
-  const reflector = app.get(Reflector);
-
-  // Enable CORS
-  // Support both storefront and admin frontends
-  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-  const adminUrl = process.env.ADMIN_URL || "http://localhost:3002";
-  const allowedOrigins = [...frontendUrl.split(","), ...adminUrl.split(",")];
-
-  // Enable cookie parser
-  app.use(cookieParser());
-
-  app.enableCors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    preflightContinue: false,
-    optionsSuccessStatus: CORS_PREFLIGHT_SUCCESS_STATUS,
-  });
-
-  // Enable validation globally
-  app.useGlobalPipes(
-    new (await import("@nestjs/common")).ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-    }),
+  const bootstrapStartTime = Date.now();
+  earlyLogger.info(
+    createBootstrapContext("bootstrapStart"),
+    "Starting application bootstrap",
   );
 
-  // Create custom JWT guard that respects @Public() decorator
-  const jwtGuard = new JwtAuthGuard();
-  const rolesGuard = new RolesGuard(reflector);
-
-  // Override JWT guard to skip public routes
-  const originalCanActivate = jwtGuard.canActivate.bind(jwtGuard);
-  jwtGuard.canActivate = async (context: ExecutionContext) => {
-    const isPublic = reflector.getAllAndOverride(IS_PUBLIC_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]) as boolean | undefined;
-    if (isPublic) {
-      return true;
-    }
-    return originalCanActivate(context);
-  };
-
-  // Get rate limit guard and interceptor
-  // Note: These are retrieved from the app container after NestFactory.create()
-  // which ensures all modules are initialized
-  let rateLimitGuard: RateLimitGuard;
-  let rateLimitInterceptor: RateLimitInterceptor;
   try {
-    rateLimitGuard = app.get(RateLimitGuard, { strict: false });
-    rateLimitInterceptor = app.get(RateLimitInterceptor, { strict: false });
-    if (!rateLimitGuard || !rateLimitInterceptor) {
-      rootLogger.warn(
-        "Rate limiting components not found, continuing without rate limiting",
+    // Create a root logger instance for startup logging
+    const rootLogger = createPinoConfig();
+
+    rootLogger.info(
+      {
+        ...createBootstrapContext("loggerInit"),
+        elapsedMs: Date.now() - bootstrapStartTime,
+      },
+      "Logger initialized",
+    );
+
+    let app: INestApplication | undefined;
+    const nestFactoryStartTime = Date.now();
+    try {
+      rootLogger.info(
+        createBootstrapContext("nestFactoryCreate"),
+        "Creating NestJS application",
+      );
+
+      // Add timeout wrapper to detect hangs during module initialization
+      // Temporarily increased to 30s for diagnostics
+      let timeoutHandle: NodeJS.Timeout | null = null;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutHandle = setTimeout(
+          () => {
+            const elapsed = Date.now() - nestFactoryStartTime;
+            rootLogger.error(
+              {
+                ...createBootstrapContext("nestFactoryTimeout"),
+                elapsedMs: elapsed,
+                timeoutMs: 30000,
+                possibleCauses: [
+                  "Database connection (check DATABASE_URL and PostgreSQL)",
+                  "Redis connection (check REDIS_URL and Redis server)",
+                  "External API call (storage providers, etc.)",
+                  "File system operation",
+                  "Circular dependency resolution",
+                ],
+              },
+              "NestFactory.create timeout - module initialization is blocking",
+            );
+            reject(
+              new Error(
+                "NestFactory.create timeout after 30s - module initialization is blocking. Check which module's onModuleInit() is hanging.",
+              ),
+            );
+          },
+          30000, // 30 second timeout (temporarily increased for diagnostics)
+        );
+      });
+
+      // Set up progress logger BEFORE creating the promise
+      // This ensures we can track progress even if the promise hangs
+      const startTime = Date.now();
+      let progressInterval: NodeJS.Timeout | null = null;
+
+      // Start progress logging immediately
+      rootLogger.debug(
+        {
+          ...createBootstrapContext("progressLoggerStart"),
+          startTime,
+        },
+        "Starting progress logger",
+      );
+      progressInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        rootLogger.debug(
+          {
+            ...createBootstrapContext("nestFactoryProgress"),
+            elapsedMs: elapsed,
+          },
+          "NestFactory.create still running",
+        );
+      }, 2000); // Log every 2 seconds
+
+      // Ensure interval is cleared on process exit
+      const clearProgressLogger = () => {
+        if (progressInterval) {
+          clearInterval(progressInterval);
+          progressInterval = null;
+          const elapsed = Date.now() - startTime;
+          rootLogger.debug(
+            {
+              ...createBootstrapContext("progressLoggerCleared"),
+              elapsedMs: elapsed,
+            },
+            "Progress logger cleared",
+          );
+        }
+      };
+
+      // Wrap NestFactory.create in a try-catch to catch any synchronous errors
+      let createPromise: Promise<INestApplication>;
+      try {
+        rootLogger.debug(
+          createBootstrapContext("nestFactoryCall"),
+          "Calling NestFactory.create() - will initialize all modules",
+        );
+        createPromise = NestFactory.create(AppModule, {
+          rawBody: true, // Enable raw body for webhook signature verification
+          logger: false, // Disable NestJS default logger, use only Pino
+          abortOnError: false, // Don't call process.exit() on errors - let us handle them
+        });
+
+        // Ensure progress logger is cleared and timeout is cancelled when promise resolves or rejects
+        createPromise.finally(() => {
+          clearProgressLogger();
+          // Cancel timeout since we've resolved successfully
+          if (timeoutHandle) {
+            clearTimeout(timeoutHandle);
+            timeoutHandle = null;
+            rootLogger.debug(
+              createBootstrapContext("timeoutCancelled"),
+              "Timeout cancelled - NestFactory.create completed",
+            );
+          }
+          const elapsed = Date.now() - startTime;
+          rootLogger.debug(
+            {
+              ...createBootstrapContext("nestFactoryResolved"),
+              elapsedMs: elapsed,
+            },
+            "NestFactory.create promise resolved/rejected",
+          );
+        });
+
+        rootLogger.debug(
+          createBootstrapContext("nestFactoryPromiseCreated"),
+          "NestFactory.create promise created successfully",
+        );
+      } catch (syncError) {
+        clearProgressLogger();
+        // Cancel timeout on synchronous error
+        if (timeoutHandle) {
+          clearTimeout(timeoutHandle);
+          timeoutHandle = null;
+        }
+        rootLogger.error(
+          {
+            ...createBootstrapContext("nestFactorySyncError"),
+            error:
+              syncError instanceof Error
+                ? {
+                    name: syncError.name,
+                    message: syncError.message,
+                    stack: syncError.stack,
+                  }
+                : { type: typeof syncError, value: String(syncError) },
+          },
+          "Synchronous error during NestFactory.create",
+        );
+        throw syncError;
+      }
+
+      // Add error handlers to the create promise to catch rejections immediately
+      createPromise.catch((error) => {
+        rootLogger.error(
+          {
+            ...createBootstrapContext("createPromiseRejected"),
+            error:
+              error instanceof Error
+                ? {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack,
+                  }
+                : { type: typeof error, value: String(error) },
+          },
+          "CreatePromise rejected",
+        );
+        // Don't rethrow - let Promise.race handle it
+      });
+
+      // Also add error handler to timeout promise
+      timeoutPromise.catch((error) => {
+        rootLogger.error(
+          {
+            ...createBootstrapContext("timeoutPromiseRejected"),
+            error:
+              error instanceof Error
+                ? {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack,
+                  }
+                : { type: typeof error, value: String(error) },
+          },
+          "TimeoutPromise rejected",
+        );
+      });
+
+      // Add promise state tracking
+      let createPromiseResolved = false;
+      let timeoutPromiseResolved = false;
+
+      createPromise
+        .then(() => {
+          createPromiseResolved = true;
+          rootLogger.debug(
+            createBootstrapContext("createPromiseResolved"),
+            "CreatePromise resolved successfully",
+          );
+        })
+        .catch((err) => {
+          rootLogger.error(
+            {
+              ...createBootstrapContext("createPromiseRejected"),
+              error:
+                err instanceof Error
+                  ? {
+                      name: err.name,
+                      message: err.message,
+                      stack: err.stack,
+                    }
+                  : { type: typeof err, value: String(err) },
+            },
+            "CreatePromise rejected",
+          );
+        });
+
+      timeoutPromise.catch(() => {
+        timeoutPromiseResolved = true;
+        rootLogger.debug(
+          createBootstrapContext("timeoutPromiseTriggered"),
+          "TimeoutPromise triggered",
+        );
+      });
+
+      // Wrap in additional try-catch with more detailed logging
+      try {
+        rootLogger.debug(
+          createBootstrapContext("promiseRaceStart"),
+          "Starting Promise.race - monitoring both createPromise and timeoutPromise",
+        );
+        app = await Promise.race([createPromise, timeoutPromise]);
+        const elapsed = Date.now() - startTime;
+        rootLogger.info(
+          {
+            ...createBootstrapContext("promiseRaceCompleted"),
+            elapsedMs: elapsed,
+            createPromiseResolved,
+            timeoutPromiseResolved,
+          },
+          "Promise.race completed successfully",
+        );
+        // Ensure timeout is cancelled if createPromise won
+        if (createPromiseResolved && timeoutHandle) {
+          clearTimeout(timeoutHandle);
+          timeoutHandle = null;
+          rootLogger.debug(
+            createBootstrapContext("timeoutCancelledAfterResolution"),
+            "Timeout cancelled after successful resolution",
+          );
+        }
+      } catch (raceError) {
+        rootLogger.error(
+          {
+            ...createBootstrapContext("promiseRaceError"),
+            error:
+              raceError instanceof Error
+                ? {
+                    name: raceError.name,
+                    message: raceError.message,
+                    stack: raceError.stack,
+                  }
+                : { type: typeof raceError, value: String(raceError) },
+          },
+          "Promise.race threw error",
+        );
+        throw raceError;
+      }
+
+      rootLogger.info(
+        {
+          ...createBootstrapContext("nestFactorySuccess"),
+          elapsedMs: Date.now() - nestFactoryStartTime,
+        },
+        "NestJS application created successfully",
+      );
+    } catch (error) {
+      rootLogger.error(
+        {
+          ...createBootstrapContext("nestFactoryError"),
+          error:
+            error instanceof Error
+              ? {
+                  name: error.name,
+                  message: error.message,
+                  stack: error.stack,
+                  isTimeout: error.message.includes("timeout"),
+                  errorType: error.message.includes("timeout")
+                    ? "TIMEOUT"
+                    : "NESTJS_ERROR",
+                }
+              : { type: typeof error, value: String(error) },
+        },
+        "Failed to create NestJS application",
+      );
+      throw error;
+    }
+
+    const reflector = app.get(Reflector);
+
+    // Enable CORS
+    // Support storefront, admin, and backend origins
+    const storefrontUrl = process.env.STOREFRONT_URL || "http://localhost:3002";
+    const adminUrl = process.env.ADMIN_URL || "http://localhost:3000";
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:3001";
+
+    // Combine all allowed origins (support comma-separated values for multiple URLs)
+    const allowedOrigins = [
+      ...storefrontUrl.split(",").map((url) => url.trim()),
+      ...adminUrl.split(",").map((url) => url.trim()),
+      ...backendUrl.split(",").map((url) => url.trim()),
+      ...(process.env.ALLOWED_ORIGINS?.split(",").map((url) => url.trim()) ||
+        []),
+    ];
+
+    // Enable cookie parser
+    app.use(cookieParser());
+
+    app.enableCors({
+      origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: [
+        "Content-Type",
+        "Authorization",
+        "X-Session-Id",
+        "X-Store-ID",
+      ],
+      preflightContinue: false,
+      optionsSuccessStatus: CORS_PREFLIGHT_SUCCESS_STATUS,
+    });
+
+    // Enable validation globally
+    app.useGlobalPipes(
+      new (await import("@nestjs/common")).ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
+      }),
+    );
+
+    // Create custom JWT guard that respects @Public() decorator
+    const jwtGuard = new JwtAuthGuard();
+    const rolesGuard = new RolesGuard(reflector);
+
+    // Override JWT guard to skip public routes
+    const originalCanActivate = jwtGuard.canActivate.bind(jwtGuard);
+    jwtGuard.canActivate = async (context: ExecutionContext) => {
+      const isPublic = reflector.getAllAndOverride(IS_PUBLIC_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) as boolean | undefined;
+      if (isPublic) {
+        return true;
+      }
+      return originalCanActivate(context);
+    };
+
+    // Get rate limit guard and interceptor
+    // Note: These are retrieved from the app container after NestFactory.create()
+    // which ensures all modules are initialized
+    let rateLimitGuard: RateLimitGuard;
+    let rateLimitInterceptor: RateLimitInterceptor;
+    try {
+      rateLimitGuard = app.get(RateLimitGuard, { strict: false });
+      rateLimitInterceptor = app.get(RateLimitInterceptor, { strict: false });
+      if (!rateLimitGuard || !rateLimitInterceptor) {
+        rootLogger.warn(
+          "Rate limiting components not found, continuing without rate limiting",
+        );
+        // Create no-op implementations
+        rateLimitGuard = {
+          canActivate: () => Promise.resolve(true),
+        } as unknown as RateLimitGuard;
+        rateLimitInterceptor = {
+          intercept: (context, next) => next.handle(),
+        } as unknown as RateLimitInterceptor;
+      }
+    } catch (error) {
+      rootLogger.error(
+        {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+        "Failed to initialize rate limiting, continuing without it",
       );
       // Create no-op implementations
       rateLimitGuard = {
@@ -158,126 +569,249 @@ async function bootstrap() {
         intercept: (context, next) => next.handle(),
       } as unknown as RateLimitInterceptor;
     }
-  } catch (error) {
-    rootLogger.error(
-      {
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
+
+    // Apply guards globally
+    app.useGlobalGuards(jwtGuard, rolesGuard, rateLimitGuard);
+
+    // Apply interceptors globally
+    app.useGlobalInterceptors(new BuildInfoInterceptor(), rateLimitInterceptor);
+
+    // Apply global exception filter
+    const contextService = app.get(ContextService);
+    app.useGlobalFilters(new GlobalExceptionFilter(contextService));
+
+    // Swagger/OpenAPI configuration
+    const config = new DocumentBuilder()
+      .setTitle("VCEcom API")
+      .setDescription(
+        "API documentation for VCEcom - A lightweight ecommerce backend built with NestJS",
+      )
+      .setVersion("0.0.1")
+      .addBearerAuth(
+        {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          name: "JWT",
+          description: "Enter JWT token",
+          in: "header",
+        },
+        "JWT-auth",
+      )
+      .addTag("admin", "Admin dashboard endpoints")
+      .addTag("store", "Storefront API endpoints")
+      .build();
+
+    // Disable auto-tag generation from controller names
+    const swaggerOptions: SwaggerDocumentOptions = {
+      autoTagControllers: false,
+    };
+
+    const document = SwaggerModule.createDocument(app, config, swaggerOptions);
+
+    // Filter document to only include "admin" and "store" tags
+    const filteredDocument = filterSwaggerTags(document);
+
+    SwaggerModule.setup("api/docs", app, filteredDocument, {
+      swaggerOptions: {
+        persistAuthorization: true,
       },
-      "Failed to initialize rate limiting, continuing without it",
-    );
-    // Create no-op implementations
-    rateLimitGuard = {
-      canActivate: () => Promise.resolve(true),
-    } as unknown as RateLimitGuard;
-    rateLimitInterceptor = {
-      intercept: (context, next) => next.handle(),
-    } as unknown as RateLimitInterceptor;
-  }
+    });
 
-  // Apply guards globally
-  app.useGlobalGuards(jwtGuard, rolesGuard, rateLimitGuard);
-
-  // Apply interceptors globally
-  app.useGlobalInterceptors(new BuildInfoInterceptor(), rateLimitInterceptor);
-
-  // Apply global exception filter
-  const contextService = app.get(ContextService);
-  app.useGlobalFilters(new GlobalExceptionFilter(contextService));
-
-  // Swagger/OpenAPI configuration
-  const config = new DocumentBuilder()
-    .setTitle("VCEcom API")
-    .setDescription(
-      "API documentation for VCEcom - A lightweight ecommerce backend built with NestJS",
-    )
-    .setVersion("0.0.1")
-    .addBearerAuth(
-      {
-        type: "http",
-        scheme: "bearer",
-        bearerFormat: "JWT",
-        name: "JWT",
-        description: "Enter JWT token",
-        in: "header",
-      },
-      "JWT-auth",
-    )
-    .addTag("admin", "Admin dashboard endpoints")
-    .addTag("store", "Storefront API endpoints")
-    .build();
-
-  // Disable auto-tag generation from controller names
-  const swaggerOptions: SwaggerDocumentOptions = {
-    autoTagControllers: false,
-  };
-
-  const document = SwaggerModule.createDocument(app, config, swaggerOptions);
-
-  // Filter document to only include "admin" and "store" tags
-  const filteredDocument = filterSwaggerTags(document);
-
-  SwaggerModule.setup("api/docs", app, filteredDocument, {
-    swaggerOptions: {
-      persistAuthorization: true,
-    },
-  });
-
-  const port = process.env.PORT ?? 3001;
-  const server = await app.listen(port);
-
-  // Set server timeout to prevent hanging requests
-  // This ensures requests are closed after the configured timeout period
-  server.timeout = SERVER_TIMEOUT_MS;
-  server.keepAliveTimeout = SERVER_KEEP_ALIVE_TIMEOUT_MS;
-  server.headersTimeout = SERVER_HEADERS_TIMEOUT_MS;
-
-  rootLogger.info({ port }, "Server started successfully");
-
-  // Graceful shutdown handlers
-  const shutdown = async (signal: string) => {
+    const port = process.env.PORT ?? 3001;
+    const serverStartTime = Date.now();
     rootLogger.info(
-      { signal },
-      "Received shutdown signal, starting graceful shutdown",
+      {
+        ...createBootstrapContext("serverStart"),
+        port,
+      },
+      "Starting HTTP server",
     );
 
+    let server: Server;
     try {
-      // Close HTTP server first to stop accepting new requests
-      server.close(() => {
-        rootLogger.info({ signal }, "HTTP server closed");
-      });
-
-      // Shutdown tracing
-      if (tracingSdk) {
-        await tracingSdk.shutdown();
-        rootLogger.info({ signal }, "Tracing SDK shut down");
-      }
-
-      // Close NestJS application (this triggers OnApplicationShutdown hooks)
-      // Database cleanup will happen via DatabaseService.onApplicationShutdown
-      await app.close();
-      rootLogger.info({ signal }, "Application closed successfully");
+      server = (await app.listen(port)) as Server;
+      rootLogger.info(
+        {
+          ...createBootstrapContext("serverStarted"),
+          port,
+          elapsedMs: Date.now() - serverStartTime,
+        },
+        "HTTP server started successfully",
+      );
     } catch (error) {
       rootLogger.error(
         {
-          error: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined,
+          ...createBootstrapContext("serverStartError"),
+          error:
+            error instanceof Error
+              ? {
+                  name: error.name,
+                  message: error.message,
+                  stack: error.stack,
+                }
+              : { type: typeof error, value: String(error) },
+          port,
+        },
+        "Failed to start HTTP server",
+      );
+      throw error;
+    }
+
+    // Set server timeout to prevent hanging requests
+    // This ensures requests are closed after the configured timeout period
+    server.timeout = SERVER_TIMEOUT_MS;
+    server.keepAliveTimeout = SERVER_KEEP_ALIVE_TIMEOUT_MS;
+    server.headersTimeout = SERVER_HEADERS_TIMEOUT_MS;
+
+    rootLogger.info(
+      {
+        ...createBootstrapContext("serverInitialized"),
+        port,
+        elapsedMs: Date.now() - bootstrapStartTime,
+        timeouts: {
+          server: SERVER_TIMEOUT_MS,
+          keepAlive: SERVER_KEEP_ALIVE_TIMEOUT_MS,
+          headers: SERVER_HEADERS_TIMEOUT_MS,
+        },
+      },
+      "Server fully initialized and listening",
+    );
+
+    // Ensure server keeps event loop alive
+    // The HTTP server should already do this, but we'll verify
+    if (!server.listening) {
+      rootLogger.error(
+        createBootstrapContext("serverNotListening"),
+        "Server is not listening - this should not happen",
+      );
+      throw new Error("Server is not listening - this should not happen");
+    }
+
+    // Graceful shutdown handlers
+    const shutdown = async (signal: string) => {
+      const shutdownStartTime = Date.now();
+      rootLogger.info(
+        {
+          ...createBootstrapContext("shutdownStart"),
           signal,
         },
-        "Error during shutdown",
+        "Received shutdown signal, starting graceful shutdown",
+      );
+
+      try {
+        // Close HTTP server first to stop accepting new requests
+        server.close(() => {
+          rootLogger.info(
+            {
+              ...createBootstrapContext("serverClosed"),
+              signal,
+              elapsedMs: Date.now() - shutdownStartTime,
+            },
+            "HTTP server closed",
+          );
+        });
+
+        // Shutdown tracing
+        if (tracingSdk) {
+          await tracingSdk.shutdown();
+          rootLogger.info(
+            {
+              ...createBootstrapContext("tracingShutdown"),
+              signal,
+              elapsedMs: Date.now() - shutdownStartTime,
+            },
+            "Tracing SDK shut down",
+          );
+        }
+
+        // Close NestJS application (this triggers OnApplicationShutdown hooks)
+        // Database cleanup will happen via DatabaseService.onApplicationShutdown
+        await app.close();
+        rootLogger.info(
+          {
+            ...createBootstrapContext("applicationClosed"),
+            signal,
+            elapsedMs: Date.now() - shutdownStartTime,
+          },
+          "Application closed successfully",
+        );
+      } catch (error) {
+        rootLogger.error(
+          {
+            ...createBootstrapContext("shutdownError"),
+            error:
+              error instanceof Error
+                ? {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack,
+                  }
+                : { type: typeof error, value: String(error) },
+            signal,
+            elapsedMs: Date.now() - shutdownStartTime,
+          },
+          "Error during shutdown",
+        );
+        process.exit(1);
+      }
+    };
+
+    // Handle SIGTERM (used by process managers like PM2, Docker, Kubernetes)
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
+
+    // Handle SIGINT (Ctrl+C)
+    process.on("SIGINT", () => shutdown("SIGINT"));
+  } catch (error) {
+    // Use earlyLogger since rootLogger might not be initialized
+    earlyLogger.error(
+      {
+        ...createBootstrapContext("bootstrapError"),
+        error:
+          error instanceof Error
+            ? {
+                name: error.name,
+                message: error.message,
+                stack: error.stack,
+              }
+            : { type: typeof error, value: String(error) },
+        elapsedMs: Date.now() - bootstrapStartTime,
+      },
+      "Caught error in bootstrap try-catch",
+    );
+    // Give time for logs to flush
+    setTimeout(() => {
+      earlyLogger.fatal(
+        createBootstrapContext("bootstrapExit"),
+        "Exiting process due to bootstrap error",
       );
       process.exit(1);
-    }
-  };
-
-  // Handle SIGTERM (used by process managers like PM2, Docker, Kubernetes)
-  process.on("SIGTERM", () => shutdown("SIGTERM"));
-
-  // Handle SIGINT (Ctrl+C)
-  process.on("SIGINT", () => shutdown("SIGINT"));
+    }, 200);
+  }
 }
 
+// Wrap bootstrap in try-catch and add detailed error logging
 bootstrap().catch((error) => {
-  console.error("[Bootstrap Error]", error);
-  process.exit(1);
+  earlyLogger.fatal(
+    {
+      ...createBootstrapContext("bootstrapPromiseRejection"),
+      error:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
+          : { type: typeof error, value: String(error) },
+    },
+    "Bootstrap promise rejection",
+  );
+  // Give time for logs to flush
+  setTimeout(() => {
+    earlyLogger.fatal(
+      createBootstrapContext("bootstrapPromiseExit"),
+      "Exiting process due to bootstrap promise rejection",
+    );
+    process.exit(1);
+  }, 200);
 });

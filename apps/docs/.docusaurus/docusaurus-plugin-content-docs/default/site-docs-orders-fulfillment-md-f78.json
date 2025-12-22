@@ -1,7 +1,7 @@
 {
   "id": "orders/fulfillment",
-  "title": "fulfillment",
-  "description": "",
+  "title": "Order Fulfillment",
+  "description": "Order fulfillment manages the complete lifecycle of an order from payment confirmation to delivery. It tracks order status, coordinates shipping, and ensures timely delivery to customers.",
   "source": "@site/docs/orders/fulfillment.md",
   "sourceDirName": "orders",
   "slug": "/orders/fulfillment",
@@ -11,8 +11,8 @@
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/orders/fulfillment.md",
   "tags": [],
   "version": "current",
-  "lastUpdatedBy": "Sarwagya Singh",
-  "lastUpdatedAt": 1766018217000,
+  "lastUpdatedBy": "Author",
+  "lastUpdatedAt": 1539502055000,
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
@@ -20,7 +20,7 @@
     "permalink": "/docs/orders/creation"
   },
   "next": {
-    "title": "refunds",
+    "title": "Order Refunds",
     "permalink": "/docs/orders/refunds"
   }
 }

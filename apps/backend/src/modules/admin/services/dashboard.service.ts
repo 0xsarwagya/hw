@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, InternalServerErrorException } from "@nestjs/common";
 import {
   and,
   categories,
@@ -19,6 +19,11 @@ import {
   sql,
 } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { CustomerSupportDashboardResponseDto } from "../dto/dashboard-customer-support.dto";
 import { OperationsDashboardResponseDto } from "../dto/dashboard-operations.dto";
 import { OverviewDashboardResponseDto } from "../dto/dashboard-overview.dto";
@@ -27,30 +32,60 @@ import { ProductMerchandisingDashboardResponseDto } from "../dto/dashboard-produ
 
 @Injectable()
 export class DashboardService {
-  constructor(readonly _logger: PinoLogger) {}
+  constructor(
+    readonly _logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {}
 
   /**
    * Get Performance Dashboard data
    */
   async getPerformanceDashboard(): Promise<PerformanceDashboardResponseDto> {
     const now = new Date();
-    const todayStart = new Date(now.setHours(0, 0, 0, 0));
-    const weekStart = new Date(now.setDate(now.getDate() - 7));
-    const monthStart = new Date(now.setDate(now.getDate() - 30));
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const weekStart = new Date(now);
+    weekStart.setDate(weekStart.getDate() - 7);
+    weekStart.setHours(0, 0, 0, 0);
+    const monthStart = new Date(now);
+    monthStart.setDate(monthStart.getDate() - 30);
+    monthStart.setHours(0, 0, 0, 0);
 
     // Get all completed orders
-    const completedOrders = await db
-      .select({
-        id: orders.id,
-        total: orders.total,
-        subtotal: orders.subtotal,
-        discountAmount: orders.discountAmount,
-        gstAmount: orders.gstAmount,
-        shippingCost: orders.shippingCost,
-        createdAt: orders.createdAt,
-      })
-      .from(orders)
-      .where(eq(orders.status, "delivered"));
+    let completedOrders: Array<{
+      id: string;
+      total: number;
+      subtotal: number;
+      discountAmount: number;
+      gstAmount: number;
+      shippingCost: number;
+      createdAt: Date;
+    }>;
+    try {
+      completedOrders = await db
+        .select({
+          id: orders.id,
+          total: orders.total,
+          subtotal: orders.subtotal,
+          discountAmount: orders.discountAmount,
+          gstAmount: orders.gstAmount,
+          shippingCost: orders.shippingCost,
+          createdAt: orders.createdAt,
+        })
+        .from(orders)
+        .where(eq(orders.status, "delivered"));
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getPerformanceDashboard.selectCompletedOrders",
+          error,
+          {},
+        ),
+        "Failed to fetch completed orders",
+      );
+      completedOrders = [];
+    }
 
     // Calculate revenue metrics
     const totalRevenue = completedOrders.reduce(
@@ -79,25 +114,56 @@ export class DashboardService {
     ).length;
 
     // Get refund data
-    const refundData = await db
-      .select({
-        amount: refunds.amount,
-        status: refunds.status,
-      })
-      .from(refunds);
+    let refundData: Array<{
+      amount: number;
+      status: string;
+    }>;
+    try {
+      refundData = await db
+        .select({
+          amount: refunds.amount,
+          status: refunds.status,
+        })
+        .from(refunds);
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getPerformanceDashboard.selectRefunds",
+          error,
+          {},
+        ),
+        "Failed to fetch refunds",
+      );
+      refundData = [];
+    }
 
     const totalRefunds = refundData.length;
     const totalRefundAmount = refundData.reduce(
-      (sum, r) => sum + Number(r.amount),
+      (sum, r) => sum + Number(r.amount || 0),
       0,
     );
     const refundRate = totalOrders > 0 ? (totalRefunds / totalOrders) * 100 : 0;
 
     // Get cancelled orders
-    const cancelledOrders = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(orders)
-      .where(eq(orders.status, "cancelled"));
+    let cancelledOrders: Array<{ count: number }>;
+    try {
+      cancelledOrders = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(orders)
+        .where(eq(orders.status, "cancelled"));
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getPerformanceDashboard.selectCancelledOrders",
+          error,
+          {},
+        ),
+        "Failed to fetch cancelled orders",
+      );
+      cancelledOrders = [{ count: 0 }];
+    }
     const cancellationRate =
       totalOrders > 0
         ? (Number(cancelledOrders[0]?.count || 0) / totalOrders) * 100
@@ -248,13 +314,27 @@ export class DashboardService {
    */
   async getOperationsDashboard(): Promise<OperationsDashboardResponseDto> {
     // Get order status counts
-    const statusCounts = await db
-      .select({
-        status: orders.status,
-        count: sql<number>`count(*)`,
-      })
-      .from(orders)
-      .groupBy(orders.status);
+    let statusCounts: Array<{ status: string; count: number }>;
+    try {
+      statusCounts = await db
+        .select({
+          status: orders.status,
+          count: sql<number>`count(*)`,
+        })
+        .from(orders)
+        .groupBy(orders.status);
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getOperationsDashboard.selectStatusCounts",
+          error,
+          {},
+        ),
+        "Failed to fetch order status counts",
+      );
+      statusCounts = [];
+    }
 
     const statusMap = statusCounts.reduce(
       (acc, s) => {
@@ -268,18 +348,37 @@ export class DashboardService {
     const fiveDaysAgo = new Date();
     fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
 
-    const delayedOrdersData = await db
-      .select({
-        id: orders.id,
-        orderNumber: orders.orderNumber,
-        status: orders.status,
-        createdAt: orders.createdAt,
-      })
-      .from(orders)
-      .where(
-        and(eq(orders.status, "shipped"), lte(orders.createdAt, fiveDaysAgo)),
-      )
-      .limit(20);
+    let delayedOrdersData: Array<{
+      id: string;
+      orderNumber: string;
+      status: string;
+      createdAt: Date;
+    }>;
+    try {
+      delayedOrdersData = await db
+        .select({
+          id: orders.id,
+          orderNumber: orders.orderNumber,
+          status: orders.status,
+          createdAt: orders.createdAt,
+        })
+        .from(orders)
+        .where(
+          and(eq(orders.status, "shipped"), lte(orders.createdAt, fiveDaysAgo)),
+        )
+        .limit(20);
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getOperationsDashboard.selectDelayedOrders",
+          error,
+          {},
+        ),
+        "Failed to fetch delayed orders",
+      );
+      delayedOrdersData = [];
+    }
 
     const delayedOrders = delayedOrdersData.map((order) => {
       const daysDelayed = Math.floor(
@@ -299,15 +398,43 @@ export class DashboardService {
     });
 
     // Get RTO data (returned shipments)
-    const rtoShipments = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(shipments)
-      .where(eq(shipments.status, "returned"));
+    let rtoShipments: Array<{ count: number }>;
+    try {
+      rtoShipments = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(shipments)
+        .where(eq(shipments.status, "returned"));
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getOperationsDashboard.selectRtoShipments",
+          error,
+          {},
+        ),
+        "Failed to fetch RTO shipments",
+      );
+      rtoShipments = [{ count: 0 }];
+    }
 
     const totalRtoOrders = Number(rtoShipments[0]?.count || 0);
-    const totalOrders = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(orders);
+    let totalOrders: Array<{ count: number }>;
+    try {
+      totalOrders = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(orders);
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getOperationsDashboard.selectTotalOrders",
+          error,
+          {},
+        ),
+        "Failed to fetch total orders",
+      );
+      totalOrders = [{ count: 0 }];
+    }
     const rtoRate =
       Number(totalOrders[0]?.count || 0) > 0
         ? (totalRtoOrders / Number(totalOrders[0]?.count || 0)) * 100
@@ -317,24 +444,56 @@ export class DashboardService {
     thisMonthStart.setDate(1);
     thisMonthStart.setHours(0, 0, 0, 0);
 
-    const rtoThisMonth = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(shipments)
-      .where(
-        and(
-          eq(shipments.status, "returned"),
-          gte(shipments.createdAt, thisMonthStart),
+    let rtoThisMonth: Array<{ count: number }>;
+    try {
+      rtoThisMonth = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(shipments)
+        .where(
+          and(
+            eq(shipments.status, "returned"),
+            gte(shipments.createdAt, thisMonthStart),
+          ),
+        );
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getOperationsDashboard.selectRtoThisMonth",
+          error,
+          {},
         ),
+        "Failed to fetch RTO this month",
       );
+      rtoThisMonth = [{ count: 0 }];
+    }
 
     // Inventory aging
-    const variants = await db
-      .select({
-        id: productVariants.id,
-        inventory: productVariants.inventory,
-        updatedAt: productVariants.updatedAt,
-      })
-      .from(productVariants);
+    let variants: Array<{
+      id: string;
+      inventory: number;
+      updatedAt: Date;
+    }>;
+    try {
+      variants = await db
+        .select({
+          id: productVariants.id,
+          inventory: productVariants.inventory,
+          updatedAt: productVariants.updatedAt,
+        })
+        .from(productVariants);
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getOperationsDashboard.selectVariants",
+          error,
+          {},
+        ),
+        "Failed to fetch variants",
+      );
+      variants = [];
+    }
 
     const now = new Date();
     const aging = {
@@ -358,27 +517,62 @@ export class DashboardService {
     });
 
     // Out of stock alerts
-    const outOfStockVariants = await db
-      .select({
-        productId: productVariants.productId,
-        inventory: productVariants.inventory,
-        updatedAt: productVariants.updatedAt,
-      })
-      .from(productVariants)
-      .where(eq(productVariants.inventory, 0))
-      .limit(20);
+    let outOfStockVariants: Array<{
+      productId: string;
+      inventory: number;
+      updatedAt: Date;
+    }>;
+    try {
+      outOfStockVariants = await db
+        .select({
+          productId: productVariants.productId,
+          inventory: productVariants.inventory,
+          updatedAt: productVariants.updatedAt,
+        })
+        .from(productVariants)
+        .where(eq(productVariants.inventory, 0))
+        .limit(20);
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getOperationsDashboard.selectOutOfStockVariants",
+          error,
+          {},
+        ),
+        "Failed to fetch out of stock variants",
+      );
+      outOfStockVariants = [];
+    }
 
     const productIds = outOfStockVariants.map((v) => v.productId);
-    const productTitles =
-      productIds.length > 0
-        ? await db
-            .select({
-              id: products.id,
-              title: products.title,
-            })
-            .from(products)
-            .where(inArray(products.id, productIds))
-        : [];
+    let productTitles: Array<{
+      id: string;
+      title: string;
+    }>;
+    try {
+      productTitles =
+        productIds.length > 0
+          ? await db
+              .select({
+                id: products.id,
+                title: products.title,
+              })
+              .from(products)
+              .where(inArray(products.id, productIds))
+          : [];
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getOperationsDashboard.selectProductTitles",
+          error,
+          { productIds },
+        ),
+        "Failed to fetch product titles",
+      );
+      productTitles = [];
+    }
 
     const titleMap = productTitles.reduce(
       (acc, p) => {
@@ -402,32 +596,67 @@ export class DashboardService {
     });
 
     // Shipping metrics
-    const shippedOrders = await db
-      .select({
-        id: orders.id,
-        createdAt: orders.createdAt,
-        shippingProvider: orders.shippingProvider,
-      })
-      .from(orders)
-      .where(eq(orders.status, "delivered"));
+    let shippedOrders: Array<{
+      id: string;
+      createdAt: Date;
+      shippingProvider: string | null;
+    }>;
+    try {
+      shippedOrders = await db
+        .select({
+          id: orders.id,
+          createdAt: orders.createdAt,
+          shippingProvider: orders.shippingProvider,
+        })
+        .from(orders)
+        .where(eq(orders.status, "delivered"));
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getOperationsDashboard.selectShippedOrders",
+          error,
+          {},
+        ),
+        "Failed to fetch shipped orders",
+      );
+      shippedOrders = [];
+    }
 
     const shippingTimes: number[] = [];
     const shippingTimesByCourier: Record<string, number[]> = {};
 
     for (const order of shippedOrders) {
-      const shipment = await db
-        .select({
-          createdAt: shipments.createdAt,
-          updatedAt: shipments.updatedAt,
-        })
-        .from(shipments)
-        .where(eq(shipments.orderId, order.id))
-        .limit(1);
+      let shipment: { createdAt: Date; updatedAt: Date } | undefined;
+      try {
+        const shipmentResult = await db
+          .select({
+            createdAt: shipments.createdAt,
+            updatedAt: shipments.updatedAt,
+          })
+          .from(shipments)
+          .where(eq(shipments.orderId, order.id))
+          .limit(1);
+        shipment = shipmentResult[0];
+      } catch (error) {
+        this._logger.warn(
+          createLogContext(
+            this.contextService,
+            "DashboardService.getOperationsDashboard.selectShipment",
+            {
+              orderId: order.id,
+              error: error instanceof Error ? error.message : String(error),
+            },
+          ),
+          "Failed to fetch shipment for order",
+        );
+        continue;
+      }
 
-      if (shipment[0]) {
+      if (shipment) {
         const shippingTime =
-          (new Date(shipment[0].updatedAt).getTime() -
-            new Date(shipment[0].createdAt).getTime()) /
+          (new Date(shipment.updatedAt).getTime() -
+            new Date(shipment.createdAt).getTime()) /
           (1000 * 60 * 60 * 24);
         shippingTimes.push(shippingTime);
 
@@ -489,14 +718,46 @@ export class DashboardService {
    */
   async getCustomerSupportDashboard(): Promise<CustomerSupportDashboardResponseDto> {
     // Customer segmentation
-    const allCustomers = await db.select().from(customers);
-    const customerOrders = await db
-      .select({
-        customerId: orders.customerId,
-        count: sql<number>`count(*)`,
-      })
-      .from(orders)
-      .groupBy(orders.customerId);
+    let allCustomers: Array<typeof customers.$inferSelect>;
+    try {
+      allCustomers = await db.select().from(customers);
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getCustomerSupportDashboard.selectCustomers",
+          error,
+          {},
+        ),
+        "Failed to fetch customers",
+      );
+      allCustomers = [];
+    }
+
+    let customerOrders: Array<{
+      customerId: string;
+      count: number;
+    }>;
+    try {
+      customerOrders = await db
+        .select({
+          customerId: orders.customerId,
+          count: sql<number>`count(*)`,
+        })
+        .from(orders)
+        .groupBy(orders.customerId);
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getCustomerSupportDashboard.selectCustomerOrders",
+          error,
+          {},
+        ),
+        "Failed to fetch customer orders",
+      );
+      customerOrders = [];
+    }
 
     const orderCountMap = customerOrders.reduce(
       (acc, co) => {
@@ -521,7 +782,7 @@ export class DashboardService {
 
     // Customer retention
     const customersWithMultipleOrders = Object.values(orderCountMap).filter(
-      (count) => count > 1,
+      (count: number) => count > 1,
     ).length;
     const repeatPurchaseRate =
       totalCustomers > 0
@@ -529,13 +790,30 @@ export class DashboardService {
         : 0;
 
     // Calculate CLV (simplified: average order value * average orders per customer)
-    const allOrders = await db
-      .select({
-        total: orders.total,
-        customerId: orders.customerId,
-      })
-      .from(orders)
-      .where(eq(orders.status, "delivered"));
+    let allOrders: Array<{
+      total: number;
+      customerId: string;
+    }>;
+    try {
+      allOrders = await db
+        .select({
+          total: orders.total,
+          customerId: orders.customerId,
+        })
+        .from(orders)
+        .where(eq(orders.status, "delivered"));
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getCustomerSupportDashboard.selectAllOrders",
+          error,
+          {},
+        ),
+        "Failed to fetch all orders",
+      );
+      allOrders = [];
+    }
 
     const totalRevenue = allOrders.reduce((sum, o) => sum + Number(o.total), 0);
     const averageOrderValue =
@@ -555,13 +833,30 @@ export class DashboardService {
     };
 
     // Return reasons (from refunds)
-    const refundReasons = await db
-      .select({
-        reason: refunds.reason,
-        count: sql<number>`count(*)`,
-      })
-      .from(refunds)
-      .groupBy(refunds.reason);
+    let refundReasons: Array<{
+      reason: string | null;
+      count: number;
+    }>;
+    try {
+      refundReasons = await db
+        .select({
+          reason: refunds.reason,
+          count: sql<number>`count(*)`,
+        })
+        .from(refunds)
+        .groupBy(refunds.reason);
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getCustomerSupportDashboard.selectRefundReasons",
+          error,
+          {},
+        ),
+        "Failed to fetch refund reasons",
+      );
+      refundReasons = [];
+    }
 
     const totalRefunds = refundReasons.reduce(
       (sum, r) => sum + Number(r.count),
@@ -575,35 +870,70 @@ export class DashboardService {
     }));
 
     // Complaint trends (simplified - based on refunds per product)
-    const productRefunds = await db
-      .select({
-        productId: products.id,
-        productTitle: products.title,
-        refundCount: sql<number>`count(*)`,
-      })
-      .from(refunds)
-      .innerJoin(orders, eq(refunds.orderId, orders.id))
-      .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
-      .innerJoin(
-        productVariants,
-        eq(orderItems.productVariantId, productVariants.id),
-      )
-      .innerJoin(products, eq(productVariants.productId, products.id))
-      .groupBy(products.id, products.title)
-      .limit(10);
+    let productRefunds: Array<{
+      productId: string;
+      productTitle: string;
+      refundCount: number;
+    }>;
+    try {
+      productRefunds = await db
+        .select({
+          productId: products.id,
+          productTitle: products.title,
+          refundCount: sql<number>`count(*)`,
+        })
+        .from(refunds)
+        .innerJoin(orders, eq(refunds.orderId, orders.id))
+        .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
+        .innerJoin(
+          productVariants,
+          eq(orderItems.productVariantId, productVariants.id),
+        )
+        .innerJoin(products, eq(productVariants.productId, products.id))
+        .groupBy(products.id, products.title)
+        .limit(10);
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getCustomerSupportDashboard.selectProductRefunds",
+          error,
+          {},
+        ),
+        "Failed to fetch product refunds",
+      );
+      productRefunds = [];
+    }
 
-    const productOrders = await db
-      .select({
-        productId: products.id,
-        orderCount: sql<number>`count(*)`,
-      })
-      .from(orderItems)
-      .innerJoin(
-        productVariants,
-        eq(orderItems.productVariantId, productVariants.id),
-      )
-      .innerJoin(products, eq(productVariants.productId, products.id))
-      .groupBy(products.id);
+    let productOrders: Array<{
+      productId: string;
+      orderCount: number;
+    }>;
+    try {
+      productOrders = await db
+        .select({
+          productId: products.id,
+          orderCount: sql<number>`count(*)`,
+        })
+        .from(orderItems)
+        .innerJoin(
+          productVariants,
+          eq(orderItems.productVariantId, productVariants.id),
+        )
+        .innerJoin(products, eq(productVariants.productId, products.id))
+        .groupBy(products.id);
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getCustomerSupportDashboard.selectProductOrders",
+          error,
+          {},
+        ),
+        "Failed to fetch product orders",
+      );
+      productOrders = [];
+    }
 
     const orderCountByProduct = productOrders.reduce(
       (acc, po) => {
@@ -625,14 +955,31 @@ export class DashboardService {
     });
 
     // Review sentiment
-    const reviewData = await db
-      .select({
-        rating: reviews.rating,
-        count: sql<number>`count(*)`,
-      })
-      .from(reviews)
-      .where(eq(reviews.status, "approved"))
-      .groupBy(reviews.rating);
+    let reviewData: Array<{
+      rating: number;
+      count: number;
+    }>;
+    try {
+      reviewData = await db
+        .select({
+          rating: reviews.rating,
+          count: sql<number>`count(*)`,
+        })
+        .from(reviews)
+        .where(eq(reviews.status, "approved"))
+        .groupBy(reviews.rating);
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getCustomerSupportDashboard.selectReviewData",
+          error,
+          {},
+        ),
+        "Failed to fetch review data",
+      );
+      reviewData = [];
+    }
 
     const totalReviews = reviewData.reduce(
       (sum, r) => sum + Number(r.count),
@@ -675,7 +1022,11 @@ export class DashboardService {
         customersWithMultipleOrders,
       },
       support: supportMetrics,
-      returnReasons,
+      returnReasons: returnReasons.map((r) => ({
+        reason: r.reason || "",
+        count: r.count,
+        percentage: r.percentage,
+      })),
       complaintTrends,
       reviewSentiment: {
         averageRating,
@@ -878,127 +1229,265 @@ export class DashboardService {
    * Get Overview Dashboard data - aggregated key metrics
    */
   async getOverviewDashboard(): Promise<OverviewDashboardResponseDto> {
-    const now = new Date();
-    const todayStart = new Date(now.setHours(0, 0, 0, 0));
-    const weekStart = new Date(now.setDate(now.getDate() - 7));
-    const monthStart = new Date(now.setDate(now.getDate() - 30));
+    try {
+      // Fix date calculation - create new Date objects to avoid mutation
+      const now = new Date();
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
 
-    // Get all orders
-    const allOrders = await db.select().from(orders);
-    const totalOrders = allOrders.length;
-    const totalRevenue = allOrders.reduce((sum, o) => sum + Number(o.total), 0);
-    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+      const weekStart = new Date(now);
+      weekStart.setDate(weekStart.getDate() - 7);
+      weekStart.setHours(0, 0, 0, 0);
 
-    // Monthly revenue
-    const monthlyOrders = allOrders.filter(
-      (o) => new Date(o.createdAt) >= monthStart,
-    );
-    const monthlyRevenue = monthlyOrders.reduce(
-      (sum, o) => sum + Number(o.total),
-      0,
-    );
+      const monthStart = new Date(now);
+      monthStart.setDate(monthStart.getDate() - 30);
+      monthStart.setHours(0, 0, 0, 0);
 
-    // Orders by period
-    const ordersToday = allOrders.filter(
-      (o) => new Date(o.createdAt) >= todayStart,
-    ).length;
-    const ordersThisWeek = allOrders.filter(
-      (o) => new Date(o.createdAt) >= weekStart,
-    ).length;
-    const ordersThisMonth = monthlyOrders.length;
+      // Get all orders with error handling
+      let allOrders: Array<typeof orders.$inferSelect>;
+      try {
+        allOrders = await db.select().from(orders);
+      } catch (error) {
+        this._logger.error(
+          createErrorContext(
+            this.contextService,
+            "DashboardService.getOverviewDashboard.selectOrders",
+            error,
+            {},
+          ),
+          "Failed to fetch orders",
+        );
+        allOrders = [];
+      }
 
-    // Order status counts
-    const orderStatusCounts = await db
-      .select({
-        status: orders.status,
-        count: sql<number>`count(*)`,
-      })
-      .from(orders)
-      .groupBy(orders.status);
+      const totalOrders = allOrders.length;
+      const totalRevenue = allOrders.reduce(
+        (sum, o) => sum + Number(o.total || 0),
+        0,
+      );
+      const averageOrderValue =
+        totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-    const statusMap = orderStatusCounts.reduce(
-      (acc, s) => {
-        acc[s.status] = Number(s.count);
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
+      // Monthly revenue
+      const monthlyOrders = allOrders.filter(
+        (o) => new Date(o.createdAt) >= monthStart,
+      );
+      const monthlyRevenue = monthlyOrders.reduce(
+        (sum, o) => sum + Number(o.total || 0),
+        0,
+      );
 
-    // Customers
-    const allCustomers = await db.select().from(customers);
-    const totalCustomers = allCustomers.length;
-    const newCustomersThisMonth = allCustomers.filter(
-      (c) => new Date(c.createdAt) >= monthStart,
-    ).length;
+      // Orders by period
+      const ordersToday = allOrders.filter(
+        (o) => new Date(o.createdAt) >= todayStart,
+      ).length;
+      const ordersThisWeek = allOrders.filter(
+        (o) => new Date(o.createdAt) >= weekStart,
+      ).length;
+      const ordersThisMonth = monthlyOrders.length;
 
-    // Products
-    const allProducts = await db.select().from(products);
-    const totalProducts = allProducts.length;
-    const activeProducts = allProducts.filter(
-      (p) => p.status === "active",
-    ).length;
+      // Order status counts
+      let orderStatusCounts: Array<{
+        status: string;
+        count: number;
+      }>;
+      try {
+        orderStatusCounts = await db
+          .select({
+            status: orders.status,
+            count: sql<number>`count(*)`,
+          })
+          .from(orders)
+          .groupBy(orders.status);
+      } catch (error) {
+        this._logger.error(
+          createErrorContext(
+            this.contextService,
+            "DashboardService.getOverviewDashboard.orderStatusCounts",
+            error,
+            {},
+          ),
+          "Failed to fetch order status counts",
+        );
+        orderStatusCounts = [];
+      }
 
-    // Out of stock products
-    const outOfStockVariants = await db
-      .select({
-        productId: productVariants.productId,
-      })
-      .from(productVariants)
-      .where(eq(productVariants.inventory, 0));
+      const statusMap = orderStatusCounts.reduce(
+        (acc, s) => {
+          acc[s.status] = Number(s.count || 0);
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
 
-    const uniqueOutOfStockProducts = new Set(
-      outOfStockVariants.map((v) => v.productId),
-    ).size;
+      // Customers
+      let allCustomers: Array<typeof customers.$inferSelect>;
+      try {
+        allCustomers = await db.select().from(customers);
+      } catch (error) {
+        this._logger.error(
+          createErrorContext(
+            this.contextService,
+            "DashboardService.getOverviewDashboard.selectCustomers",
+            error,
+            {},
+          ),
+          "Failed to fetch customers",
+        );
+        allCustomers = [];
+      }
 
-    // Refunds
-    const refundData = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(refunds);
-    const totalRefunds = Number(refundData[0]?.count || 0);
-    const refundRate = totalOrders > 0 ? (totalRefunds / totalOrders) * 100 : 0;
+      const totalCustomers = allCustomers.length;
+      const newCustomersThisMonth = allCustomers.filter(
+        (c) => new Date(c.createdAt) >= monthStart,
+      ).length;
 
-    // Reviews
-    const reviewData = await db
-      .select({
-        rating: reviews.rating,
-        count: sql<number>`count(*)`,
-      })
-      .from(reviews)
-      .where(eq(reviews.status, "approved"))
-      .groupBy(reviews.rating);
+      // Products
+      let allProducts: Array<typeof products.$inferSelect>;
+      try {
+        allProducts = await db.select().from(products);
+      } catch (error) {
+        this._logger.error(
+          createErrorContext(
+            this.contextService,
+            "DashboardService.getOverviewDashboard.selectProducts",
+            error,
+            {},
+          ),
+          "Failed to fetch products",
+        );
+        allProducts = [];
+      }
 
-    const totalReviews = reviewData.reduce(
-      (sum, r) => sum + Number(r.count),
-      0,
-    );
-    const averageRating =
-      totalReviews > 0
-        ? reviewData.reduce(
-            (sum, r) => sum + Number(r.rating) * Number(r.count),
-            0,
-          ) / totalReviews
-        : 0;
+      const totalProducts = allProducts.length;
+      const activeProducts = allProducts.filter(
+        (p) => p.status === "active",
+      ).length;
 
-    return {
-      totalRevenue,
-      monthlyRevenue,
-      averageOrderValue,
-      totalOrders,
-      ordersToday,
-      ordersThisWeek,
-      ordersThisMonth,
-      totalCustomers,
-      newCustomersThisMonth,
-      totalProducts,
-      activeProducts,
-      pendingOrders: statusMap.pending || 0,
-      shippedOrders: statusMap.shipped || 0,
-      deliveredOrders: statusMap.delivered || 0,
-      outOfStockProducts: uniqueOutOfStockProducts,
-      totalRefunds,
-      refundRate,
-      averageRating,
-      totalReviews,
-    };
+      // Out of stock products
+      let outOfStockVariants: Array<{
+        productId: string;
+      }>;
+      try {
+        outOfStockVariants = await db
+          .select({
+            productId: productVariants.productId,
+          })
+          .from(productVariants)
+          .where(eq(productVariants.inventory, 0));
+      } catch (error) {
+        this._logger.error(
+          createErrorContext(
+            this.contextService,
+            "DashboardService.getOverviewDashboard.outOfStockVariants",
+            error,
+            {},
+          ),
+          "Failed to fetch out of stock variants",
+        );
+        outOfStockVariants = [];
+      }
+
+      const uniqueOutOfStockProducts = new Set(
+        outOfStockVariants.map((v) => v.productId),
+      ).size;
+
+      // Refunds
+      let refundData: Array<{ count: number }>;
+      try {
+        refundData = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(refunds);
+      } catch (error) {
+        this._logger.error(
+          createErrorContext(
+            this.contextService,
+            "DashboardService.getOverviewDashboard.selectRefunds",
+            error,
+            {},
+          ),
+          "Failed to fetch refunds",
+        );
+        refundData = [{ count: 0 }];
+      }
+
+      const totalRefunds = Number(refundData[0]?.count || 0);
+      const refundRate =
+        totalOrders > 0 ? (totalRefunds / totalOrders) * 100 : 0;
+
+      // Reviews
+      let reviewData: Array<{
+        rating: number;
+        count: number;
+      }>;
+      try {
+        reviewData = await db
+          .select({
+            rating: reviews.rating,
+            count: sql<number>`count(*)`,
+          })
+          .from(reviews)
+          .where(eq(reviews.status, "approved"))
+          .groupBy(reviews.rating);
+      } catch (error) {
+        this._logger.error(
+          createErrorContext(
+            this.contextService,
+            "DashboardService.getOverviewDashboard.selectReviews",
+            error,
+            {},
+          ),
+          "Failed to fetch reviews",
+        );
+        reviewData = [];
+      }
+
+      const totalReviews = reviewData.reduce(
+        (sum, r) => sum + Number(r.count || 0),
+        0,
+      );
+      const averageRating =
+        totalReviews > 0
+          ? reviewData.reduce(
+              (sum, r) => sum + Number(r.rating || 0) * Number(r.count || 0),
+              0,
+            ) / totalReviews
+          : 0;
+
+      return {
+        totalRevenue,
+        monthlyRevenue,
+        averageOrderValue,
+        totalOrders,
+        ordersToday,
+        ordersThisWeek,
+        ordersThisMonth,
+        totalCustomers,
+        newCustomersThisMonth,
+        totalProducts,
+        activeProducts,
+        pendingOrders: statusMap.pending || 0,
+        shippedOrders: statusMap.shipped || 0,
+        deliveredOrders: statusMap.delivered || 0,
+        outOfStockProducts: uniqueOutOfStockProducts,
+        totalRefunds,
+        refundRate,
+        averageRating,
+        totalReviews,
+      };
+    } catch (error) {
+      this._logger.error(
+        createErrorContext(
+          this.contextService,
+          "DashboardService.getOverviewDashboard",
+          error,
+          {},
+        ),
+        "Failed to get overview dashboard",
+      );
+      throw new InternalServerErrorException(
+        "Failed to retrieve dashboard data",
+      );
+    }
   }
 }

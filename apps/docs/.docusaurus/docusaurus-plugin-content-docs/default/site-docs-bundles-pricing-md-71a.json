@@ -1,7 +1,7 @@
 {
   "id": "bundles/pricing",
-  "title": "pricing",
-  "description": "",
+  "title": "Bundle Pricing",
+  "description": "Bundle pricing calculates the total cost of a bundle based on customer selections from choice sets. The system uses a sum-of-parts pricing model where the bundle price equals the sum of individual variant prices for all selected items.",
   "source": "@site/docs/bundles/pricing.md",
   "sourceDirName": "bundles",
   "slug": "/bundles/pricing",
@@ -11,8 +11,8 @@
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/bundles/pricing.md",
   "tags": [],
   "version": "current",
-  "lastUpdatedBy": "Sarwagya Singh",
-  "lastUpdatedAt": 1766018217000,
+  "lastUpdatedBy": "Author",
+  "lastUpdatedAt": 1539502055000,
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
@@ -20,7 +20,7 @@
     "permalink": "/docs/bundles/choice-sets"
   },
   "next": {
-    "title": "cart-integration",
+    "title": "Bundle Cart Integration",
     "permalink": "/docs/bundles/cart-integration"
   }
 }

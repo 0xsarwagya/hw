@@ -37,14 +37,24 @@ export class PricingHotReloadWatcher implements OnModuleInit, OnModuleDestroy {
    * Initialize watcher on module startup
    */
   async onModuleInit(): Promise<void> {
-    // Create separate subscriber client (required for pub/sub)
-    // Disable ready check to avoid conflicts with subscriber mode
-    const client = await this.redisStoreService.getClient();
-    this.subscriber = client.duplicate({
-      enableReadyCheck: false,
-      enableOfflineQueue: true,
+    // Initialize in background - don't block app startup
+    this.initializeWatcher().catch((error) => {
+      this.logger.error(
+        `Failed to initialize pricing hot reload watcher - will retry in background: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     });
+  }
+
+  private async initializeWatcher(): Promise<void> {
     try {
+      // Create separate subscriber client (required for pub/sub)
+      // Disable ready check to avoid conflicts with subscriber mode
+      const client = await this.redisStoreService.getClient();
+      this.subscriber = client.duplicate({
+        enableReadyCheck: false,
+        enableOfflineQueue: true,
+      });
+
       await this.refreshBundle(); // Initial load
       await this.subscribeToVersionChanges();
       this.logger.info(

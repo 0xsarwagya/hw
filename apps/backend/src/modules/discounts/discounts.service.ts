@@ -613,9 +613,23 @@ export class DiscountsService {
     }
 
     // STEP 3: Apply constraints (dates, limits, amounts)
+    // Only include AUTOMATIC discounts here - MANUAL discounts require code entry
     const eligible: DiscountResponseDto[] = [];
     for (const discount of rules) {
       try {
+        // Skip MANUAL discounts - they should only be applied when code is provided
+        if (discount.applicationType === DiscountApplicationType.MANUAL) {
+          // Only include if this discount matches the provided code
+          if (discountCode && discount.code === discountCode) {
+            // Will be validated and added in STEP 4
+            continue;
+          } else {
+            // Skip MANUAL discounts that don't match the code
+            continue;
+          }
+        }
+
+        // For AUTOMATIC discounts, check eligibility constraints
         const isEligible = await passesEligibilityConstraints(
           discount,
           cartSubtotal,

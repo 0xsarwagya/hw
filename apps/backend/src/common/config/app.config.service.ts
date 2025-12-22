@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Injectable } from "@nestjs/common";
 
 /**
@@ -121,10 +122,18 @@ export class AppConfigService {
   getRazorpayConfig(): {
     keyId: string | undefined;
     keySecret: string | undefined;
+    timeout: number;
   } {
+    // Default timeout: 10 seconds (10000ms)
+    // Can be overridden via RAZORPAY_TIMEOUT_MS environment variable
+    const timeout = process.env.RAZORPAY_TIMEOUT_MS
+      ? parseInt(process.env.RAZORPAY_TIMEOUT_MS, 10)
+      : 10000;
+
     return {
       keyId: process.env.RAZORPAY_KEY_ID,
       keySecret: process.env.RAZORPAY_KEY_SECRET,
+      timeout,
     };
   }
 

@@ -26,8 +26,16 @@ export const TERMINAL_STATES: CheckoutState[] = [
  * If a transition is not in this table, it is illegal and will throw
  */
 export const TRANSITION_RULES: Record<CheckoutState, CheckoutState[]> = {
-  [CheckoutState.CREATED]: [CheckoutState.LOCKED],
-  [CheckoutState.LOCKED]: [CheckoutState.PAYMENT_PENDING, CheckoutState.FAILED],
+  [CheckoutState.CREATED]: [CheckoutState.LOCKED, CheckoutState.FAILED], // Allow CREATED → FAILED for cleanup
+  // LOCKED can transition to:
+  // - PAYMENT_PENDING: For online payments (normal flow)
+  // - PAYMENT_CONFIRMED: For COD orders (COD selection = payment confirmation)
+  // - FAILED: For error cases
+  [CheckoutState.LOCKED]: [
+    CheckoutState.PAYMENT_PENDING,
+    CheckoutState.PAYMENT_CONFIRMED, // Allow COD orders to skip PAYMENT_PENDING
+    CheckoutState.FAILED,
+  ],
   [CheckoutState.PAYMENT_PENDING]: [
     CheckoutState.PAYMENT_CONFIRMED,
     CheckoutState.FAILED,

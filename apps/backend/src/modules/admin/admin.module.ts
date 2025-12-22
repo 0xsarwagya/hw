@@ -1,7 +1,9 @@
 import { Module } from "@nestjs/common";
 import { CartsModule } from "../carts/carts.module";
+import { DiscountsModule } from "../discounts/discounts.module";
 import { AdminOrdersController } from "../orders/admin-orders.controller";
 import { OrdersModule } from "../orders/orders.module";
+import { PricingModule } from "../pricing/pricing.module";
 import { ProductsModule } from "../products/products.module";
 import { RedisStoreModule } from "../redis-store/redis-store.module";
 import { AdminController } from "./admin.controller";
@@ -16,7 +18,14 @@ import { DashboardService } from "./services/dashboard.service";
 import { RedisHealthService } from "./services/redis-health.service";
 
 @Module({
-  imports: [ProductsModule, CartsModule, RedisStoreModule, OrdersModule],
+  imports: [
+    ProductsModule,
+    CartsModule,
+    RedisStoreModule,
+    OrdersModule,
+    DiscountsModule,
+    PricingModule,
+  ],
   controllers: [
     AdminController,
     AdminActivityLogsController,

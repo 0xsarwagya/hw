@@ -250,35 +250,81 @@ export class ExportsService {
     const whereCondition =
       conditions.length > 0 ? and(...conditions) : undefined;
 
-    const ordersList = await db
-      .select({
-        id: orders.id,
-        orderNumber: orders.orderNumber,
-        status: orders.status,
-        total: orders.total,
-        subtotal: orders.subtotal,
-        gstAmount: orders.gstAmount,
-        discountAmount: orders.discountAmount,
-        shippingCost: orders.shippingCost,
-        createdAt: orders.createdAt,
-        customerId: orders.customerId,
-      })
-      .from(orders)
-      .where(whereCondition)
-      .orderBy(orders.createdAt);
+    let ordersList: Array<{
+      id: string;
+      orderNumber: string;
+      status: string;
+      total: number;
+      subtotal: number;
+      gstAmount: number;
+      discountAmount: number;
+      shippingCost: number;
+      createdAt: Date;
+      customerId: string;
+    }>;
+    try {
+      ordersList = await db
+        .select({
+          id: orders.id,
+          orderNumber: orders.orderNumber,
+          status: orders.status,
+          total: orders.total,
+          subtotal: orders.subtotal,
+          gstAmount: orders.gstAmount,
+          discountAmount: orders.discountAmount,
+          shippingCost: orders.shippingCost,
+          createdAt: orders.createdAt,
+          customerId: orders.customerId,
+        })
+        .from(orders)
+        .where(whereCondition)
+        .orderBy(orders.createdAt);
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "ExportsService.fetchOrdersData.selectOrders",
+          error,
+          { dto },
+        ),
+        "Failed to fetch orders for export",
+      );
+      throw error;
+    }
 
     // Enrich with customer info
     return Promise.all(
       ordersList.map(async (order) => {
-        const [customer] = await db
-          .select({
-            email: customers.email,
-            name: customers.name,
-            phone: customers.phone,
-          })
-          .from(customers)
-          .where(eq(customers.id, order.customerId))
-          .limit(1);
+        let customer:
+          | {
+              email: string;
+              name: string | null;
+              phone: string | null;
+            }
+          | undefined;
+        try {
+          const customerResult = await db
+            .select({
+              email: customers.email,
+              name: customers.name,
+              phone: customers.phone,
+            })
+            .from(customers)
+            .where(eq(customers.id, order.customerId))
+            .limit(1);
+          customer = customerResult[0];
+        } catch (error) {
+          this.logger.warn(
+            createErrorContext(
+              this.contextService,
+              "ExportsService.fetchOrdersData.selectCustomer",
+              error,
+              { orderId: order.id, customerId: order.customerId },
+            ),
+            "Failed to fetch customer for order export, using N/A",
+          );
+          customer = undefined;
+        }
 
         return {
           "Order ID": order.id,
@@ -310,29 +356,68 @@ export class ExportsService {
     const whereCondition =
       conditions.length > 0 ? and(...conditions) : undefined;
 
-    const productsList = await db
-      .select({
-        id: products.id,
-        title: products.title,
-        price: products.price,
-        status: products.status,
-        createdAt: products.createdAt,
-      })
-      .from(products)
-      .where(whereCondition);
+    let productsList: Array<{
+      id: string;
+      title: string;
+      price: number;
+      status: string;
+      createdAt: Date;
+    }>;
+    try {
+      productsList = await db
+        .select({
+          id: products.id,
+          title: products.title,
+          price: products.price,
+          status: products.status,
+          createdAt: products.createdAt,
+        })
+        .from(products)
+        .where(whereCondition);
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "ExportsService.fetchProductsData.selectProducts",
+          error,
+          { dto },
+        ),
+        "Failed to fetch products for export",
+      );
+      throw error;
+    }
 
     // Get variants for each product
     return Promise.all(
       productsList.map(async (product) => {
-        const variants = await db
-          .select({
-            id: productVariants.id,
-            sku: productVariants.sku,
-            price: productVariants.price,
-            inventory: productVariants.inventory,
-          })
-          .from(productVariants)
-          .where(eq(productVariants.productId, product.id));
+        let variants: Array<{
+          id: string;
+          sku: string | null;
+          price: number;
+          inventory: number;
+        }>;
+        try {
+          variants = await db
+            .select({
+              id: productVariants.id,
+              sku: productVariants.sku,
+              price: productVariants.price,
+              inventory: productVariants.inventory,
+            })
+            .from(productVariants)
+            .where(eq(productVariants.productId, product.id));
+        } catch (error) {
+          this.logger.warn(
+            createErrorContext(
+              this.contextService,
+              "ExportsService.fetchProductsData.selectVariants",
+              error,
+              { productId: product.id },
+            ),
+            "Failed to fetch variants for product export, using empty array",
+          );
+          variants = [];
+        }
 
         // Return one row per variant
         return variants.map((variant) => ({
@@ -350,7 +435,21 @@ export class ExportsService {
   }
 
   private async fetchCustomersData(): Promise<Record<string, unknown>[]> {
-    const customersList = await db.select().from(customers);
+    let customersList: Array<typeof customers.$inferSelect>;
+    try {
+      customersList = await db.select().from(customers);
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "ExportsService.fetchCustomersData.selectCustomers",
+          error,
+          {},
+        ),
+        "Failed to fetch customers for export",
+      );
+      throw error;
+    }
 
     return customersList.map((customer) => ({
       "Customer ID": customer.id,

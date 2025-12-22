@@ -1,7 +1,7 @@
 {
   "id": "bundles/cart-integration",
-  "title": "cart-integration",
-  "description": "",
+  "title": "Bundle Cart Integration",
+  "description": "Bundles integrate seamlessly with the cart system, allowing customers to add custom bundle configurations to their shopping cart. The system handles bundle selections, pricing, inventory, and cart operations.",
   "source": "@site/docs/bundles/cart-integration.md",
   "sourceDirName": "bundles",
   "slug": "/bundles/cart-integration",
@@ -11,12 +11,12 @@
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/bundles/cart-integration.md",
   "tags": [],
   "version": "current",
-  "lastUpdatedBy": "Sarwagya Singh",
-  "lastUpdatedAt": 1766018217000,
+  "lastUpdatedBy": "Author",
+  "lastUpdatedAt": 1539502055000,
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
-    "title": "pricing",
+    "title": "Bundle Pricing",
     "permalink": "/docs/bundles/pricing"
   },
   "next": {
