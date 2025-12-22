@@ -137,12 +137,11 @@ export class OrdersController {
   }
 
   @Get(":id")
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth("JWT-auth")
+  @Public()
   @ApiOperation({
     summary: "Get order by ID",
     description:
-      "Returns a specific order by ID for the authenticated customer",
+      "Returns a specific order by ID. Supports both authenticated customers and guest orders.",
   })
   @ApiParam({
     name: "id",
@@ -155,15 +154,21 @@ export class OrdersController {
     type: OrderResponseDto,
   })
   @ApiResponse({
-    status: 401,
-    description: "Unauthorized",
-  })
-  @ApiResponse({
     status: 404,
     description: "Order not found",
   })
-  async findOne(@Request() req: AuthenticatedRequest, @Param("id") id: string) {
-    return this.ordersService.findOne(req.user.userId, id);
+  async findOne(
+    @Request() req: Request & {
+      user?: { userId: string; email: string; role: string };
+    },
+    @Param("id") id: string,
+  ) {
+    // If user is authenticated, use authenticated flow
+    if (req.user?.userId) {
+      return this.ordersService.findOne(req.user.userId, id);
+    }
+    // Otherwise, use public guest order lookup
+    return this.ordersService.findOnePublic(id);
   }
 
   @Patch(":id/status")

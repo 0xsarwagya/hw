@@ -89,6 +89,36 @@ export class ProductResponseDto {
     example: "2025-11-26T00:00:00.000Z",
   })
   updatedAt: Date;
+
+  @ApiProperty({
+    description: "Product images array (URL encoded)",
+    type: [String],
+    example: ["https://example.com/image1.jpg", "https://example.com/image2.jpg"],
+    nullable: true,
+  })
+  images?: string[] | null;
+
+  @ApiProperty({
+    description: "Pricelist prices for this product",
+    type: [Object],
+    example: [
+      {
+        priceListId: "123e4567-e89b-12d3-a456-426614174000",
+        priceListName: "VIP Customers",
+        price: 89.29,
+        overrideType: "PERCENTAGE",
+        overrideValue: 10,
+      },
+    ],
+    nullable: true,
+  })
+  pricelistPrices?: Array<{
+    priceListId: string;
+    priceListName: string;
+    price: number;
+    overrideType: string;
+    overrideValue: number;
+  }> | null;
 }
 
 export class PaginatedProductsResponseDto {

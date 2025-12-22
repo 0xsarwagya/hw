@@ -25,10 +25,19 @@ export class PaymentChargesService {
   ) {}
 
   async findAll() {
-    return db
+    const charges = await db
       .select()
       .from(paymentMethodCharges)
       .orderBy(paymentMethodCharges.method);
+    
+    // Convert paise to rupees for response
+    return charges.map(charge => ({
+      ...charge,
+      flatAmount: charge.flatAmount / 100,
+      mixCap: charge.mixCap ? charge.mixCap / 100 : null,
+      mixMin: charge.mixMin ? charge.mixMin / 100 : null,
+      codMaxAmount: charge.codMaxAmount ? charge.codMaxAmount / 100 : null,
+    }));
   }
 
   async findOne(id: string) {
@@ -42,25 +51,38 @@ export class PaymentChargesService {
       throw new NotFoundException(`Payment charge with ID ${id} not found`);
     }
 
-    return charge;
+    // Convert paise to rupees for response
+    return {
+      ...charge,
+      flatAmount: charge.flatAmount / 100,
+      mixCap: charge.mixCap ? charge.mixCap / 100 : null,
+      mixMin: charge.mixMin ? charge.mixMin / 100 : null,
+      codMaxAmount: charge.codMaxAmount ? charge.codMaxAmount / 100 : null,
+    };
   }
 
   async create(dto: CreatePaymentChargeDto) {
     // Validate charge type specific fields
     this.validateChargeType(dto);
 
+    // Convert rupees to paise for storage (database stores in paise)
+    const flatAmountInPaise = Math.round(dto.flatAmount * 100);
+    const mixCapInPaise = dto.mixCap !== undefined ? Math.round(dto.mixCap * 100) : null;
+    const mixMinInPaise = dto.mixMin !== undefined ? Math.round(dto.mixMin * 100) : null;
+    const codMaxAmountInPaise = dto.codMaxAmount !== undefined ? Math.round(dto.codMaxAmount * 100) : null;
+
     const [charge] = await db
       .insert(paymentMethodCharges)
       .values({
         method: dto.method as unknown as PaymentMethod,
         chargeType: dto.chargeType as unknown as ChargeType,
-        flatAmount: dto.flatAmount,
+        flatAmount: flatAmountInPaise,
         percentage: dto.percentage,
-        mixCap: dto.mixCap ?? null,
-        mixMin: dto.mixMin ?? null,
+        mixCap: mixCapInPaise,
+        mixMin: mixMinInPaise,
         isTaxable: dto.isTaxable ?? false,
         currency: dto.currency ?? "INR",
-        codMaxAmount: dto.codMaxAmount ?? null,
+        codMaxAmount: codMaxAmountInPaise,
         codDisallowHighValue: dto.codDisallowHighValue ?? false,
         codDisallowDigital: dto.codDisallowDigital ?? true,
         codDisallowPreorder: dto.codDisallowPreorder ?? true,
@@ -73,11 +95,36 @@ export class PaymentChargesService {
       "Payment charge created",
     );
 
-    return charge;
+    // Return charge with amounts converted back to rupees
+    return {
+      ...charge,
+      flatAmount: charge.flatAmount / 100,
+      mixCap: charge.mixCap ? charge.mixCap / 100 : null,
+      mixMin: charge.mixMin ? charge.mixMin / 100 : null,
+      codMaxAmount: charge.codMaxAmount ? charge.codMaxAmount / 100 : null,
+    };
   }
 
   async update(id: string, dto: UpdatePaymentChargeDto) {
-    const existing = await this.findOne(id);
+    // Get existing charge from database (in paise)
+    const [existingDb] = await db
+      .select()
+      .from(paymentMethodCharges)
+      .where(eq(paymentMethodCharges.id, id))
+      .limit(1);
+
+    if (!existingDb) {
+      throw new NotFoundException(`Payment charge with ID ${id} not found`);
+    }
+
+    // Convert existing to rupees for validation
+    const existing = {
+      ...existingDb,
+      flatAmount: existingDb.flatAmount / 100,
+      mixCap: existingDb.mixCap ? existingDb.mixCap / 100 : null,
+      mixMin: existingDb.mixMin ? existingDb.mixMin / 100 : null,
+      codMaxAmount: existingDb.codMaxAmount ? existingDb.codMaxAmount / 100 : null,
+    };
 
     // If charge type is being updated, validate the new type
     if (dto.chargeType && dto.chargeType !== existing.chargeType) {
@@ -90,33 +137,42 @@ export class PaymentChargesService {
       } as CreatePaymentChargeDto);
     }
 
+    // Convert rupees to paise for storage
+    const updateData: Partial<typeof paymentMethodCharges.$inferInsert> = {
+      ...(dto.chargeType && {
+        chargeType: dto.chargeType as unknown as ChargeType,
+      }),
+      ...(dto.flatAmount !== undefined && { 
+        flatAmount: Math.round(dto.flatAmount * 100) 
+      }),
+      ...(dto.percentage !== undefined && { percentage: dto.percentage }),
+      ...(dto.mixCap !== undefined && { 
+        mixCap: dto.mixCap !== null ? Math.round(dto.mixCap * 100) : null 
+      }),
+      ...(dto.mixMin !== undefined && { 
+        mixMin: dto.mixMin !== null ? Math.round(dto.mixMin * 100) : null 
+      }),
+      ...(dto.isTaxable !== undefined && { isTaxable: dto.isTaxable }),
+      ...(dto.currency && { currency: dto.currency }),
+      ...(dto.codMaxAmount !== undefined && {
+        codMaxAmount: dto.codMaxAmount !== null ? Math.round(dto.codMaxAmount * 100) : null,
+      }),
+      ...(dto.codDisallowHighValue !== undefined && {
+        codDisallowHighValue: dto.codDisallowHighValue,
+      }),
+      ...(dto.codDisallowDigital !== undefined && {
+        codDisallowDigital: dto.codDisallowDigital,
+      }),
+      ...(dto.codDisallowPreorder !== undefined && {
+        codDisallowPreorder: dto.codDisallowPreorder,
+      }),
+      ...(dto.active !== undefined && { active: dto.active }),
+      updatedAt: new Date(),
+    };
+
     const [updated] = await db
       .update(paymentMethodCharges)
-      .set({
-        ...(dto.chargeType && {
-          chargeType: dto.chargeType as unknown as ChargeType,
-        }),
-        ...(dto.flatAmount !== undefined && { flatAmount: dto.flatAmount }),
-        ...(dto.percentage !== undefined && { percentage: dto.percentage }),
-        ...(dto.mixCap !== undefined && { mixCap: dto.mixCap }),
-        ...(dto.mixMin !== undefined && { mixMin: dto.mixMin }),
-        ...(dto.isTaxable !== undefined && { isTaxable: dto.isTaxable }),
-        ...(dto.currency && { currency: dto.currency }),
-        ...(dto.codMaxAmount !== undefined && {
-          codMaxAmount: dto.codMaxAmount,
-        }),
-        ...(dto.codDisallowHighValue !== undefined && {
-          codDisallowHighValue: dto.codDisallowHighValue,
-        }),
-        ...(dto.codDisallowDigital !== undefined && {
-          codDisallowDigital: dto.codDisallowDigital,
-        }),
-        ...(dto.codDisallowPreorder !== undefined && {
-          codDisallowPreorder: dto.codDisallowPreorder,
-        }),
-        ...(dto.active !== undefined && { active: dto.active }),
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(paymentMethodCharges.id, id))
       .returning();
 
@@ -125,7 +181,14 @@ export class PaymentChargesService {
       "Payment charge updated",
     );
 
-    return updated;
+    // Return charge with amounts converted back to rupees
+    return {
+      ...updated,
+      flatAmount: updated.flatAmount / 100,
+      mixCap: updated.mixCap ? updated.mixCap / 100 : null,
+      mixMin: updated.mixMin ? updated.mixMin / 100 : null,
+      codMaxAmount: updated.codMaxAmount ? updated.codMaxAmount / 100 : null,
+    };
   }
 
   async remove(id: string) {
@@ -143,17 +206,27 @@ export class PaymentChargesService {
   async previewFee(chargeId: string, cartTotal: number) {
     const charge = await this.findOne(chargeId);
 
+    // Convert cart total from rupees to paise for calculation
+    const cartTotalInPaise = Math.round(cartTotal * 100);
+
     const { fee, breakdown } = await this.paymentChargeService.calculateFee(
       charge.method,
-      cartTotal,
+      cartTotalInPaise,
       charge.currency,
     );
 
+    // Convert fee from paise to rupees for response
     return {
       charge,
       cartTotal,
-      fee,
-      breakdown,
+      fee: fee / 100,
+      breakdown: {
+        ...breakdown,
+        flatAmount: breakdown.flatAmount ? breakdown.flatAmount / 100 : undefined,
+        calculatedFee: breakdown.calculatedFee / 100,
+        mixMin: breakdown.mixMin ? breakdown.mixMin / 100 : undefined,
+        mixCap: breakdown.mixCap ? breakdown.mixCap / 100 : undefined,
+      },
       feeInRupees: fee / 100,
     };
   }

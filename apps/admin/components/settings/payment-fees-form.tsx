@@ -47,13 +47,13 @@ const paymentChargeSchema = z.object({
     "BNPL",
   ]),
   chargeType: z.enum(["FLAT", "PERCENTAGE", "MIXED"]),
-  flatAmount: z.number().int().min(0),
+  flatAmount: z.number().min(0),
   percentage: z.number().min(0),
-  mixCap: z.number().int().min(0).nullable().optional(),
-  mixMin: z.number().int().min(0).nullable().optional(),
+  mixCap: z.number().min(0).nullable().optional(),
+  mixMin: z.number().min(0).nullable().optional(),
   isTaxable: z.boolean().optional(),
   currency: z.string().optional(),
-  codMaxAmount: z.number().int().min(0).nullable().optional(),
+  codMaxAmount: z.number().min(0).nullable().optional(),
   codDisallowHighValue: z.boolean().optional(),
   codDisallowDigital: z.boolean().optional(),
   codDisallowPreorder: z.boolean().optional(),
@@ -231,18 +231,19 @@ export function PaymentFeesForm({
                 name="flatAmount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Flat Amount (in paise)</FormLabel>
+                    <FormLabel>Flat Amount (in rupees)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
+                        step="0.01"
                         {...field}
                         onChange={(e) =>
-                          field.onChange(parseInt(e.target.value, 10) || 0)
+                          field.onChange(parseFloat(e.target.value) || 0)
                         }
                       />
                     </FormControl>
                     <FormDescription>
-                      Flat charge amount in paise (e.g., 3000 = ₹30)
+                      Flat charge amount in rupees (e.g., 30 = ₹30)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -283,23 +284,24 @@ export function PaymentFeesForm({
                       name="mixMin"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Minimum Charge (in paise)</FormLabel>
+                          <FormLabel>Minimum Charge (in rupees)</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
+                              step="0.01"
                               {...field}
                               value={field.value || ""}
                               onChange={(e) =>
                                 field.onChange(
                                   e.target.value
-                                    ? parseInt(e.target.value, 10)
+                                    ? parseFloat(e.target.value)
                                     : null,
                                 )
                               }
                             />
                           </FormControl>
                           <FormDescription>
-                            Minimum charge amount in paise (optional)
+                            Minimum charge amount in rupees (optional)
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -311,23 +313,24 @@ export function PaymentFeesForm({
                       name="mixCap"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Maximum Cap (in paise)</FormLabel>
+                          <FormLabel>Maximum Cap (in rupees)</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
+                              step="0.01"
                               {...field}
                               value={field.value || ""}
                               onChange={(e) =>
                                 field.onChange(
                                   e.target.value
-                                    ? parseInt(e.target.value, 10)
+                                    ? parseFloat(e.target.value)
                                     : null,
                                 )
                               }
                             />
                           </FormControl>
                           <FormDescription>
-                            Maximum charge cap in paise (optional)
+                            Maximum charge cap in rupees (optional)
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -354,23 +357,24 @@ export function PaymentFeesForm({
                 name="codMaxAmount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Maximum Order Value (in paise)</FormLabel>
+                    <FormLabel>Maximum Order Value (in rupees)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
+                        step="0.01"
                         {...field}
                         value={field.value || ""}
                         onChange={(e) =>
                           field.onChange(
                             e.target.value
-                              ? parseInt(e.target.value, 10)
+                              ? parseFloat(e.target.value)
                               : null,
                           )
                         }
                       />
                     </FormControl>
                     <FormDescription>
-                      Maximum order value for COD in paise (optional)
+                      Maximum order value for COD in rupees (optional)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

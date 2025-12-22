@@ -47,11 +47,11 @@ export class CreatePaymentChargeDto {
   chargeType: ChargeTypeEnum;
 
   @ApiProperty({
-    description: "Flat amount in paise",
-    example: 3000,
+    description: "Flat amount in rupees",
+    example: 30,
     default: 0,
   })
-  @IsInt()
+  @IsNumber()
   @Min(0)
   flatAmount: number;
 
@@ -65,21 +65,21 @@ export class CreatePaymentChargeDto {
   percentage: number;
 
   @ApiProperty({
-    description: "Maximum cap in paise (for MIXED type)",
+    description: "Maximum cap in rupees (for MIXED type)",
     required: false,
   })
   @IsOptional()
-  @IsInt()
+  @IsNumber()
   @Min(0)
   @ValidateIf((o) => o.chargeType === ChargeTypeEnum.MIXED)
   mixCap?: number;
 
   @ApiProperty({
-    description: "Minimum charge in paise (for MIXED type)",
+    description: "Minimum charge in rupees (for MIXED type)",
     required: false,
   })
   @IsOptional()
-  @IsInt()
+  @IsNumber()
   @Min(0)
   @ValidateIf((o) => o.chargeType === ChargeTypeEnum.MIXED)
   mixMin?: number;
@@ -160,11 +160,11 @@ export class UpdatePaymentChargeDto {
   chargeType?: ChargeTypeEnum;
 
   @ApiProperty({
-    description: "Flat amount in paise",
+    description: "Flat amount in rupees",
     required: false,
   })
   @IsOptional()
-  @IsInt()
+  @IsNumber()
   @Min(0)
   flatAmount?: number;
 
@@ -178,20 +178,20 @@ export class UpdatePaymentChargeDto {
   percentage?: number;
 
   @ApiProperty({
-    description: "Maximum cap in paise (for MIXED type)",
+    description: "Maximum cap in rupees (for MIXED type)",
     required: false,
   })
   @IsOptional()
-  @IsInt()
+  @IsNumber()
   @Min(0)
   mixCap?: number;
 
   @ApiProperty({
-    description: "Minimum charge in paise (for MIXED type)",
+    description: "Minimum charge in rupees (for MIXED type)",
     required: false,
   })
   @IsOptional()
-  @IsInt()
+  @IsNumber()
   @Min(0)
   mixMin?: number;
 
@@ -263,10 +263,10 @@ export class PreviewFeeDto {
   chargeId: string;
 
   @ApiProperty({
-    description: "Test cart total in paise",
-    example: 100000,
+    description: "Test cart total in rupees",
+    example: 1000,
   })
-  @IsInt()
+  @IsNumber()
   @Min(0)
   cartTotal: number;
 }

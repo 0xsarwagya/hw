@@ -15,8 +15,8 @@ export class PaymentFeeBreakdownDto {
   chargeType: string;
 
   @ApiProperty({
-    description: "Flat amount in paise",
-    example: 3000,
+    description: "Flat amount in rupees",
+    example: 30,
   })
   flatAmount?: number;
 
@@ -27,19 +27,19 @@ export class PaymentFeeBreakdownDto {
   percentage?: number;
 
   @ApiProperty({
-    description: "Calculated fee in paise",
-    example: 3000,
+    description: "Calculated fee in rupees",
+    example: 30,
   })
   calculatedFee: number;
 
   @ApiProperty({
-    description: "Minimum charge in paise (for MIXED type)",
+    description: "Minimum charge in rupees (for MIXED type)",
     required: false,
   })
   mixMin?: number;
 
   @ApiProperty({
-    description: "Maximum cap in paise (for MIXED type)",
+    description: "Maximum cap in rupees (for MIXED type)",
     required: false,
   })
   mixCap?: number;
@@ -59,8 +59,8 @@ export class PaymentMethodWithFeeDto {
   label: string;
 
   @ApiProperty({
-    description: "Calculated fee in paise",
-    example: 3000,
+    description: "Calculated fee in rupees",
+    example: 30,
   })
   fee: number;
 
@@ -91,8 +91,8 @@ export class CalculateFeeDto {
   method: string;
 
   @ApiProperty({
-    description: "Cart total in paise",
-    example: 100000,
+    description: "Cart total in rupees",
+    example: 1000,
   })
   cartTotal: number;
 
@@ -112,8 +112,8 @@ export class PreviewFeeDto {
   chargeId: string;
 
   @ApiProperty({
-    description: "Test cart total in paise",
-    example: 100000,
+    description: "Test cart total in rupees",
+    example: 1000,
   })
   cartTotal: number;
 }

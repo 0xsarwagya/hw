@@ -49,6 +49,8 @@ import {
   isLikelySku,
   parseSearchQuery,
 } from "../../common/utils/search.utils";
+import { PriceListService } from "../pricing/services/price-list.service";
+import { calculatePriceAfterOverride } from "../pricing/engine/override-strategies/price-override.strategy";
 import { StorageService } from "../storage/storage.service";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { FilterProductsDto, SortField, SortOrder } from "./dto/filter.dto";
@@ -68,6 +70,7 @@ import { MediaTransactionService } from "./services/media-transaction.service";
 export class ProductsService {
   constructor(
     private readonly storageService: StorageService,
+    private readonly priceListService?: PriceListService,
     private readonly mediaTransactionService?: MediaTransactionService,
     private readonly mediaCacheInvalidationService?: MediaCacheInvalidationService,
     private readonly logger?: PinoLogger,
@@ -477,7 +480,123 @@ export class ProductsService {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
 
-    return this.enrichProductWithGst(product);
+    // Get all product images
+    const images = await db
+      .select({
+        url: productImages.url,
+      })
+      .from(productImages)
+      .where(
+        and(
+          eq(productImages.productId, id),
+          sql`${productImages.variantId} IS NULL`, // Only product-level images
+        ),
+      )
+      .orderBy(asc(productImages.order));
+
+    // Resolve S3 keys to URLs and URL encode
+    const resolvedImages = await Promise.all(
+      images.map(async (image) => {
+        let url = image.url;
+        if (this.isS3Key(image.url)) {
+          try {
+            url = await this.storageService.getUrl(image.url);
+          } catch {
+            // If S3 key resolution fails, keep original
+            url = image.url;
+          }
+        }
+        // URL encode the image URL
+        return encodeURI(url);
+      }),
+    );
+
+    const enrichedProduct = this.enrichProductWithGst(product);
+    
+    // Get pricelist prices for this product
+    const pricelistPrices = await this.getPricelistPricesForProduct(
+      id, 
+      enrichedProduct.priceIncludingGst,
+      product.categoryId
+    );
+    
+    return {
+      ...enrichedProduct,
+      images: resolvedImages.length > 0 ? resolvedImages : null,
+      pricelistPrices: pricelistPrices.length > 0 ? pricelistPrices : null,
+    };
+  }
+
+  /**
+   * Get pricelist prices for a product
+   * Returns effective prices for all active pricelists that apply to this product
+   */
+  private async getPricelistPricesForProduct(
+    productId: string,
+    basePrice: number,
+    categoryId: string | null = null,
+  ): Promise<Array<{ priceListId: string; priceListName: string; price: number; overrideType: string; overrideValue: number }>> {
+    if (!this.priceListService) {
+      return [];
+    }
+
+    try {
+      // Get active pricelists
+      const activePriceLists = await this.priceListService.findActive();
+      
+      const pricelistPrices: Array<{ priceListId: string; priceListName: string; price: number; overrideType: string; overrideValue: number }> = [];
+
+      for (const priceList of activePriceLists) {
+        // Find product-level or category-level items for this product
+        const applicableItem = priceList.items.find(
+          (item) => item.productId === productId || (item.categoryId && item.categoryId === productId)
+        );
+
+        if (applicableItem) {
+          // Calculate price after override
+          const priceAfterOverride = calculatePriceAfterOverride(
+            basePrice,
+            {
+              priceListId: priceList.id,
+              priceListName: priceList.name,
+              priority: priceList.priority,
+              overrideType: applicableItem.overrideType,
+              overrideValue: applicableItem.overrideValue,
+              specificity: applicableItem.productId === productId ? "PRODUCT" : "CATEGORY",
+            }
+          );
+
+          // Apply GST calculation if needed (assuming same GST rate)
+          // For now, use the price after override directly
+          pricelistPrices.push({
+            priceListId: priceList.id,
+            priceListName: priceList.name,
+            price: Math.round(priceAfterOverride * 100) / 100, // Round to 2 decimals
+            overrideType: applicableItem.overrideType,
+            overrideValue: applicableItem.overrideValue,
+          });
+        }
+      }
+
+      return pricelistPrices;
+    } catch (error) {
+      this.logger?.error(
+        this.contextService
+          ? createErrorContext(
+              this.contextService,
+              "ProductsService.getPricelistPricesForProduct",
+              error,
+              { productId },
+            )
+          : {
+              operation: "ProductsService.getPricelistPricesForProduct",
+              error: error instanceof Error ? error.message : String(error),
+              productId,
+            },
+        "Failed to fetch pricelist prices",
+      );
+      return [];
+    }
   }
 
   /**

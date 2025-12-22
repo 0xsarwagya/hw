@@ -1,6 +1,7 @@
 import { forwardRef, Module } from "@nestjs/common";
 import { ScheduleModule } from "@nestjs/schedule";
 import { NotificationsModule } from "../notifications/notifications.module";
+import { PricingModule } from "../pricing/pricing.module";
 import { RedisStoreModule } from "../redis-store/redis-store.module";
 import { ReviewsModule } from "../reviews/reviews.module";
 import { StorageModule } from "../storage/storage.module";
@@ -23,6 +24,7 @@ import { VariantsService } from "./variants.service";
     ScheduleModule,
     RedisStoreModule,
     NotificationsModule,
+    PricingModule,
     forwardRef(() => ReviewsModule),
   ],
   controllers: [
