@@ -33,9 +33,27 @@ export RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
 
 3. **Build and start all services**
 
+**For AWS Lightsail or resource-constrained systems:**
+```bash
+# Use the optimized build script
+./scripts/build-on-lightsail.sh
+
+# Then start services
+docker-compose up -d
+```
+
+**For systems with adequate resources (4GB+ RAM):**
 ```bash
 docker-compose up -d --build
 ```
+
+### AWS Lightsail Specific Notes
+
+If the build hangs on Lightsail:
+- **Minimum instance size**: 2GB RAM (4GB recommended)
+- Use the provided build script: `./scripts/build-on-lightsail.sh`
+- See `BUILD_TROUBLESHOOTING.md` for detailed solutions
+- Consider building locally and pushing to a registry if builds consistently fail
 
 4. **Check service status**
 
