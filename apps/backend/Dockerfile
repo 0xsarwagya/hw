@@ -39,6 +39,7 @@ COPY --from=builder /usr/src/app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --from=builder /usr/src/app/out/full/ .
 
 # Install dependencies with frozen lockfile for reproducible builds
+# Use --prod=false to install all dependencies (needed for building)
 RUN pnpm install --frozen-lockfile
 
 # Copy turbo.json for build orchestration
@@ -62,32 +63,43 @@ RUN apk add --no-cache openssl && \
     addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nodejs
 
-# Copy root package.json for workspace reference
+# Install pnpm in runner stage for dependency management
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy root package.json and workspace files for dependency installation
 COPY --from=installer --chown=nodejs:nodejs /usr/src/app/package.json ./package.json
+COPY --from=installer --chown=nodejs:nodejs /usr/src/app/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=installer --chown=nodejs:nodejs /usr/src/app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 
-# Copy root node_modules (workspace dependencies)
-COPY --from=installer --chown=nodejs:nodejs /usr/src/app/node_modules ./node_modules
-
-# Copy backend package.json
+# Copy workspace packages needed for installation
+COPY --from=installer --chown=nodejs:nodejs /usr/src/app/packages ./packages
 COPY --from=installer --chown=nodejs:nodejs /usr/src/app/apps/backend/package.json ./apps/backend/package.json
 
-# Copy backend built application
-COPY --from=installer --chown=nodejs:nodejs /usr/src/app/apps/backend/dist ./apps/backend/dist
+# Remove prepare script from package.json to avoid husky dependency issue
+# prepare script runs husky which is a devDependency and not needed in production
+RUN node -e "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('package.json')); delete pkg.scripts.prepare; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
 
-# Copy backend node_modules (production dependencies)
-COPY --from=installer --chown=nodejs:nodejs /usr/src/app/apps/backend/node_modules ./apps/backend/node_modules
+# Install only production dependencies
+# This ensures all workspace dependencies (including db package deps) are properly linked
+RUN pnpm install --frozen-lockfile --prod && \
+    chown -R nodejs:nodejs /usr/src/app
+
+# Copy backend built application (after dependencies are installed)
+COPY --from=installer --chown=nodejs:nodejs /usr/src/app/apps/backend/dist ./apps/backend/dist
 
 # Copy backend scripts (needed for build-info generation)
 COPY --from=installer --chown=nodejs:nodejs /usr/src/app/apps/backend/scripts ./apps/backend/scripts
+
+# Copy Lua scripts for Redis operations (not compiled, need to copy from source)
+COPY --from=installer --chown=nodejs:nodejs /usr/src/app/apps/backend/src/modules/redis-store/scripts ./apps/backend/dist/modules/redis-store/scripts
 
 # Create storage directory structure (for file uploads and generated files)
 # Storage directory is created at runtime, so we just need the directory structure
 RUN mkdir -p /usr/src/app/apps/backend/storage/invoices && \
     chown -R nodejs:nodejs /usr/src/app/apps/backend/storage
 
-# Copy built database package (required dependency)
+# Copy built database package dist (package.json already copied above for pnpm install)
 COPY --from=installer --chown=nodejs:nodejs /usr/src/app/packages/db/dist ./packages/db/dist
-COPY --from=installer --chown=nodejs:nodejs /usr/src/app/packages/db/package.json ./packages/db/package.json
 
 # Copy typescript-config package if it exists (for type definitions)
 COPY --from=installer --chown=nodejs:nodejs /usr/src/app/packages/typescript-config ./packages/typescript-config

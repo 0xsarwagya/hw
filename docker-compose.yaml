@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Traefik Reverse Proxy with SSL
   traefik:
@@ -43,7 +41,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: SNDl5BRY24N5yLCnwT6o1w==
+      POSTGRES_PASSWORD: "SNDl5BRY24N5yLCnwT6o1w=="
       POSTGRES_DB: maindb
     volumes:
       - postgres_data:/var/lib/postgresql/data
