@@ -18,6 +18,11 @@ FROM base AS builder
 RUN apk add --no-cache openssl
 WORKDIR /usr/src/app
 
+# Install Git
+RUN apk add --no-cache git
+# Copy Root .git directory
+COPY .git .git
+
 # Copy package files for dependency resolution
 COPY package.json pnpm-lock.yaml* ./
 COPY . .
