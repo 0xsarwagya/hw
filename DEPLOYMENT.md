@@ -84,7 +84,7 @@ docker-compose logs -f backend
 - **Password**: `SNDl5BRY24N5yLCnwT6o1w==`
 - **Port**: Not exposed externally (Docker network only)
 
-### Zipkin Tracing (Telemetry)
+  ### Zipkin Tracing (Telemetry)
 - **URL**: https://telemetry-hw-vcecom.vestcodes.co
 - **Container**: `vcecom-zipkin`
 - **Port**: 9411 (exposed via Traefik)

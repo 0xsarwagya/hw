@@ -80,8 +80,10 @@ COPY --from=installer --chown=nodejs:nodejs /usr/src/app/apps/backend/node_modul
 # Copy backend scripts (needed for build-info generation)
 COPY --from=installer --chown=nodejs:nodejs /usr/src/app/apps/backend/scripts ./apps/backend/scripts
 
-# Copy storage directory (for file uploads and generated files)
-COPY --from=installer --chown=nodejs:nodejs /usr/src/app/apps/backend/storage ./apps/backend/storage
+# Create storage directory structure (for file uploads and generated files)
+# Storage directory is created at runtime, so we just need the directory structure
+RUN mkdir -p /usr/src/app/apps/backend/storage/invoices && \
+    chown -R nodejs:nodejs /usr/src/app/apps/backend/storage
 
 # Copy built database package (required dependency)
 COPY --from=installer --chown=nodejs:nodejs /usr/src/app/packages/db/dist ./packages/db/dist
