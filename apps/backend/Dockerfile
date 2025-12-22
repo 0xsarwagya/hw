@@ -18,10 +18,10 @@ FROM base AS builder
 RUN apk add --no-cache openssl
 WORKDIR /usr/src/app
 
-# Install Git
+# Install Git (optional - for build-info generation, but not required)
+# Note: Railway and many CI/CD platforms don't include .git in build context
+# The build-info script handles missing git gracefully (uses "unknown" for commit hash)
 RUN apk add --no-cache git
-# Copy Root .git directory
-COPY .git .git
 
 # Copy package files for dependency resolution
 COPY package.json pnpm-lock.yaml* ./
