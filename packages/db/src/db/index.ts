@@ -26,13 +26,13 @@ function createPool(): Pool {
   const pool = new Pool({
     connectionString: databaseUrl,
     // Connection pool settings
-    max: 50, // Maximum number of clients in the pool (increased for better concurrency)
-    min: 0, // Minimum number of clients - set to 0 to avoid blocking during startup
-    // Connections will be created on-demand, preventing startup delays
-    idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-    connectionTimeoutMillis: 10000, // Return an error after 10 seconds if connection could not be established
-    // Allow pool to wait for connections when max is reached
-    allowExitOnIdle: false,
+    // Keep pool size small - most apps don't need more than 10-20 connections
+    // High values (50+) often mask connection leaks and cause pool exhaustion
+    max: 10,
+    min: 0, // Connections created on-demand
+    idleTimeoutMillis: 10000, // Close idle clients after 10 seconds (faster cleanup)
+    connectionTimeoutMillis: 5000, // Fail fast if connection can't be established
+    allowExitOnIdle: true, // Allow process to exit when pool is idle
   });
 
   // Increase max listeners to prevent EventEmitter warnings

@@ -31,7 +31,10 @@ const PaymentGateway: React.FC = () => {
     const maxAttempts = 20;
     const pollInterval = 1000;
     const token = getToken();
-    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+    // Use validated env in production, fallback for development
+    const apiUrl = import.meta.env.PROD
+      ? (import.meta.env.VITE_API_URL || "http://localhost:3001")
+      : import.meta.env.VITE_API_URL || "http://localhost:3001";
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
