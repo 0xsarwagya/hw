@@ -6,6 +6,7 @@ import {
   createErrorContext,
   createLogContext,
 } from "../../../common/logging/logging.helper";
+import { TracingService } from "../../../common/tracing/tracing.service";
 import { RedisStoreService } from "../redis-store.service";
 import { InventoryStore } from "../stores/inventory-store";
 
@@ -27,33 +28,51 @@ export class InventoryRecoveryService implements OnModuleInit {
     private readonly redisStoreService: RedisStoreService,
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    private readonly tracingService: TracingService,
   ) {}
 
   async onModuleInit() {
+    // Run recovery in background - don't block app startup
     this.logger.info(
       createLogContext(this.contextService, "onModuleInit", {}),
-      "Starting inventory recovery service",
+      "Starting inventory recovery service in background",
     );
-    try {
-      const result = await this.inventoryStore.reconcileReservations();
-      await this.emitMetrics(result);
-      this.logger.info(
-        createLogContext(this.contextService, "inventoryRecovery", {
-          released: result.released,
-          inconsistencies: result.inconsistencies,
-          orphaned: result.orphaned,
-          negativeCorrections: result.negativeCorrections,
-          variantsProcessed: result.variantsProcessed,
-        }),
-        "Inventory recovery complete",
-      );
-    } catch (error) {
+    this.runRecovery().catch((error) => {
       this.logger.error(
         createErrorContext(this.contextService, "inventoryRecovery", error),
-        "Failed to run inventory recovery",
+        "Inventory recovery failed - will retry in background",
       );
-      // Don't throw - allow service to start even if recovery fails
-    }
+    });
+  }
+
+  private async runRecovery() {
+    return this.tracingService
+      .startSpan({
+        operation: "InventoryRecoveryService.runRecovery",
+        logLifecycle: true,
+      })
+      .execute(async () => {
+        try {
+          const result = await this.inventoryStore.reconcileReservations();
+          await this.emitMetrics(result);
+          this.logger.info(
+            createLogContext(this.contextService, "inventoryRecovery", {
+              released: result.released,
+              inconsistencies: result.inconsistencies,
+              orphaned: result.orphaned,
+              negativeCorrections: result.negativeCorrections,
+              variantsProcessed: result.variantsProcessed,
+            }),
+            "Inventory recovery complete",
+          );
+        } catch (error) {
+          this.logger.error(
+            createErrorContext(this.contextService, "inventoryRecovery", error),
+            "Failed to run inventory recovery",
+          );
+          // Don't throw - allow service to start even if recovery fails
+        }
+      });
   }
 
   /**
@@ -62,31 +81,42 @@ export class InventoryRecoveryService implements OnModuleInit {
    */
   @Cron("*/7 * * * *")
   async handleReconciliation() {
-    this.logger.debug(
-      createLogContext(this.contextService, "handleReconciliation", {}),
-      "Starting periodic inventory reconciliation",
-    );
-    try {
-      const result = await this.inventoryStore.reconcileReservations();
-      await this.emitMetrics(result);
-      this.logger.info(
-        createLogContext(this.contextService, "handleReconciliation", {
-          released: result.released,
-          inconsistencies: result.inconsistencies,
-          orphaned: result.orphaned,
-          negativeCorrections: result.negativeCorrections,
-          variantsProcessed: result.variantsProcessed,
-        }),
-        "Periodic reconciliation complete",
-      );
-    } catch (error) {
-      // Fail closed - log error but don't throw
-      // This ensures the worker continues running even if reconciliation fails
-      this.logger.error(
-        createErrorContext(this.contextService, "handleReconciliation", error),
-        "Failed to run periodic reconciliation",
-      );
-    }
+    return this.tracingService
+      .startSpan({
+        operation: "InventoryRecoveryService.handleReconciliation",
+        logLifecycle: true,
+      })
+      .execute(async () => {
+        this.logger.debug(
+          createLogContext(this.contextService, "handleReconciliation", {}),
+          "Starting periodic inventory reconciliation",
+        );
+        try {
+          const result = await this.inventoryStore.reconcileReservations();
+          await this.emitMetrics(result);
+          this.logger.info(
+            createLogContext(this.contextService, "handleReconciliation", {
+              released: result.released,
+              inconsistencies: result.inconsistencies,
+              orphaned: result.orphaned,
+              negativeCorrections: result.negativeCorrections,
+              variantsProcessed: result.variantsProcessed,
+            }),
+            "Periodic reconciliation complete",
+          );
+        } catch (error) {
+          // Fail closed - log error but don't throw
+          // This ensures the worker continues running even if reconciliation fails
+          this.logger.error(
+            createErrorContext(
+              this.contextService,
+              "handleReconciliation",
+              error,
+            ),
+            "Failed to run periodic reconciliation",
+          );
+        }
+      });
   }
 
   /**

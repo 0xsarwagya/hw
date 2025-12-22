@@ -5,6 +5,7 @@ import {
   createErrorContext,
   createLogContext,
 } from "../../../common/logging/logging.helper";
+import { TracingService } from "../../../common/tracing/tracing.service";
 import { DiscountRuleStore } from "../../redis-store/stores/discount-rule-store";
 import { EligibilityStore } from "../../redis-store/stores/eligibility-store";
 import { ProductMappingStore } from "../../redis-store/stores/product-mapping-store";
@@ -27,85 +28,98 @@ export class DiscountCacheHydrationService implements OnModuleInit {
     private readonly versionManager: RulesetVersionManager,
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    private readonly tracingService: TracingService,
   ) {}
 
   /**
    * Bootstrap Redis caches on app startup
+   * Runs in background to avoid blocking app startup
    */
   async onModuleInit() {
     this.logger.info(
       createLogContext(this.contextService, "onModuleInit", {}),
-      "Starting discount cache hydration",
+      "Starting discount cache hydration in background",
     );
-    try {
-      await this.hydrate();
-      this.logger.info(
-        createLogContext(this.contextService, "onModuleInit", {}),
-        "Discount cache hydration completed successfully",
-      );
-    } catch (error) {
-      // Don't block startup if hydration fails
-      this.logger.error(
-        createErrorContext(this.contextService, "onModuleInit", error),
-        "Failed to hydrate discount caches on startup",
-      );
-      this.logger.warn(
-        createLogContext(this.contextService, "onModuleInit", {}),
-        "Continuing startup without discount cache hydration, system will fallback to DB queries",
-      );
-    }
+    // Run hydration in background - don't block startup
+    this.hydrate()
+      .then(() => {
+        this.logger.info(
+          createLogContext(this.contextService, "onModuleInit", {}),
+          "Discount cache hydration completed successfully",
+        );
+      })
+      .catch((error) => {
+        // Don't block startup if hydration fails
+        this.logger.error(
+          createErrorContext(this.contextService, "onModuleInit", error),
+          "Failed to hydrate discount caches on startup - will retry later",
+        );
+        this.logger.warn(
+          createLogContext(this.contextService, "onModuleInit", {}),
+          "Continuing startup without discount cache hydration, system will fallback to DB queries",
+        );
+      });
   }
 
   /**
    * Hydrate all discount caches
    */
   async hydrate(): Promise<void> {
-    this.logger.info(
-      createLogContext(this.contextService, "hydrate", {}),
-      "Hydrating discount caches",
-    );
+    return this.tracingService
+      .startSpan({
+        operation: "DiscountCacheHydrationService.hydrate",
+        logLifecycle: true,
+      })
+      .execute(async () => {
+        this.logger.info(
+          createLogContext(this.contextService, "hydrate", {}),
+          "Hydrating discount caches",
+        );
 
-    // STEP 1: Initialize version if not exists
-    try {
-      const currentVersion = await this.versionManager.getCurrentVersion();
-      this.logger.info(
-        createLogContext(this.contextService, "hydrate", { currentVersion }),
-        "Current ruleset version",
-      );
-    } catch (_error) {
-      // Version will be initialized by versionManager if not exists
-      this.logger.debug(
-        createLogContext(this.contextService, "hydrate", {}),
-        "Version not initialized yet, will be created on first bundle",
-      );
-    }
+        // STEP 1: Initialize version if not exists
+        try {
+          const currentVersion = await this.versionManager.getCurrentVersion();
+          this.logger.info(
+            createLogContext(this.contextService, "hydrate", {
+              currentVersion,
+            }),
+            "Current ruleset version",
+          );
+        } catch (_error) {
+          // Version will be initialized by versionManager if not exists
+          this.logger.debug(
+            createLogContext(this.contextService, "hydrate", {}),
+            "Version not initialized yet, will be created on first bundle",
+          );
+        }
 
-    // STEP 2: Rebuild bundle from DB (this creates versioned bundle with eligibility + mappings)
-    try {
-      const newVersion = await this.rulesetRebuilder.rebuildFromDb();
-      this.logger.info(
-        createLogContext(this.contextService, "hydrate", {
-          version: newVersion,
-        }),
-        "Successfully hydrated discount caches with bundle",
-      );
-    } catch (error) {
-      this.logger.error(
-        createErrorContext(this.contextService, "hydrate", error),
-        "Failed to rebuild bundle during hydration",
-      );
-      // Fallback to old method for backward compatibility
-      this.logger.warn(
-        createLogContext(this.contextService, "hydrate", {}),
-        "Falling back to legacy cache hydration method",
-      );
-      await this.hydrateLegacy();
-    }
+        // STEP 2: Rebuild bundle from DB (this creates versioned bundle with eligibility + mappings)
+        try {
+          const newVersion = await this.rulesetRebuilder.rebuildFromDb();
+          this.logger.info(
+            createLogContext(this.contextService, "hydrate", {
+              version: newVersion,
+            }),
+            "Successfully hydrated discount caches with bundle",
+          );
+        } catch (error) {
+          this.logger.error(
+            createErrorContext(this.contextService, "hydrate", error),
+            "Failed to rebuild bundle during hydration",
+          );
+          // Fallback to old method for backward compatibility
+          this.logger.warn(
+            createLogContext(this.contextService, "hydrate", {}),
+            "Falling back to legacy cache hydration method",
+          );
+          await this.hydrateLegacy();
+        }
 
-    this.logger.info(
-      createLogContext(this.contextService, "hydrate", {}),
-      "Discount cache hydration completed",
-    );
+        this.logger.info(
+          createLogContext(this.contextService, "hydrate", {}),
+          "Discount cache hydration completed",
+        );
+      });
   }
 
   /**

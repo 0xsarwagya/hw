@@ -162,4 +162,27 @@ export class OrderResponseDto {
     example: "2025-11-26T00:00:00.000Z",
   })
   updatedAt: Date;
+
+  @ApiProperty({
+    description: "Whether the order is archived",
+    example: false,
+    required: false,
+  })
+  archived?: boolean;
+
+  @ApiProperty({
+    description: "Timestamp when order was archived",
+    example: "2025-11-26T00:00:00.000Z",
+    nullable: true,
+    required: false,
+  })
+  archivedAt?: Date | null;
+
+  @ApiProperty({
+    description: "User ID who archived the order",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+    nullable: true,
+    required: false,
+  })
+  archivedBy?: string | null;
 }

@@ -26,6 +26,13 @@ import {
   variantOptionValues,
 } from "@vcecom/db";
 import Fuse from "fuse.js";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../common/logging/logging.helper";
+import { Trace } from "../../common/tracing/trace.decorator";
 import {
   calculateBasePrice,
   calculateGstAmount,
@@ -63,6 +70,8 @@ export class ProductsService {
     private readonly storageService: StorageService,
     private readonly mediaTransactionService?: MediaTransactionService,
     private readonly mediaCacheInvalidationService?: MediaCacheInvalidationService,
+    private readonly logger?: PinoLogger,
+    private readonly contextService?: ContextService,
   ) {}
   /**
    * Create a new product
@@ -112,6 +121,7 @@ export class ProductsService {
   /**
    * Get all products with pagination, search, and filters
    */
+  @Trace({ operation: "ProductsService.findAll" })
   async findAll(query: QueryProductsDto) {
     const { page, limit, offset } = normalizePaginationParams(
       query.page,
@@ -139,10 +149,33 @@ export class ProductsService {
       // Search in variants SKU if search term looks like SKU
       if (query.search.length <= 50) {
         // Get product IDs that have matching SKUs
-        const variantsWithMatchingSku = await db
-          .select({ productId: productVariants.productId })
-          .from(productVariants)
-          .where(ilike(productVariants.sku, searchPattern));
+        let variantsWithMatchingSku: Array<{ productId: string }>;
+        try {
+          variantsWithMatchingSku = await db
+            .select({ productId: productVariants.productId })
+            .from(productVariants)
+            .where(ilike(productVariants.sku, searchPattern));
+        } catch (error) {
+          this.logger?.warn(
+            this.contextService
+              ? createLogContext(
+                  this.contextService,
+                  "ProductsService.findAll.searchVariants",
+                  {
+                    search: query.search,
+                    error:
+                      error instanceof Error ? error.message : String(error),
+                  },
+                )
+              : {
+                  operation: "ProductsService.findAll.searchVariants",
+                  search: query.search,
+                  error: error instanceof Error ? error.message : String(error),
+                },
+            "Failed to search variants by SKU, continuing with product search",
+          );
+          variantsWithMatchingSku = [];
+        }
 
         if (variantsWithMatchingSku.length > 0) {
           const productIds = variantsWithMatchingSku.map((v) => v.productId);
@@ -175,20 +208,39 @@ export class ProductsService {
     // Availability filter (in stock/out of stock)
     if (query.inStock !== undefined) {
       // Get products with at least one variant with inventory > 0
-      const productsInStock = await db
-        .select({ productId: productVariants.productId })
-        .from(productVariants)
-        .where(sql`${productVariants.inventory} > 0`);
+      let productsInStock: Array<{ productId: string }>;
+      try {
+        productsInStock = await db
+          .select({ productId: productVariants.productId })
+          .from(productVariants)
+          .where(sql`${productVariants.inventory} > 0`);
+      } catch (error) {
+        this.logger?.error(
+          this.contextService
+            ? createErrorContext(
+                this.contextService,
+                "ProductsService.findAll.selectProductsInStock",
+                error,
+                { inStock: query.inStock },
+              )
+            : {
+                operation: "ProductsService.findAll.selectProductsInStock",
+                error: error instanceof Error ? error.message : String(error),
+                inStock: query.inStock,
+              },
+          "Failed to fetch products in stock",
+        );
+        productsInStock = [];
+      }
 
       // Get unique product IDs
-      const productIdsInStock = Array.from(
-        new Set(productsInStock.map((p) => p.productId)),
+      const productIdsInStock: string[] = Array.from(
+        new Set(productsInStock.map((p: { productId: string }) => p.productId)),
       );
 
       if (query.inStock) {
         // Filter to only products in stock
         if (productIdsInStock.length > 0) {
-          const { inArray } = await import("@vcecom/db");
           conditions.push(inArray(products.id, productIdsInStock));
         } else {
           // No products in stock, return empty result
@@ -207,7 +259,9 @@ export class ProductsService {
         // Filter to only products out of stock (not in the in-stock list)
         if (productIdsInStock.length > 0) {
           const { notInArray } = await import("@vcecom/db");
-          conditions.push(notInArray(products.id, productIdsInStock));
+          conditions.push(
+            notInArray(products.id, productIdsInStock as string[]),
+          );
         }
         // If no products are in stock, all products are out of stock, so no additional filter needed
       }
@@ -342,7 +396,9 @@ export class ProductsService {
         // Filter to only products out of stock (not in the in-stock list)
         if (productIdsInStock.length > 0) {
           const { notInArray } = await import("@vcecom/db");
-          conditions.push(notInArray(products.id, productIdsInStock));
+          conditions.push(
+            notInArray(products.id, productIdsInStock as string[]),
+          );
         }
         // If no products are in stock, all products are out of stock, so no additional filter needed
       }
@@ -409,6 +465,7 @@ export class ProductsService {
   /**
    * Get product by ID
    */
+  @Trace({ operation: "ProductsService.findOne" })
   async findOne(id: string) {
     const [product] = await db
       .select()
@@ -505,6 +562,7 @@ export class ProductsService {
    * Advanced product search with full-text search, SKU search, and ranking
    * Uses fuse.js for fuzzy search and relevance scoring
    */
+  @Trace({ operation: "ProductsService.search" })
   async search(searchDto: SearchProductsDto): Promise<SearchResponseDto> {
     const { page, limit, offset } = normalizePaginationParams(
       searchDto.page,

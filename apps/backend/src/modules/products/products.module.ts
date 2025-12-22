@@ -46,6 +46,7 @@ import { VariantsService } from "./variants.service";
     VariantsService,
     MediaConsistencyService,
     MediaAuditService,
+    MediaConsistencyWorker,
   ],
 })
 export class ProductsModule {}

@@ -20,7 +20,11 @@ import {
 } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
-import { createErrorContext } from "../../common/logging/logging.helper";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../common/logging/logging.helper";
+import { Trace } from "../../common/tracing/trace.decorator";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import {
   BundleEligibilityService,
@@ -34,6 +38,7 @@ import { DiscountProfiler } from "../discounts/services/discount-profiler.servic
 import { HotReloadWatcher } from "../discounts/services/hot-reload-watcher.service";
 import { BundlePricingService } from "../pricing/services/bundle-pricing.service";
 import { KEY_PATTERNS } from "../redis-store/constants/key-patterns";
+import { RedisStoreService } from "../redis-store/redis-store.service";
 import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
 import { BundleCartItemMetadata } from "./dto/bundle-cart-item.dto";
@@ -44,6 +49,7 @@ export class CartsService {
     private readonly discountsService: DiscountsService,
     private readonly inventoryStore: InventoryStore,
     private readonly checkoutStore: CheckoutStore,
+    readonly _redisStoreService: RedisStoreService,
     private readonly discountAuditService: DiscountAuditService,
     private readonly discountProfiler: DiscountProfiler,
     private readonly hotReloadWatcher: HotReloadWatcher,
@@ -63,45 +69,103 @@ export class CartsService {
   ) {
     if (customerId) {
       // Customer cart
-      let [cart] = await db
-        .select()
-        .from(carts)
-        .where(eq(carts.customerId, customerId))
-        .limit(1);
+      let cart: typeof carts.$inferSelect | undefined;
+      try {
+        const cartResult = await db
+          .select()
+          .from(carts)
+          .where(eq(carts.customerId, customerId))
+          .limit(1);
+        cart = cartResult[0];
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "CartsService.getOrCreateCart.selectCustomerCart",
+            error,
+            { customerId },
+          ),
+          "Failed to fetch customer cart",
+        );
+        throw error;
+      }
 
       if (!cart) {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + this.CART_EXPIRY_DAYS);
 
-        [cart] = await db
-          .insert(carts)
-          .values({
-            customerId,
-            expiresAt,
-          })
-          .returning();
+        try {
+          const cartResult = await db
+            .insert(carts)
+            .values({
+              customerId,
+              expiresAt,
+            })
+            .returning();
+          cart = cartResult[0];
+        } catch (error) {
+          this.logger.error(
+            createErrorContext(
+              this.contextService,
+              "CartsService.getOrCreateCart.insertCustomerCart",
+              error,
+              { customerId },
+            ),
+            "Failed to create customer cart",
+          );
+          throw error;
+        }
       }
 
       return cart;
     } else if (sessionId) {
       // Guest cart
-      let [cart] = await db
-        .select()
-        .from(carts)
-        .where(eq(carts.sessionId, sessionId))
-        .limit(1);
+      let cart: typeof carts.$inferSelect | undefined;
+      try {
+        const cartResult = await db
+          .select()
+          .from(carts)
+          .where(eq(carts.sessionId, sessionId))
+          .limit(1);
+        cart = cartResult[0];
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "CartsService.getOrCreateCart.selectGuestCart",
+            error,
+            { sessionId },
+          ),
+          "Failed to fetch guest cart",
+        );
+        throw error;
+      }
 
       if (!cart) {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + this.CART_EXPIRY_DAYS);
 
-        [cart] = await db
-          .insert(carts)
-          .values({
-            sessionId,
-            expiresAt,
-          })
-          .returning();
+        try {
+          const cartResult = await db
+            .insert(carts)
+            .values({
+              sessionId,
+              expiresAt,
+            })
+            .returning();
+          cart = cartResult[0];
+        } catch (error) {
+          this.logger.error(
+            createErrorContext(
+              this.contextService,
+              "CartsService.getOrCreateCart.insertGuestCart",
+              error,
+              { sessionId },
+            ),
+            "Failed to create guest cart",
+          );
+          throw error;
+        }
       }
 
       return cart;
@@ -558,7 +622,12 @@ export class CartsService {
 
         const engineResult = runDiscountEngine(engineInput);
         const engineRuntime = Date.now() - engineStartTime;
-        discountAmount = engineResult.discountTotal;
+        // Cap discount amount to not exceed subtotal (discounts can't be more than the cart value)
+        // Also ensure discount is non-negative
+        discountAmount = Math.max(
+          0,
+          Math.min(engineResult.discountTotal, subtotal),
+        );
 
         // Record profiler metrics
         const rulesetVersion = this.hotReloadWatcher.getCurrentVersion();
@@ -607,15 +676,28 @@ export class CartsService {
     const total = subtotalAfterDiscount + totalGstAmount;
 
     // Update cart totals
-    await db
-      .update(carts)
-      .set({
-        subtotal,
-        gstAmount: totalGstAmount,
-        discountAmount,
-        total,
-      })
-      .where(eq(carts.id, cartId));
+    try {
+      await db
+        .update(carts)
+        .set({
+          subtotal,
+          gstAmount: totalGstAmount,
+          discountAmount,
+          total,
+        })
+        .where(eq(carts.id, cartId));
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CartsService.recalculateCartTotals.updateCart",
+          error,
+          { cartId },
+        ),
+        "Failed to update cart totals",
+      );
+      throw error;
+    }
 
     return {
       subtotal,
@@ -634,18 +716,37 @@ export class CartsService {
   private async getUserIdFromCustomerId(
     customerId: string,
   ): Promise<string | undefined> {
-    const [customer] = await db
-      .select({ userId: customers.userId })
-      .from(customers)
-      .where(eq(customers.id, customerId))
-      .limit(1);
+    let customer: { userId: string } | undefined;
+    try {
+      const customerResult = await db
+        .select({ userId: customers.userId })
+        .from(customers)
+        .where(eq(customers.id, customerId))
+        .limit(1);
+      customer = customerResult[0];
+    } catch (error) {
+      this.logger.warn(
+        createLogContext(
+          this.contextService,
+          "CartsService.getUserIdFromCustomerId.selectCustomer",
+          {
+            customerId,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        ),
+        "Failed to fetch customer, returning undefined",
+      );
+      return undefined;
+    }
 
     return customer?.userId || undefined;
   }
 
   /**
    * Get cart (for customer or session)
+   * Automatically reinitializes cart if it's in error state
    */
+  @Trace({ operation: "CartsService.getCart" })
   async getCart(userId: string | null, sessionId: string | null) {
     let customerId: string | null = null;
     if (userId) {
@@ -653,20 +754,35 @@ export class CartsService {
     }
 
     const cart = await this.getOrCreateCart(customerId, sessionId);
-
     return this.getCartById(cart.id, customerId);
   }
 
   /**
    * Get cart by ID
    */
+  @Trace({ operation: "CartsService.getCartById" })
   async getCartById(cartId: string, customerId?: string | null) {
     // Get cart from database
-    const [cart] = await db
-      .select()
-      .from(carts)
-      .where(eq(carts.id, cartId))
-      .limit(1);
+    let cart: typeof carts.$inferSelect | undefined;
+    try {
+      const cartResult = await db
+        .select()
+        .from(carts)
+        .where(eq(carts.id, cartId))
+        .limit(1);
+      cart = cartResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CartsService.getCartById.selectCart",
+          error,
+          { cartId },
+        ),
+        "Failed to fetch cart",
+      );
+      throw new NotFoundException("Cart not found");
+    }
 
     if (!cart) {
       throw new NotFoundException("Cart not found");
@@ -676,10 +792,24 @@ export class CartsService {
     const effectiveCustomerId = customerId || cart.customerId;
 
     // Get cart items
-    const items = await db
-      .select()
-      .from(cartItems)
-      .where(eq(cartItems.cartId, cart.id));
+    let items: Array<typeof cartItems.$inferSelect>;
+    try {
+      items = await db
+        .select()
+        .from(cartItems)
+        .where(eq(cartItems.cartId, cart.id));
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CartsService.getCartById.selectCartItems",
+          error,
+          { cartId },
+        ),
+        "Failed to fetch cart items",
+      );
+      items = [];
+    }
 
     // Hydrate bundle items
     const hydratedItems = await Promise.all(
@@ -786,21 +916,90 @@ export class CartsService {
 
   /**
    * Check if cart has active checkout session (snapshot locked)
+   * Cart should only be locked if checkout has progressed to payment intent creation
+   * Early checkout states (CREATED, LOCKED) should allow cart modifications
    */
   private async isCartSnapshotLocked(cartId: string): Promise<boolean> {
     try {
-      // Check if checkout lock exists (indicates payment intent creation started)
+      // Check if checkout lock exists
       const isLocked = await this.checkoutStore.isCheckoutLocked(cartId);
-      if (isLocked) {
-        return true;
+      if (!isLocked) {
+        return false;
       }
 
-      // Also check if there's an active checkout session with payment intent
-      // This is a best-effort check - we iterate through potential sessions
-      // In production, you might want a reverse lookup by cartId
-      return false;
-    } catch (_error) {
+      // Lock exists - check if there's an active checkout session
+      // Only lock cart if checkout has progressed to payment intent creation
+      const hasActiveSession =
+        await this.checkoutStore.hasActiveCheckoutSession(cartId);
+
+      if (!hasActiveSession) {
+        // Stale lock - release it and allow cart modifications
+        this.logger.warn(
+          `Stale checkout lock detected for cartId=${cartId} during cart modification, releasing lock`,
+        );
+        try {
+          await this.checkoutStore.releaseCheckoutLock(cartId);
+        } catch (error) {
+          this.logger.error(
+            `Failed to release stale checkout lock for cartId=${cartId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+          );
+        }
+        return false;
+      }
+
+      // Check the checkout session state by getting it directly
+      // Only lock cart if checkout has progressed to PAYMENT_PENDING or later
+      // Early states (CREATED, LOCKED) should allow cart modifications
+      const sessionResult = await this.checkoutStore.getSessionByCartId(cartId);
+      if (!sessionResult) {
+        // No active session found - release lock
+        try {
+          await this.checkoutStore.releaseCheckoutLock(cartId);
+        } catch (error) {
+          this.logger.error(
+            `Failed to release checkout lock for cartId=${cartId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+          );
+        }
+        return false;
+      }
+
+      // Import CheckoutState to check session state
+      const { CheckoutState } = await import(
+        "../redis-store/constants/checkout-states"
+      );
+
+      // Only lock cart if checkout has progressed to payment intent creation
+      // Allow cart modifications in early checkout states
+      const lockingStates = [
+        CheckoutState.PAYMENT_PENDING,
+        CheckoutState.PAYMENT_CONFIRMED,
+        CheckoutState.ORDER_CREATED,
+        CheckoutState.COMPLETED,
+      ];
+
+      const shouldLock = lockingStates.includes(sessionResult.session.state);
+
+      if (!shouldLock) {
+        // Early checkout state - release lock to allow cart modifications
+        this.logger.debug(
+          `Checkout session for cartId=${cartId} is in early state (${sessionResult.session.state}), allowing cart modifications`,
+        );
+        try {
+          await this.checkoutStore.releaseCheckoutLock(cartId);
+        } catch (error) {
+          this.logger.error(
+            `Failed to release checkout lock for cartId=${cartId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+          );
+        }
+        return false;
+      }
+
+      return true;
+    } catch (error) {
       // If check fails, allow cart update (fail open for availability)
+      this.logger.error(
+        `Failed to check cart lock status for cartId=${cartId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
       return false;
     }
   }
@@ -808,6 +1007,7 @@ export class CartsService {
   /**
    * Add item to cart (variant or bundle)
    */
+  @Trace({ operation: "CartsService.addItem" })
   async addItem(
     userId: string | null,
     sessionId: string | null,
@@ -860,15 +1060,36 @@ export class CartsService {
     }
 
     // Check if product variant exists and get its price
-    const [variant] = await db
-      .select({
-        id: productVariants.id,
-        price: productVariants.price,
-        productId: productVariants.productId,
-      })
-      .from(productVariants)
-      .where(eq(productVariants.id, addItemDto.productVariantId))
-      .limit(1);
+    let variant:
+      | {
+          id: string;
+          price: number;
+          productId: string;
+        }
+      | undefined;
+    try {
+      const variantResult = await db
+        .select({
+          id: productVariants.id,
+          price: productVariants.price,
+          productId: productVariants.productId,
+        })
+        .from(productVariants)
+        .where(eq(productVariants.id, addItemDto.productVariantId))
+        .limit(1);
+      variant = variantResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CartsService.addItem.selectVariant",
+          error,
+          { productVariantId: addItemDto.productVariantId },
+        ),
+        "Failed to fetch product variant",
+      );
+      throw new NotFoundException("Product variant not found");
+    }
 
     if (!variant) {
       throw new NotFoundException("Product variant not found");
@@ -1153,6 +1374,7 @@ export class CartsService {
   /**
    * Update cart item quantity
    */
+  @Trace({ operation: "CartsService.updateItem" })
   async updateItem(
     userId: string | null,
     sessionId: string | null,
@@ -1262,6 +1484,7 @@ export class CartsService {
   /**
    * Remove item from cart
    */
+  @Trace({ operation: "CartsService.removeItem" })
   async removeItem(
     userId: string | null,
     sessionId: string | null,
@@ -1354,6 +1577,7 @@ export class CartsService {
   /**
    * Clear cart
    */
+  @Trace({ operation: "CartsService.clearCart" })
   async clearCart(userId: string | null, sessionId: string | null) {
     let customerId: string | null = null;
     if (userId) {
@@ -1376,6 +1600,52 @@ export class CartsService {
       .where(eq(carts.id, cart.id));
 
     return this.getCart(userId, sessionId);
+  }
+
+  /**
+   * Clear cart by cart ID
+   * This is a convenience method that fetches the cart first to get userId/sessionId
+   */
+  async clearCartById(cartId: string): Promise<void> {
+    // Get cart from database to find its customerId/sessionId
+    let cart: typeof carts.$inferSelect | undefined;
+    try {
+      const cartResult = await db
+        .select()
+        .from(carts)
+        .where(eq(carts.id, cartId))
+        .limit(1);
+      cart = cartResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CartsService.clearCartById.selectCart",
+          error,
+          { cartId },
+        ),
+        "Failed to fetch cart for clearing",
+      );
+      throw new NotFoundException("Cart not found");
+    }
+
+    if (!cart) {
+      throw new NotFoundException("Cart not found");
+    }
+
+    let userId: string | null = null;
+    let sessionId: string | null = null;
+
+    if (cart.customerId) {
+      // Customer cart - get userId from customerId
+      userId = (await this.getUserIdFromCustomerId(cart.customerId)) || null;
+    } else if (cart.sessionId) {
+      // Guest cart - use sessionId
+      sessionId = cart.sessionId;
+    }
+
+    // Clear the cart using the standard method
+    await this.clearCart(userId, sessionId);
   }
 
   /**
@@ -1448,6 +1718,7 @@ export class CartsService {
   /**
    * Apply discount code to cart
    */
+  @Trace({ operation: "CartsService.applyDiscount" })
   async applyDiscount(
     userId: string | null,
     sessionId: string | null,

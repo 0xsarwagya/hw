@@ -12,11 +12,13 @@ import {
   variantOptionValueAssignments,
   variantOptionValues,
 } from "@vcecom/db";
+import { InventoryStore } from "../redis-store/stores/inventory-store";
 import { CreateVariantDto } from "./dto/create-variant.dto";
 import { UpdateVariantDto } from "./dto/update-variant.dto";
 
 @Injectable()
 export class VariantsService {
+  constructor(private readonly inventoryStore: InventoryStore) {}
   /**
    * Generate a SKU from product and variant attributes
    */
@@ -156,6 +158,14 @@ export class VariantsService {
       );
     }
 
+    // Sync inventory to Redis
+    if (newVariant.inventory !== undefined) {
+      await this.inventoryStore.setInventory(
+        newVariant.id,
+        newVariant.inventory,
+      );
+    }
+
     return newVariant;
   }
 
@@ -265,6 +275,11 @@ export class VariantsService {
       .set(updateData)
       .where(eq(productVariants.id, id))
       .returning();
+
+    // Sync inventory to Redis if it was updated
+    if (updateVariantDto.inventory !== undefined) {
+      await this.inventoryStore.setInventory(id, updated.inventory);
+    }
 
     // Handle option value assignments update (new flexible system)
     if (updateVariantDto.optionValueIds !== undefined) {

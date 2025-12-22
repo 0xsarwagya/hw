@@ -85,6 +85,55 @@ export class BundleDefinitionService {
   }
 
   /**
+   * Get all active bundles with pagination (for storefront)
+   */
+  async findAllActive(
+    page = 1,
+    limit = 10,
+  ): Promise<{
+    data: BundleResponseDto[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  }> {
+    const offset = (page - 1) * limit;
+    const maxLimit = Math.min(limit, 100); // Max 100 per page
+
+    const activeBundles = await db
+      .select()
+      .from(bundles)
+      .where(eq(bundles.isActive, true))
+      .orderBy(desc(bundles.createdAt))
+      .limit(maxLimit)
+      .offset(offset);
+
+    // Get total count of active bundles
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(bundles)
+      .where(eq(bundles.isActive, true));
+    const total = Number(countResult[0]?.count || 0);
+    const totalPages = Math.ceil(total / maxLimit);
+
+    const hydratedBundles = await Promise.all(
+      activeBundles.map((bundle) => this.hydrateBundle(bundle.id)),
+    );
+
+    return {
+      data: hydratedBundles,
+      total,
+      page,
+      limit: maxLimit,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    };
+  }
+
+  /**
    * Get a single bundle with all sets and items (hydrated)
    * Tries cache first, falls back to DB
    */
@@ -107,6 +156,50 @@ export class BundleDefinitionService {
     }
 
     return bundle;
+  }
+
+  /**
+   * Get a single active bundle (for storefront)
+   */
+  async findOneActive(id: string): Promise<BundleResponseDto> {
+    // Try cache first
+    const cached = await this.bundleCacheStore.getBundleDefinition(id);
+    if (cached) {
+      if (!cached.isActive) {
+        throw new NotFoundException(
+          `Bundle with ID ${id} not found or not active`,
+        );
+      }
+      return cached;
+    }
+
+    // Check if bundle exists and is active
+    const [bundle] = await db
+      .select()
+      .from(bundles)
+      .where(eq(bundles.id, id))
+      .limit(1);
+
+    if (!bundle) {
+      throw new NotFoundException(`Bundle with ID ${id} not found`);
+    }
+
+    if (!bundle.isActive) {
+      throw new NotFoundException(`Bundle with ID ${id} is not active`);
+    }
+
+    // Hydrate and return
+    const hydratedBundle = await this.hydrateBundle(id);
+
+    // Store in cache for next time
+    try {
+      await this.bundleCacheStore.storeBundleDefinition(id, hydratedBundle);
+    } catch (error) {
+      // Log but don't throw - cache failure shouldn't break the request
+      console.warn(`Failed to cache bundle ${id}:`, error);
+    }
+
+    return hydratedBundle;
   }
 
   /**

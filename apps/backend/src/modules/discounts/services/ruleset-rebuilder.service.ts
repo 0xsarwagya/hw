@@ -6,6 +6,7 @@ import {
   createLogContext,
 } from "../../../common/logging/logging.helper";
 import { DiscountsService } from "../discounts.service";
+import { DiscountApplicationType } from "../dto/create-discount.dto";
 import { DiscountResponseDto } from "../dto/discount-response.dto";
 import { DiscountProfiler } from "./discount-profiler.service";
 import { RulesetBundleService } from "./ruleset-bundle.service";
@@ -93,7 +94,8 @@ export class RulesetRebuilder {
       const discounts = await this.discountsService.findAllUnpaginated();
       const now = new Date();
 
-      // Filter active discounts
+      // Filter active AUTOMATIC discounts only
+      // MANUAL discounts should only be applied when code is entered
       const activeDiscounts = discounts.filter((d) => {
         if (!d.isActive) {
           return false;
@@ -103,6 +105,11 @@ export class RulesetRebuilder {
         }
         if (d.endDate && d.endDate < now) {
           return false; // Expired
+        }
+        // Only include AUTOMATIC discounts in the bundle
+        // MANUAL discounts are validated separately when codes are entered
+        if (d.applicationType !== DiscountApplicationType.AUTOMATIC) {
+          return false;
         }
         return true;
       });

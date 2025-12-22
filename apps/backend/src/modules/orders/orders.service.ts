@@ -18,6 +18,7 @@ import {
   inArray,
   orderItems,
   orders,
+  payments,
   productCollections,
   products,
   productTags,
@@ -26,11 +27,16 @@ import {
 import { PinoLogger } from "nestjs-pino";
 
 // Internal modules - Common
+import {
+  COD_PAYMENT_METHOD,
+  isCodPayment,
+} from "../../common/constants/orders.constants";
 import { ContextService } from "../../common/logging/context.service";
 import {
   createErrorContext,
   createLogContext,
 } from "../../common/logging/logging.helper";
+import { Trace } from "../../common/tracing/trace.decorator";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 
 // Internal modules - Feature modules
@@ -72,7 +78,10 @@ import { PricingHotReloadWatcher } from "../pricing/services/pricing-hot-reload-
 import { PricingSnapshotValidator } from "../pricing/services/pricing-snapshot-validator.service";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
 import { CheckoutMetadata } from "../redis-store/dto/checkout-metadata.dto";
-import { PaymentIntent } from "../redis-store/dto/payment-intent.dto";
+import {
+  PaymentIntent,
+  PaymentIntentStatus,
+} from "../redis-store/dto/payment-intent.dto";
 import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
 
@@ -143,6 +152,7 @@ export class OrdersService {
    * Orders are now created only after payment confirmation via webhook
    * Supports both authenticated and guest checkout
    */
+  @Trace({ operation: "OrdersService.create" })
   async create(
     userId: string | null,
     createOrderDto: CreateOrderDto,
@@ -271,63 +281,92 @@ export class OrdersService {
       // Get cart object for later use (discount code, items, etc.)
       const cart = await this.cartsService.getCartById(cartId);
 
-      // Create checkout session for state machine tracking
-      // Session tracks checkout progress: CREATED -> LOCKED -> COMPLETED/FAILED
-      // If session creation fails, we continue without state tracking (graceful degradation)
-      // This allows order creation to proceed even if Redis is temporarily unavailable
-      try {
-        const sessionResult = await this.checkoutStore.createSession(cartId);
-        checkoutSessionId = sessionResult.sessionId;
-      } catch (error) {
-        // Session creation failure is non-fatal
-        // Order creation can proceed without state machine tracking
-        this.logger.warn(
-          createErrorContext(
-            this.contextService,
-            "createCheckoutSession",
-            error,
-            { cartId },
-          ),
-          "Failed to create checkout session, proceeding without state machine",
-        );
-      }
+      // Check if checkout session ID is provided (from CheckoutService flow)
+      // If provided, skip session creation and lock acquisition as they're already done
+      checkoutSessionId = createOrderDto.checkoutSessionId || null;
 
-      // Acquire checkout lock to prevent concurrent checkout attempts on same cart
-      // This prevents race conditions where multiple requests try to checkout simultaneously
-      // Lock is held for the duration of checkout process
-      lockAcquired = await this.checkoutStore.acquireCheckoutLock(cartId);
-      if (!lockAcquired) {
-        // Another checkout is in progress - mark session as failed if it exists
-        if (checkoutSessionId) {
-          try {
-            await this.checkoutStore.failSession(checkoutSessionId);
-          } catch (error) {
-            console.error("Failed to fail checkout session:", error);
-          }
-        }
-        throw new ConflictException("Cart is already being checked out");
-      }
-
-      // Transition session to LOCKED state (lock successfully acquired)
-      // If state transition fails, we continue anyway since lock prevents duplicates
-      // The lock is the source of truth for preventing concurrent checkouts
-      if (checkoutSessionId) {
+      if (!checkoutSessionId) {
+        // Legacy flow: Create checkout session for state machine tracking
+        // Session tracks checkout progress: CREATED -> LOCKED -> COMPLETED/FAILED
+        // If session creation fails, we continue without state tracking (graceful degradation)
+        // This allows order creation to proceed even if Redis is temporarily unavailable
         try {
-          await this.checkoutStore.transitionState(
-            checkoutSessionId,
-            CheckoutState.CREATED,
-            CheckoutState.LOCKED,
-          );
+          const sessionResult = await this.checkoutStore.createSession(cartId);
+          checkoutSessionId = sessionResult.sessionId;
         } catch (error) {
-          // State transition failure is non-fatal - lock is already held
-          this.logger.error(
+          // Session creation failure is non-fatal
+          // Order creation can proceed without state machine tracking
+          this.logger.warn(
             createErrorContext(
               this.contextService,
-              "transitionToLocked",
+              "createCheckoutSession",
               error,
-              { checkoutSessionId },
+              { cartId },
             ),
-            "State transition to LOCKED failed, but lock is acquired",
+            "Failed to create checkout session, proceeding without state machine",
+          );
+        }
+
+        // Acquire checkout lock to prevent concurrent checkout attempts on same cart
+        // This prevents race conditions where multiple requests try to checkout simultaneously
+        // Lock is held for the duration of checkout process
+        lockAcquired = await this.checkoutStore.acquireCheckoutLock(cartId);
+        if (!lockAcquired) {
+          // Another checkout is in progress - mark session as failed if it exists
+          if (checkoutSessionId) {
+            try {
+              await this.checkoutStore.failSession(checkoutSessionId);
+            } catch (error) {
+              console.error("Failed to fail checkout session:", error);
+            }
+          }
+          throw new ConflictException("Cart is already being checked out");
+        }
+
+        // Transition session to LOCKED state (lock successfully acquired)
+        // If state transition fails, we continue anyway since lock prevents duplicates
+        // The lock is the source of truth for preventing concurrent checkouts
+        if (checkoutSessionId) {
+          try {
+            await this.checkoutStore.transitionState(
+              checkoutSessionId,
+              CheckoutState.CREATED,
+              CheckoutState.LOCKED,
+            );
+          } catch (error) {
+            // State transition failure is non-fatal - lock is already held
+            this.logger.error(
+              createErrorContext(
+                this.contextService,
+                "transitionToLocked",
+                error,
+                { checkoutSessionId },
+              ),
+              "State transition to LOCKED failed, but lock is acquired",
+            );
+          }
+        }
+      } else {
+        // Checkout session already exists (from CheckoutService flow)
+        // Lock is already held by CheckoutService, so we don't need to acquire it
+        this.logger.debug(
+          createLogContext(this.contextService, "create", {
+            checkoutSessionId,
+            cartId,
+          }),
+          "Using existing checkout session from CheckoutService",
+        );
+        // Verify the session exists and is in LOCKED state
+        const existingSession =
+          await this.checkoutStore.getSession(checkoutSessionId);
+        if (!existingSession) {
+          throw new BadRequestException(
+            `Checkout session ${checkoutSessionId} not found`,
+          );
+        }
+        if (existingSession.cartId !== cartId) {
+          throw new BadRequestException(
+            `Checkout session cart ID mismatch: expected ${cartId}, got ${existingSession.cartId}`,
           );
         }
       }
@@ -949,7 +988,7 @@ export class OrdersService {
         effectiveSubtotal - discountAmount,
       );
 
-      // Get payment fee from checkout metadata if payment method was selected
+      // Get payment method and fee from checkout metadata
       let paymentFee = 0;
       let paymentMethod: string | undefined;
       let paymentFeeBreakdown: PaymentFeeBreakdownDto | undefined;
@@ -957,14 +996,109 @@ export class OrdersService {
       if (checkoutSessionId) {
         const existingMetadata =
           await this.checkoutStore.getCheckoutMetadata(checkoutSessionId);
-        if (
-          existingMetadata?.paymentMethod &&
-          existingMetadata.paymentFee !== undefined
-        ) {
-          paymentFee = existingMetadata.paymentFee; // Already in paise
+        // Get payment method first (required for COD detection)
+        if (existingMetadata?.paymentMethod) {
           paymentMethod = existingMetadata.paymentMethod;
+        }
+        // Get payment fee if available
+        if (existingMetadata?.paymentFee !== undefined) {
+          paymentFee = existingMetadata.paymentFee; // Already in paise
           paymentFeeBreakdown = existingMetadata.paymentFeeBreakdown;
         }
+      }
+
+      // Comprehensive COD detection with debug logging
+      const isCod = isCodPayment(paymentMethod);
+      this.logger.debug(
+        createLogContext(this.contextService, "codDetection", {
+          checkoutSessionId,
+          cartId,
+          paymentMethod,
+          normalizedMethod: paymentMethod
+            ? paymentMethod.trim().toLowerCase()
+            : null,
+          expectedCOD: COD_PAYMENT_METHOD,
+          isCOD: isCod,
+          metadataExists: !!checkoutSessionId,
+          paymentMethodType: typeof paymentMethod,
+        }),
+        "COD detection check",
+      );
+
+      // Check if payment method is COD - if so, create order directly without payment intent
+      // This check must happen BEFORE storing metadata and creating payment intent
+      if (isCod) {
+        this.logger.info(
+          createLogContext(this.contextService, "createCodOrder", {
+            checkoutSessionId,
+            cartId,
+            paymentMethod,
+          }),
+          "COD payment method detected, creating order directly",
+        );
+
+        // Ensure checkout metadata is stored before creating COD order
+        if (!checkoutSessionId) {
+          throw new ConflictException(
+            "Checkout session is required for COD order creation",
+          );
+        }
+
+        const checkoutMetadata: CheckoutMetadata = {
+          customerId,
+          userId: actualUserId,
+          shippingAddressId,
+          billingAddressId,
+          shippingCost: createOrderDto.shippingCost || 0,
+          discountSnapshot,
+          pricingSnapshot,
+          paymentMethod,
+          paymentFee,
+          paymentFeeBreakdown,
+          createdAt: new Date().toISOString(),
+        };
+
+        try {
+          await this.checkoutStore.storeCheckoutMetadata(
+            checkoutSessionId,
+            checkoutMetadata,
+          );
+        } catch (error) {
+          this.logger.error(
+            createErrorContext(
+              this.contextService,
+              "storeCheckoutMetadata",
+              error,
+              { checkoutSessionId },
+            ),
+            "Failed to store checkout metadata for COD order",
+          );
+          throw new ConflictException(
+            "Failed to store checkout metadata - cannot proceed with COD order creation",
+          );
+        }
+
+        // Create COD order directly
+        const codOrder = await this.createCodOrder(
+          checkoutSessionId,
+          userId,
+          createOrderDto,
+          sessionId || null,
+        );
+
+        // Return response with order details (no payment intent for COD)
+        return {
+          paymentIntent: {
+            paymentProvider: "cod",
+            paymentIntentId: `cod-${codOrder.id}`, // Placeholder ID for COD
+            status: PaymentIntentStatus.CREATED,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          checkoutSessionId,
+          message: "COD order created successfully",
+          orderId: codOrder.id, // Include order ID for COD orders
+        };
       }
 
       // Include payment fee in total (convert from paise to rupees)
@@ -1099,10 +1233,60 @@ export class OrdersService {
             payment_method: paymentMethod || "unknown",
           },
         );
-        if (!paymentIntent || !paymentIntent.paymentIntentId) {
-          throw new ConflictException(
-            "Payment intent creation returned invalid result",
+        if (!paymentIntent) {
+          const errorMessage = `Payment intent creation returned null or undefined for checkoutSessionId=${checkoutSessionId}. This may indicate a payment provider issue. Please try again or contact support if the problem persists.`;
+          this.logger.error(
+            createErrorContext(
+              this.contextService,
+              "createPaymentIntent",
+              new Error("Payment intent is null"),
+              { checkoutSessionId, cartId, total },
+            ),
+            errorMessage,
           );
+          throw new ConflictException(errorMessage);
+        }
+        // Handle placeholder case (empty paymentIntentId) - retry once after short delay
+        if (
+          !paymentIntent.paymentIntentId ||
+          paymentIntent.paymentIntentId === ""
+        ) {
+          this.logger.warn(
+            createLogContext(this.contextService, "createPaymentIntent", {
+              checkoutSessionId,
+            }),
+            `Payment intent returned with empty paymentIntentId (placeholder) for checkoutSessionId=${checkoutSessionId}, retrying after delay`,
+          );
+          // Wait a bit longer for concurrent creation to complete
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          // Try to get the payment intent again
+          const retryPaymentIntent =
+            await this.checkoutStore.getPaymentIntent(checkoutSessionId);
+          if (
+            retryPaymentIntent?.paymentIntentId &&
+            retryPaymentIntent.paymentIntentId !== ""
+          ) {
+            paymentIntent = retryPaymentIntent;
+            this.logger.info(
+              createLogContext(this.contextService, "createPaymentIntent", {
+                checkoutSessionId,
+                paymentIntentId: paymentIntent.paymentIntentId,
+              }),
+              `Payment intent placeholder filled after retry for checkoutSessionId=${checkoutSessionId}`,
+            );
+          } else {
+            const errorMessage = `Payment intent creation returned invalid result - paymentIntentId is empty after retry for checkoutSessionId=${checkoutSessionId}. The payment provider call may have timed out or failed. Please try again or contact support.`;
+            this.logger.error(
+              createErrorContext(
+                this.contextService,
+                "createPaymentIntent",
+                new Error("Payment intent placeholder not filled after retry"),
+                { checkoutSessionId, cartId, total },
+              ),
+              errorMessage,
+            );
+            throw new ConflictException(errorMessage);
+          }
         }
         this.logger.info(
           createLogContext(this.contextService, "createPaymentIntent", {
@@ -1182,18 +1366,47 @@ export class OrdersService {
       } catch (error) {
         // Payment intent creation failure - MUST BLOCK
         // This is a critical failure - we cannot proceed without payment intent
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        const isTimeoutError =
+          error instanceof Error &&
+          (error.message.includes("timed out") ||
+            error.message.includes("timeout") ||
+            error.name === "TimeoutError" ||
+            error.name === "ProviderTimeoutError");
+        const isNetworkError =
+          error instanceof Error &&
+          (error.message.includes("ECONNREFUSED") ||
+            error.message.includes("ENOTFOUND") ||
+            error.message.includes("ETIMEDOUT") ||
+            error.message.includes("network"));
+
+        let userFriendlyMessage: string;
+        if (isTimeoutError) {
+          userFriendlyMessage = `Payment intent creation timed out for checkoutSessionId=${checkoutSessionId}. The payment provider did not respond in time. This may be a temporary issue. Please try again in a few moments.`;
+        } else if (isNetworkError) {
+          userFriendlyMessage = `Network error while creating payment intent for checkoutSessionId=${checkoutSessionId}. Please check your connection and try again.`;
+        } else {
+          userFriendlyMessage = `Failed to create payment intent for checkoutSessionId=${checkoutSessionId}. ${errorMessage}. Please try again or contact support if the issue persists.`;
+        }
+
         this.logger.error(
           createErrorContext(
             this.contextService,
             "createPaymentIntent",
             error,
-            { checkoutSessionId, cartId, total },
+            {
+              checkoutSessionId,
+              cartId,
+              total,
+              isTimeoutError,
+              isNetworkError,
+              errorType: error instanceof Error ? error.name : typeof error,
+            },
           ),
-          "Failed to create payment intent",
+          `Failed to create payment intent${isTimeoutError ? " (timeout)" : isNetworkError ? " (network error)" : ""}`,
         );
-        throw new ConflictException(
-          "Failed to create payment intent - cannot proceed with checkout",
-        );
+        throw new ConflictException(userFriendlyMessage);
       }
 
       // Release checkout lock - order creation will happen in webhook handler
@@ -1216,7 +1429,7 @@ export class OrdersService {
 
       // Return payment intent + session ID
       return {
-        paymentIntent,
+        paymentIntent: paymentIntent || null,
         checkoutSessionId,
         message: "Payment intent created. Redirect user to payment gateway.",
       };
@@ -1262,10 +1475,674 @@ export class OrdersService {
   }
 
   /**
+   * Create order directly for COD (Cash on Delivery) orders
+   * COD orders skip payment intent creation and go straight to order creation
+   */
+  @Trace({ operation: "OrdersService.createCodOrder" })
+  async createCodOrder(
+    checkoutSessionId: string,
+    userId: string | null,
+    createOrderDto: CreateOrderDto,
+    sessionId: string | null,
+  ): Promise<OrderResponseDto> {
+    // Get checkout session
+    const session = await this.checkoutStore.getSession(checkoutSessionId);
+    if (!session) {
+      throw new NotFoundException(
+        `Checkout session ${checkoutSessionId} not found`,
+      );
+    }
+
+    // Validate state - must be LOCKED for COD orders
+    if (session.state !== CheckoutState.LOCKED) {
+      throw new ConflictException(
+        `Cannot create COD order: checkout session is in state ${session.state}, expected LOCKED`,
+      );
+    }
+
+    // Get checkout metadata
+    const metadata =
+      await this.checkoutStore.getCheckoutMetadata(checkoutSessionId);
+    if (!metadata) {
+      throw new NotFoundException(
+        `Checkout metadata not found for session ${checkoutSessionId}`,
+      );
+    }
+
+    // Verify payment method is COD (use helper function for consistency)
+    if (!isCodPayment(metadata.paymentMethod)) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "createCodOrder",
+          new Error("Invalid payment method for COD order"),
+          {
+            checkoutSessionId,
+            paymentMethod: metadata.paymentMethod,
+            expectedCOD: COD_PAYMENT_METHOD,
+          },
+        ),
+        "Payment method validation failed for COD order",
+      );
+      throw new BadRequestException(
+        `Expected COD payment method, got ${metadata.paymentMethod || "undefined"}`,
+      );
+    }
+
+    // Use customerId from metadata (required field)
+    const customerId = metadata.customerId;
+
+    // Get cart data - use cartId from session
+    const cart = await this.cartsService.getCartById(session.cartId);
+    if (!cart || !cart.items || cart.items.length === 0) {
+      throw new BadRequestException("Cart is empty or not found");
+    }
+
+    // Get cart items with metadata
+    const cartItemIds = cart.items.map((item) => item.id);
+    const allCartItems = await db
+      .select({
+        id: cartItems.id,
+        productVariantId: cartItems.productVariantId,
+        quantity: cartItems.quantity,
+        price: cartItems.price,
+        metadata: cartItems.metadata,
+      })
+      .from(cartItems)
+      .where(inArray(cartItems.id, cartItemIds));
+
+    if (allCartItems.length === 0) {
+      throw new BadRequestException("Cart items not found or invalid");
+    }
+
+    // Separate bundle and variant items
+    const bundleCartItems: Array<{
+      id: string;
+      productVariantId: string;
+      quantity: number;
+      price: number;
+      metadata: unknown;
+    }> = [];
+    const variantCartItems: Array<{
+      id: string;
+      productVariantId: string;
+      quantity: number;
+      price: number;
+      metadata: unknown;
+    }> = [];
+
+    for (const item of allCartItems) {
+      const itemMetadata = item.metadata as BundleCartItemMetadata | null;
+      if (itemMetadata?.type === "bundle") {
+        bundleCartItems.push(item);
+      } else {
+        variantCartItems.push(item);
+      }
+    }
+
+    // Get variant items with product details
+    const variantItemIds = variantCartItems.map((i) => i.id);
+    const cartItemsWithVariantsResult =
+      variantItemIds.length > 0
+        ? await db
+            .select({
+              cartItemId: cartItems.id,
+              productVariantId: cartItems.productVariantId,
+              quantity: cartItems.quantity,
+              price: cartItems.price,
+              productGstRate: products.gstRate,
+            })
+            .from(cartItems)
+            .innerJoin(
+              productVariants,
+              eq(cartItems.productVariantId, productVariants.id),
+            )
+            .innerJoin(products, eq(productVariants.productId, products.id))
+            .where(inArray(cartItems.id, variantItemIds))
+        : [];
+
+    const cartItemsWithVariants = Array.isArray(cartItemsWithVariantsResult)
+      ? cartItemsWithVariantsResult
+      : [];
+
+    // Get shipping address for GST calculation
+    const [shippingAddress] = await db
+      .select()
+      .from(addresses)
+      .where(eq(addresses.id, metadata.shippingAddressId))
+      .limit(1);
+
+    if (!shippingAddress) {
+      throw new NotFoundException("Shipping address not found");
+    }
+
+    // Calculate totals
+    const sellerState = this.getSellerState();
+    const buyerState = shippingAddress.state;
+
+    let subtotal = 0;
+    let totalCgst = 0;
+    let totalSgst = 0;
+    let totalIgst = 0;
+
+    for (const item of cartItemsWithVariants) {
+      const itemSubtotal = item.price * item.quantity;
+      subtotal += itemSubtotal;
+
+      const gstBreakdown = calculateGstBreakdown(
+        itemSubtotal,
+        item.productGstRate,
+        sellerState,
+        buyerState,
+      );
+      totalCgst += gstBreakdown.cgst;
+      totalSgst += gstBreakdown.sgst;
+      totalIgst += gstBreakdown.igst;
+    }
+
+    const totalGstAmount = totalCgst + totalSgst + totalIgst;
+    const shippingCost = metadata.shippingCost;
+
+    // Use discount snapshot from checkout metadata
+    let discountAmount = 0;
+    let discountCode: string | null = null;
+    if (metadata.discountSnapshot) {
+      // Validate snapshot version exists (bundle available)
+      if (metadata.discountSnapshot.rulesetVersion) {
+        const bundle = await this.bundleService.getBundle(
+          metadata.discountSnapshot.rulesetVersion,
+        );
+        if (!bundle) {
+          this.logger.warn(
+            createLogContext(this.contextService, "validateDiscountSnapshot", {
+              checkoutSessionId,
+              rulesetVersion: metadata.discountSnapshot.rulesetVersion,
+            }),
+            "Bundle not found for snapshot, but continuing with order creation",
+          );
+        }
+      }
+
+      // Validate snapshot integrity
+      const snapshotTotal =
+        metadata.discountSnapshot.total + totalGstAmount + shippingCost;
+
+      this.discountSnapshotValidator.validateSnapshot(
+        metadata.discountSnapshot,
+        [],
+        snapshotTotal,
+      );
+
+      discountAmount = metadata.discountSnapshot.discountTotal;
+      // Extract discount code from snapshot
+      if (metadata.discountSnapshot.cartDiscounts.length > 0) {
+        discountCode = metadata.discountSnapshot.cartDiscounts[0].discountCode;
+      } else if (
+        metadata.discountSnapshot.lineItems.some(
+          (item) => item.discounts.length > 0,
+        )
+      ) {
+        const firstDiscount = metadata.discountSnapshot.lineItems.find(
+          (item) => item.discounts.length > 0,
+        );
+        discountCode = firstDiscount?.discounts[0].discountCode || null;
+      }
+    }
+
+    // Use effective subtotal from pricing snapshot if available
+    let finalSubtotal = subtotal;
+    if (metadata.pricingSnapshot) {
+      try {
+        this.pricingSnapshotValidator.validate(metadata.pricingSnapshot);
+        finalSubtotal = metadata.pricingSnapshot.totalEffectivePrice;
+      } catch (_error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "validatePricingSnapshot",
+            _error,
+            { checkoutSessionId },
+          ),
+          "Pricing snapshot validation failed",
+        );
+      }
+    }
+    const subtotalAfterDiscount = Math.max(0, finalSubtotal - discountAmount);
+
+    // Get payment fee from metadata (already calculated)
+    const paymentFee = metadata.paymentFee || 0;
+    const paymentMethod = metadata.paymentMethod;
+    const paymentFeeBreakdown = metadata.paymentFeeBreakdown || null;
+
+    // Include payment fee in total (convert from paise to rupees)
+    const total =
+      subtotalAfterDiscount + totalGstAmount + shippingCost + paymentFee / 100;
+
+    // Generate order number
+    const orderNumber = await this.generateOrderNumber();
+
+    // Create order in database
+    const [order] = await db
+      .insert(orders)
+      .values({
+        customerId,
+        orderNumber,
+        status: "pending",
+        subtotal: finalSubtotal,
+        gstAmount: totalGstAmount,
+        discountCode,
+        discountAmount,
+        shippingCost,
+        paymentFee,
+        paymentMethod,
+        paymentFeeBreakdown,
+        total,
+        shippingAddressId: metadata.shippingAddressId,
+        billingAddressId: metadata.billingAddressId,
+        razorpayOrderId: null, // COD orders don't have Razorpay order ID
+        discountSnapshot: metadata.discountSnapshot,
+        pricingSnapshot: metadata.pricingSnapshot,
+      })
+      .returning();
+
+    const orderId = order.id;
+
+    // Log snapshot usage
+    if (metadata.discountSnapshot) {
+      try {
+        await this.discountAuditService.logSnapshotUsed(
+          checkoutSessionId,
+          orderId,
+          metadata.discountSnapshot,
+        );
+      } catch (error) {
+        this.logger.warn(
+          createErrorContext(
+            this.contextService,
+            "logDiscountSnapshotUsage",
+            error,
+            { checkoutSessionId, orderId },
+          ),
+          "Failed to log discount snapshot usage",
+        );
+      }
+    }
+
+    if (metadata.pricingSnapshot) {
+      try {
+        await this.pricingAuditService.logSnapshotUsed(
+          checkoutSessionId,
+          orderId,
+          metadata.pricingSnapshot,
+        );
+      } catch (error) {
+        this.logger.warn(
+          createErrorContext(
+            this.contextService,
+            "logPricingSnapshotUsage",
+            error,
+            { checkoutSessionId, orderId },
+          ),
+          "Failed to log pricing snapshot usage",
+        );
+      }
+    }
+
+    // Create order items using pricing snapshot prices (if available)
+    const orderItemsToInsert: Array<{
+      orderId: string;
+      productVariantId: string;
+      quantity: number;
+      price: number;
+      gstRate: number;
+      gstAmount: number;
+      metadata?: unknown;
+    }> = [];
+
+    // Create order items for variant items
+    for (const item of cartItemsWithVariants) {
+      // Use effective price from pricing snapshot if available, otherwise use cart price
+      let itemPrice = item.price;
+      if (metadata.pricingSnapshot) {
+        const variantPrice = metadata.pricingSnapshot.variantPrices.find(
+          (vp) => vp.variantId === item.productVariantId,
+        );
+        if (variantPrice) {
+          itemPrice = variantPrice.effectivePrice;
+        }
+      }
+
+      const itemSubtotal = itemPrice * item.quantity;
+      const gstBreakdown = calculateGstBreakdown(
+        itemSubtotal,
+        item.productGstRate,
+        sellerState,
+        buyerState,
+      );
+
+      orderItemsToInsert.push({
+        orderId,
+        productVariantId: item.productVariantId,
+        quantity: item.quantity,
+        price: itemPrice,
+        gstRate: item.productGstRate,
+        gstAmount: gstBreakdown.totalGst,
+      });
+    }
+
+    // Expand bundles to multiple order items
+    for (const bundleItem of bundleCartItems) {
+      const bundleMetadata = bundleItem.metadata as BundleCartItemMetadata;
+      const bundleBreakdown =
+        metadata.pricingSnapshot?.bundleBreakdowns?.find(
+          (b) => b.bundleLineId === bundleItem.id,
+        ) ||
+        metadata.pricingSnapshot?.bundleBreakdowns?.find(
+          (b) => b.bundleId === bundleMetadata.bundleId,
+        );
+
+      if (bundleBreakdown) {
+        // Use snapshot breakdown
+        for (const variantBreakdown of bundleBreakdown.variantBreakdown) {
+          // Get variant details for GST
+          const [variant] = await db
+            .select({
+              productId: productVariants.productId,
+            })
+            .from(productVariants)
+            .where(eq(productVariants.id, variantBreakdown.variantId))
+            .limit(1);
+
+          if (variant) {
+            const [product] = await db
+              .select({
+                gstRate: products.gstRate,
+              })
+              .from(products)
+              .where(eq(products.id, variant.productId))
+              .limit(1);
+
+            if (product) {
+              const itemSubtotal =
+                variantBreakdown.unitPrice * variantBreakdown.quantity;
+              const gstBreakdown = calculateGstBreakdown(
+                itemSubtotal,
+                product.gstRate,
+                sellerState,
+                buyerState,
+              );
+
+              // Find which set this variant belongs to
+              let setId: string | undefined;
+              for (const [setIdKey, variantIds] of Object.entries(
+                bundleMetadata.selections,
+              )) {
+                if (variantIds.includes(variantBreakdown.variantId)) {
+                  setId = setIdKey;
+                  break;
+                }
+              }
+
+              orderItemsToInsert.push({
+                orderId,
+                productVariantId: variantBreakdown.variantId,
+                quantity: variantBreakdown.quantity,
+                price: variantBreakdown.unitPrice,
+                gstRate: product.gstRate,
+                gstAmount: gstBreakdown.totalGst,
+                metadata: {
+                  bundleId: bundleMetadata.bundleId,
+                  bundleLineId: bundleItem.id,
+                  setId,
+                  isBundleComponent: true,
+                } as unknown as Record<string, unknown>,
+              });
+            }
+          }
+        }
+      } else {
+        // Fallback: flatten bundle manually if snapshot not available
+        const variantQuantities =
+          this.bundlePricingService.flattenBundleSelections(
+            bundleMetadata.selections,
+            bundleItem.quantity,
+          );
+
+        for (const vq of variantQuantities) {
+          const [variant] = await db
+            .select({
+              productId: productVariants.productId,
+            })
+            .from(productVariants)
+            .where(eq(productVariants.id, vq.variantId))
+            .limit(1);
+
+          if (variant) {
+            const [product] = await db
+              .select({
+                gstRate: products.gstRate,
+              })
+              .from(products)
+              .where(eq(products.id, variant.productId))
+              .limit(1);
+
+            if (product) {
+              // Use unit bundle price divided by variant count
+              const unitPrice = bundleItem.price / variantQuantities.length;
+              const itemSubtotal = unitPrice * vq.quantity;
+              const gstBreakdown = calculateGstBreakdown(
+                itemSubtotal,
+                product.gstRate,
+                sellerState,
+                buyerState,
+              );
+
+              // Find which set this variant belongs to
+              let setId: string | undefined;
+              for (const [setIdKey, variantIds] of Object.entries(
+                bundleMetadata.selections,
+              )) {
+                if (variantIds.includes(vq.variantId)) {
+                  setId = setIdKey;
+                  break;
+                }
+              }
+
+              orderItemsToInsert.push({
+                orderId,
+                productVariantId: vq.variantId,
+                quantity: vq.quantity,
+                price: unitPrice,
+                gstRate: product.gstRate,
+                gstAmount: gstBreakdown.totalGst,
+                metadata: {
+                  bundleId: bundleMetadata.bundleId,
+                  bundleLineId: bundleItem.id,
+                  setId,
+                  isBundleComponent: true,
+                } as unknown as Record<string, unknown>,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    await db.insert(orderItems).values(orderItemsToInsert);
+
+    // Create COD payment record (status: pending, will be marked as captured when delivered)
+    await db.insert(payments).values({
+      orderId,
+      method: COD_PAYMENT_METHOD,
+      status: "pending",
+      amount: total, // Amount in rupees (real type)
+      razorpayPaymentId: null,
+      razorpayOrderId: null,
+    });
+
+    // COD orders: Transition through valid states
+    // LOCKED → PAYMENT_CONFIRMED → ORDER_CREATED → COMPLETED
+    // COD selection is equivalent to payment confirmation (commitment to pay on delivery)
+
+    // Step 1: Transition to PAYMENT_CONFIRMED (COD = payment confirmed)
+    try {
+      this.logger.info(
+        createLogContext(this.contextService, "codOrderStateTransition", {
+          checkoutSessionId,
+          orderId,
+          fromState: CheckoutState.LOCKED,
+          toState: CheckoutState.PAYMENT_CONFIRMED,
+        }),
+        "COD order: transitioning to PAYMENT_CONFIRMED state",
+      );
+      await this.checkoutStore.transitionState(
+        checkoutSessionId,
+        CheckoutState.LOCKED,
+        CheckoutState.PAYMENT_CONFIRMED,
+      );
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "transitionToPaymentConfirmed",
+          error,
+          { checkoutSessionId, orderId },
+        ),
+        "Failed to transition to PAYMENT_CONFIRMED state for COD order",
+      );
+      throw error;
+    }
+
+    // Step 2: Set order and transition to ORDER_CREATED
+    try {
+      await this.checkoutStore.setOrder(checkoutSessionId, orderId);
+      this.logger.info(
+        createLogContext(this.contextService, "codOrderStateTransition", {
+          checkoutSessionId,
+          orderId,
+          fromState: CheckoutState.PAYMENT_CONFIRMED,
+          toState: CheckoutState.ORDER_CREATED,
+        }),
+        "COD order: transitioning to ORDER_CREATED state",
+      );
+      await this.checkoutStore.transitionState(
+        checkoutSessionId,
+        CheckoutState.PAYMENT_CONFIRMED,
+        CheckoutState.ORDER_CREATED,
+      );
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "transitionToOrderCreated",
+          error,
+          { checkoutSessionId, orderId },
+        ),
+        "Failed to transition to ORDER_CREATED state for COD order",
+      );
+      throw error;
+    }
+
+    // Step 3: Transition to COMPLETED state
+    try {
+      this.logger.info(
+        createLogContext(this.contextService, "codOrderStateTransition", {
+          checkoutSessionId,
+          orderId,
+          fromState: CheckoutState.ORDER_CREATED,
+          toState: CheckoutState.COMPLETED,
+        }),
+        "COD order: transitioning to COMPLETED state",
+      );
+      await this.checkoutStore.transitionState(
+        checkoutSessionId,
+        CheckoutState.ORDER_CREATED,
+        CheckoutState.COMPLETED,
+      );
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "transitionToCompleted",
+          error,
+          { checkoutSessionId, orderId },
+        ),
+        "Failed to transition to COMPLETED state for COD order",
+      );
+      throw error;
+    }
+
+    // Clear cart
+    try {
+      await this.cartsService.clearCartById(session.cartId);
+    } catch (error) {
+      this.logger.warn(
+        createErrorContext(this.contextService, "clearCart", error, {
+          customerId,
+          cartId: session.cartId,
+        }),
+        "Failed to clear cart after COD order creation",
+      );
+    }
+
+    // Get order items for response
+    const orderItemsList = await db
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.orderId, orderId));
+
+    // Calculate GST breakdown
+    const gstBreakdown = {
+      cgst: totalCgst,
+      sgst: totalSgst,
+      igst: totalIgst,
+      totalGst: totalGstAmount,
+      isIntraState: sellerState === buyerState,
+    };
+
+    // Send order confirmation notification
+    try {
+      await this.notificationsService.createFromEvent({
+        adminId: null, // Broadcast to all admins
+        type: NotificationType.ORDER,
+        title: "New COD Order Received",
+        message: `COD Order #${order.orderNumber} has been placed for ₹${total.toFixed(2)}`,
+        meta: {
+          orderId,
+          orderNumber: order.orderNumber,
+          total,
+          customerId,
+          paymentMethod: COD_PAYMENT_METHOD,
+        },
+      });
+    } catch (error) {
+      this.logger.warn(
+        createErrorContext(
+          this.contextService,
+          "createOrderNotification",
+          error,
+          {
+            orderId,
+            customerId,
+          },
+        ),
+        "Failed to send order confirmation notification",
+      );
+    }
+
+    return {
+      ...order,
+      gstBreakdown,
+      items: orderItemsList,
+    } as OrderResponseDto;
+  }
+
+  /**
    * Finalize order from payment confirmation (webhook-driven)
    * Creates order only after payment is confirmed
    * Uses payment-scoped idempotency to prevent duplicate orders
    */
+  @Trace({ operation: "OrdersService.finalizeOrderFromPayment" })
   async finalizeOrderFromPayment(
     checkoutSessionId: string,
     paymentIntentId: string,
@@ -2054,14 +2931,18 @@ export class OrdersService {
       // Order is already created, inventory can be reconciled later
     }
 
-    // Clear cart
+    // Clear cart - use cartId from session
     try {
-      await this.cartsService.clearCart(metadata.userId, null);
+      const cart = await this.cartsService.getCartById(session.cartId);
+      if (cart) {
+        await this.cartsService.clearCart(metadata.userId, cart.sessionId);
+      }
     } catch (error) {
       this.logger.error(
         createErrorContext(this.contextService, "clearCart", error, {
           userId: metadata.userId,
           orderId,
+          cartId: session.cartId,
         }),
         "Failed to clear cart",
       );
@@ -2141,76 +3022,249 @@ export class OrdersService {
   /**
    * Get order by ID (for authenticated customer)
    */
+  @Trace({ operation: "OrdersService.findOne" })
   async findOne(userId: string, orderId: string) {
-    const customerId = await this.getCustomerId(userId);
+    try {
+      const customerId = await this.getCustomerId(userId);
 
-    const [order] = await db
-      .select()
-      .from(orders)
-      .where(and(eq(orders.id, orderId), eq(orders.customerId, customerId)))
-      .limit(1);
+      let order: typeof orders.$inferSelect | undefined;
+      try {
+        const orderResult = await db
+          .select()
+          .from(orders)
+          .where(and(eq(orders.id, orderId), eq(orders.customerId, customerId)))
+          .limit(1);
+        order = orderResult[0];
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "OrdersService.findOne.selectOrder",
+            error,
+            { orderId, customerId },
+          ),
+          "Failed to fetch order",
+        );
+        throw new NotFoundException("Order not found");
+      }
 
-    if (!order) {
+      if (!order) {
+        throw new NotFoundException("Order not found");
+      }
+
+      // Get order items with GST rates
+      let items: Array<{
+        id: string;
+        orderId: string;
+        productVariantId: string;
+        quantity: number;
+        price: number;
+        gstRate: number;
+        gstAmount: number;
+        createdAt: Date;
+        updatedAt: Date;
+      }>;
+      try {
+        items = await db
+          .select({
+            id: orderItems.id,
+            orderId: orderItems.orderId,
+            productVariantId: orderItems.productVariantId,
+            quantity: orderItems.quantity,
+            price: orderItems.price,
+            gstRate: orderItems.gstRate,
+            gstAmount: orderItems.gstAmount,
+            createdAt: orderItems.createdAt,
+            updatedAt: orderItems.updatedAt,
+          })
+          .from(orderItems)
+          .where(eq(orderItems.orderId, orderId));
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "OrdersService.findOne.selectItems",
+            error,
+            { orderId },
+          ),
+          "Failed to fetch order items",
+        );
+        items = [];
+      }
+
+      // Get shipping address for GST calculation
+      let shippingAddress: { state: string } | undefined;
+      try {
+        const addressResult = await db
+          .select({ state: addresses.state })
+          .from(addresses)
+          .where(eq(addresses.id, order.shippingAddressId))
+          .limit(1);
+        shippingAddress = addressResult[0];
+      } catch (error) {
+        this.logger.warn(
+          createLogContext(
+            this.contextService,
+            "OrdersService.findOne.selectAddress",
+            {
+              orderId,
+              shippingAddressId: order.shippingAddressId,
+              error: error instanceof Error ? error.message : String(error),
+            },
+          ),
+          "Failed to fetch shipping address, using default state",
+        );
+        shippingAddress = undefined;
+      }
+
+      // Calculate GST breakdown
+      const sellerState = this.getSellerState();
+      const buyerState = shippingAddress?.state || "";
+
+      let totalCgst = 0;
+      let totalSgst = 0;
+      let totalIgst = 0;
+
+      for (const item of items) {
+        try {
+          const itemSubtotal = item.price * item.quantity;
+          const gstBreakdown = calculateGstBreakdown(
+            itemSubtotal,
+            item.gstRate,
+            sellerState,
+            buyerState,
+          );
+          totalCgst += gstBreakdown.cgst;
+          totalSgst += gstBreakdown.sgst;
+          totalIgst += gstBreakdown.igst;
+        } catch (error) {
+          this.logger.warn(
+            createLogContext(
+              this.contextService,
+              "OrdersService.findOne.calculateGst",
+              {
+                orderId,
+                itemId: item.id,
+                error: error instanceof Error ? error.message : String(error),
+              },
+            ),
+            "Failed to calculate GST for item, skipping",
+          );
+        }
+      }
+
+      const gstBreakdown = {
+        cgst: totalCgst,
+        sgst: totalSgst,
+        igst: totalIgst,
+        totalGst: order.gstAmount || 0,
+        isIntraState: sellerState === buyerState,
+      };
+
+      // Validate and parse payment fee breakdown
+      let paymentFeeBreakdown:
+        | {
+            method: string;
+            chargeType: string;
+            calculatedFee: number;
+            flatAmount?: number;
+            percentage?: number;
+            mixMin?: number;
+            mixCap?: number;
+          }
+        | null
+        | undefined = null;
+
+      if (order.paymentFeeBreakdown) {
+        try {
+          const parsed =
+            typeof order.paymentFeeBreakdown === "string"
+              ? JSON.parse(order.paymentFeeBreakdown)
+              : order.paymentFeeBreakdown;
+
+          if (
+            parsed &&
+            typeof parsed === "object" &&
+            "method" in parsed &&
+            "chargeType" in parsed &&
+            "calculatedFee" in parsed &&
+            typeof parsed.method === "string" &&
+            typeof parsed.chargeType === "string" &&
+            typeof parsed.calculatedFee === "number"
+          ) {
+            paymentFeeBreakdown = parsed as {
+              method: string;
+              chargeType: string;
+              calculatedFee: number;
+              flatAmount?: number;
+              percentage?: number;
+              mixMin?: number;
+              mixCap?: number;
+            };
+          }
+        } catch (error) {
+          this.logger.warn(
+            createLogContext(
+              this.contextService,
+              "OrdersService.findOne.parsePaymentFeeBreakdown",
+              {
+                orderId,
+                error: error instanceof Error ? error.message : String(error),
+              },
+            ),
+            "Failed to parse payment fee breakdown",
+          );
+        }
+      }
+
+      return {
+        id: order.id,
+        customerId: order.customerId,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        subtotal: order.subtotal || 0,
+        gstAmount: order.gstAmount || 0,
+        gstBreakdown,
+        shippingCost: order.shippingCost || 0,
+        paymentFee: order.paymentFee || undefined,
+        paymentMethod: order.paymentMethod || null,
+        paymentFeeBreakdown,
+        total: order.total || 0,
+        razorpayOrderId: order.razorpayOrderId || null,
+        shippingProvider: order.shippingProvider || null,
+        shippingAddressId: order.shippingAddressId,
+        billingAddressId: order.billingAddressId,
+        items,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        archived: order.archived || false,
+        archivedAt: order.archivedAt || null,
+        archivedBy: order.archivedBy || null,
+        ...(order.discountCode !== null && order.discountCode !== undefined
+          ? { discountCode: order.discountCode }
+          : {}),
+        ...(order.discountAmount !== null && order.discountAmount !== undefined
+          ? { discountAmount: order.discountAmount }
+          : {}),
+      } as OrderResponseDto & {
+        discountCode?: string | null;
+        discountAmount?: number;
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "OrdersService.findOne",
+          error,
+          { orderId, userId },
+        ),
+        "Failed to get order",
+      );
       throw new NotFoundException("Order not found");
     }
-
-    // Get order items with GST rates
-    const items = await db
-      .select({
-        id: orderItems.id,
-        orderId: orderItems.orderId,
-        productVariantId: orderItems.productVariantId,
-        quantity: orderItems.quantity,
-        price: orderItems.price,
-        gstRate: orderItems.gstRate,
-        gstAmount: orderItems.gstAmount,
-        createdAt: orderItems.createdAt,
-        updatedAt: orderItems.updatedAt,
-      })
-      .from(orderItems)
-      .where(eq(orderItems.orderId, orderId));
-
-    // Get shipping address for GST calculation
-    const [shippingAddress] = await db
-      .select({ state: addresses.state })
-      .from(addresses)
-      .where(eq(addresses.id, order.shippingAddressId))
-      .limit(1);
-
-    // Calculate GST breakdown
-    const sellerState = this.getSellerState();
-    const buyerState = shippingAddress?.state || "";
-
-    let totalCgst = 0;
-    let totalSgst = 0;
-    let totalIgst = 0;
-
-    for (const item of items) {
-      const itemSubtotal = item.price * item.quantity;
-      const gstBreakdown = calculateGstBreakdown(
-        itemSubtotal,
-        item.gstRate,
-        sellerState,
-        buyerState,
-      );
-      totalCgst += gstBreakdown.cgst;
-      totalSgst += gstBreakdown.sgst;
-      totalIgst += gstBreakdown.igst;
-    }
-
-    const gstBreakdown = {
-      cgst: totalCgst,
-      sgst: totalSgst,
-      igst: totalIgst,
-      totalGst: order.gstAmount,
-      isIntraState: sellerState === buyerState,
-    };
-
-    return {
-      ...order,
-      gstBreakdown,
-      items,
-    } as OrderResponseDto;
   }
 
   /**
@@ -2241,41 +3295,291 @@ export class OrdersService {
    * @param userId - User ID
    * @param status - Optional status filter
    */
-  async findAll(userId: string, status?: OrderStatus) {
-    const customerId = await this.getCustomerId(userId);
+  @Trace({ operation: "OrdersService.findAll" })
+  async findAll(
+    userId: string,
+    status?: OrderStatus,
+    includeArchived?: boolean,
+  ) {
+    try {
+      const customerId = await this.getCustomerId(userId);
 
-    const whereConditions = status
-      ? and(eq(orders.customerId, customerId), eq(orders.status, status))
-      : eq(orders.customerId, customerId);
+      // Build where conditions
+      const conditions = [eq(orders.customerId, customerId)];
 
-    const customerOrders = await db
-      .select()
-      .from(orders)
-      .where(whereConditions)
-      .orderBy(desc(orders.createdAt));
+      if (status) {
+        conditions.push(eq(orders.status, status));
+      }
 
-    // Get items and GST breakdown for each order
-    const ordersWithItems = await Promise.all(
-      customerOrders.map(async (order) => {
-        const items = await db
+      // Exclude archived orders by default
+      if (!includeArchived) {
+        conditions.push(eq(orders.archived, false));
+      }
+
+      const whereConditions =
+        conditions.length > 1 ? and(...conditions) : conditions[0];
+
+      let customerOrders: Array<typeof orders.$inferSelect>;
+      try {
+        customerOrders = await db
           .select()
-          .from(orderItems)
-          .where(eq(orderItems.orderId, order.id));
-
-        const gstBreakdown = await this.calculateOrderGstBreakdown(
-          order.id,
-          order.shippingAddressId,
+          .from(orders)
+          .where(whereConditions)
+          .orderBy(desc(orders.createdAt));
+      } catch (error) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "OrdersService.findAll.selectOrders",
+            error,
+            { userId, customerId, status },
+          ),
+          "Failed to fetch orders",
         );
+        return [];
+      }
 
-        return {
-          ...order,
-          gstBreakdown,
-          items,
-        } as OrderResponseDto;
-      }),
-    );
+      // Get items and GST breakdown for each order
+      const ordersWithItems = await Promise.all(
+        customerOrders.map(async (order) => {
+          try {
+            let items: Array<{
+              id: string;
+              orderId: string;
+              productVariantId: string;
+              quantity: number;
+              price: number;
+              gstRate: number;
+              gstAmount: number;
+              createdAt: Date;
+              updatedAt: Date;
+            }>;
+            try {
+              items = await db
+                .select({
+                  id: orderItems.id,
+                  orderId: orderItems.orderId,
+                  productVariantId: orderItems.productVariantId,
+                  quantity: orderItems.quantity,
+                  price: orderItems.price,
+                  gstRate: orderItems.gstRate,
+                  gstAmount: orderItems.gstAmount,
+                  createdAt: orderItems.createdAt,
+                  updatedAt: orderItems.updatedAt,
+                })
+                .from(orderItems)
+                .where(eq(orderItems.orderId, order.id));
+            } catch (error) {
+              this.logger.warn(
+                createLogContext(
+                  this.contextService,
+                  "OrdersService.findAll.selectItems",
+                  {
+                    orderId: order.id,
+                    error:
+                      error instanceof Error ? error.message : String(error),
+                  },
+                ),
+                "Failed to fetch order items",
+              );
+              items = [];
+            }
 
-    return ordersWithItems;
+            let gstBreakdown: {
+              cgst: number;
+              sgst: number;
+              igst: number;
+              totalGst: number;
+              isIntraState: boolean;
+            };
+            try {
+              gstBreakdown = await this.calculateOrderGstBreakdown(
+                order.id,
+                order.shippingAddressId,
+              );
+            } catch (error) {
+              this.logger.warn(
+                createLogContext(
+                  this.contextService,
+                  "OrdersService.findAll.calculateGst",
+                  {
+                    orderId: order.id,
+                    error:
+                      error instanceof Error ? error.message : String(error),
+                  },
+                ),
+                "Failed to calculate GST breakdown, using defaults",
+              );
+              gstBreakdown = {
+                cgst: 0,
+                sgst: 0,
+                igst: 0,
+                totalGst: order.gstAmount || 0,
+                isIntraState: false,
+              };
+            }
+
+            // Validate and parse payment fee breakdown
+            let paymentFeeBreakdown:
+              | {
+                  method: string;
+                  chargeType: string;
+                  calculatedFee: number;
+                  flatAmount?: number;
+                  percentage?: number;
+                  mixMin?: number;
+                  mixCap?: number;
+                }
+              | null
+              | undefined = null;
+
+            if (order.paymentFeeBreakdown) {
+              try {
+                const parsed =
+                  typeof order.paymentFeeBreakdown === "string"
+                    ? JSON.parse(order.paymentFeeBreakdown)
+                    : order.paymentFeeBreakdown;
+
+                if (
+                  parsed &&
+                  typeof parsed === "object" &&
+                  "method" in parsed &&
+                  "chargeType" in parsed &&
+                  "calculatedFee" in parsed &&
+                  typeof parsed.method === "string" &&
+                  typeof parsed.chargeType === "string" &&
+                  typeof parsed.calculatedFee === "number"
+                ) {
+                  paymentFeeBreakdown = parsed as {
+                    method: string;
+                    chargeType: string;
+                    calculatedFee: number;
+                    flatAmount?: number;
+                    percentage?: number;
+                    mixMin?: number;
+                    mixCap?: number;
+                  };
+                }
+              } catch (error) {
+                this.logger.warn(
+                  createLogContext(
+                    this.contextService,
+                    "OrdersService.findAll.parsePaymentFeeBreakdown",
+                    {
+                      orderId: order.id,
+                      error:
+                        error instanceof Error ? error.message : String(error),
+                    },
+                  ),
+                  "Failed to parse payment fee breakdown",
+                );
+              }
+            }
+
+            return {
+              id: order.id,
+              customerId: order.customerId,
+              orderNumber: order.orderNumber,
+              status: order.status,
+              subtotal: order.subtotal || 0,
+              gstAmount: order.gstAmount || 0,
+              gstBreakdown,
+              shippingCost: order.shippingCost || 0,
+              paymentFee: order.paymentFee || undefined,
+              paymentMethod: order.paymentMethod || null,
+              paymentFeeBreakdown,
+              total: order.total || 0,
+              razorpayOrderId: order.razorpayOrderId || null,
+              shippingProvider: order.shippingProvider || null,
+              shippingAddressId: order.shippingAddressId,
+              billingAddressId: order.billingAddressId,
+              items,
+              createdAt: order.createdAt,
+              updatedAt: order.updatedAt,
+              archived: order.archived || false,
+              archivedAt: order.archivedAt || null,
+              archivedBy: order.archivedBy || null,
+              ...(order.discountCode !== null &&
+              order.discountCode !== undefined
+                ? { discountCode: order.discountCode }
+                : {}),
+              ...(order.discountAmount !== null &&
+              order.discountAmount !== undefined
+                ? { discountAmount: order.discountAmount }
+                : {}),
+            } as OrderResponseDto & {
+              discountCode?: string | null;
+              discountAmount?: number;
+            };
+          } catch (error) {
+            this.logger.error(
+              createErrorContext(
+                this.contextService,
+                "OrdersService.findAll.processOrder",
+                error,
+                { orderId: order.id },
+              ),
+              "Failed to process order in findAll",
+            );
+            // Return minimal order to prevent complete failure
+            return {
+              id: order.id,
+              customerId: order.customerId,
+              orderNumber: order.orderNumber,
+              status: order.status,
+              subtotal: order.subtotal || 0,
+              gstAmount: order.gstAmount || 0,
+              gstBreakdown: {
+                cgst: 0,
+                sgst: 0,
+                igst: 0,
+                totalGst: order.gstAmount || 0,
+                isIntraState: false,
+              },
+              shippingCost: order.shippingCost || 0,
+              paymentFee: order.paymentFee || undefined,
+              paymentMethod: order.paymentMethod || null,
+              paymentFeeBreakdown: null,
+              total: order.total || 0,
+              razorpayOrderId: order.razorpayOrderId || null,
+              shippingProvider: order.shippingProvider || null,
+              shippingAddressId: order.shippingAddressId,
+              billingAddressId: order.billingAddressId,
+              items: [],
+              createdAt: order.createdAt,
+              updatedAt: order.updatedAt,
+              archived: order.archived || false,
+              archivedAt: order.archivedAt || null,
+              archivedBy: order.archivedBy || null,
+              ...(order.discountCode !== null &&
+              order.discountCode !== undefined
+                ? { discountCode: order.discountCode }
+                : {}),
+              ...(order.discountAmount !== null &&
+              order.discountAmount !== undefined
+                ? { discountAmount: order.discountAmount }
+                : {}),
+            } as OrderResponseDto & {
+              discountCode?: string | null;
+              discountAmount?: number;
+            };
+          }
+        }),
+      );
+
+      return ordersWithItems;
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "OrdersService.findAll",
+          error,
+          { userId, status },
+        ),
+        "Failed to get orders",
+      );
+      return [];
+    }
   }
 
   // ============================================================================
@@ -2286,6 +3590,7 @@ export class OrdersService {
    * Update order status
    * Validates status transition and updates the order
    */
+  @Trace({ operation: "OrdersService.updateStatus" })
   async updateStatus(
     userId: string,
     orderId: string,
@@ -2302,6 +3607,7 @@ export class OrdersService {
    * Get order tracking information
    * Returns order details with shipment tracking information
    */
+  @Trace({ operation: "OrdersService.getTracking" })
   async getTracking(
     userId: string,
     orderId: string,
@@ -2313,6 +3619,7 @@ export class OrdersService {
    * Get order timeline
    * Returns chronological list of all events related to the order
    */
+  @Trace({ operation: "OrdersService.getTimeline" })
   async getTimeline(
     userId: string,
     orderId: string,

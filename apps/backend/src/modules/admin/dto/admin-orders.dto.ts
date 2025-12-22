@@ -79,6 +79,15 @@ export class AdminQueryOrdersDto {
   @IsOptional()
   @IsDateString({}, { message: "End date must be a valid ISO 8601 date" })
   endDate?: string;
+
+  @ApiProperty({
+    description: "Include archived orders (default: false)",
+    example: false,
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Boolean)
+  archived?: boolean;
 }
 
 export class PaginatedOrdersResponseDto {

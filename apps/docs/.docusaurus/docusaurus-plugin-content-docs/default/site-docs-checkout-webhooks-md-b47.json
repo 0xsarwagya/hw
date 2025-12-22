@@ -1,7 +1,7 @@
 {
   "id": "checkout/webhooks",
-  "title": "webhooks",
-  "description": "",
+  "title": "Checkout Webhooks",
+  "description": "Webhooks are HTTP callbacks from payment gateways (Razorpay) that notify the system about payment status changes. They are critical for order creation, inventory management, and payment reconciliation.",
   "source": "@site/docs/checkout/webhooks.md",
   "sourceDirName": "checkout",
   "slug": "/checkout/webhooks",
@@ -11,16 +11,16 @@
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/checkout/webhooks.md",
   "tags": [],
   "version": "current",
-  "lastUpdatedBy": "Sarwagya Singh",
-  "lastUpdatedAt": 1766018217000,
+  "lastUpdatedBy": "Author",
+  "lastUpdatedAt": 1539502055000,
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
-    "title": "payment-intent",
+    "title": "Payment Intent",
     "permalink": "/docs/checkout/payment-intent"
   },
   "next": {
-    "title": "inventory-flow",
+    "title": "Checkout Inventory Flow",
     "permalink": "/docs/checkout/inventory-flow"
   }
 }

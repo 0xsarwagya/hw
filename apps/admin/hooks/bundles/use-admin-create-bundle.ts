@@ -10,16 +10,17 @@ import { useApiMutation } from "../use-api-mutation";
 
 export function useAdminCreateBundle() {
   const queryClient = useQueryClient();
-  const router = useRouter();
+  const _router = useRouter();
 
   return useApiMutation<Bundle, CreateBundleInput, FetchError>({
     mutationFn: async (data) => {
       return api.post<Bundle>(endpoints.bundles.create, data);
     },
-    onSuccess: (data) => {
+    onSuccess: (_data) => {
       queryClient.invalidateQueries({ queryKey: [endpoints.bundles.list] });
       toast.success("Bundle created successfully");
-      router.push(`/bundles/${data.id}`);
+      // Don't redirect immediately - let the page handle navigation
+      // so users can add sets first
     },
     onError: (error) => {
       if (error.errors && Object.keys(error.errors).length > 0) {

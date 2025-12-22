@@ -33,14 +33,23 @@ export class MinioProvider implements StorageProvider {
     });
 
     // Only ensure bucket exists if not in test environment
+    // This is non-blocking - runs in background and won't prevent app startup
     if (!this.appConfigService.isTestEnvironment()) {
-      this.ensureBucketExists().catch((error) => {
-        this.logger.error(
-          createErrorContext(this.contextService, "ensureBucketExists", error, {
-            bucket: this.bucket,
-          }),
-          "Failed to ensure bucket exists",
-        );
+      // Use setImmediate to ensure this doesn't block constructor
+      setImmediate(() => {
+        this.ensureBucketExists().catch((error) => {
+          this.logger.error(
+            createErrorContext(
+              this.contextService,
+              "ensureBucketExists",
+              error,
+              {
+                bucket: this.bucket,
+              },
+            ),
+            "Failed to ensure bucket exists",
+          );
+        });
       });
     }
   }

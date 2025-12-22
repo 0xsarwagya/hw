@@ -2,11 +2,13 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   real,
   text,
   timestamp,
+  unique,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -100,9 +102,38 @@ export const stateShippingRules = pgTable(
   }),
 );
 
+export const shippingMethods = pgTable(
+  "shipping_methods",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    description: text("description"),
+    code: text("code").notNull(),
+    baseRate: real("base_rate").notNull(),
+    estimatedDays: integer("estimated_days").notNull(),
+    codAvailable: boolean("cod_available").notNull().default(true),
+    codCharge: real("cod_charge"),
+    isActive: boolean("is_active").notNull().default(true),
+    priority: integer("priority").notNull().default(0),
+    minOrderValue: integer("min_order_value"), // in paise
+    maxOrderValue: integer("max_order_value"), // in paise
+    restrictedZones: jsonb("restricted_zones").$type<string[]>(),
+    restrictedStates: jsonb("restricted_states").$type<string[]>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    codeIdx: unique("shipping_methods_code_unique").on(table.code),
+    activeIdx: index("shipping_methods_active_idx").on(table.isActive),
+    priorityIdx: index("shipping_methods_priority_idx").on(table.priority),
+  }),
+);
+
 export type ShippingRule = typeof shippingRules.$inferSelect;
 export type NewShippingRule = typeof shippingRules.$inferInsert;
 export type ShippingZoneRate = typeof shippingZoneRates.$inferSelect;
 export type NewShippingZoneRate = typeof shippingZoneRates.$inferInsert;
 export type StateShippingRule = typeof stateShippingRules.$inferSelect;
 export type NewStateShippingRule = typeof stateShippingRules.$inferInsert;
+export type ShippingMethod = typeof shippingMethods.$inferSelect;
+export type NewShippingMethod = typeof shippingMethods.$inferInsert;

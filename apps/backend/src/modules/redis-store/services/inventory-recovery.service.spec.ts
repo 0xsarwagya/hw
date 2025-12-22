@@ -1,6 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import Redis from "ioredis";
 import { getCommonTestProviders } from "../../../common/testing/test-helpers";
+import { TracingService } from "../../../common/tracing/tracing.service";
 import { InventoryRecoveryService } from "./inventory-recovery.service";
 import { InventoryStore } from "../stores/inventory-store";
 import { RedisStoreService } from "../redis-store.service";
@@ -24,8 +25,21 @@ describe("InventoryRecoveryService", () => {
     } as unknown as jest.Mocked<InventoryStore>;
 
     redisStoreService = {
-      getClient: jest.fn().mockReturnValue(mockRedisClient),
+      getClient: jest.fn().mockResolvedValue(mockRedisClient),
     } as unknown as jest.Mocked<RedisStoreService>;
+
+    const mockTracingService = {
+      startSpan: jest.fn().mockReturnValue({
+        execute: jest.fn(async (fn: () => any) => {
+          // Execute the function and await if it's a promise
+          const result = fn();
+          if (result && typeof result.then === "function") {
+            return await result;
+          }
+          return result;
+        }),
+      }),
+    } as unknown as jest.Mocked<TracingService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -38,6 +52,10 @@ describe("InventoryRecoveryService", () => {
         {
           provide: RedisStoreService,
           useValue: redisStoreService,
+        },
+        {
+          provide: TracingService,
+          useValue: mockTracingService,
         },
       ],
     }).compile();
@@ -64,6 +82,10 @@ describe("InventoryRecoveryService", () => {
       mockRedisClient.incrby.mockResolvedValue(1);
 
       await service.onModuleInit();
+
+      // Wait for the background recovery to complete
+      // onModuleInit calls runRecovery() in background, so we need to wait
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       expect(inventoryStore.reconcileReservations).toHaveBeenCalledTimes(1);
       expect(mockRedisClient.incr).toHaveBeenCalledWith(

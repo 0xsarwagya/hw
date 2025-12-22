@@ -105,4 +105,14 @@ export class CreateOrderDto {
     required: false,
   })
   idempotencyKey?: string;
+
+  @ApiProperty({
+    description:
+      "Existing checkout session ID (optional - if provided, skips session creation and lock acquisition)",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID("4", { message: "Checkout session ID must be a valid UUID" })
+  checkoutSessionId?: string;
 }

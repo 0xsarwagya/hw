@@ -136,6 +136,34 @@ pnpm format
 
 ## 🔧 Configuration
 
+### Environment Variables
+
+The backend uses environment variables for configuration. See `.env.example` for all available variables.
+
+#### CORS Configuration
+
+CORS is configured to allow requests from Storefront, Admin, and Backend origins:
+
+```bash
+# Storefront URL (default: http://localhost:3002)
+STOREFRONT_URL=http://localhost:3002
+
+# Admin URL (default: http://localhost:3000)
+ADMIN_URL=http://localhost:3000
+
+# Backend URL (default: http://localhost:3001)
+BACKEND_URL=http://localhost:3001
+```
+
+**Note:** Multiple URLs can be specified using comma-separated values:
+```bash
+STOREFRONT_URL=http://localhost:3002,https://storefront.example.com
+ADMIN_URL=http://localhost:3000,https://admin.example.com
+BACKEND_URL=http://localhost:3001,https://api.example.com
+```
+
+### Configuration Service
+
 Configuration is managed through `AppConfigService` (never access `process.env` directly):
 
 ```typescript

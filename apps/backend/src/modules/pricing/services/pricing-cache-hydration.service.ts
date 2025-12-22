@@ -5,6 +5,7 @@ import {
   createErrorContext,
   createLogContext,
 } from "../../../common/logging/logging.helper";
+import { TracingService } from "../../../common/tracing/tracing.service";
 import { PricingRebuilder } from "./pricing-rebuilder.service";
 
 /**
@@ -17,29 +18,33 @@ export class PricingCacheHydrationService implements OnModuleInit {
     private readonly rebuilder: PricingRebuilder,
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    readonly _tracingService: TracingService,
   ) {}
 
   /**
    * Hydrate pricing caches on module initialization
+   * Runs in background to avoid blocking app startup
    */
   async onModuleInit(): Promise<void> {
-    try {
-      this.logger.info(
-        createLogContext(this.contextService, "onModuleInit", {}),
-        "Starting pricing cache hydration",
-      );
-      await this.hydrate();
-      this.logger.info(
-        createLogContext(this.contextService, "onModuleInit", {}),
-        "Pricing cache hydration completed",
-      );
-    } catch (error) {
-      this.logger.error(
-        createErrorContext(this.contextService, "onModuleInit", error),
-        "Failed to hydrate pricing caches",
-      );
-      // Don't throw - cache hydration failure shouldn't prevent app startup
-    }
+    this.logger.info(
+      createLogContext(this.contextService, "onModuleInit", {}),
+      "Starting pricing cache hydration in background",
+    );
+    // Run hydration in background - don't block startup
+    this.hydrate()
+      .then(() => {
+        this.logger.info(
+          createLogContext(this.contextService, "onModuleInit", {}),
+          "Pricing cache hydration completed",
+        );
+      })
+      .catch((error) => {
+        this.logger.error(
+          createErrorContext(this.contextService, "onModuleInit", error),
+          "Failed to hydrate pricing caches - will retry later",
+        );
+        // Don't throw - cache hydration failure shouldn't prevent app startup
+      });
   }
 
   /**

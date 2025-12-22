@@ -32,6 +32,7 @@ import { ProductMappingStore } from "./stores/product-mapping-store";
     CartStore,
     CheckoutStore,
     IdempotencyStore,
+    InventoryRecoveryService,
     DiscountRuleStore,
     EligibilityStore,
     ProductMappingStore,

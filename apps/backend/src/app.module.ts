@@ -8,6 +8,7 @@ import { ContextModule } from "./common/logging/context.module";
 import { LoggerModule } from "./common/logging/logger.module";
 import { RateLimitingModule } from "./common/rate-limiting/rate-limiting.module";
 import { OtelTracingModule } from "./common/tracing/otel-tracing.module";
+import { TracingModule } from "./common/tracing/tracing.module";
 import { AddressAutocompleteModule } from "./modules/address-autocomplete/address-autocomplete.module";
 import { AdminModule } from "./modules/admin/admin.module";
 import { AdminAuthModule } from "./modules/admin-auth/admin-auth.module";
@@ -44,6 +45,7 @@ import { SystemLogsModule } from "./modules/system-logs/system-logs.module";
     LoggerModule,
     ContextModule,
     OtelTracingModule,
+    TracingModule, // Global tracing with interceptor
     RateLimitingModule,
     // Register DatabaseModule early for connection management
     DatabaseModule,

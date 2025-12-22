@@ -14,9 +14,32 @@ export class StoresService {
 
   /**
    * Get the default store or first store
+   * Uses ENV vars as source of truth for store settings
    */
   async getStore(): Promise<StoreResponseDto> {
     try {
+      // Use ENV vars as source of truth
+      const storeName =
+        process.env.NEXT_PUBLIC_STORE_NAME ||
+        process.env.STORE_NAME ||
+        "Default Store";
+      const storeDomain =
+        process.env.NEXT_PUBLIC_STORE_DOMAIN ||
+        process.env.STORE_DOMAIN ||
+        "localhost";
+      const storeCurrency =
+        process.env.NEXT_PUBLIC_STORE_CURRENCY ||
+        process.env.STORE_CURRENCY ||
+        "INR";
+      const storePrimaryColor =
+        process.env.NEXT_PUBLIC_STORE_PRIMARY_COLOR ||
+        process.env.STORE_PRIMARY_COLOR ||
+        null;
+      const storeLogoUrl =
+        process.env.NEXT_PUBLIC_STORE_LOGO_URL ||
+        process.env.STORE_LOGO_URL ||
+        null;
+
       // Try to get default store first
       let [store] = await db
         .select()
@@ -29,14 +52,16 @@ export class StoresService {
         [store] = await db.select().from(stores).limit(1);
       }
 
-      // If still no store, create a default one
+      // If still no store, create a default one using ENV vars
       if (!store) {
         const [created] = await db
           .insert(stores)
           .values({
-            name: "Default Store",
-            domain: "localhost",
-            currency: "INR",
+            name: storeName,
+            domain: storeDomain,
+            currency: storeCurrency,
+            primaryColor: storePrimaryColor,
+            logoUrl: storeLogoUrl,
             isDefault: true,
           })
           .returning();
@@ -44,7 +69,16 @@ export class StoresService {
         return this.mapToResponseDto(created);
       }
 
-      return this.mapToResponseDto(store);
+      // Return store with ENV vars overriding database values
+      // This ensures ENV vars are always the source of truth
+      return {
+        ...this.mapToResponseDto(store),
+        name: storeName,
+        domain: storeDomain,
+        currency: storeCurrency,
+        primaryColor: storePrimaryColor,
+        logoUrl: storeLogoUrl,
+      };
     } catch (error) {
       this.logger.error(
         createErrorContext(this.contextService, "getStore", error),

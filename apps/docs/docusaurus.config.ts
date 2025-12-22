@@ -73,6 +73,7 @@ const config: Config = {
         alt: "VCEcom Logo",
         src: "img/logo.svg",
       },
+      hideOnScroll: true,
       items: [
         {
           type: "docSidebar",
@@ -118,14 +119,22 @@ const config: Config = {
               label: "Deployment",
               to: "/deployment/overview",
             },
+            {
+              label: "Redis Architecture",
+              to: "/redis/overview",
+            },
           ],
         },
         {
-          title: "More",
+          title: "Community",
           items: [
             {
               label: "GitHub",
               href: "https://github.com/Vestcodes/vcecom",
+            },
+            {
+              label: "Issues",
+              href: "https://github.com/Vestcodes/vcecom/issues",
             },
           ],
         },
@@ -134,7 +143,8 @@ const config: Config = {
     },
     prism: {
       theme: prismThemes.github,
-      darkTheme: prismThemes.dracula,
+      darkTheme: prismThemes.vsDark,
+      additionalLanguages: ["bash", "json", "typescript", "javascript"],
     },
   } satisfies Preset.ThemeConfig,
 };

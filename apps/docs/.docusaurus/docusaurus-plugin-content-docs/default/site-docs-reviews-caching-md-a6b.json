@@ -1,7 +1,7 @@
 {
   "id": "reviews/caching",
-  "title": "caching",
-  "description": "",
+  "title": "Review Caching",
+  "description": "Review caching optimizes performance by storing frequently accessed review data in Redis. This reduces database load and improves response times for product pages and review listings.",
   "source": "@site/docs/reviews/caching.md",
   "sourceDirName": "reviews",
   "slug": "/reviews/caching",
@@ -11,12 +11,12 @@
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/reviews/caching.md",
   "tags": [],
   "version": "current",
-  "lastUpdatedBy": "Sarwagya Singh",
-  "lastUpdatedAt": 1766018217000,
+  "lastUpdatedBy": "Author",
+  "lastUpdatedAt": 1539502055000,
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
-    "title": "aggregation",
+    "title": "Review Aggregation",
     "permalink": "/docs/reviews/aggregation"
   },
   "next": {

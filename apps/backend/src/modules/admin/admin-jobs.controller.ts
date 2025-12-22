@@ -18,6 +18,10 @@ import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
+import { DiscountWarmupWorker } from "../discounts/services/discount-warmup-worker.service";
+import { PricingWarmupWorker } from "../pricing/services/pricing-warmup-worker.service";
+import { MediaConsistencyWorker } from "../products/services/media-consistency-worker.service";
+import { InventoryRecoveryService } from "../redis-store/services/inventory-recovery.service";
 import {
   JobHistoryResponseDto,
   JobsListResponseDto,
@@ -30,7 +34,14 @@ import { BackgroundJobsService } from "./services/background-jobs.service";
 @ApiBearerAuth("JWT-auth")
 @Roles("admin")
 export class AdminJobsController {
-  constructor(private readonly jobsService: BackgroundJobsService) {}
+  constructor(
+    private readonly jobsService: BackgroundJobsService,
+    // Inject job services for manual triggering
+    private readonly inventoryRecoveryService: InventoryRecoveryService,
+    private readonly mediaConsistencyWorker: MediaConsistencyWorker,
+    private readonly discountWarmupWorker: DiscountWarmupWorker,
+    private readonly pricingWarmupWorker: PricingWarmupWorker,
+  ) {}
 
   @Get()
   @RateLimit(RATE_LIMIT_PRESETS.ADMIN_GET)
@@ -128,13 +139,44 @@ export class AdminJobsController {
       );
     }
 
-    // Note: Actual job triggering would need to be implemented
-    // by calling the respective service methods directly
-    // For now, we just return a success message
-    return {
-      message:
-        "Job trigger requested. Note: Manual triggering requires service integration.",
-      jobName,
-    };
+    // Record job start
+    await this.jobsService.recordJobStart(jobName);
+
+    try {
+      // Trigger the actual job based on job name
+      switch (jobName) {
+        case "inventory-reconciliation":
+          await this.inventoryRecoveryService.handleReconciliation();
+          break;
+        case "media-consistency-maintenance":
+          await this.mediaConsistencyWorker.handleNightlyMaintenance();
+          break;
+        case "discount-warmup":
+          await this.discountWarmupWorker.warmup();
+          break;
+        case "pricing-warmup":
+          await this.pricingWarmupWorker.warmup();
+          break;
+        default:
+          throw new BadRequestException(`Unknown job: ${jobName}`);
+      }
+
+      // Record successful completion
+      await this.jobsService.recordJobCompletion(jobName, true);
+
+      return {
+        message: "Job triggered and executed successfully",
+        jobName,
+      };
+    } catch (error) {
+      // Record failure
+      await this.jobsService.recordJobCompletion(
+        jobName,
+        false,
+        error instanceof Error ? error.message : "Unknown error",
+      );
+
+      throw error;
+    }
   }
 }

@@ -18,7 +18,6 @@ if not current then
 end
 
 -- Parse session JSON
-local cjson = require('cjson')
 local session = cjson.decode(current)
 
 -- Verify current state matches expected fromState

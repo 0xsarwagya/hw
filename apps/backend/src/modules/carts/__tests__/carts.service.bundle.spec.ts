@@ -10,6 +10,7 @@ import { BundleDefinitionService } from "../../bundles/services/bundle-definitio
 import { BundlePricingService } from "../../pricing/services/bundle-pricing.service";
 import { DiscountsService } from "../../discounts/discounts.service";
 import { InventoryStore } from "../../redis-store/stores/inventory-store";
+import { RedisStoreService } from "../../redis-store/redis-store.service";
 import { CheckoutStore } from "../../redis-store/stores/checkout-store";
 import { DiscountAuditService } from "../../discounts/services/discount-audit.service";
 import { DiscountProfiler } from "../../discounts/services/discount-profiler.service";
@@ -141,6 +142,18 @@ describe("CartsService - Bundle Integration", () => {
           provide: CheckoutStore,
           useValue: {
             isCheckoutLocked: jest.fn().mockResolvedValue(false),
+            getSessionByCartId: jest.fn().mockResolvedValue(null),
+            getSession: jest.fn(),
+            deleteCheckoutSession: jest.fn(),
+            releaseCheckoutLock: jest.fn(),
+          },
+        },
+        {
+          provide: RedisStoreService,
+          useValue: {
+            getClient: jest.fn().mockResolvedValue({
+              scan: jest.fn().mockResolvedValue(["0", []]),
+            }),
           },
         },
         {
@@ -165,7 +178,13 @@ describe("CartsService - Bundle Integration", () => {
             warn: jest.fn(),
             debug: jest.fn(),
             logger: {
-              child: jest.fn().mockReturnThis(),
+              child: jest.fn().mockReturnValue({
+                debug: jest.fn(),
+                info: jest.fn(),
+                error: jest.fn(),
+                warn: jest.fn(),
+                log: jest.fn(),
+              }),
             },
           },
         },

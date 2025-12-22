@@ -1,7 +1,8 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { BadRequestException } from "@nestjs/common";
-import { db, orders, PaymentMethod } from "@vcecom/db";
+import { db, orders, PaymentMethod, payments, orderItems, addresses, productVariants, products, cartItems } from "@vcecom/db";
 import { OrdersService } from "../orders.service";
+import { COD_PAYMENT_METHOD } from "../../../common/constants/orders.constants";
 import { PaymentChargeService } from "../../payments/services/payment-charge.service";
 import { PaymentsService } from "../../payments/payments.service";
 import { CartsService } from "../../carts/carts.service";
@@ -45,6 +46,7 @@ jest.mock("@vcecom/db", () => {
     },
     eq: jest.fn((field, value) => ({ field, value })),
     and: jest.fn((...conditions) => conditions),
+    inArray: jest.fn((field, values) => ({ field, values })),
     orders: {
       id: "id",
       customerId: "customer_id",
@@ -54,6 +56,41 @@ jest.mock("@vcecom/db", () => {
       paymentMethod: "payment_method",
       paymentFeeBreakdown: "payment_fee_breakdown",
       total: "total",
+    },
+    payments: {
+      id: "id",
+      orderId: "order_id",
+      method: "method",
+      status: "status",
+      amount: "amount",
+    },
+    orderItems: {
+      id: "id",
+      orderId: "order_id",
+      productVariantId: "product_variant_id",
+      quantity: "quantity",
+      price: "price",
+      gstRate: "gst_rate",
+      gstAmount: "gst_amount",
+    },
+    addresses: {
+      id: "id",
+      state: "state",
+    },
+    productVariants: {
+      id: "id",
+      productId: "product_id",
+    },
+    products: {
+      id: "id",
+      gstRate: "gst_rate",
+    },
+    cartItems: {
+      id: "id",
+      productVariantId: "product_variant_id",
+      quantity: "quantity",
+      price: "price",
+      metadata: "metadata",
     },
   };
 });
@@ -101,9 +138,9 @@ describe("OrdersService - Payment Fees Integration", () => {
 
   const mockCheckoutSession = {
     sessionId: mockCheckoutSessionId,
-    state: CheckoutState.PAYMENT_PENDING,
+    state: CheckoutState.LOCKED, // COD orders start in LOCKED state
     cartId: mockCartId,
-    paymentIntentId: "pi-123",
+    paymentIntentId: null,
   };
 
   beforeEach(async () => {
@@ -120,8 +157,8 @@ describe("OrdersService - Payment Fees Integration", () => {
       getCartById: jest.fn().mockResolvedValue({
         ...mockCart,
         discountCode: null,
-      }),
-      clearCart: jest.fn(),
+      }) as jest.MockedFunction<CartsService["getCartById"]>,
+      clearCart: jest.fn().mockResolvedValue(undefined),
     };
 
     const mockCheckoutStore = {
@@ -132,11 +169,13 @@ describe("OrdersService - Payment Fees Integration", () => {
       acquireCheckoutLock: jest.fn().mockResolvedValue(true),
       releaseCheckoutLock: jest.fn(),
       assertStateIn: jest.fn(),
+      assertState: jest.fn(),
       createSession: jest.fn().mockResolvedValue({
         sessionId: mockCheckoutSessionId,
       }),
       setPaymentIntent: jest.fn(),
       getPaymentIntent: jest.fn(),
+      setOrder: jest.fn(),
     };
 
     module = await Test.createTestingModule({
@@ -326,15 +365,15 @@ describe("OrdersService - Payment Fees Integration", () => {
 
     service = module.get<OrdersService>(OrdersService);
     paymentChargeService = module.get(PaymentChargeService);
-    cartsService = module.get(CartsService);
+    cartsService = module.get(CartsService) as jest.Mocked<CartsService>;
     checkoutStore = module.get(CheckoutStore);
 
     jest.clearAllMocks();
   });
 
   describe("create - Payment Fees Integration", () => {
-    it.skip("should include payment fee in order total when payment method is COD", async () => {
-      const paymentFee = 3000; // ₹30
+    it.skip("should create COD order directly with payment fee included", async () => {
+      const paymentFee = 3000; // ₹30 in paise
       const paymentFeeBreakdown = {
         method: PaymentMethod.COD,
         chargeType: "FLAT",
@@ -343,65 +382,475 @@ describe("OrdersService - Payment Fees Integration", () => {
       };
 
       const mockCheckoutMetadata = {
+        customerId: mockCustomerId,
+        userId: mockCustomerId,
         shippingAddressId: mockShippingAddressId,
         billingAddressId: mockBillingAddressId,
-        paymentMethod: PaymentMethod.COD,
+        shippingCost: 0,
+        paymentMethod: COD_PAYMENT_METHOD, // Use lowercase "cod" to match constant
         paymentFee,
         paymentFeeBreakdown,
         discountSnapshot: null,
         pricingSnapshot: null,
+        createdAt: new Date().toISOString(),
       };
 
-      checkoutStore.getSession.mockResolvedValue(mockCheckoutSession as any);
-      checkoutStore.getCheckoutMetadata.mockResolvedValue(mockCheckoutMetadata as any);
-      cartsService.getCart.mockResolvedValue(mockCart as any);
+      const mockCodCheckoutSession = {
+        ...mockCheckoutSession,
+        state: CheckoutState.LOCKED, // COD orders must be in LOCKED state
+      };
 
-      const mockInsert = jest.fn().mockReturnValue({
+      checkoutStore.getSession.mockResolvedValue(mockCodCheckoutSession as any);
+      checkoutStore.getCheckoutMetadata.mockResolvedValue(mockCheckoutMetadata as any);
+      checkoutStore.storeCheckoutMetadata.mockResolvedValue(undefined);
+      checkoutStore.transitionState.mockResolvedValue(undefined);
+      checkoutStore.setOrder.mockResolvedValue(undefined);
+      if (cartsService.getCartById) {
+        (cartsService.getCartById as jest.Mock).mockResolvedValue(mockCart as any);
+      }
+      cartsService.clearCart.mockResolvedValue(undefined);
+
+      // Mock order insert
+      const mockOrderInsert = jest.fn().mockReturnValue({
         values: jest.fn().mockReturnValue({
           returning: jest.fn().mockResolvedValue([
             {
               id: "order-123",
               orderNumber: "ORD-123",
-              total: 103000, // ₹1000 + ₹30 payment fee
+              customerId: mockCustomerId,
+              subtotal: 1000,
+              gstAmount: 0,
+              discountCode: null,
+              discountAmount: 0,
+              shippingCost: 0,
               paymentFee,
-              paymentMethod: PaymentMethod.COD,
+              paymentMethod: COD_PAYMENT_METHOD,
               paymentFeeBreakdown,
+              total: 1030, // ₹1000 + ₹30 payment fee (in rupees)
+              shippingAddressId: mockShippingAddressId,
+              billingAddressId: mockBillingAddressId,
+              razorpayOrderId: null,
+              discountSnapshot: null,
+              pricingSnapshot: null,
+              status: "pending",
+              createdAt: new Date(),
+              updatedAt: new Date(),
             },
           ]),
         }),
       });
 
-      (db.insert as jest.Mock).mockReturnValue(mockInsert());
-
-      const createOrderDto = {
-        shippingAddressId: mockShippingAddressId,
-        shippingCost: 0,
-      };
-
-      // Mock all required database queries
-      (db.select as jest.Mock).mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue([
-              {
-                id: mockCustomerId,
-              },
-            ]),
-          }),
+      // Mock payment insert
+      const mockPaymentInsert = jest.fn().mockReturnValue({
+        values: jest.fn().mockReturnValue({
+          returning: jest.fn().mockResolvedValue([{ id: "payment-123" }]),
         }),
       });
 
-      await service.create(mockCustomerId, createOrderDto, mockCheckoutSessionId);
+      // Mock order items insert
+      const mockOrderItemsInsert = jest.fn().mockReturnValue({
+        values: jest.fn().mockReturnValue({
+          returning: jest.fn().mockResolvedValue([]),
+        }),
+      });
 
-      // Verify payment fee was included in order
-      expect(mockInsert).toHaveBeenCalled();
-      const insertCall = (db.insert as jest.Mock).mock.results[0].value;
-      expect(insertCall.values).toHaveBeenCalledWith(
+      // Mock db.insert to return different mocks based on table
+      (db.insert as jest.Mock).mockImplementation((table: any) => {
+        if (table === orders) {
+          return mockOrderInsert();
+        }
+        if (table === payments) {
+          return mockPaymentInsert();
+        }
+        if (table === orderItems) {
+          return mockOrderItemsInsert();
+        }
+        return mockOrderInsert();
+      });
+
+      // Mock db.select for various queries
+      let selectCallCount = 0;
+      (db.select as jest.Mock).mockImplementation(() => {
+        const callIndex = selectCallCount++;
+        const mockFrom = jest.fn().mockImplementation((table: any) => {
+          // Handle cartItems query specifically - needs to support both where() and innerJoin()
+          if (table === cartItems) {
+            return {
+              where: jest.fn().mockResolvedValue([
+                {
+                  id: "cart-item-1",
+                  productVariantId: "variant-1",
+                  quantity: 2,
+                  price: 500,
+                  metadata: null,
+                },
+              ]),
+              innerJoin: jest.fn().mockReturnValue({
+                innerJoin: jest.fn().mockReturnValue({
+                  where: jest.fn().mockResolvedValue([
+                    {
+                      cartItemId: "cart-item-1",
+                      productVariantId: "variant-1",
+                      quantity: 2,
+                      price: 500,
+                      productGstRate: 18,
+                    },
+                  ]),
+                }),
+              }),
+            };
+          }
+          
+          // Handle productVariants query for variantProductMap
+          if (table === productVariants) {
+            return {
+              where: jest.fn().mockResolvedValue([
+                {
+                  variantId: "variant-1",
+                  productId: "product-1",
+                },
+              ]),
+            };
+          }
+          
+          // Handle products query for productDetails
+          if (table === products) {
+            return {
+              where: jest.fn().mockResolvedValue([
+                {
+                  productId: "product-1",
+                  categoryId: "category-1",
+                },
+              ]),
+            };
+          }
+          
+          // Handle other queries
+          return {
+            where: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue(
+                callIndex === 0
+                  ? [{ id: mockCustomerId }] // Customer lookup
+                  : callIndex === 1
+                    ? [{ id: mockShippingAddressId, state: "Maharashtra" }] // Address lookup
+                    : callIndex === 2
+                      ? [
+                          {
+                            cartItemId: "cart-item-1",
+                            productVariantId: "variant-1",
+                            quantity: 2,
+                            price: 500,
+                            productGstRate: 18,
+                          },
+                        ] // Cart items with variants
+                      : [] // Order items lookup
+              ),
+            }),
+            innerJoin: jest.fn().mockReturnValue({
+              innerJoin: jest.fn().mockReturnValue({
+                where: jest.fn().mockResolvedValue([
+                  {
+                    cartItemId: "cart-item-1",
+                    productVariantId: "variant-1",
+                    quantity: 2,
+                    price: 500,
+                    productGstRate: 18,
+                  },
+                ]),
+              }),
+            }),
+          };
+        });
+        
+        return {
+          from: mockFrom,
+        };
+      });
+
+      // Mock generateOrderNumber
+      const generateOrderNumberSpy = jest
+        .spyOn(service as any, "generateOrderNumber")
+        .mockResolvedValue("ORD-123");
+
+      const createOrderDto = {
+        shippingAddressId: mockShippingAddressId,
+        billingAddressId: mockBillingAddressId,
+        shippingCost: 0,
+        checkoutSessionId: mockCheckoutSessionId,
+      };
+
+      const result = await service.create(
+        mockCustomerId,
+        createOrderDto,
+        mockCheckoutSessionId,
+      );
+
+      // Cleanup
+      generateOrderNumberSpy.mockRestore();
+
+      // Verify COD order was created (not payment intent)
+      expect(result.orderId).toBe("order-123");
+      expect(result.paymentIntent).toBeDefined();
+      expect(result.paymentIntent?.paymentProvider).toBe("cod");
+      expect(result.message).toContain("COD order created successfully");
+
+      // Verify order was inserted with payment fee
+      expect(mockOrderInsert).toHaveBeenCalled();
+      const orderInsertCall = mockOrderInsert.mock.results[0].value;
+      expect(orderInsertCall.values).toHaveBeenCalledWith(
         expect.objectContaining({
           paymentFee,
-          paymentMethod: PaymentMethod.COD,
+          paymentMethod: COD_PAYMENT_METHOD,
           paymentFeeBreakdown,
         }),
+      );
+
+      // Verify payment record was created for COD
+      expect(mockPaymentInsert).toHaveBeenCalled();
+      const paymentInsertCall = mockPaymentInsert.mock.results[0].value;
+      expect(paymentInsertCall.values).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderId: "order-123",
+          method: COD_PAYMENT_METHOD,
+          status: "pending",
+        }),
+      );
+
+      // Verify state transitions for COD (LOCKED → PAYMENT_CONFIRMED → ORDER_CREATED → COMPLETED)
+      expect(checkoutStore.transitionState).toHaveBeenCalledWith(
+        mockCheckoutSessionId,
+        CheckoutState.LOCKED,
+        CheckoutState.PAYMENT_CONFIRMED, // COD = payment confirmed
+      );
+      expect(checkoutStore.transitionState).toHaveBeenCalledWith(
+        mockCheckoutSessionId,
+        CheckoutState.PAYMENT_CONFIRMED,
+        CheckoutState.ORDER_CREATED,
+      );
+      expect(checkoutStore.transitionState).toHaveBeenCalledWith(
+        mockCheckoutSessionId,
+        CheckoutState.ORDER_CREATED,
+        CheckoutState.COMPLETED,
+      );
+
+      // Verify cart was cleared
+      expect(cartsService.clearCart).toHaveBeenCalledWith(
+        mockCustomerId,
+        mockCartId,
+      );
+    });
+
+    it.skip("should create COD order with uppercase COD payment method", async () => {
+      // Test case-insensitive COD detection with uppercase "COD"
+      const paymentFee = 3000;
+      const paymentFeeBreakdown = {
+        method: PaymentMethod.COD,
+        chargeType: "FLAT",
+        flatAmount: 3000,
+        calculatedFee: 3000,
+      };
+
+      const mockCheckoutMetadata = {
+        customerId: mockCustomerId,
+        userId: mockCustomerId,
+        shippingAddressId: mockShippingAddressId,
+        billingAddressId: mockBillingAddressId,
+        shippingCost: 0,
+        paymentMethod: "COD", // Uppercase COD - should still be detected
+        paymentFee,
+        paymentFeeBreakdown,
+        discountSnapshot: null,
+        pricingSnapshot: null,
+        createdAt: new Date().toISOString(),
+      };
+
+      const mockCodCheckoutSession = {
+        ...mockCheckoutSession,
+        state: CheckoutState.LOCKED,
+      };
+
+      checkoutStore.getSession.mockResolvedValue(mockCodCheckoutSession as any);
+      checkoutStore.getCheckoutMetadata.mockResolvedValue(mockCheckoutMetadata as any);
+      checkoutStore.storeCheckoutMetadata.mockResolvedValue(undefined);
+      checkoutStore.transitionState.mockResolvedValue(undefined);
+      checkoutStore.setOrder.mockResolvedValue(undefined);
+      if (cartsService.getCartById) {
+        (cartsService.getCartById as jest.Mock).mockResolvedValue(mockCart as any);
+      }
+      cartsService.clearCart.mockResolvedValue(undefined);
+
+      // Mock order insert
+      const mockOrderInsert = jest.fn().mockReturnValue({
+        values: jest.fn().mockReturnValue({
+          returning: jest.fn().mockResolvedValue([
+            {
+              id: "order-456",
+              orderNumber: "ORD-456",
+              customerId: mockCustomerId,
+              subtotal: 1000,
+              gstAmount: 0,
+              discountCode: null,
+              discountAmount: 0,
+              shippingCost: 0,
+              paymentFee,
+              paymentMethod: COD_PAYMENT_METHOD, // Stored as lowercase
+              paymentFeeBreakdown,
+              total: 1030,
+              shippingAddressId: mockShippingAddressId,
+              billingAddressId: mockBillingAddressId,
+              razorpayOrderId: null,
+              discountSnapshot: null,
+              pricingSnapshot: null,
+              status: "pending",
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ]),
+        }),
+      });
+
+      const mockPaymentInsert = jest.fn().mockReturnValue({
+        values: jest.fn().mockReturnValue({
+          returning: jest.fn().mockResolvedValue([{ id: "payment-456" }]),
+        }),
+      });
+
+      const mockOrderItemsInsert = jest.fn().mockReturnValue({
+        values: jest.fn().mockReturnValue({
+          returning: jest.fn().mockResolvedValue([]),
+        }),
+      });
+
+      (db.insert as jest.Mock).mockImplementation((table: any) => {
+        if (table === orders) {
+          return mockOrderInsert();
+        }
+        if (table === payments) {
+          return mockPaymentInsert();
+        }
+        if (table === orderItems) {
+          return mockOrderItemsInsert();
+        }
+        return mockOrderInsert();
+      });
+
+      let selectCallCount = 0;
+      (db.select as jest.Mock).mockImplementation(() => {
+        const callIndex = selectCallCount++;
+        const mockFrom = jest.fn().mockImplementation((table: any) => {
+          // Handle cartItems query specifically - needs to support both where() and innerJoin()
+          if (table === cartItems) {
+            return {
+              where: jest.fn().mockResolvedValue([
+                {
+                  id: "cart-item-1",
+                  productVariantId: "variant-1",
+                  quantity: 2,
+                  price: 500,
+                  metadata: null,
+                },
+              ]),
+              innerJoin: jest.fn().mockReturnValue({
+                innerJoin: jest.fn().mockReturnValue({
+                  where: jest.fn().mockResolvedValue([
+                    {
+                      cartItemId: "cart-item-1",
+                      productVariantId: "variant-1",
+                      quantity: 2,
+                      price: 500,
+                      productGstRate: 18,
+                    },
+                  ]),
+                }),
+              }),
+            };
+          }
+          
+          // Handle other queries
+          return {
+            where: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue(
+                callIndex === 0
+                  ? [{ id: mockCustomerId }]
+                  : callIndex === 1
+                    ? [{ id: mockShippingAddressId, state: "Maharashtra" }]
+                    : callIndex === 2
+                      ? [
+                          {
+                            cartItemId: "cart-item-1",
+                            productVariantId: "variant-1",
+                            quantity: 2,
+                            price: 500,
+                            productGstRate: 18,
+                          },
+                        ]
+                      : []
+              ),
+            }),
+            innerJoin: jest.fn().mockReturnValue({
+              innerJoin: jest.fn().mockReturnValue({
+                where: jest.fn().mockResolvedValue([
+                  {
+                    cartItemId: "cart-item-1",
+                    productVariantId: "variant-1",
+                    quantity: 2,
+                    price: 500,
+                    productGstRate: 18,
+                  },
+                ]),
+              }),
+            }),
+          };
+        });
+        
+        return {
+          from: mockFrom,
+        };
+      });
+
+      const generateOrderNumberSpy = jest
+        .spyOn(service as any, "generateOrderNumber")
+        .mockResolvedValue("ORD-456");
+
+      const createOrderDto = {
+        shippingAddressId: mockShippingAddressId,
+        billingAddressId: mockBillingAddressId,
+        shippingCost: 0,
+        checkoutSessionId: mockCheckoutSessionId,
+      };
+
+      const result = await service.create(
+        mockCustomerId,
+        createOrderDto,
+        mockCheckoutSessionId,
+      );
+
+      generateOrderNumberSpy.mockRestore();
+
+      // Verify COD order was created despite uppercase payment method
+      expect(result.orderId).toBe("order-456");
+      expect(result.paymentIntent?.paymentProvider).toBe("cod");
+      expect(result.message).toContain("COD order created successfully");
+
+      // Verify payment intent was NOT created
+      const paymentsService = module.get(PaymentsService);
+      expect(paymentsService.createPaymentIntent).not.toHaveBeenCalled();
+
+      // Verify state transitions for COD (LOCKED → PAYMENT_CONFIRMED → ORDER_CREATED → COMPLETED)
+      expect(checkoutStore.transitionState).toHaveBeenCalledWith(
+        mockCheckoutSessionId,
+        CheckoutState.LOCKED,
+        CheckoutState.PAYMENT_CONFIRMED, // COD = payment confirmed
+      );
+      expect(checkoutStore.transitionState).toHaveBeenCalledWith(
+        mockCheckoutSessionId,
+        CheckoutState.PAYMENT_CONFIRMED,
+        CheckoutState.ORDER_CREATED,
+      );
+      expect(checkoutStore.transitionState).toHaveBeenCalledWith(
+        mockCheckoutSessionId,
+        CheckoutState.ORDER_CREATED,
+        CheckoutState.COMPLETED,
       );
     });
 

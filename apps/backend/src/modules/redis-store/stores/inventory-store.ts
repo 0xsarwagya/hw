@@ -68,27 +68,45 @@ export class InventoryStore implements IInventoryStore, OnModuleInit {
   }
 
   async onModuleInit() {
-    // Initialize Redis client
-    this.client = await this.redisStoreService.getClient();
-
-    // Load Lua script
+    // Initialize Redis client - don't block if Redis is unavailable
+    // Wrap entire initialization in timeout to prevent blocking
     try {
-      const script = loadLuaScript("reserve-inventory.lua", __dirname);
-      this.reserveInventoryScriptSha = (await this.client.script(
-        "LOAD",
-        script,
-      )) as string;
-      this.logger.info(
-        createLogContext(this.contextService, "onModuleInit", {
-          scriptName: "reserve-inventory.lua",
-        }),
-        "Reservation Lua script loaded successfully",
-      );
+      const initPromise = (async () => {
+        this.client = await this.redisStoreService.getClient();
+
+        // Load Lua script with timeout to avoid blocking startup
+        const script = loadLuaScript("reserve-inventory.lua", __dirname);
+        // Use Promise.race to add timeout for script loading
+        this.reserveInventoryScriptSha = (await Promise.race([
+          this.client.script("LOAD", script),
+          new Promise<string>((_, reject) =>
+            setTimeout(() => reject(new Error("Script load timeout")), 2000),
+          ),
+        ])) as string;
+        this.logger.info(
+          createLogContext(this.contextService, "onModuleInit", {
+            scriptName: "reserve-inventory.lua",
+          }),
+          "Reservation Lua script loaded successfully",
+        );
+      })();
+
+      // Add overall timeout for entire initialization (3 seconds total)
+      await Promise.race([
+        initPromise,
+        new Promise<void>((_, reject) =>
+          setTimeout(
+            () => reject(new Error("InventoryStore init timeout")),
+            3000,
+          ),
+        ),
+      ]);
     } catch (error) {
-      this.logger.error(
-        `Failed to load reservation Lua script: ${error instanceof Error ? error.message : "Unknown error"}`,
+      this.logger.warn(
+        createErrorContext(this.contextService, "redisInit", error),
+        "Redis client not available during initialization - will retry when Redis is available",
       );
-      throw error;
+      // Don't throw - allow app to start without Redis
     }
   }
 
@@ -313,12 +331,23 @@ export class InventoryStore implements IInventoryStore, OnModuleInit {
   /**
    * Get available inventory count
    */
+  /**
+   * Get available inventory count
+   * If Redis doesn't have the value, syncs from database
+   */
   async getAvailableInventory(variantId: string): Promise<number | null> {
     const inventoryKey = KEY_PATTERNS.INVENTORY_VARIANT(variantId);
     try {
       const value = await this.client.get(inventoryKey);
       if (value === null) {
-        return null;
+        // Redis doesn't have the value - sync from database
+        await this.syncInventoryFromDatabase(variantId);
+        // Try again after sync
+        const syncedValue = await this.client.get(inventoryKey);
+        if (syncedValue === null) {
+          return null;
+        }
+        return parseInt(syncedValue, 10);
       }
       return parseInt(value, 10);
     } catch (error) {
@@ -326,6 +355,39 @@ export class InventoryStore implements IInventoryStore, OnModuleInit {
         `Failed to get available inventory for variant ${variantId}: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       throw error;
+    }
+  }
+
+  /**
+   * Sync inventory from database to Redis
+   * Called when Redis doesn't have the inventory value
+   */
+  private async syncInventoryFromDatabase(variantId: string): Promise<void> {
+    try {
+      // Import here to avoid circular dependency
+      const { db, eq, productVariants } = await import("@vcecom/db");
+
+      const [variant] = await db
+        .select({ inventory: productVariants.inventory })
+        .from(productVariants)
+        .where(eq(productVariants.id, variantId))
+        .limit(1);
+
+      if (variant) {
+        await this.setInventory(variantId, variant.inventory);
+        this.logger.debug(
+          `Synced inventory for variant ${variantId} from database: ${variant.inventory}`,
+        );
+      } else {
+        this.logger.warn(
+          `Variant ${variantId} not found in database during inventory sync`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to sync inventory from database for variant ${variantId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      // Don't throw - allow the system to continue
     }
   }
 

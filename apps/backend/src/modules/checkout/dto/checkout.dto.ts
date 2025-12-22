@@ -6,6 +6,7 @@ import {
   IsString,
   IsUUID,
   MaxLength,
+  MinLength,
 } from "class-validator";
 import { PaymentMethodWithFeeDto } from "../../payments/dto/payment-charge.dto";
 
@@ -136,6 +137,17 @@ export class CheckoutAddressDto {
   @IsString()
   @MaxLength(100)
   country?: string;
+
+  @ApiProperty({
+    description:
+      "Password (optional - if provided, creates account instead of guest)",
+    example: "SecurePassword123!",
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: "Password must be a string" })
+  @MinLength(8, { message: "Password must be at least 8 characters long" })
+  password?: string;
 }
 
 export class CheckoutShippingDto {

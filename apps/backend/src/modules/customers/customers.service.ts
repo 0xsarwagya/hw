@@ -1,12 +1,17 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { customers, db, eq, users } from "@vcecom/db";
 import * as bcrypt from "bcrypt";
+import { PinoLogger } from "nestjs-pino";
+import { ContextService } from "../../common/logging/context.service";
+import { createErrorContext } from "../../common/logging/logging.helper";
+import { Trace } from "../../common/tracing/trace.decorator";
 import { formatGstin, validateGstin } from "../../common/utils/gstin.utils";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { RegisterCustomerDto } from "./dto/register-customer.dto";
@@ -14,7 +19,11 @@ import { UpdateProfileDto } from "./dto/update-profile.dto";
 
 @Injectable()
 export class CustomersService {
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private readonly logger: PinoLogger,
+    private readonly contextService: ContextService,
+  ) {}
 
   /**
    * Register a new customer
@@ -28,22 +37,54 @@ export class CustomersService {
     }
 
     // Check if user already exists
-    const [existingUser] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, registerDto.email))
-      .limit(1);
+    let existingUser: typeof users.$inferSelect | undefined;
+    try {
+      const userResult = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, registerDto.email))
+        .limit(1);
+      existingUser = userResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CustomersService.register.selectExistingUser",
+          error,
+          { email: registerDto.email },
+        ),
+        "Failed to check existing user",
+      );
+      throw new InternalServerErrorException("Failed to check user existence");
+    }
 
     if (existingUser) {
       throw new BadRequestException("User with this email already exists");
     }
 
     // Check if customer with phone already exists
-    const [existingCustomer] = await db
-      .select()
-      .from(customers)
-      .where(eq(customers.phone, registerDto.phone))
-      .limit(1);
+    let existingCustomer: typeof customers.$inferSelect | undefined;
+    try {
+      const customerResult = await db
+        .select()
+        .from(customers)
+        .where(eq(customers.phone, registerDto.phone))
+        .limit(1);
+      existingCustomer = customerResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CustomersService.register.selectExistingCustomer",
+          error,
+          { phone: registerDto.phone },
+        ),
+        "Failed to check existing customer",
+      );
+      throw new InternalServerErrorException(
+        "Failed to check customer existence",
+      );
+    }
 
     if (existingCustomer) {
       throw new BadRequestException(
@@ -61,11 +102,28 @@ export class CustomersService {
       }
 
       // Check if GSTIN already exists
-      const [existingGstin] = await db
-        .select()
-        .from(customers)
-        .where(eq(customers.gstin, formattedGstin))
-        .limit(1);
+      let existingGstin: typeof customers.$inferSelect | undefined;
+      try {
+        const gstinResult = await db
+          .select()
+          .from(customers)
+          .where(eq(customers.gstin, formattedGstin))
+          .limit(1);
+        existingGstin = gstinResult[0];
+      } catch (error) {
+        this.logger?.error(
+          createErrorContext(
+            this.contextService,
+            "CustomersService.register.selectExistingGstin",
+            error,
+            { gstin: formattedGstin },
+          ),
+          "Failed to check existing GSTIN",
+        );
+        throw new InternalServerErrorException(
+          "Failed to check GSTIN existence",
+        );
+      }
 
       if (existingGstin) {
         throw new BadRequestException(
@@ -78,34 +136,90 @@ export class CustomersService {
     const passwordHash = await bcrypt.hash(registerDto.password, 10);
 
     // Create user first
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        email: registerDto.email,
-        passwordHash,
-        role: "customer",
-      })
-      .returning();
+    let newUser: typeof users.$inferSelect | undefined;
+    try {
+      const userResult = await db
+        .insert(users)
+        .values({
+          email: registerDto.email,
+          passwordHash,
+          role: "customer",
+        })
+        .returning();
+      newUser = userResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CustomersService.register.insertUser",
+          error,
+          { email: registerDto.email },
+        ),
+        "Failed to create user",
+      );
+      throw new InternalServerErrorException("Failed to create user");
+    }
 
     if (!newUser) {
       throw new BadRequestException("Failed to create user");
     }
 
     // Create customer profile
-    const [newCustomer] = await db
-      .insert(customers)
-      .values({
-        userId: newUser.id,
-        email: registerDto.email,
-        phone: registerDto.phone,
-        name: registerDto.name,
-        gstin: registerDto.gstin ? formatGstin(registerDto.gstin) : null,
-      })
-      .returning();
+    let newCustomer: typeof customers.$inferSelect | undefined;
+    try {
+      const customerResult = await db
+        .insert(customers)
+        .values({
+          userId: newUser.id,
+          email: registerDto.email,
+          phone: registerDto.phone,
+          name: registerDto.name,
+          gstin: registerDto.gstin ? formatGstin(registerDto.gstin) : null,
+        })
+        .returning();
+      newCustomer = customerResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CustomersService.register.insertCustomer",
+          error,
+          { userId: newUser.id, email: registerDto.email },
+        ),
+        "Failed to create customer profile",
+      );
+      // Rollback: delete user if customer creation fails
+      try {
+        await db.delete(users).where(eq(users.id, newUser.id));
+      } catch (rollbackError) {
+        this.logger?.error(
+          createErrorContext(
+            this.contextService,
+            "CustomersService.register.rollbackDeleteUser",
+            rollbackError,
+            { userId: newUser.id },
+          ),
+          "Failed to rollback user creation",
+        );
+      }
+      throw new BadRequestException("Failed to create customer profile");
+    }
 
     if (!newCustomer) {
       // Rollback: delete user if customer creation fails
-      await db.delete(users).where(eq(users.id, newUser.id));
+      try {
+        await db.delete(users).where(eq(users.id, newUser.id));
+      } catch (rollbackError) {
+        this.logger?.error(
+          createErrorContext(
+            this.contextService,
+            "CustomersService.register.rollbackDeleteUser",
+            rollbackError,
+            { userId: newUser.id },
+          ),
+          "Failed to rollback user creation",
+        );
+      }
       throw new BadRequestException("Failed to create customer profile");
     }
 
@@ -135,12 +249,28 @@ export class CustomersService {
   /**
    * Get customer profile by user ID
    */
+  @Trace({ operation: "CustomersService.getProfile" })
   async getProfile(userId: string) {
-    const [customer] = await db
-      .select()
-      .from(customers)
-      .where(eq(customers.userId, userId))
-      .limit(1);
+    let customer: typeof customers.$inferSelect | undefined;
+    try {
+      const customerResult = await db
+        .select()
+        .from(customers)
+        .where(eq(customers.userId, userId))
+        .limit(1);
+      customer = customerResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CustomersService.getProfile.selectCustomer",
+          error,
+          { userId },
+        ),
+        "Failed to fetch customer profile",
+      );
+      throw new NotFoundException("Customer profile not found");
+    }
 
     if (!customer) {
       throw new NotFoundException("Customer profile not found");
@@ -152,13 +282,29 @@ export class CustomersService {
   /**
    * Update customer profile
    */
+  @Trace({ operation: "CustomersService.updateProfile" })
   async updateProfile(userId: string, updateDto: UpdateProfileDto) {
     // Get existing customer
-    const [existingCustomer] = await db
-      .select()
-      .from(customers)
-      .where(eq(customers.userId, userId))
-      .limit(1);
+    let existingCustomer: typeof customers.$inferSelect | undefined;
+    try {
+      const customerResult = await db
+        .select()
+        .from(customers)
+        .where(eq(customers.userId, userId))
+        .limit(1);
+      existingCustomer = customerResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CustomersService.updateProfile.selectCustomer",
+          error,
+          { userId },
+        ),
+        "Failed to fetch customer profile",
+      );
+      throw new NotFoundException("Customer profile not found");
+    }
 
     if (!existingCustomer) {
       throw new NotFoundException("Customer profile not found");
@@ -166,11 +312,28 @@ export class CustomersService {
 
     // Validate phone uniqueness if phone is being updated
     if (updateDto.phone && updateDto.phone !== existingCustomer.phone) {
-      const [existingPhone] = await db
-        .select()
-        .from(customers)
-        .where(eq(customers.phone, updateDto.phone))
-        .limit(1);
+      let existingPhone: typeof customers.$inferSelect | undefined;
+      try {
+        const phoneResult = await db
+          .select()
+          .from(customers)
+          .where(eq(customers.phone, updateDto.phone))
+          .limit(1);
+        existingPhone = phoneResult[0];
+      } catch (error) {
+        this.logger?.error(
+          createErrorContext(
+            this.contextService,
+            "CustomersService.updateProfile.selectExistingPhone",
+            error,
+            { phone: updateDto.phone },
+          ),
+          "Failed to check phone uniqueness",
+        );
+        throw new InternalServerErrorException(
+          "Failed to validate phone number",
+        );
+      }
 
       if (existingPhone) {
         throw new BadRequestException(
@@ -190,11 +353,26 @@ export class CustomersService {
         }
 
         // Check if GSTIN already exists (excluding current customer)
-        const [existingGstin] = await db
-          .select()
-          .from(customers)
-          .where(eq(customers.gstin, formattedGstin))
-          .limit(1);
+        let existingGstin: typeof customers.$inferSelect | undefined;
+        try {
+          const gstinResult = await db
+            .select()
+            .from(customers)
+            .where(eq(customers.gstin, formattedGstin))
+            .limit(1);
+          existingGstin = gstinResult[0];
+        } catch (error) {
+          this.logger?.error(
+            createErrorContext(
+              this.contextService,
+              "CustomersService.updateProfile.selectExistingGstin",
+              error,
+              { gstin: formattedGstin },
+            ),
+            "Failed to check GSTIN uniqueness",
+          );
+          throw new InternalServerErrorException("Failed to validate GSTIN");
+        }
 
         if (existingGstin && existingGstin.id !== existingCustomer.id) {
           throw new BadRequestException(
@@ -213,11 +391,30 @@ export class CustomersService {
     }
 
     // Update customer
-    const [updated] = await db
-      .update(customers)
-      .set(updateData)
-      .where(eq(customers.userId, userId))
-      .returning();
+    let updated: typeof customers.$inferSelect | undefined;
+    try {
+      const updatedResult = await db
+        .update(customers)
+        .set(updateData)
+        .where(eq(customers.userId, userId))
+        .returning();
+      updated = updatedResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CustomersService.updateProfile.updateCustomer",
+          error,
+          { userId, updateData },
+        ),
+        "Failed to update customer profile",
+      );
+      throw new InternalServerErrorException("Failed to update profile");
+    }
+
+    if (!updated) {
+      throw new NotFoundException("Customer profile not found");
+    }
 
     return updated;
   }
@@ -227,11 +424,26 @@ export class CustomersService {
    */
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
     // Get user
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+    let user: typeof users.$inferSelect | undefined;
+    try {
+      const userResult = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+      user = userResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CustomersService.changePassword.selectUser",
+          error,
+          { userId },
+        ),
+        "Failed to fetch user",
+      );
+      throw new NotFoundException("User not found");
+    }
 
     if (!user) {
       throw new NotFoundException("User not found");
@@ -258,10 +470,23 @@ export class CustomersService {
     );
 
     // Update password
-    await db
-      .update(users)
-      .set({ passwordHash: newPasswordHash })
-      .where(eq(users.id, userId));
+    try {
+      await db
+        .update(users)
+        .set({ passwordHash: newPasswordHash })
+        .where(eq(users.id, userId));
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CustomersService.changePassword.updatePassword",
+          error,
+          { userId },
+        ),
+        "Failed to update password",
+      );
+      throw new InternalServerErrorException("Failed to update password");
+    }
 
     return { message: "Password changed successfully" };
   }
@@ -276,6 +501,7 @@ export class CustomersService {
    * @param password - Optional password (if provided, creates account)
    * @returns Customer record
    */
+  @Trace({ operation: "CustomersService.createGuestCustomer" })
   async createGuestCustomer(
     email: string,
     name: string,
@@ -289,11 +515,28 @@ export class CustomersService {
     }
 
     // Check if customer exists by email
-    const [existingCustomer] = await db
-      .select()
-      .from(customers)
-      .where(eq(customers.email, email))
-      .limit(1);
+    let existingCustomer: typeof customers.$inferSelect | undefined;
+    try {
+      const customerResult = await db
+        .select()
+        .from(customers)
+        .where(eq(customers.email, email))
+        .limit(1);
+      existingCustomer = customerResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CustomersService.createGuestCustomer.selectExistingCustomer",
+          error,
+          { email },
+        ),
+        "Failed to check existing customer",
+      );
+      throw new InternalServerErrorException(
+        "Failed to check customer existence",
+      );
+    }
 
     if (existingCustomer) {
       // If customer exists and is not a guest, error
@@ -307,11 +550,26 @@ export class CustomersService {
     }
 
     // Check if user exists by email
-    const [existingUser] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
+    let existingUser: typeof users.$inferSelect | undefined;
+    try {
+      const userResult = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
+      existingUser = userResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CustomersService.createGuestCustomer.selectExistingUser",
+          error,
+          { email },
+        ),
+        "Failed to check existing user",
+      );
+      throw new InternalServerErrorException("Failed to check user existence");
+    }
 
     if (existingUser) {
       // User exists but customer doesn't - this shouldn't happen normally
@@ -327,11 +585,28 @@ export class CustomersService {
 
     // Check if phone already exists (only if provided)
     if (phone) {
-      const [existingPhone] = await db
-        .select()
-        .from(customers)
-        .where(eq(customers.phone, phone))
-        .limit(1);
+      let existingPhone: typeof customers.$inferSelect | undefined;
+      try {
+        const phoneResult = await db
+          .select()
+          .from(customers)
+          .where(eq(customers.phone, phone))
+          .limit(1);
+        existingPhone = phoneResult[0];
+      } catch (error) {
+        this.logger?.error(
+          createErrorContext(
+            this.contextService,
+            "CustomersService.createGuestCustomer.selectExistingPhone",
+            error,
+            { phone },
+          ),
+          "Failed to check phone existence",
+        );
+        throw new InternalServerErrorException(
+          "Failed to validate phone number",
+        );
+      }
 
       if (existingPhone) {
         throw new BadRequestException(
@@ -348,35 +623,91 @@ export class CustomersService {
     const passwordHash = password ? await bcrypt.hash(password, 10) : null;
 
     // Create user first
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        email,
-        passwordHash: passwordHash || null,
-        role: "customer",
-      })
-      .returning();
+    let newUser: typeof users.$inferSelect | undefined;
+    try {
+      const userResult = await db
+        .insert(users)
+        .values({
+          email,
+          passwordHash: passwordHash || null,
+          role: "customer",
+        })
+        .returning();
+      newUser = userResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CustomersService.createGuestCustomer.insertUser",
+          error,
+          { email },
+        ),
+        "Failed to create user",
+      );
+      throw new InternalServerErrorException("Failed to create user");
+    }
 
     if (!newUser) {
       throw new BadRequestException("Failed to create user");
     }
 
     // Create customer profile
-    const [newCustomer] = await db
-      .insert(customers)
-      .values({
-        userId: newUser.id,
-        email,
-        phone: customerPhone,
-        name,
-        isGuest,
-        emailVerified,
-      })
-      .returning();
+    let newCustomer: typeof customers.$inferSelect | undefined;
+    try {
+      const customerResult = await db
+        .insert(customers)
+        .values({
+          userId: newUser.id,
+          email,
+          phone: customerPhone,
+          name,
+          isGuest,
+          emailVerified,
+        })
+        .returning();
+      newCustomer = customerResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CustomersService.createGuestCustomer.insertCustomer",
+          error,
+          { userId: newUser.id, email },
+        ),
+        "Failed to create customer profile",
+      );
+      // Rollback: delete user if customer creation fails
+      try {
+        await db.delete(users).where(eq(users.id, newUser.id));
+      } catch (rollbackError) {
+        this.logger?.error(
+          createErrorContext(
+            this.contextService,
+            "CustomersService.createGuestCustomer.rollbackDeleteUser",
+            rollbackError,
+            { userId: newUser.id },
+          ),
+          "Failed to rollback user creation",
+        );
+      }
+      throw new BadRequestException("Failed to create customer profile");
+    }
 
     if (!newCustomer) {
       // Rollback: delete user if customer creation fails
-      await db.delete(users).where(eq(users.id, newUser.id));
+      try {
+        await db.delete(users).where(eq(users.id, newUser.id));
+      } catch (rollbackError) {
+        this.logger?.error(
+          createErrorContext(
+            this.contextService,
+            "CustomersService.createGuestCustomer.rollbackDeleteUser",
+            rollbackError,
+            { userId: newUser.id },
+          ),
+          "Failed to rollback user creation",
+        );
+      }
       throw new BadRequestException("Failed to create customer profile");
     }
 
@@ -399,11 +730,26 @@ export class CustomersService {
     }
 
     // Find customer by email
-    const [customer] = await db
-      .select()
-      .from(customers)
-      .where(eq(customers.email, email))
-      .limit(1);
+    let customer: typeof customers.$inferSelect | undefined;
+    try {
+      const customerResult = await db
+        .select()
+        .from(customers)
+        .where(eq(customers.email, email))
+        .limit(1);
+      customer = customerResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CustomersService.claimAccount.selectCustomer",
+          error,
+          { email },
+        ),
+        "Failed to fetch customer",
+      );
+      throw new NotFoundException("Customer not found");
+    }
 
     if (!customer) {
       throw new NotFoundException("Customer not found");
@@ -417,11 +763,26 @@ export class CustomersService {
     }
 
     // Get user
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, customer.userId))
-      .limit(1);
+    let user: typeof users.$inferSelect | undefined;
+    try {
+      const userResult = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, customer.userId))
+        .limit(1);
+      user = userResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CustomersService.claimAccount.selectUser",
+          error,
+          { userId: customer.userId },
+        ),
+        "Failed to fetch user",
+      );
+      throw new NotFoundException("User not found");
+    }
 
     if (!user) {
       throw new NotFoundException("User not found");
@@ -434,17 +795,49 @@ export class CustomersService {
     const passwordHash = await bcrypt.hash(newPassword, 10);
 
     // Update user with password
-    await db.update(users).set({ passwordHash }).where(eq(users.id, user.id));
+    try {
+      await db.update(users).set({ passwordHash }).where(eq(users.id, user.id));
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CustomersService.claimAccount.updateUserPassword",
+          error,
+          { userId: user.id },
+        ),
+        "Failed to update user password",
+      );
+      throw new InternalServerErrorException("Failed to update password");
+    }
 
     // Update customer: set isGuest=false, emailVerified=true
-    const [updatedCustomer] = await db
-      .update(customers)
-      .set({
-        isGuest: false,
-        emailVerified: true,
-      })
-      .where(eq(customers.id, customer.id))
-      .returning();
+    let updatedCustomer: typeof customers.$inferSelect | undefined;
+    try {
+      const updatedResult = await db
+        .update(customers)
+        .set({
+          isGuest: false,
+          emailVerified: true,
+        })
+        .where(eq(customers.id, customer.id))
+        .returning();
+      updatedCustomer = updatedResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "CustomersService.claimAccount.updateCustomer",
+          error,
+          { customerId: customer.id },
+        ),
+        "Failed to update customer",
+      );
+      throw new InternalServerErrorException("Failed to update customer");
+    }
+
+    if (!updatedCustomer) {
+      throw new NotFoundException("Customer not found");
+    }
 
     return updatedCustomer;
   }

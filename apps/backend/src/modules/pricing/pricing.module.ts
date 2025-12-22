@@ -47,6 +47,7 @@ import { VariantPricingService } from "./services/variant-pricing.service";
     BundlePricingService,
     PricingHotReloadWatcher,
     PricingRebuilder,
+    PricingWarmupWorker,
     PricingSnapshotValidator,
     PricingAuditService,
     PricingDriftDetectorService,

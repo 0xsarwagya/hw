@@ -30,6 +30,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAdminPaymentReconcile } from "@/hooks/orders/use-admin-payment-reconcile";
+import { useArchiveOrder } from "@/hooks/orders/use-archive-order";
+import { useCancelOrder } from "@/hooks/orders/use-cancel-order";
+import { useDuplicateOrder } from "@/hooks/orders/use-duplicate-order";
 import type { Order } from "@/lib/types/orders";
 
 interface OrderActionsDropdownProps {
@@ -48,6 +51,9 @@ export function OrderActionsDropdown({
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [reconcileDialogOpen, setReconcileDialogOpen] = useState(false);
   const reconcileMutation = useAdminPaymentReconcile();
+  const cancelOrderMutation = useCancelOrder();
+  const archiveOrderMutation = useArchiveOrder();
+  const duplicateOrderMutation = useDuplicateOrder();
 
   const handleCopyOrderId = () => {
     navigator.clipboard.writeText(order.id);
@@ -73,19 +79,35 @@ export function OrderActionsDropdown({
   };
 
   const handleCancelOrder = async () => {
-    // TODO: Implement cancel order endpoint
-    toast.info("Cancel order feature coming soon");
-    setCancelDialogOpen(false);
+    try {
+      await cancelOrderMutation.mutateAsync({
+        orderId: order.id,
+        cancelDto: {
+          reason: "Cancelled by admin",
+        },
+      });
+      setCancelDialogOpen(false);
+    } catch (_error) {
+      // Error handled by mutation hook
+    }
   };
 
-  const handleDuplicateOrder = () => {
-    // TODO: Implement duplicate order feature
-    toast.info("Duplicate order feature coming soon");
+  const handleDuplicateOrder = async () => {
+    try {
+      await duplicateOrderMutation.mutateAsync({
+        orderId: order.id,
+      });
+    } catch (_error) {
+      // Error handled by mutation hook
+    }
   };
 
-  const handleArchiveOrder = () => {
-    // TODO: Implement archive order feature
-    toast.info("Archive order feature coming soon");
+  const handleArchiveOrder = async () => {
+    try {
+      await archiveOrderMutation.mutateAsync(order.id);
+    } catch (_error) {
+      // Error handled by mutation hook
+    }
   };
 
   const canReconcile =
@@ -208,6 +230,7 @@ export function OrderActionsDropdown({
         cancelText="Keep Order"
         variant="destructive"
         onConfirm={handleCancelOrder}
+        isLoading={cancelOrderMutation.isPending}
       />
     </>
   );

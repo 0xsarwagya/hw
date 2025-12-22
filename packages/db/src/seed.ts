@@ -16,8 +16,9 @@ if (!process.env.DATABASE_URL) {
 }
 
 import * as bcrypt from "bcrypt";
-import { db } from "./db/index";
+import { and, db, eq } from "./db/index";
 import { paymentMethodCharges, users } from "./schema";
+import type { NewPaymentMethodCharge } from "./schema/payment-method-charges";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@vcecom.local";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Admin@123";
@@ -28,8 +29,8 @@ async function seedAdminUser() {
     const existingUsers = await db.select().from(users).limit(1);
 
     if (existingUsers.length > 0) {
-      console.log("✅ Users already exist, skipping seed");
-      process.exit(0);
+      console.log("✅ Users already exist, skipping admin user seed");
+      return;
     }
 
     // Hash password with bcrypt
@@ -59,32 +60,20 @@ async function seedAdminUser() {
     console.log(`   Password: ${ADMIN_PASSWORD}`);
     console.log(`   Role: admin`);
     console.log(`   Hash format: bcrypt (starts with $2b$)`);
-    process.exit(0);
   } catch (error) {
     console.error("❌ Error seeding admin user:", error);
-    process.exit(1);
+    // Don't throw - continue with payment method charges seeding
   }
 }
 
 async function seedPaymentMethodCharges() {
   try {
-    // Check if any payment charges exist
-    const existingCharges = await db
-      .select()
-      .from(paymentMethodCharges)
-      .limit(1);
-
-    if (existingCharges.length > 0) {
-      console.log("✅ Payment method charges already exist, skipping seed");
-      return;
-    }
-
     // Seed default payment method charges
     const charges = [
       {
         method: "COD" as const,
         chargeType: "FLAT" as const,
-        flatAmount: 3000, // ₹30
+        flatAmount: 2900, // ₹30
         percentage: 0,
         mixCap: null,
         mixMin: null,
@@ -96,103 +85,59 @@ async function seedPaymentMethodCharges() {
         codDisallowPreorder: true,
         active: true,
       },
-      {
-        method: "RAZORPAY_UPI" as const,
-        chargeType: "PERCENTAGE" as const,
-        flatAmount: 0,
-        percentage: 0,
-        mixCap: null,
-        mixMin: null,
-        isTaxable: false,
-        currency: "INR",
-        codMaxAmount: null,
-        codDisallowHighValue: false,
-        codDisallowDigital: false,
-        codDisallowPreorder: false,
-        active: true,
-      },
-      {
-        method: "RAZORPAY_CARD" as const,
-        chargeType: "PERCENTAGE" as const,
-        flatAmount: 0,
-        percentage: 2.0,
-        mixCap: null,
-        mixMin: null,
-        isTaxable: false,
-        currency: "INR",
-        codMaxAmount: null,
-        codDisallowHighValue: false,
-        codDisallowDigital: false,
-        codDisallowPreorder: false,
-        active: true,
-      },
-      {
-        method: "STRIPE_CARD" as const,
-        chargeType: "MIXED" as const,
-        flatAmount: 200, // ₹2
-        percentage: 2.9,
-        mixCap: 5000, // ₹50 cap
-        mixMin: null,
-        isTaxable: false,
-        currency: "INR",
-        codMaxAmount: null,
-        codDisallowHighValue: false,
-        codDisallowDigital: false,
-        codDisallowPreorder: false,
-        active: true,
-      },
-      {
-        method: "WALLET" as const,
-        chargeType: "PERCENTAGE" as const,
-        flatAmount: 0,
-        percentage: 1.5,
-        mixCap: null,
-        mixMin: null,
-        isTaxable: false,
-        currency: "INR",
-        codMaxAmount: null,
-        codDisallowHighValue: false,
-        codDisallowDigital: false,
-        codDisallowPreorder: false,
-        active: true,
-      },
-      {
-        method: "NETBANKING" as const,
-        chargeType: "PERCENTAGE" as const,
-        flatAmount: 0,
-        percentage: 1.0,
-        mixCap: null,
-        mixMin: null,
-        isTaxable: false,
-        currency: "INR",
-        codMaxAmount: null,
-        codDisallowHighValue: false,
-        codDisallowDigital: false,
-        codDisallowPreorder: false,
-        active: true,
-      },
-      {
-        method: "BNPL" as const,
-        chargeType: "PERCENTAGE" as const,
-        flatAmount: 0,
-        percentage: 2.5,
-        mixCap: null,
-        mixMin: null,
-        isTaxable: false,
-        currency: "INR",
-        codMaxAmount: null,
-        codDisallowHighValue: false,
-        codDisallowDigital: false,
-        codDisallowPreorder: false,
-        active: true,
-      },
     ];
 
+    let createdCount = 0;
+    let updatedCount = 0;
+
     for (const charge of charges) {
-      await db.insert(paymentMethodCharges).values(charge);
+      // Check if payment method already exists
+      const existing = await db
+        .select()
+        .from(paymentMethodCharges)
+        .where(
+          and(
+            eq(paymentMethodCharges.method, charge.method),
+            eq(paymentMethodCharges.currency, charge.currency),
+          ),
+        )
+        .limit(1);
+
+      if (existing.length > 0) {
+        // Update existing to ensure it's active and not disabled
+        await db
+          .update(paymentMethodCharges)
+          .set({
+            chargeType: charge.chargeType,
+            flatAmount: charge.flatAmount,
+            percentage: charge.percentage,
+            mixCap: charge.mixCap,
+            mixMin: charge.mixMin,
+            isTaxable: charge.isTaxable,
+            active: true,
+            storeLevelDisabled: false,
+            updatedAt: new Date(),
+          } as Partial<NewPaymentMethodCharge>)
+          .where(eq(paymentMethodCharges.id, existing[0].id));
+        updatedCount++;
+      } else {
+        // Create new payment method charge
+        await db.insert(paymentMethodCharges).values(charge);
+        createdCount++;
+      }
     }
 
-    console.log("✅ Payment method charges seeded successfully");
+    if (createdCount > 0) {
+      console.log(`✅ Created ${createdCount} payment method charge(s)`);
+    }
+    if (updatedCount > 0) {
+      console.log(
+        `✅ Updated ${updatedCount} payment method charge(s) to ensure they're active`,
+      );
+    }
+    if (createdCount === 0 && updatedCount === 0) {
+      console.log("✅ All payment method charges are already configured");
+    }
   } catch (error) {
     console.error("❌ Error seeding payment method charges:", error);
     // Don't throw - seed failures shouldn't break the process
@@ -202,6 +147,11 @@ async function seedPaymentMethodCharges() {
 async function seed() {
   await seedAdminUser();
   await seedPaymentMethodCharges();
+  console.log("✅ Seed completed");
+  process.exit(0);
 }
 
-seed();
+seed().catch((error) => {
+  console.error("❌ Seed failed:", error);
+  process.exit(1);
+});

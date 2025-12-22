@@ -67,11 +67,11 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
     this.redisStoreService = redisStoreService;
   }
 
-  async onModuleInit() {
-    // Initialize Redis client
-    this.client = await this.redisStoreService.getClient();
-
-    // Load Lua script for atomic state transitions
+  /**
+   * Reload the transition state Lua script
+   * Useful when script content changes and needs to be refreshed
+   */
+  private async reloadTransitionStateScript(): Promise<void> {
     try {
       const script = loadLuaScript("transition-state.lua", __dirname);
       this.transitionStateScriptSha = (await this.client.script(
@@ -79,59 +79,97 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
         script,
       )) as string;
       this.logger.info(
-        createLogContext(this.contextService, "onModuleInit", {
+        createLogContext(this.contextService, "reloadTransitionStateScript", {
           scriptName: "transition-state.lua",
+          newSha: this.transitionStateScriptSha,
         }),
-        "State transition Lua script loaded successfully",
+        "State transition Lua script reloaded successfully",
       );
     } catch (error) {
       this.logger.error(
-        createErrorContext(this.contextService, "loadLuaScript", error, {
-          scriptName: "transition-state.lua",
-        }),
-        "Failed to load state transition Lua script",
+        createErrorContext(
+          this.contextService,
+          "reloadTransitionStateScript",
+          error,
+          {
+            scriptName: "transition-state.lua",
+          },
+        ),
+        "Failed to reload state transition Lua script",
       );
       throw error;
     }
+  }
 
-    // Load Lua script for atomic payment intent creation
+  async onModuleInit() {
+    // Initialize Redis client - don't block if Redis is unavailable
+    // Wrap entire initialization in timeout to prevent blocking
     try {
-      const script = loadLuaScript("create-payment-intent.lua", __dirname);
-      this.createPaymentIntentScriptSha = (await this.client.script(
-        "LOAD",
-        script,
-      )) as string;
-      this.logger.info(
-        createLogContext(this.contextService, "onModuleInit", {
-          scriptName: "create-payment-intent.lua",
-        }),
-        "Payment intent creation Lua script loaded successfully",
-      );
-    } catch (error) {
-      this.logger.error(
-        createErrorContext(this.contextService, "loadLuaScript", error, {
-          scriptName: "create-payment-intent.lua",
-        }),
-        "Failed to load payment intent creation Lua script",
-      );
-      throw error;
-    }
+      const initPromise = (async () => {
+        this.client = await this.redisStoreService.getClient();
 
-    // Load Lua script for atomic order creation from payment
-    try {
-      const script = loadLuaScript("create-order-from-payment.lua", __dirname);
-      this.createOrderFromPaymentScriptSha = (await this.client.script(
-        "LOAD",
-        script,
-      )) as string;
-      this.logger.info(
-        "Order creation from payment Lua script loaded successfully",
-      );
+        // Load Lua scripts with timeout to avoid blocking startup
+        // Scripts will be loaded on first use if they fail here
+        const loadScript = async (
+          scriptName: string,
+        ): Promise<string | null> => {
+          try {
+            const script = loadLuaScript(scriptName, __dirname);
+            const sha = (await Promise.race([
+              this.client.script("LOAD", script),
+              new Promise<string>((_, reject) =>
+                setTimeout(
+                  () => reject(new Error("Script load timeout")),
+                  2000,
+                ),
+              ),
+            ])) as string;
+            this.logger.info(
+              createLogContext(this.contextService, "onModuleInit", {
+                scriptName,
+              }),
+              `${scriptName} Lua script loaded successfully`,
+            );
+            return sha;
+          } catch (error) {
+            this.logger.warn(
+              createErrorContext(this.contextService, "loadLuaScript", error, {
+                scriptName,
+              }),
+              `Failed to load ${scriptName} Lua script - will retry when Redis is available`,
+            );
+            return null;
+          }
+        };
+
+        // Load all scripts, but don't fail if any fail
+        this.transitionStateScriptSha = await loadScript(
+          "transition-state.lua",
+        );
+        this.createPaymentIntentScriptSha = await loadScript(
+          "create-payment-intent.lua",
+        );
+        this.createOrderFromPaymentScriptSha = await loadScript(
+          "create-order-from-payment.lua",
+        );
+      })();
+
+      // Add overall timeout for entire initialization (5 seconds total)
+      await Promise.race([
+        initPromise,
+        new Promise<void>((_, reject) =>
+          setTimeout(
+            () => reject(new Error("CheckoutStore init timeout")),
+            5000,
+          ),
+        ),
+      ]);
     } catch (error) {
-      this.logger.error(
-        `Failed to load order creation from payment Lua script: ${error instanceof Error ? error.message : "Unknown error"}`,
+      this.logger.warn(
+        createErrorContext(this.contextService, "redisInit", error),
+        "Redis client not available during initialization - will retry when Redis is available",
       );
-      throw error;
+      // Don't throw - allow app to start without Redis
     }
   }
 
@@ -294,6 +332,66 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
   }
 
   /**
+   * Check if there's an active checkout session for a cart
+   * This is a helper to detect stale locks
+   * Uses SCAN to find sessions, but limits the scan to avoid performance issues
+   */
+  async hasActiveCheckoutSession(cartId: string): Promise<boolean> {
+    try {
+      // Scan for checkout sessions with this cartId
+      // Limit scan to first 1000 keys to avoid performance issues
+      const pattern = KEY_PATTERNS.CHECKOUT_SESSION("*");
+      let cursor = "0";
+      let scannedCount = 0;
+      const maxScan = 1000; // Limit scan to prevent performance issues
+
+      do {
+        const result = await this.client.scan(
+          cursor,
+          "MATCH",
+          pattern,
+          "COUNT",
+          100,
+        );
+        cursor = result[0] as string;
+        const foundKeys = result[1] as string[];
+        scannedCount += foundKeys.length;
+
+        // Check each session to see if it belongs to this cart
+        for (const key of foundKeys) {
+          const session = await this.get<CheckoutSession>(key);
+          if (
+            session &&
+            session.cartId === cartId &&
+            session.state !== CheckoutState.FAILED &&
+            session.state !== CheckoutState.ORDER_CREATED &&
+            session.state !== CheckoutState.COMPLETED
+          ) {
+            // Found an active session for this cart
+            return true;
+          }
+        }
+
+        // Stop if we've scanned enough keys
+        if (scannedCount >= maxScan) {
+          this.logger.warn(
+            `Reached scan limit (${maxScan}) while checking for active checkout session for cartId=${cartId}`,
+          );
+          break;
+        }
+      } while (cursor !== "0");
+
+      return false;
+    } catch (error) {
+      this.logger.error(
+        `Failed to check for active checkout session for cartId=${cartId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      // On error, assume no active session (fail open) to allow checkout to proceed
+      return false;
+    }
+  }
+
+  /**
    * Get payment intent key
    */
   private getPaymentIntentKey(checkoutSessionId: string): string {
@@ -391,35 +489,168 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
         // If it's still a placeholder (empty paymentIntentId), wait for it to be filled
         if (existingIntent.paymentIntentId === "") {
           // Wait a bit and retry (another process is calling provider)
-          await new Promise((resolve) => setTimeout(resolve, 200));
-          const retryExisting = await this.getPaymentIntent(checkoutSessionId);
-          if (retryExisting && retryExisting.paymentIntentId !== "") {
-            return retryExisting;
+          // Try multiple times with increasing delays
+          const maxRetries = 10;
+          const initialDelay = 200;
+          this.logger.debug(
+            `Waiting for payment intent placeholder to be filled by another process for checkoutSessionId=${checkoutSessionId}, maxRetries=${maxRetries}`,
+          );
+          console.log(
+            `[CheckoutStore] Waiting for placeholder to be filled for checkoutSessionId=${checkoutSessionId}`,
+          );
+
+          for (let i = 0; i < maxRetries; i++) {
+            const delay = initialDelay * (i + 1);
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            const retryExisting =
+              await this.getPaymentIntent(checkoutSessionId);
+
+            if (retryExisting && retryExisting.paymentIntentId !== "") {
+              this.logger.debug(
+                `Payment intent placeholder filled after ${i + 1} retries for checkoutSessionId=${checkoutSessionId}, paymentIntentId=${retryExisting.paymentIntentId}`,
+              );
+              console.log(
+                `[CheckoutStore] Placeholder filled after ${i + 1} retries for checkoutSessionId=${checkoutSessionId}`,
+              );
+              return retryExisting;
+            }
+
+            // Log progress every few retries
+            if ((i + 1) % 3 === 0) {
+              this.logger.debug(
+                `Still waiting for placeholder to be filled for checkoutSessionId=${checkoutSessionId}, retry ${i + 1}/${maxRetries}`,
+              );
+            }
           }
-          // If still placeholder after wait, return it (provider call might be slow)
-          return existingIntent;
+
+          // If still placeholder after all retries, the provider call likely failed
+          // Don't return placeholder - throw error instead
+          const totalWaitTime =
+            (initialDelay * maxRetries * (maxRetries + 1)) / 2;
+          const errorMessage = `Payment intent placeholder was not filled after ${maxRetries} retries (total wait time: ${totalWaitTime}ms) for checkoutSessionId=${checkoutSessionId}. Provider call likely failed or timed out.`;
+          this.logger.error(errorMessage);
+          console.error(`[CheckoutStore] ${errorMessage}`);
+          throw new Error(
+            `Payment intent creation timed out - another process created a placeholder but it was never filled after ${maxRetries} retries. This usually indicates the payment provider call failed or timed out. CheckoutSessionId: ${checkoutSessionId}`,
+          );
         }
 
         return existingIntent;
       } else if (status === "ok" && action === "CREATED") {
         // Successfully created placeholder atomically - this process owns the creation
         // Now call provider to create actual payment intent
+        // Wrap createFn() with timeout to ensure placeholder cleanup on timeout
+        const PROVIDER_TIMEOUT_MS = 15000; // 15 seconds (slightly longer than Razorpay timeout)
         let paymentIntent: PaymentIntent;
-        try {
-          paymentIntent = await createFn();
-        } catch (error) {
-          // Provider call failed - delete placeholder, allow retry
+        let timeoutId: NodeJS.Timeout | null = null;
+        let placeholderCleanedUp = false;
+
+        const cleanupPlaceholder = async () => {
+          if (placeholderCleanedUp) return;
+          placeholderCleanedUp = true;
           try {
+            this.logger.warn(
+              `Cleaning up placeholder for checkoutSessionId=${checkoutSessionId}`,
+            );
             await this.delete(intentKey);
             await this.delete(tempReverseKey);
+            console.log(
+              `[CheckoutStore] Placeholder cleaned up for checkoutSessionId=${checkoutSessionId}`,
+            );
           } catch (deleteError) {
+            console.error(
+              `[CheckoutStore] Failed to delete placeholder:`,
+              deleteError instanceof Error
+                ? deleteError.message
+                : "Unknown error",
+            );
             this.logger.error(
-              `Failed to delete placeholder after provider failure: ${deleteError instanceof Error ? deleteError.message : "Unknown error"}`,
+              `Failed to delete placeholder: ${deleteError instanceof Error ? deleteError.message : "Unknown error"}`,
             );
           }
-          this.logger.error(
-            `Payment provider call failed for checkoutSessionId=${checkoutSessionId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        };
+
+        try {
+          console.log(
+            `[CheckoutStore] Lua script path: About to call createFn() for checkoutSessionId=${checkoutSessionId}`,
           );
+          this.logger.debug(
+            `Calling payment provider for checkoutSessionId=${checkoutSessionId} with timeout=${PROVIDER_TIMEOUT_MS}ms`,
+          );
+
+          // Wrap createFn() with timeout to prevent hanging
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            timeoutId = setTimeout(() => {
+              const timeoutError = new Error(
+                `Payment provider call timed out after ${PROVIDER_TIMEOUT_MS}ms for checkoutSessionId=${checkoutSessionId}`,
+              );
+              timeoutError.name = "ProviderTimeoutError";
+              this.logger.error(
+                `Payment provider call timed out for checkoutSessionId=${checkoutSessionId}`,
+              );
+              console.error(
+                `[CheckoutStore] Payment provider call timed out after ${PROVIDER_TIMEOUT_MS}ms`,
+              );
+              reject(timeoutError);
+            }, PROVIDER_TIMEOUT_MS);
+          });
+
+          // Race between provider call and timeout
+          try {
+            paymentIntent = await Promise.race([createFn(), timeoutPromise]);
+          } finally {
+            // Always clear timeout if it hasn't fired
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+              timeoutId = null;
+            }
+          }
+
+          console.log(
+            `[CheckoutStore] Lua script path: createFn() completed, paymentIntentId=${paymentIntent.paymentIntentId}`,
+          );
+          this.logger.debug(
+            `Payment provider call succeeded for checkoutSessionId=${checkoutSessionId}, paymentIntentId=${paymentIntent.paymentIntentId}`,
+          );
+        } catch (error) {
+          // Provider call failed - delete placeholder, allow retry
+          // Log error with both structured logger and console as fallback
+          const errorDetails =
+            error instanceof Error
+              ? {
+                  name: error.name,
+                  message: error.message,
+                  stack: error.stack,
+                }
+              : { type: typeof error, value: String(error) };
+
+          // Determine if this is a timeout error
+          const isTimeoutError =
+            error instanceof Error &&
+            (error.name === "ProviderTimeoutError" ||
+              error.name === "TimeoutError" ||
+              error.message.includes("timed out"));
+
+          // Use console.error as fallback to ensure error is visible
+          console.error(
+            `[CheckoutStore] Payment provider call failed for checkoutSessionId=${checkoutSessionId}:`,
+            errorDetails,
+            { isTimeoutError },
+          );
+
+          this.logger.error(
+            {
+              checkoutSessionId,
+              error: errorDetails,
+              isTimeoutError,
+            },
+            `Payment provider call failed for checkoutSessionId=${checkoutSessionId}${isTimeoutError ? " (timeout)" : ""}`,
+          );
+
+          // Always cleanup placeholder on error
+          await cleanupPlaceholder();
+
+          // Re-throw error to propagate it
           throw error;
         }
 
@@ -525,8 +756,82 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
       }
 
       // Successfully created placeholder, call provider
+      // Wrap createFn() with timeout to ensure placeholder cleanup on timeout
+      const PROVIDER_TIMEOUT_MS = 15000; // 15 seconds (slightly longer than Razorpay timeout)
+      let timeoutId: NodeJS.Timeout | null = null;
+      let placeholderCleanedUp = false;
+
+      const cleanupPlaceholder = async () => {
+        if (placeholderCleanedUp) return;
+        placeholderCleanedUp = true;
+        try {
+          this.logger.warn(
+            `[Fallback] Cleaning up placeholder for checkoutSessionId=${checkoutSessionId}`,
+          );
+          await this.delete(intentKey);
+          console.log(
+            `[CheckoutStore] Fallback path: Placeholder cleaned up for checkoutSessionId=${checkoutSessionId}`,
+          );
+        } catch (deleteError) {
+          console.error(
+            `[CheckoutStore] Fallback path: Failed to delete placeholder:`,
+            deleteError instanceof Error
+              ? deleteError.message
+              : "Unknown error",
+          );
+          this.logger.error(
+            `Failed to delete placeholder in fallback path: ${deleteError instanceof Error ? deleteError.message : "Unknown error"}`,
+          );
+        }
+      };
+
       try {
-        const paymentIntent = await createFn();
+        console.log(
+          `[CheckoutStore] Fallback path: Calling provider for checkoutSessionId=${checkoutSessionId}`,
+        );
+        console.log(
+          `[CheckoutStore] Fallback path: About to call createFn() - this should trigger Razorpay API call`,
+        );
+        this.logger.debug(
+          `[Fallback] Calling payment provider for checkoutSessionId=${checkoutSessionId} with timeout=${PROVIDER_TIMEOUT_MS}ms`,
+        );
+
+        // Wrap createFn() with timeout to prevent hanging
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => {
+            const timeoutError = new Error(
+              `Payment provider call timed out after ${PROVIDER_TIMEOUT_MS}ms for checkoutSessionId=${checkoutSessionId}`,
+            );
+            timeoutError.name = "ProviderTimeoutError";
+            this.logger.error(
+              `[Fallback] Payment provider call timed out for checkoutSessionId=${checkoutSessionId}`,
+            );
+            console.error(
+              `[CheckoutStore] Fallback path: Payment provider call timed out after ${PROVIDER_TIMEOUT_MS}ms`,
+            );
+            reject(timeoutError);
+          }, PROVIDER_TIMEOUT_MS);
+        });
+
+        // Race between provider call and timeout
+        let paymentIntent: PaymentIntent;
+        try {
+          paymentIntent = await Promise.race([createFn(), timeoutPromise]);
+        } finally {
+          // Always clear timeout if it hasn't fired
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+          }
+        }
+
+        console.log(
+          `[CheckoutStore] Fallback path: createFn() completed, paymentIntentId=${paymentIntent.paymentIntentId}`,
+        );
+        this.logger.debug(
+          `[Fallback] Payment provider call succeeded for checkoutSessionId=${checkoutSessionId}, paymentIntentId=${paymentIntent.paymentIntentId}`,
+        );
+
         const updatedIntent: PaymentIntent = {
           ...paymentIntent,
           updatedAt: new Date().toISOString(),
@@ -536,10 +841,46 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
         );
         await this.set(intentKey, updatedIntent, TTL.PAYMENT_INTENT);
         await this.set(reverseLookupKey, checkoutSessionId, TTL.PAYMENT_INTENT);
+        console.log(
+          `[CheckoutStore] Fallback path: Payment intent created successfully: ${paymentIntent.paymentIntentId}`,
+        );
         return updatedIntent;
       } catch (providerError) {
         // Provider failed, delete placeholder
-        await this.delete(intentKey);
+        const errorDetails =
+          providerError instanceof Error
+            ? {
+                name: providerError.name,
+                message: providerError.message,
+                stack: providerError.stack,
+              }
+            : { type: typeof providerError, value: String(providerError) };
+
+        const isTimeoutError =
+          providerError instanceof Error &&
+          (providerError.name === "ProviderTimeoutError" ||
+            providerError.name === "TimeoutError" ||
+            providerError.message.includes("timed out"));
+
+        console.error(
+          `[CheckoutStore] Fallback path: Provider call failed for checkoutSessionId=${checkoutSessionId}:`,
+          errorDetails,
+          { isTimeoutError },
+        );
+
+        this.logger.error(
+          {
+            checkoutSessionId,
+            error: errorDetails,
+            isTimeoutError,
+          },
+          `[Fallback] Payment provider call failed for checkoutSessionId=${checkoutSessionId}${isTimeoutError ? " (timeout)" : ""}`,
+        );
+
+        // Always cleanup placeholder on error
+        await cleanupPlaceholder();
+
+        // Re-throw error to propagate it
         throw providerError;
       }
     }
@@ -871,6 +1212,84 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
         `State transition successful: sessionId=${sessionId}, ${from} → ${to}`,
       );
     } catch (error) {
+      // Check if this is a script error that requires reloading
+      if (
+        error instanceof Error &&
+        (error.message.includes("require") ||
+          error.message.includes("user_script") ||
+          error.message.includes("NOSCRIPT"))
+      ) {
+        this.logger.warn(
+          createLogContext(this.contextService, "transitionState", {
+            sessionId,
+            error: error.message,
+          }),
+          "Detected script error, reloading transition state script and retrying",
+        );
+        try {
+          // Reload the script
+          await this.reloadTransitionStateScript();
+          // Retry the operation
+          if (!this.transitionStateScriptSha) {
+            throw new Error("Failed to reload transition state script");
+          }
+          const result = (await this.client.evalsha(
+            this.transitionStateScriptSha,
+            1, // Number of keys
+            key,
+            from,
+            to,
+            updatedAt,
+            JSON.stringify(allowedTransitions),
+          )) as [string, string] | [string, string, string, string];
+
+          const [status, ...rest] = result;
+
+          if (status === "err") {
+            const errorType = rest[0] as string;
+            if (errorType === "SESSION_NOT_FOUND") {
+              throw new BadRequestException(
+                `Checkout session ${sessionId} not found`,
+              );
+            }
+            if (errorType === "INVALID_TRANSITION") {
+              const currentState = rest[1] as string;
+              const expectedState = rest[2] as string;
+              throw new BadRequestException(
+                `Invalid state transition for session ${sessionId}: expected state ${expectedState}, but current state is ${currentState}`,
+              );
+            }
+            if (errorType === "TRANSITION_NOT_ALLOWED") {
+              const fromState = rest[1] as string;
+              const toState = rest[2] as string;
+              throw new BadRequestException(
+                `Transition from ${fromState} to ${toState} is not allowed for session ${sessionId}`,
+              );
+            }
+            throw new BadRequestException(
+              `State transition failed: ${errorType}`,
+            );
+          }
+
+          this.logger.debug(
+            `State transition successful after script reload: sessionId=${sessionId}, ${from} → ${to}`,
+          );
+          return;
+        } catch (retryError) {
+          // If retry also fails, log and throw original error
+          this.logger.error(
+            createErrorContext(
+              this.contextService,
+              "transitionState",
+              retryError,
+              { sessionId },
+            ),
+            "Failed to transition state after script reload",
+          );
+          throw retryError;
+        }
+      }
+
       if (
         error instanceof BadRequestException ||
         (error instanceof Error && error.message.includes("transition"))
@@ -970,6 +1389,69 @@ export class CheckoutStore implements ICheckoutStore, OnModuleInit {
     } catch (error) {
       this.logger.error(
         `Failed to get checkout session by orderId=${orderId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get checkout session by cart ID
+   * Scans for sessions with matching cartId
+   * Returns the first active session found
+   */
+  async getSessionByCartId(
+    cartId: string,
+  ): Promise<{ sessionId: string; session: CheckoutSession } | null> {
+    try {
+      // Scan for checkout sessions with this cartId
+      const pattern = KEY_PATTERNS.CHECKOUT_SESSION("*");
+      let cursor = "0";
+      let scannedCount = 0;
+      const maxScan = 1000; // Limit scan to prevent performance issues
+
+      do {
+        const result = await this.client.scan(
+          cursor,
+          "MATCH",
+          pattern,
+          "COUNT",
+          100,
+        );
+        cursor = result[0] as string;
+        const foundKeys = result[1] as string[];
+        scannedCount += foundKeys.length;
+
+        // Check each session to see if it belongs to this cart
+        for (const key of foundKeys) {
+          const session = await this.get<CheckoutSession>(key);
+          if (
+            session &&
+            session.cartId === cartId &&
+            session.state !== CheckoutState.FAILED &&
+            session.state !== CheckoutState.COMPLETED
+          ) {
+            // Extract sessionId from key (format: checkout:session:{sessionId})
+            const sessionId = key.replace(
+              KEY_PATTERNS.CHECKOUT_SESSION(""),
+              "",
+            );
+            return { sessionId, session };
+          }
+        }
+
+        // Stop if we've scanned enough keys
+        if (scannedCount >= maxScan) {
+          this.logger.warn(
+            `Reached scan limit (${maxScan}) while looking for checkout session for cartId=${cartId}`,
+          );
+          break;
+        }
+      } while (cursor !== "0");
+
+      return null;
+    } catch (error) {
+      this.logger.error(
+        `Failed to get checkout session by cartId=${cartId}: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       throw error;
     }

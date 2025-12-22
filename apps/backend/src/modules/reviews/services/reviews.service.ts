@@ -19,7 +19,10 @@ import {
 } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
-import { createLogContext } from "../../../common/logging/logging.helper";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { NotificationsService } from "../../notifications/notifications.service";
 import { NotificationType } from "../../notifications/types/notification.types";
 import { CreateReviewDto } from "../dto/create-review.dto";
@@ -67,16 +70,31 @@ export class ReviewsService {
     );
 
     // Check if review already exists for this customer + variant
-    const [existingReview] = await db
-      .select()
-      .from(reviews)
-      .where(
-        and(
-          eq(reviews.customerId, customerId),
-          eq(reviews.variantId, createReviewDto.variantId),
+    let existingReview: typeof reviews.$inferSelect | undefined;
+    try {
+      const existingReviewResult = await db
+        .select()
+        .from(reviews)
+        .where(
+          and(
+            eq(reviews.customerId, customerId),
+            eq(reviews.variantId, createReviewDto.variantId),
+          ),
+        )
+        .limit(1);
+      existingReview = existingReviewResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "ReviewsService.create.selectExistingReview",
+          error,
+          { customerId, variantId: createReviewDto.variantId },
         ),
-      )
-      .limit(1);
+        "Failed to check existing review",
+      );
+      throw error;
+    }
 
     if (existingReview) {
       throw new BadRequestException(
@@ -90,19 +108,38 @@ export class ReviewsService {
     }
 
     // Create review
-    const [newReview] = await db
-      .insert(reviews)
-      .values({
-        customerId,
-        orderId: createReviewDto.orderId,
-        variantId: createReviewDto.variantId,
-        rating: createReviewDto.rating,
-        title: createReviewDto.title || null,
-        body: createReviewDto.body,
-        images: createReviewDto.images || null,
-        status: "pending",
-      })
-      .returning();
+    let newReview: typeof reviews.$inferSelect | undefined;
+    try {
+      const reviewResult = await db
+        .insert(reviews)
+        .values({
+          customerId,
+          orderId: createReviewDto.orderId,
+          variantId: createReviewDto.variantId,
+          rating: createReviewDto.rating,
+          title: createReviewDto.title || null,
+          body: createReviewDto.body,
+          images: createReviewDto.images || null,
+          status: "pending",
+        })
+        .returning();
+      newReview = reviewResult[0];
+    } catch (error) {
+      this.logger.error(
+        createErrorContext(
+          this.contextService,
+          "ReviewsService.create.insertReview",
+          error,
+          { customerId, createReviewDto },
+        ),
+        "Failed to create review",
+      );
+      throw error;
+    }
+
+    if (!newReview) {
+      throw new BadRequestException("Failed to create review");
+    }
 
     this.logger.info(
       `Review created: ${newReview.id} for variant ${createReviewDto.variantId}`,
@@ -112,11 +149,28 @@ export class ReviewsService {
     await this.moderationService.tryAutoApprove(newReview.id);
 
     // Refresh review to check if still pending after auto-approve attempt
-    const [checkReview] = await db
-      .select()
-      .from(reviews)
-      .where(eq(reviews.id, newReview.id))
-      .limit(1);
+    let checkReview: typeof reviews.$inferSelect | undefined;
+    try {
+      const checkReviewResult = await db
+        .select()
+        .from(reviews)
+        .where(eq(reviews.id, newReview.id))
+        .limit(1);
+      checkReview = checkReviewResult[0] || newReview;
+    } catch (error) {
+      this.logger.warn(
+        createLogContext(
+          this.contextService,
+          "ReviewsService.create.selectCheckReview",
+          {
+            reviewId: newReview.id,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        ),
+        "Failed to refresh review, using original review",
+      );
+      checkReview = newReview;
+    }
 
     // Create notification if review is still pending
     if (checkReview && checkReview.status === "pending") {

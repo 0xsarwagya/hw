@@ -1,7 +1,7 @@
 {
   "id": "orders/refunds",
-  "title": "refunds",
-  "description": "",
+  "title": "Order Refunds",
+  "description": "The refund system handles processing refunds for orders, including full and partial refunds, payment gateway integration, and refund status tracking.",
   "source": "@site/docs/orders/refunds.md",
   "sourceDirName": "orders",
   "slug": "/orders/refunds",
@@ -11,16 +11,16 @@
   "editUrl": "https://github.com/Vestcodes/vcecom/tree/main/apps/docs/docs/orders/refunds.md",
   "tags": [],
   "version": "current",
-  "lastUpdatedBy": "Sarwagya Singh",
-  "lastUpdatedAt": 1766018217000,
+  "lastUpdatedBy": "Author",
+  "lastUpdatedAt": 1539502055000,
   "frontMatter": {},
   "sidebar": "docsSidebar",
   "previous": {
-    "title": "fulfillment",
+    "title": "Order Fulfillment",
     "permalink": "/docs/orders/fulfillment"
   },
   "next": {
-    "title": "reconciliation",
+    "title": "Order Reconciliation",
     "permalink": "/docs/orders/reconciliation"
   }
 }
