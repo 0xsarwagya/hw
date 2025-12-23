@@ -23,16 +23,24 @@ function createPool(): Pool {
     });
   }
 
+  // Determine optimal pool size based on environment
+  // Production: Use smaller pool (10-15) to prevent connection exhaustion
+  // Development: Use slightly larger pool (20) for convenience
+  const isProduction = process.env.NODE_ENV === "production";
+  const maxConnections = isProduction ? 15 : 20;
+
   const pool = new Pool({
     connectionString: databaseUrl,
     // Connection pool settings
-    // Keep pool size small - most apps don't need more than 10-20 connections
-    // High values (50+) often mask connection leaks and cause pool exhaustion
-    max: 50,
-    min: 0, // Connections created on-demand
-    idleTimeoutMillis: 1000, // Close idle clients after 1 second (faster cleanup)
-    connectionTimeoutMillis: 1000, // Fail fast if connection can't be established
+    // Keep pool size small to prevent max connection errors
+    // Production: 15 connections max (prevents hitting database limits)
+    // Development: 20 connections max (more lenient for local dev)
+    max: maxConnections,
+    min: 0, // Connections created on-demand (no pre-warming)
+    idleTimeoutMillis: 30000, // Close idle clients after 30 seconds (balance between reuse and cleanup)
+    connectionTimeoutMillis: 10000, // Fail fast if connection can't be established (10 seconds)
     allowExitOnIdle: true, // Allow process to exit when pool is idle
+    // Statement timeout is set per-connection in the 'connect' event handler below
   });
 
   // Increase max listeners to prevent EventEmitter warnings
@@ -44,13 +52,49 @@ function createPool(): Pool {
     console.error("Unexpected error on idle client", err);
   });
 
+  // Monitor pool for connection exhaustion warnings
+  let lastWarningTime = 0;
+  const WARNING_INTERVAL = 60000; // Only warn once per minute
+
+  pool.on("acquire", (client) => {
+    const total = pool.totalCount || 0;
+    const idle = pool.idleCount || 0;
+    const waiting = pool.waitingCount || 0;
+    const used = total - idle;
+
+    // Warn if pool is getting close to max connections
+    const usagePercent = (used / maxConnections) * 100;
+    const now = Date.now();
+
+    if (
+      usagePercent >= 80 &&
+      now - lastWarningTime > WARNING_INTERVAL
+    ) {
+      lastWarningTime = now;
+      console.warn(
+        `[DB Pool] High connection usage: ${used}/${maxConnections} (${usagePercent.toFixed(1)}%) - ${waiting} waiting`,
+      );
+    }
+
+    // Critical warning if pool is exhausted
+    if (waiting > 0 && now - lastWarningTime > WARNING_INTERVAL) {
+      lastWarningTime = now;
+      console.error(
+        `[DB Pool] CRITICAL: Pool exhausted! ${used}/${maxConnections} connections in use, ${waiting} requests waiting`,
+      );
+    }
+  });
+
   // Set statement timeout on each new connection as a fallback
   pool.on("connect", async (client) => {
     try {
+      // Set statement timeout to prevent long-running queries from holding connections
       await client.query("SET statement_timeout = 30000"); // 30 seconds
+      // Set idle_in_transaction_session_timeout to prevent abandoned transactions
+      await client.query("SET idle_in_transaction_session_timeout = 60000"); // 60 seconds
     } catch (err) {
       // Ignore errors setting timeout - connection will still work
-      console.warn("Failed to set statement_timeout on connection", err);
+      console.warn("Failed to set connection timeouts", err);
     }
   });
 
@@ -150,15 +194,32 @@ export function getPoolStats(): {
   totalCount: number;
   idleCount: number;
   waitingCount: number;
+  usedCount: number;
+  usagePercent: number;
+  maxConnections: number;
 } | null {
   if (!poolInstance) {
     return null;
   }
 
+  const totalCount = poolInstance.totalCount || 0;
+  const idleCount = poolInstance.idleCount || 0;
+  const waitingCount = poolInstance.waitingCount || 0;
+  const usedCount = totalCount - idleCount;
+
+  // Get max connections from pool config
+  const maxConnections = (poolInstance as any).options?.max || 15;
+  const usagePercent = maxConnections > 0
+    ? (usedCount / maxConnections) * 100
+    : 0;
+
   return {
-    totalCount: poolInstance.totalCount || 0,
-    idleCount: poolInstance.idleCount || 0,
-    waitingCount: poolInstance.waitingCount || 0,
+    totalCount,
+    idleCount,
+    waitingCount,
+    usedCount,
+    usagePercent: Math.round(usagePercent * 100) / 100, // Round to 2 decimal places
+    maxConnections,
   };
 }
 

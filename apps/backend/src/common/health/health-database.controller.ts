@@ -52,8 +52,11 @@ export class HealthDatabaseController {
         stats: healthStatus.stats
           ? {
               totalConnections: healthStatus.stats.totalCount,
+              usedConnections: healthStatus.stats.usedCount,
               idleConnections: healthStatus.stats.idleCount,
               waitingConnections: healthStatus.stats.waitingCount,
+              usagePercent: healthStatus.stats.usagePercent,
+              maxConnections: healthStatus.stats.maxConnections,
             }
           : null,
       },
