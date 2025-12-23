@@ -1,5 +1,3 @@
-import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../database/database.module";
 // External libraries
 import {
   BadRequestException,
@@ -9,6 +7,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
 import {
   addresses,
   and,
@@ -27,7 +26,6 @@ import {
   productVariants,
 } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
-
 // Internal modules - Common
 import {
   COD_PAYMENT_METHOD,
@@ -40,12 +38,12 @@ import {
 } from "../../common/logging/logging.helper";
 import { Trace } from "../../common/tracing/trace.decorator";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
-
 // Internal modules - Feature modules
 import { CartsService } from "../carts/carts.service";
 import { BundleCartItemMetadata } from "../carts/dto/bundle-cart-item.dto";
 import { AddressesService } from "../customers/addresses.service";
 import { CustomersService } from "../customers/customers.service";
+import { DB_TOKEN } from "../database/database.module";
 import { DiscountsService } from "../discounts/discounts.service";
 import { runDiscountEngine } from "../discounts/engine/discount-engine";
 import {

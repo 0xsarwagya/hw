@@ -4,15 +4,15 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { and, eq, orderItems, orders, payments } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../../modules/database/database.module";
+import { and, eq, orderItems, orders, payments } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import {
   createErrorContext,
   createLogContext,
 } from "../../../common/logging/logging.helper";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { BundleCartItemMetadata } from "../../carts/dto/bundle-cart-item.dto";
 import { BundlePricingService } from "../../pricing/services/bundle-pricing.service";
 import { InventoryStore } from "../../redis-store/stores/inventory-store";
@@ -79,7 +79,7 @@ export class OrderCancelService {
     try {
       // Get order items
       const items = await this.db
-      .select()
+        .select()
         .from(orderItems)
         .where(eq(orderItems.orderId, orderId));
 

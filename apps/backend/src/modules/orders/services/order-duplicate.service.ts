@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
 import {
   and,
   desc,
@@ -13,11 +14,10 @@ import {
   orders,
   productVariants,
 } from "@vcecom/db";
-import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../../modules/database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import { createLogContext } from "../../../common/logging/logging.helper";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { BundleCartItemMetadata } from "../../carts/dto/bundle-cart-item.dto";
 import { BundlePricingService } from "../../pricing/services/bundle-pricing.service";
 import { InventoryStore } from "../../redis-store/stores/inventory-store";
@@ -201,7 +201,7 @@ export class OrderDuplicateService {
 
           if (actuallyAvailable < item.quantity) {
             const [variant] = await this.db
-      .select()
+              .select()
               .from(productVariants)
               .where(eq(productVariants.id, item.productVariantId))
               .limit(1);
@@ -223,7 +223,7 @@ export class OrderDuplicateService {
 
         if (actuallyAvailable < item.quantity) {
           const [variant] = await this.db
-      .select()
+            .select()
             .from(productVariants)
             .where(eq(productVariants.id, item.productVariantId))
             .limit(1);

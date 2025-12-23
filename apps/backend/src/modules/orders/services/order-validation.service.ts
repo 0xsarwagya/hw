@@ -1,11 +1,11 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { addresses, and, customers, eq } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../../modules/database/database.module";
+import { addresses, and, customers, eq } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { AppConfigService } from "../../../common/config/app.config.service";
 import { ContextService } from "../../../common/logging/context.service";
 import { createErrorContext } from "../../../common/logging/logging.helper";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { AddressesService } from "../../customers/addresses.service";
 import { CustomersService } from "../../customers/customers.service";
 
@@ -33,7 +33,7 @@ export class OrderValidationService {
   async getCustomerId(userId: string): Promise<string> {
     try {
       const [customer] = await this.db
-      .select()
+        .select()
         .from(customers)
         .where(eq(customers.userId, userId))
         .limit(1);
@@ -65,7 +65,7 @@ export class OrderValidationService {
   async getCustomerGroupId(customerId: string): Promise<string | null> {
     try {
       const [customer] = await this.db
-      .select()
+        .select()
         .from(customers)
         .where(eq(customers.id, customerId))
         .limit(1);

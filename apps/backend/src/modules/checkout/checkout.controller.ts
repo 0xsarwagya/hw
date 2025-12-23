@@ -15,14 +15,14 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import { customers, eq } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../database/database.module";
+import { customers, eq } from "@vcecom/db";
 import { Public } from "../../common/decorators/public.decorator";
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 import { extractSessionId } from "../../common/utils/session.utils";
 import { CartsService } from "../carts/carts.service";
+import { DB_TOKEN } from "../database/database.module";
 import { PaymentFeeBreakdownDto } from "../payments/dto/payment-charge.dto";
 import {
   CodEligibilityContext,
@@ -301,7 +301,7 @@ export class CheckoutController {
         try {
           const { addresses } = await import("@vcecom/db");
           const [address] = await this.db
-      .select({
+            .select({
               country: addresses.country,
               state: addresses.state,
               pincode: addresses.pincode,
@@ -327,7 +327,7 @@ export class CheckoutController {
     if (userId && cart.customerId) {
       try {
         const [customer] = await this.db
-      .select({ customerGroupId: customers.customerGroupId })
+          .select({ customerGroupId: customers.customerGroupId })
           .from(customers)
           .where(eq(customers.id, cart.customerId))
           .limit(1);

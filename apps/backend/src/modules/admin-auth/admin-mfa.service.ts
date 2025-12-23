@@ -5,9 +5,8 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
-import { admin2fa, eq, users } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../database/database.module";
+import { admin2fa, eq, users } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { authenticator } from "otplib";
 import * as qrcode from "qrcode";
@@ -16,6 +15,7 @@ import {
   createErrorContext,
   createLogContext,
 } from "../../common/logging/logging.helper";
+import { DB_TOKEN } from "../database/database.module";
 
 @Injectable()
 export class AdminMfaService {
@@ -51,7 +51,7 @@ export class AdminMfaService {
     // Store secret temporarily (not enabled yet)
     try {
       await this.db
-      .insert(admin2fa)
+        .insert(admin2fa)
         .values({
           adminId,
           secret,
@@ -127,7 +127,7 @@ export class AdminMfaService {
 
     try {
       await this.db
-      .insert(admin2fa)
+        .insert(admin2fa)
         .values({ adminId, secret, backupCodes, enabled: true })
         .onConflictDoUpdate({
           target: admin2fa.adminId,
@@ -187,7 +187,7 @@ export class AdminMfaService {
 
     try {
       await this.db
-      .update(admin2fa)
+        .update(admin2fa)
         .set({ enabled: false, secret: "", backupCodes: [] }) // Clear secret and backup codes
         .where(eq(admin2fa.adminId, adminId));
 
@@ -230,7 +230,7 @@ export class AdminMfaService {
         (_, i) => i !== backupCodeIndex,
       );
       await this.db
-      .update(admin2fa)
+        .update(admin2fa)
         .set({ backupCodes: updatedBackupCodes })
         .where(eq(admin2fa.adminId, adminId));
 
@@ -278,7 +278,7 @@ export class AdminMfaService {
   async is2FAEnabled(adminId: string): Promise<boolean> {
     try {
       const [mfaRecord] = await this.db
-      .select({ enabled: admin2fa.enabled })
+        .select({ enabled: admin2fa.enabled })
         .from(admin2fa)
         .where(eq(admin2fa.adminId, adminId))
         .limit(1);

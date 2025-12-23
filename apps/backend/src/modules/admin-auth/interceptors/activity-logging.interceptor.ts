@@ -6,12 +6,12 @@ import {
   NestInterceptor,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { discounts, eq, orders, products } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../../modules/database/database.module";
+import { discounts, eq, orders, products } from "@vcecom/db";
 import { Observable } from "rxjs";
 import { tap } from "rxjs/operators";
 import { ContextService } from "../../../common/logging/context.service";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { AdminActivityService } from "../admin-activity.service";
 import {
   LOG_ACTIVITY_KEY,
@@ -185,7 +185,7 @@ export class ActivityLoggingInterceptor implements NestInterceptor {
       switch (entityType.toLowerCase()) {
         case "product": {
           const [product] = await this.db
-      .select()
+            .select()
             .from(products)
             .where(eq(products.id, entityId))
             .limit(1);
@@ -194,7 +194,7 @@ export class ActivityLoggingInterceptor implements NestInterceptor {
 
         case "discount": {
           const [discount] = await this.db
-      .select()
+            .select()
             .from(discounts)
             .where(eq(discounts.id, entityId))
             .limit(1);
@@ -203,7 +203,7 @@ export class ActivityLoggingInterceptor implements NestInterceptor {
 
         case "order": {
           const [order] = await this.db
-      .select()
+            .select()
             .from(orders)
             .where(eq(orders.id, entityId))
             .limit(1);

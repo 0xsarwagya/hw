@@ -7,15 +7,15 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { eq, users } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../database/database.module";
+import { eq, users } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
 import {
   createErrorContext,
   createLogContext,
 } from "../../common/logging/logging.helper";
+import { DB_TOKEN } from "../database/database.module";
 import { AdminActivityService } from "./admin-activity.service";
 import { AdminMfaService } from "./admin-mfa.service";
 import { AdminSessionsService } from "./admin-sessions.service";
@@ -99,7 +99,7 @@ export class AdminAuthService {
       try {
         const newHash = await migratePasswordHash(password, admin.passwordHash);
         await this.db
-      .update(users)
+          .update(users)
           .set({ passwordHash: newHash })
           .where(eq(users.id, admin.id));
 
@@ -225,7 +225,7 @@ export class AdminAuthService {
 
       // Get admin info
       const [admin] = await this.db
-      .select()
+        .select()
         .from(users)
         .where(eq(users.id, session.adminId))
         .limit(1);

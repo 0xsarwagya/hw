@@ -1,12 +1,11 @@
-import type { Database } from "@vcecom/db";
 import {
   BadRequestException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-  Inject,
 } from "@nestjs/common";
-import { DB_TOKEN } from "../../modules/database/database.module";
+import type { Database } from "@vcecom/db";
 import {
   and,
   collections,
@@ -32,6 +31,7 @@ import {
   generatePaginationMetadata,
   normalizePaginationParams,
 } from "../../common/utils/pagination.utils";
+import { DB_TOKEN } from "../../modules/database/database.module";
 import { AddProductsDto } from "./dto/add-products.dto";
 import {
   CollectionRuleDto,
@@ -79,7 +79,7 @@ export class CollectionsService {
       let existing: typeof collections.$inferSelect | undefined;
       try {
         const existingResult = await this.db
-      .select()
+          .select()
           .from(collections)
           .where(eq(collections.slug, slug))
           .limit(1);
@@ -147,7 +147,7 @@ export class CollectionsService {
       | undefined;
     try {
       const collectionResult = await this.db
-      .insert(collections)
+        .insert(collections)
         .values({
           name: createCollectionDto.name,
           slug,
@@ -226,7 +226,7 @@ export class CollectionsService {
     let totalResult: Array<{ count: number }>;
     try {
       totalResult = await this.db
-      .select({ count: sql<number>`count(*)` })
+        .select({ count: sql<number>`count(*)` })
         .from(collections)
         .where(whereCondition);
     } catch (error) {
@@ -269,7 +269,7 @@ export class CollectionsService {
     }>;
     try {
       collectionsData = await this.db
-      .select({
+        .select({
           id: collections.id,
           name: collections.name,
           slug: collections.slug,
@@ -606,7 +606,7 @@ export class CollectionsService {
         case CollectionRuleField.TAGS: {
           // For tags, we need to check productTags junction table
           const tagProducts = await this.db
-      .select({ productId: productTags.productId })
+            .select({ productId: productTags.productId })
             .from(productTags)
             .innerJoin(tags, eq(productTags.tagId, tags.id))
             .where(
@@ -629,7 +629,7 @@ export class CollectionsService {
 
           if (rule.operator === CollectionRuleOperator.EQUALS) {
             inventoryProducts = await this.db
-      .select({ productId: productVariants.productId })
+              .select({ productId: productVariants.productId })
               .from(productVariants)
               .groupBy(productVariants.productId)
               .having(
@@ -637,7 +637,7 @@ export class CollectionsService {
               );
           } else if (rule.operator === CollectionRuleOperator.NOT_EQUALS) {
             inventoryProducts = await this.db
-      .select({ productId: productVariants.productId })
+              .select({ productId: productVariants.productId })
               .from(productVariants)
               .groupBy(productVariants.productId)
               .having(
@@ -645,7 +645,7 @@ export class CollectionsService {
               );
           } else if (rule.operator === CollectionRuleOperator.GREATER_THAN) {
             inventoryProducts = await this.db
-      .select({ productId: productVariants.productId })
+              .select({ productId: productVariants.productId })
               .from(productVariants)
               .groupBy(productVariants.productId)
               .having(
@@ -653,7 +653,7 @@ export class CollectionsService {
               );
           } else if (rule.operator === CollectionRuleOperator.LESS_THAN) {
             inventoryProducts = await this.db
-      .select({ productId: productVariants.productId })
+              .select({ productId: productVariants.productId })
               .from(productVariants)
               .groupBy(productVariants.productId)
               .having(
@@ -746,7 +746,7 @@ export class CollectionsService {
       }
 
       const collectionProducts = await this.db
-      .select({
+        .select({
           id: products.id,
           title: products.title,
           price: products.price,

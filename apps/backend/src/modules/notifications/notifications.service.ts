@@ -1,7 +1,6 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { and, desc, eq, isNull, notifications, or, sql } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../database/database.module";
+import { and, desc, eq, isNull, notifications, or, sql } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
 import { createErrorContext } from "../../common/logging/logging.helper";
@@ -9,6 +8,7 @@ import {
   generatePaginationMetadata,
   normalizePaginationParams,
 } from "../../common/utils/pagination.utils";
+import { DB_TOKEN } from "../database/database.module";
 import {
   CreateNotificationDto,
   NotificationResponseDto,
@@ -34,7 +34,7 @@ export class NotificationsService {
   async create(dto: CreateNotificationDto): Promise<NotificationResponseDto> {
     try {
       const [notification] = await this.db
-      .insert(notifications)
+        .insert(notifications)
         .values({
           adminId: dto.adminId || null,
           type: dto.type,
@@ -210,7 +210,9 @@ export class NotificationsService {
       );
     }
 
-    await this.db.delete(notifications).where(eq(notifications.id, notificationId));
+    await this.db
+      .delete(notifications)
+      .where(eq(notifications.id, notificationId));
   }
 
   /**

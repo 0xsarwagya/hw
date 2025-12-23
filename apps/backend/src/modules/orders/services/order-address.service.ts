@@ -4,10 +4,10 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { addresses, eq, orders } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../../modules/database/database.module";
+import { addresses, eq, orders } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { TimelineEventType } from "../dto/order-timeline.dto";
 import { OrderTimelineService } from "./order-timeline.service";
 

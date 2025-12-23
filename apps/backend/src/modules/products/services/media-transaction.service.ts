@@ -1,13 +1,13 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { productImages, sql } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../../modules/database/database.module";
+import { productImages, sql } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import {
   createErrorContext,
   createLogContext,
 } from "../../../common/logging/logging.helper";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 100;

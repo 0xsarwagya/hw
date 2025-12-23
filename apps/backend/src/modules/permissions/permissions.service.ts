@@ -4,12 +4,12 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { adminRoles, eq } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../database/database.module";
+import { adminRoles, eq } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
 import { createErrorContext } from "../../common/logging/logging.helper";
+import { DB_TOKEN } from "../database/database.module";
 import {
   CreateRoleDto,
   RoleResponseDto,
@@ -29,7 +29,10 @@ export class PermissionsService {
    */
   async getRoles(): Promise<RoleResponseDto[]> {
     try {
-      const roles = await this.db.select().from(adminRoles).orderBy(adminRoles.name);
+      const roles = await this.db
+        .select()
+        .from(adminRoles)
+        .orderBy(adminRoles.name);
 
       return roles.map((role) => this.mapToResponseDto(role));
     } catch (error) {
@@ -47,7 +50,7 @@ export class PermissionsService {
   async getRole(id: string): Promise<RoleResponseDto> {
     try {
       const [role] = await this.db
-      .select()
+        .select()
         .from(adminRoles)
         .where(eq(adminRoles.id, id))
         .limit(1);
@@ -76,7 +79,7 @@ export class PermissionsService {
     try {
       // Check if role name already exists
       const [existing] = await this.db
-      .select()
+        .select()
         .from(adminRoles)
         .where(eq(adminRoles.name, dto.name))
         .limit(1);
@@ -91,7 +94,7 @@ export class PermissionsService {
       this.validatePermissions(dto.permissions);
 
       const [created] = await this.db
-      .insert(adminRoles)
+        .insert(adminRoles)
         .values({
           name: dto.name,
           permissions: dto.permissions as Record<string, unknown>,
@@ -121,7 +124,7 @@ export class PermissionsService {
     try {
       // Check if role exists
       const [existing] = await this.db
-      .select()
+        .select()
         .from(adminRoles)
         .where(eq(adminRoles.id, id))
         .limit(1);
@@ -133,7 +136,7 @@ export class PermissionsService {
       // Check if new name conflicts with another role
       if (dto.name && dto.name !== existing.name) {
         const [conflicting] = await this.db
-      .select()
+          .select()
           .from(adminRoles)
           .where(eq(adminRoles.name, dto.name))
           .limit(1);
@@ -151,7 +154,7 @@ export class PermissionsService {
       }
 
       const [updated] = await this.db
-      .update(adminRoles)
+        .update(adminRoles)
         .set({
           name: dto.name ?? existing.name,
           permissions: dto.permissions
@@ -188,7 +191,7 @@ export class PermissionsService {
     try {
       // Check if role exists
       const [existing] = await this.db
-      .select()
+        .select()
         .from(adminRoles)
         .where(eq(adminRoles.id, id))
         .limit(1);
@@ -200,7 +203,7 @@ export class PermissionsService {
       // Check if any users are using this role
       const { users } = await import("@vcecom/db");
       const usersWithRole = await this.db
-      .select()
+        .select()
         .from(users)
         .where(eq(users.roleId, id))
         .limit(1);
@@ -246,7 +249,7 @@ export class PermissionsService {
     try {
       const { users } = await import("@vcecom/db");
       const [user] = await this.db
-      .select({
+        .select({
           role: users.role,
           roleId: users.roleId,
         })
@@ -270,7 +273,7 @@ export class PermissionsService {
 
       // Get role permissions
       const [role] = await this.db
-      .select()
+        .select()
         .from(adminRoles)
         .where(eq(adminRoles.id, user.roleId))
         .limit(1);

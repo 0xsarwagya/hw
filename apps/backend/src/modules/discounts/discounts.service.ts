@@ -6,6 +6,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
 import {
   and,
   desc,
@@ -27,7 +28,6 @@ import {
   or,
   sql,
 } from "@vcecom/db";
-import type { Database } from "@vcecom/db";
 import { DB_TOKEN } from "../database/database.module";
 
 // Internal modules - Redis stores
@@ -309,7 +309,7 @@ export class DiscountsService {
     // Validate code uniqueness if code is being updated
     if (updateDiscountDto.code && updateDiscountDto.code !== existing.code) {
       const [codeExists] = await this.db
-      .select()
+        .select()
         .from(discounts)
         .where(eq(discounts.code, updateDiscountDto.code))
         .limit(1);
@@ -527,7 +527,7 @@ export class DiscountsService {
       // Check per user limit
       if (userId && discount.perUserLimit) {
         const userUsages = await this.db
-      .select()
+          .select()
           .from(discountUsages)
           .where(
             and(
@@ -760,7 +760,7 @@ export class DiscountsService {
 
     if (currentDiscount) {
       await this.db
-      .update(discounts)
+        .update(discounts)
         .set({
           usageCount: currentDiscount.usageCount + 1,
         })
@@ -928,16 +928,16 @@ export class DiscountsService {
     // Delete BUY_X_GET_Y relationships
     if (type === DiscountType.BUY_X_GET_Y) {
       await this.db
-      .delete(discountGetProducts)
+        .delete(discountGetProducts)
         .where(eq(discountGetProducts.discountId, discountId));
       await this.db
-      .delete(discountGetCategories)
+        .delete(discountGetCategories)
         .where(eq(discountGetCategories.discountId, discountId));
       await this.db
-      .delete(discountGetCollections)
+        .delete(discountGetCollections)
         .where(eq(discountGetCollections.discountId, discountId));
       await this.db
-      .delete(discountGetTags)
+        .delete(discountGetTags)
         .where(eq(discountGetTags.discountId, discountId));
     }
   }

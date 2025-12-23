@@ -4,8 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { and, desc, eq, priceListItems, priceLists } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
+import { and, desc, eq, priceListItems, priceLists } from "@vcecom/db";
 import { DB_TOKEN } from "../../../modules/database/database.module";
 import {
   CreatePriceListDto,
@@ -128,7 +128,10 @@ export class PriceListService {
     if (updateDto.endDate !== undefined)
       updateData.endDate = updateDto.endDate || null;
 
-    await this.db.update(priceLists).set(updateData).where(eq(priceLists.id, id));
+    await this.db
+      .update(priceLists)
+      .set(updateData)
+      .where(eq(priceLists.id, id));
 
     const updated = await this.findOne(id);
 

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, desc, eq, gte, lte, pricingAuditLogs } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
+import { and, desc, eq, gte, lte, pricingAuditLogs } from "@vcecom/db";
 import { DB_TOKEN } from "../../../modules/database/database.module";
 import {
   PricingAuditEventType,

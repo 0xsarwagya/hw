@@ -1,5 +1,5 @@
-import { addresses, eq } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
+import { addresses, eq } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../logging/context.service";
 import { createLogContext } from "../logging/logging.helper";

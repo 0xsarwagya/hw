@@ -17,11 +17,11 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
-import { admin2fa, eq, users } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../modules/database/database.module";
+import { admin2fa, eq, users } from "@vcecom/db";
 import type { Request } from "express";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { DB_TOKEN } from "../../modules/database/database.module";
 import { AdminMfaService } from "./admin-mfa.service";
 import {
   Disable2FADto,

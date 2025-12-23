@@ -7,9 +7,8 @@ import {
   NotFoundException,
   OnModuleInit,
 } from "@nestjs/common";
-import { eq, orders, payments } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../database/database.module";
+import { eq, orders, payments } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import Razorpay from "razorpay";
 import { AppConfigService } from "../../common/config/app.config.service";
@@ -19,6 +18,7 @@ import {
   createLogContext,
 } from "../../common/logging/logging.helper";
 import { Trace } from "../../common/tracing/trace.decorator";
+import { DB_TOKEN } from "../database/database.module";
 import { OrdersService } from "../orders/orders.service";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
 import {
@@ -448,7 +448,7 @@ export class PaymentsService implements OnModuleInit {
     let order: typeof orders.$inferSelect | undefined;
     try {
       const orderResult = await this.db
-      .select()
+        .select()
         .from(orders)
         .where(eq(orders.id, createRazorpayOrderDto.orderId))
         .limit(1);
@@ -501,7 +501,7 @@ export class PaymentsService implements OnModuleInit {
       // Update our order with Razorpay order ID
       try {
         await this.db
-      .update(orders)
+          .update(orders)
           .set({
             razorpayOrderId: razorpayOrder.id,
             updatedAt: new Date(),
@@ -989,7 +989,7 @@ export class PaymentsService implements OnModuleInit {
     let existingPayment: typeof payments.$inferSelect | undefined;
     try {
       const paymentResult = await this.db
-      .select()
+        .select()
         .from(payments)
         .where(eq(payments.razorpayPaymentId, paymentEntity.id))
         .limit(1);
@@ -1011,7 +1011,7 @@ export class PaymentsService implements OnModuleInit {
       // Update existing payment (idempotent)
       try {
         await this.db
-      .update(payments)
+          .update(payments)
           .set({
             status: "captured",
             updatedAt: new Date(),
@@ -1058,7 +1058,7 @@ export class PaymentsService implements OnModuleInit {
     let order: typeof orders.$inferSelect | undefined;
     try {
       const orderResult = await this.db
-      .select()
+        .select()
         .from(orders)
         .where(eq(orders.id, orderId))
         .limit(1);
@@ -1080,7 +1080,7 @@ export class PaymentsService implements OnModuleInit {
     if (order && order.status === "pending") {
       try {
         await this.db
-      .update(orders)
+          .update(orders)
           .set({
             status: "confirmed",
             updatedAt: new Date(),
@@ -1189,7 +1189,7 @@ export class PaymentsService implements OnModuleInit {
     let order: typeof orders.$inferSelect | undefined;
     try {
       const orderResult = await this.db
-      .select()
+        .select()
         .from(orders)
         .where(eq(orders.razorpayOrderId, paymentIntentId))
         .limit(1);
@@ -1237,7 +1237,7 @@ export class PaymentsService implements OnModuleInit {
     let existingPayment: typeof payments.$inferSelect | undefined;
     try {
       const paymentResult = await this.db
-      .select()
+        .select()
         .from(payments)
         .where(eq(payments.razorpayPaymentId, paymentEntity.id))
         .limit(1);
@@ -1259,7 +1259,7 @@ export class PaymentsService implements OnModuleInit {
       // Update payment status
       try {
         await this.db
-      .update(payments)
+          .update(payments)
           .set({
             status: "failed",
             updatedAt: new Date(),
@@ -1318,7 +1318,7 @@ export class PaymentsService implements OnModuleInit {
     let order: typeof orders.$inferSelect | undefined;
     try {
       const orderResult = await this.db
-      .select()
+        .select()
         .from(orders)
         .where(eq(orders.razorpayOrderId, paymentEntity.order_id))
         .limit(1);
@@ -1344,7 +1344,7 @@ export class PaymentsService implements OnModuleInit {
     let existingPayment: typeof payments.$inferSelect | undefined;
     try {
       const paymentResult = await this.db
-      .select()
+        .select()
         .from(payments)
         .where(eq(payments.razorpayPaymentId, paymentEntity.id))
         .limit(1);
@@ -1365,7 +1365,7 @@ export class PaymentsService implements OnModuleInit {
     if (existingPayment) {
       try {
         await this.db
-      .update(payments)
+          .update(payments)
           .set({
             status: "processing",
             updatedAt: new Date(),
@@ -1423,7 +1423,7 @@ export class PaymentsService implements OnModuleInit {
     let order: typeof orders.$inferSelect | undefined;
     try {
       const orderResult = await this.db
-      .select()
+        .select()
         .from(orders)
         .where(eq(orders.razorpayOrderId, orderEntity.id))
         .limit(1);
@@ -1448,7 +1448,7 @@ export class PaymentsService implements OnModuleInit {
     // Update order status to confirmed
     if (order.status === "pending") {
       await this.db
-      .update(orders)
+        .update(orders)
         .set({
           status: "confirmed",
           updatedAt: new Date(),

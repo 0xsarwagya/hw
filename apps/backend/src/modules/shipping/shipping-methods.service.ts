@@ -4,10 +4,10 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { and, desc, eq, shippingMethods } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../database/database.module";
+import { and, desc, eq, shippingMethods } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
+import { DB_TOKEN } from "../database/database.module";
 import {
   AvailableShippingMethod,
   CreateShippingMethodDto,
@@ -105,7 +105,7 @@ export class ShippingMethodsService {
     // If code is being updated, check for duplicates
     if (dto.code) {
       const existing = await this.db
-      .select()
+        .select()
         .from(shippingMethods)
         .where(
           and(eq(shippingMethods.code, dto.code), eq(shippingMethods.id, id)),
@@ -115,7 +115,7 @@ export class ShippingMethodsService {
       if (existing.length === 0) {
         // Check if another method has this code
         const duplicate = await this.db
-      .select()
+          .select()
           .from(shippingMethods)
           .where(eq(shippingMethods.code, dto.code))
           .limit(1);

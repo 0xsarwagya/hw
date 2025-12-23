@@ -14,9 +14,6 @@ import {
   Request,
   UseGuards,
 } from "@nestjs/common";
-import type { Database } from "@vcecom/db";
-import { customers, eq } from "@vcecom/db";
-import { DB_TOKEN } from "../../modules/database/database.module";
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -29,10 +26,13 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
+import type { Database } from "@vcecom/db";
+import { customers, eq } from "@vcecom/db";
 import { Public } from "../../common/decorators/public.decorator";
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
+import { DB_TOKEN } from "../../modules/database/database.module";
 
 interface AuthenticatedRequest extends Request {
   user: {

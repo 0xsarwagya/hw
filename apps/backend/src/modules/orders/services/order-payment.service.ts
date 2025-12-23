@@ -4,11 +4,11 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { eq, orders, payments } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../../modules/database/database.module";
+import { eq, orders, payments } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { isCodPayment } from "../../../common/constants/orders.constants";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { TimelineEventType } from "../dto/order-timeline.dto";
 import { OrderTimelineService } from "./order-timeline.service";
 
@@ -82,7 +82,7 @@ export class OrderPaymentService {
     // Update order status to confirmed if it's still pending (consistent with online payment flow)
     if (order.status === "pending") {
       await this.db
-      .update(orders)
+        .update(orders)
         .set({
           status: "confirmed",
           updatedAt: new Date(),

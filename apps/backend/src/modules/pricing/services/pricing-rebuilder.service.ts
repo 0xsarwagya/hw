@@ -1,13 +1,13 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { productVariants } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../../modules/database/database.module";
+import { productVariants } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import {
   createErrorContext,
   createLogContext,
 } from "../../../common/logging/logging.helper";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { PriceList } from "../engine/pricing-engine.types";
 import { PriceListService } from "./price-list.service";
 import { PricingBundleService } from "./pricing-bundle.service";

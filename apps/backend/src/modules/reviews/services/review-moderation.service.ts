@@ -1,9 +1,5 @@
+import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import type { Database } from "@vcecom/db";
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-} from "@nestjs/common";
 import {
   and,
   customers,
@@ -13,11 +9,11 @@ import {
   reviews,
   sql,
 } from "@vcecom/db";
-import { DB_TOKEN } from "../../../modules/database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { AUTO_APPROVE_THRESHOLD } from "../../../common/constants";
 import { ContextService } from "../../../common/logging/context.service";
 import { createLogContext } from "../../../common/logging/logging.helper";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { ReviewResponseDto } from "../dto/review-response.dto";
 import { ReviewAggregationService } from "./review-aggregation.service";
 import { ReviewCacheService } from "./review-cache.service";

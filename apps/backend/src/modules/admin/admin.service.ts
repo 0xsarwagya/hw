@@ -1,4 +1,9 @@
-import { Inject, Injectable, InternalServerErrorException } from "@nestjs/common";
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from "@nestjs/common";
+import type { Database } from "@vcecom/db";
 import {
   addresses,
   and,
@@ -17,8 +22,6 @@ import {
   products,
   sql,
 } from "@vcecom/db";
-import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
 import {
@@ -28,6 +31,7 @@ import {
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { UserBundleSelection } from "../bundles/services/bundle-eligibility.service";
 import { CartsService } from "../carts/carts.service";
+import { DB_TOKEN } from "../database/database.module";
 import { OrderResponseDto } from "../orders/dto/order-response.dto";
 import { ProductsService } from "../products/products.service";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
@@ -143,7 +147,7 @@ export class AdminService {
       try {
         const countQuery = whereCondition
           ? this.db
-      .select({ count: sql<number>`count(*)` })
+              .select({ count: sql<number>`count(*)` })
               .from(orders)
               .where(whereCondition)
           : this.db.select({ count: sql<number>`count(*)` }).from(orders);
@@ -227,7 +231,7 @@ export class AdminService {
             }>;
             try {
               items = await this.db
-      .select({
+                .select({
                   id: orderItems.id,
                   orderId: orderItems.orderId,
                   productVariantId: orderItems.productVariantId,
@@ -258,7 +262,7 @@ export class AdminService {
             let shippingAddress: { state: string } | undefined;
             try {
               const addressResult = await this.db
-      .select({ state: addresses.state })
+                .select({ state: addresses.state })
                 .from(addresses)
                 .where(eq(addresses.id, order.shippingAddressId))
                 .limit(1);
@@ -651,7 +655,7 @@ export class AdminService {
     switch (operation) {
       case BulkProductOperation.ACTIVATE:
         await this.db
-      .update(products)
+          .update(products)
           .set({ status: "active", updatedAt: new Date() })
           .where(inArray(products.id, productIds));
         affected = productIds.length;
@@ -659,7 +663,7 @@ export class AdminService {
 
       case BulkProductOperation.ARCHIVE:
         await this.db
-      .update(products)
+          .update(products)
           .set({ status: "archived", updatedAt: new Date() })
           .where(inArray(products.id, productIds));
         affected = productIds.length;
@@ -767,7 +771,7 @@ export class AdminService {
 
       // Get cart items
       const cartItemsData = await this.db
-      .select()
+        .select()
         .from(cartItems)
         .where(eq(cartItems.cartId, cart.id));
 
@@ -775,7 +779,7 @@ export class AdminService {
       let customerEmail: string | null = null;
       if (cart.customerId) {
         const [customer] = await this.db
-      .select({ email: customers.email })
+          .select({ email: customers.email })
           .from(customers)
           .where(eq(customers.id, cart.customerId))
           .limit(1);
@@ -945,7 +949,7 @@ export class AdminService {
     let customerEmail: string | null = null;
     if (cart.customerId) {
       const [customer] = await this.db
-      .select({ email: customers.email })
+        .select({ email: customers.email })
         .from(customers)
         .where(eq(customers.id, cart.customerId))
         .limit(1);

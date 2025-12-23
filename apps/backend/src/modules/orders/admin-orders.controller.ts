@@ -20,9 +20,8 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import { addresses, eq, orderItems, orders } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../modules/database/database.module";
+import { addresses, eq, orderItems, orders } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
@@ -35,6 +34,7 @@ import {
 } from "../../common/logging/logging.helper";
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
+import { DB_TOKEN } from "../../modules/database/database.module";
 import { CreateOrderNoteDto } from "../admin/dto/create-order-note.dto";
 import { CreateRefundDto } from "../admin/dto/create-refund.dto";
 import { MarkOrderPaidResponseDto } from "../admin/dto/mark-order-paid.dto";
@@ -113,7 +113,7 @@ export class AdminOrdersController {
       let order: typeof orders.$inferSelect | undefined;
       try {
         const orderResult = await this.db
-      .select()
+          .select()
           .from(orders)
           .where(eq(orders.id, id))
           .limit(1);
@@ -149,7 +149,7 @@ export class AdminOrdersController {
       }>;
       try {
         items = await this.db
-      .select({
+          .select({
             id: orderItems.id,
             orderId: orderItems.orderId,
             productVariantId: orderItems.productVariantId,
@@ -179,7 +179,7 @@ export class AdminOrdersController {
       let shippingAddress: { state: string } | undefined;
       try {
         const addressResult = await this.db
-      .select({ state: addresses.state })
+          .select({ state: addresses.state })
           .from(addresses)
           .where(eq(addresses.id, order.shippingAddressId))
           .limit(1);

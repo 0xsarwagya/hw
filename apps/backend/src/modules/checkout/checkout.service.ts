@@ -5,9 +5,8 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { addresses, eq } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../database/database.module";
+import { addresses, eq } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { isCodPayment } from "../../common/constants/orders.constants";
 import { ContextService } from "../../common/logging/context.service";
@@ -24,6 +23,7 @@ import {
 } from "../../common/utils/pincode.utils";
 import { CartsService } from "../carts/carts.service";
 import { AddressesService } from "../customers/addresses.service";
+import { DB_TOKEN } from "../database/database.module";
 import { CreateOrderDto } from "../orders/dto/create-order.dto";
 import { OrdersService } from "../orders/orders.service";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
@@ -453,7 +453,7 @@ export class CheckoutService {
         ) {
           try {
             const addressResult = await this.db
-      .select({ pincode: addresses.pincode, state: addresses.state })
+              .select({ pincode: addresses.pincode, state: addresses.state })
               .from(addresses)
               .where(eq(addresses.id, metadata.shippingAddressId))
               .limit(1);
@@ -558,7 +558,7 @@ export class CheckoutService {
       // Get address from database
       try {
         const addressResult = await this.db
-      .select({ pincode: addresses.pincode })
+          .select({ pincode: addresses.pincode })
           .from(addresses)
           .where(eq(addresses.id, metadata.shippingAddressId))
           .limit(1);

@@ -1,7 +1,7 @@
 import { Controller, Get, Inject } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { sql } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
+import { sql } from "@vcecom/db";
 import { DB_TOKEN } from "../../modules/database/database.module";
 import { DatabaseService } from "../../modules/database/database.service";
 import { Public } from "../decorators/public.decorator";

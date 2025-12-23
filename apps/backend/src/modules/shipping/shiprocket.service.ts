@@ -1,12 +1,17 @@
-import { Inject, Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
-import { addresses, eq, orderItems, orders, shipments } from "@vcecom/db";
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  OnModuleInit,
+} from "@nestjs/common";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../modules/database/database.module";
+import { addresses, eq, orderItems, orders, shipments } from "@vcecom/db";
 import { AppConfigService } from "../../common/config/app.config.service";
 import {
   SHIPROCKET_CANCEL_SHIPMENT_ENDPOINT_TEMPLATE,
   SHIPROCKET_PICKUP_LOCATIONS_ENDPOINT,
 } from "../../common/constants/shipping.constants";
+import { DB_TOKEN } from "../../modules/database/database.module";
 import { ShiprocketConfigService } from "./shiprocket-config.service";
 
 export interface ShiprocketAuthToken {

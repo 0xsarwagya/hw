@@ -1,4 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
 import {
   and,
   desc,
@@ -7,14 +8,13 @@ import {
   mediaAuditLogs,
   sql,
 } from "@vcecom/db";
-import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../../modules/database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import {
   createErrorContext,
   createLogContext,
 } from "../../../common/logging/logging.helper";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 
 export interface AuditLogFilters {
   productId?: string;

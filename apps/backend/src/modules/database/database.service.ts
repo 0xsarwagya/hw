@@ -1,12 +1,14 @@
 import {
-  Inject,
   Injectable,
   OnApplicationShutdown,
   OnModuleInit,
 } from "@nestjs/common";
-import { closeDatabasePool, getDatabasePool, getPoolStats, isPoolHealthy } from "@vcecom/db";
-import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "./database.module";
+import {
+  closeDatabasePool,
+  getDatabasePool,
+  getPoolStats,
+  isPoolHealthy,
+} from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
 import {
@@ -19,7 +21,6 @@ export class DatabaseService implements OnModuleInit, OnApplicationShutdown {
   constructor(
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
-    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB to verify singleton
   ) {}
 
   async onModuleInit() {
@@ -27,8 +28,10 @@ export class DatabaseService implements OnModuleInit, OnApplicationShutdown {
     // This ensures we're using the same pool instance across all modules
     try {
       const poolInstance = getDatabasePool();
-      const poolId = poolInstance ? `pool_${poolInstance.totalCount}_${Date.now()}` : "not_created";
-      
+      const poolId = poolInstance
+        ? `pool_${poolInstance.totalCount}_${Date.now()}`
+        : "not_created";
+
       // Log pool status on startup
       // Note: getPoolStats() doesn't trigger pool creation - pool is created lazily
       // This is safe to call during initialization
@@ -41,7 +44,7 @@ export class DatabaseService implements OnModuleInit, OnApplicationShutdown {
             idleConnections: stats.idleCount,
             waitingConnections: stats.waitingCount,
             poolInstanceExists: !!poolInstance,
-            dbInstanceType: typeof this.db,
+            dbInstanceType: "Database",
           }),
           "Database connection pool initialized (singleton verified)",
         );
@@ -49,7 +52,7 @@ export class DatabaseService implements OnModuleInit, OnApplicationShutdown {
         this.logger.info(
           createLogContext(this.contextService, "databasePoolInit", {
             poolId,
-            dbInstanceType: typeof this.db,
+            dbInstanceType: "Database",
           }),
           "Database pool not yet created (lazy initialization) - singleton pattern active",
         );

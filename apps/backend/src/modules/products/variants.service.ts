@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
 import {
   eq,
   inArray,
@@ -12,7 +13,6 @@ import {
   variantOptionValueAssignments,
   variantOptionValues,
 } from "@vcecom/db";
-import type { Database } from "@vcecom/db";
 import { DB_TOKEN } from "../../modules/database/database.module";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
 import { CreateVariantDto } from "./dto/create-variant.dto";
@@ -74,7 +74,7 @@ export class VariantsService {
     // Ensure SKU is unique
     while (true) {
       const [existing] = await this.db
-      .select()
+        .select()
         .from(productVariants)
         .where(eq(productVariants.sku, sku))
         .limit(1);
@@ -142,7 +142,7 @@ export class VariantsService {
     ) {
       // Validate all option values exist
       const optionValues = await this.db
-      .select()
+        .select()
         .from(variantOptionValues)
         .where(
           inArray(variantOptionValues.id, createVariantDto.optionValueIds),
@@ -290,14 +290,14 @@ export class VariantsService {
     if (updateVariantDto.optionValueIds !== undefined) {
       // Delete existing assignments
       await this.db
-      .delete(variantOptionValueAssignments)
+        .delete(variantOptionValueAssignments)
         .where(eq(variantOptionValueAssignments.variantId, id));
 
       // Create new assignments if provided
       if (updateVariantDto.optionValueIds.length > 0) {
         // Validate all option values exist
         const optionValues = await this.db
-      .select()
+          .select()
           .from(variantOptionValues)
           .where(
             inArray(variantOptionValues.id, updateVariantDto.optionValueIds),
@@ -355,7 +355,7 @@ export class VariantsService {
 
     while (true) {
       const [existing] = await this.db
-      .select()
+        .select()
         .from(productVariants)
         .where(eq(productVariants.sku, sku))
         .limit(1);

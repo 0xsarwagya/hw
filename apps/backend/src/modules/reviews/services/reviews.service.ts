@@ -1,4 +1,3 @@
-import type { Database } from "@vcecom/db";
 import {
   BadRequestException,
   ForbiddenException,
@@ -6,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
 import {
   and,
   customers,
@@ -18,13 +18,13 @@ import {
   reviews,
   sql,
 } from "@vcecom/db";
-import { DB_TOKEN } from "../../../modules/database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import {
   createErrorContext,
   createLogContext,
 } from "../../../common/logging/logging.helper";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { NotificationsService } from "../../notifications/notifications.service";
 import { NotificationType } from "../../notifications/types/notification.types";
 import { CreateReviewDto } from "../dto/create-review.dto";
@@ -76,7 +76,7 @@ export class ReviewsService {
     let existingReview: typeof reviews.$inferSelect | undefined;
     try {
       const existingReviewResult = await this.db
-      .select()
+        .select()
         .from(reviews)
         .where(
           and(
@@ -114,7 +114,7 @@ export class ReviewsService {
     let newReview: typeof reviews.$inferSelect | undefined;
     try {
       const reviewResult = await this.db
-      .insert(reviews)
+        .insert(reviews)
         .values({
           customerId,
           orderId: createReviewDto.orderId,
@@ -155,7 +155,7 @@ export class ReviewsService {
     let checkReview: typeof reviews.$inferSelect | undefined;
     try {
       const checkReviewResult = await this.db
-      .select()
+        .select()
         .from(reviews)
         .where(eq(reviews.id, newReview.id))
         .limit(1);
@@ -668,7 +668,7 @@ export class ReviewsService {
     let isHelpful = false;
     if (customerId) {
       const [vote] = await this.db
-      .select()
+        .select()
         .from(reviewHelpfulVotes)
         .where(
           and(

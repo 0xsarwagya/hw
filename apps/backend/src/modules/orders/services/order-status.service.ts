@@ -4,11 +4,11 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { and, eq, orderItems, orders } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../../modules/database/database.module";
+import { and, eq, orderItems, orders } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { OrderResponseDto } from "../dto/order-response.dto";
 import {
   OrderStatus,

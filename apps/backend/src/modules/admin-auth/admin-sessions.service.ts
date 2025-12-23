@@ -1,8 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
-import { adminSessions, eq, gte } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../database/database.module";
+import { adminSessions, eq, gte } from "@vcecom/db";
 import * as argon2 from "argon2";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
@@ -10,6 +9,7 @@ import {
   createErrorContext,
   createLogContext,
 } from "../../common/logging/logging.helper";
+import { DB_TOKEN } from "../database/database.module";
 
 export interface CreateSessionParams {
   adminId: string;
@@ -62,7 +62,7 @@ export class AdminSessionsService {
 
     try {
       const [session] = await this.db
-      .insert(adminSessions)
+        .insert(adminSessions)
         .values({
           adminId,
           refreshTokenHash,
@@ -108,7 +108,7 @@ export class AdminSessionsService {
   ): Promise<{ id: string; adminId: string; deviceId: string } | null> {
     try {
       const [session] = await this.db
-      .select({
+        .select({
           id: adminSessions.id,
           adminId: adminSessions.adminId,
           deviceId: adminSessions.deviceId,
@@ -123,7 +123,7 @@ export class AdminSessionsService {
 
       // Check if session is expired
       const [fullSession] = await this.db
-      .select({
+        .select({
           expiresAt: adminSessions.expiresAt,
         })
         .from(adminSessions)
@@ -161,7 +161,7 @@ export class AdminSessionsService {
 
     try {
       await this.db
-      .update(adminSessions)
+        .update(adminSessions)
         .set({
           refreshTokenHash: newRefreshTokenHash,
           lastUsedAt: new Date(),
@@ -193,7 +193,7 @@ export class AdminSessionsService {
   async updateLastUsedAt(sessionId: string): Promise<void> {
     try {
       await this.db
-      .update(adminSessions)
+        .update(adminSessions)
         .set({ lastUsedAt: new Date() })
         .where(eq(adminSessions.id, sessionId));
     } catch (error) {
@@ -211,7 +211,9 @@ export class AdminSessionsService {
    */
   async deleteSession(sessionId: string): Promise<void> {
     try {
-      await this.db.delete(adminSessions).where(eq(adminSessions.id, sessionId));
+      await this.db
+        .delete(adminSessions)
+        .where(eq(adminSessions.id, sessionId));
 
       this.logger.info(
         createLogContext(this.contextService, "deleteSession", { sessionId }),
@@ -234,7 +236,7 @@ export class AdminSessionsService {
   async deleteAllSessions(adminId: string): Promise<number> {
     try {
       const result = await this.db
-      .delete(adminSessions)
+        .delete(adminSessions)
         .where(eq(adminSessions.adminId, adminId))
         .returning();
 
@@ -264,7 +266,7 @@ export class AdminSessionsService {
   async getActiveSessions(adminId: string): Promise<SessionInfo[]> {
     try {
       const sessions = await this.db
-      .select({
+        .select({
           id: adminSessions.id,
           deviceId: adminSessions.deviceId,
           userAgent: adminSessions.userAgent,

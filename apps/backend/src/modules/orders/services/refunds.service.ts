@@ -5,9 +5,8 @@ import {
   NotFoundException,
   OnModuleInit,
 } from "@nestjs/common";
-import { and, desc, eq, orders, payments, refunds } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../../modules/database/database.module";
+import { and, desc, eq, orders, payments, refunds } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import Razorpay from "razorpay";
 import { AppConfigService } from "../../../common/config/app.config.service";
@@ -15,6 +14,7 @@ import {
   MAX_REFUND_AMOUNT_MULTIPLIER,
   MIN_REFUND_AMOUNT_INR,
 } from "../../../common/constants/orders.constants";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { NotificationsService } from "../../notifications/notifications.service";
 import { NotificationType } from "../../notifications/types/notification.types";
 import { RazorpayConfigService } from "../../payments/razorpay-config.service";
@@ -265,7 +265,7 @@ export class RefundsService implements OnModuleInit {
     if (!order || !order.razorpayOrderId || !this.razorpay) {
       // Mark as failed if no payment provider
       await this.db
-      .update(refunds)
+        .update(refunds)
         .set({
           status: "failed",
           updatedAt: new Date(),
@@ -278,7 +278,7 @@ export class RefundsService implements OnModuleInit {
     try {
       // Get payment ID from payments table
       const [payment] = await this.db
-      .select()
+        .select()
         .from(payments)
         .where(
           and(eq(payments.orderId, order.id), eq(payments.status, "captured")),
@@ -303,7 +303,7 @@ export class RefundsService implements OnModuleInit {
 
       // Update refund with provider refund ID
       const [updatedRefund] = await this.db
-      .update(refunds)
+        .update(refunds)
         .set({
           status: "completed",
           providerRefundId: razorpayRefund.id,
@@ -338,7 +338,7 @@ export class RefundsService implements OnModuleInit {
     } catch (error) {
       // Mark refund as failed
       await this.db
-      .update(refunds)
+        .update(refunds)
         .set({
           status: "failed",
           updatedAt: new Date(),

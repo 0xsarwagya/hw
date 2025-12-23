@@ -1,4 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
 import {
   and,
   asc,
@@ -10,14 +11,13 @@ import {
   productVariants,
   sql,
 } from "@vcecom/db";
-import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../../modules/database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import {
   createErrorContext,
   createLogContext,
 } from "../../../common/logging/logging.helper";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { NotificationsService } from "../../notifications/notifications.service";
 import { NotificationType } from "../../notifications/types/notification.types";
 import { StorageService } from "../../storage/storage.service";
@@ -133,7 +133,9 @@ export class MediaConsistencyService {
     const allImages = await this.db.select().from(productImages);
 
     // Get all product IDs
-    const allProducts = await this.db.select({ id: products.id }).from(products);
+    const allProducts = await this.db
+      .select({ id: products.id })
+      .from(products);
     const productIds = new Set(allProducts.map((p) => p.id));
 
     // Get all variant IDs
@@ -182,12 +184,14 @@ export class MediaConsistencyService {
     const issues: OrderIndexIssue[] = [];
 
     // Get all products
-    const allProducts = await this.db.select({ id: products.id }).from(products);
+    const allProducts = await this.db
+      .select({ id: products.id })
+      .from(products);
 
     for (const product of allProducts) {
       // Get product images (no variantId)
       const productImgs = await this.db
-      .select()
+        .select()
         .from(productImages)
         .where(
           and(
@@ -247,7 +251,7 @@ export class MediaConsistencyService {
 
     for (const variant of allVariants) {
       const variantImgs = await this.db
-      .select()
+        .select()
         .from(productImages)
         .where(eq(productImages.variantId, variant.id))
         .orderBy(asc(productImages.order));
@@ -368,7 +372,7 @@ export class MediaConsistencyService {
     for (const variant of allVariants) {
       // Get product images
       const productImgs = await this.db
-      .select()
+        .select()
         .from(productImages)
         .where(
           and(
@@ -379,7 +383,7 @@ export class MediaConsistencyService {
 
       // Get variant-specific images
       const variantImgs = await this.db
-      .select()
+        .select()
         .from(productImages)
         .where(eq(productImages.variantId, variant.id));
 
@@ -465,7 +469,7 @@ export class MediaConsistencyService {
       try {
         // Get image record
         const [image] = await this.db
-      .select()
+          .select()
           .from(productImages)
           .where(eq(productImages.id, issue.imageId))
           .limit(1);
@@ -496,7 +500,7 @@ export class MediaConsistencyService {
 
         // Delete from database
         await this.db
-      .delete(productImages)
+          .delete(productImages)
           .where(eq(productImages.id, issue.imageId));
 
         // Log audit entry
@@ -569,7 +573,7 @@ export class MediaConsistencyService {
     for (const [productId, _issues] of productGroups.entries()) {
       try {
         const images = await this.db
-      .select()
+          .select()
           .from(productImages)
           .where(
             and(
@@ -588,14 +592,14 @@ export class MediaConsistencyService {
         for (let i = 0; i < images.length; i++) {
           if (images[i].order !== i) {
             await this.db
-      .update(productImages)
+              .update(productImages)
               .set({ order: i, updatedAt: new Date() })
               .where(eq(productImages.id, images[i].id));
           }
         }
 
         const afterImages = await this.db
-      .select()
+          .select()
           .from(productImages)
           .where(
             and(
@@ -641,7 +645,7 @@ export class MediaConsistencyService {
       const [productId, variantId] = key.split(":");
       try {
         const images = await this.db
-      .select()
+          .select()
           .from(productImages)
           .where(eq(productImages.variantId, variantId))
           .orderBy(asc(productImages.order));
@@ -655,14 +659,14 @@ export class MediaConsistencyService {
         for (let i = 0; i < images.length; i++) {
           if (images[i].order !== i) {
             await this.db
-      .update(productImages)
+              .update(productImages)
               .set({ order: i, updatedAt: new Date() })
               .where(eq(productImages.id, images[i].id));
           }
         }
 
         const afterImages = await this.db
-      .select()
+          .select()
           .from(productImages)
           .where(eq(productImages.variantId, variantId))
           .orderBy(asc(productImages.order));

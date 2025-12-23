@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
 import {
   and,
   asc,
@@ -25,8 +26,6 @@ import {
   variantOptionTypes,
   variantOptionValues,
 } from "@vcecom/db";
-import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../database/database.module";
 import Fuse from "fuse.js";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
@@ -51,6 +50,7 @@ import {
   isLikelySku,
   parseSearchQuery,
 } from "../../common/utils/search.utils";
+import { DB_TOKEN } from "../database/database.module";
 import { calculatePriceAfterOverride } from "../pricing/engine/override-strategies/price-override.strategy";
 import { PriceListService } from "../pricing/services/price-list.service";
 import { StorageService } from "../storage/storage.service";
@@ -86,7 +86,7 @@ export class ProductsService {
     // Validate category exists if provided
     if (createProductDto.categoryId) {
       const [category] = await this.db
-      .select()
+        .select()
         .from(categories)
         .where(eq(categories.id, createProductDto.categoryId))
         .limit(1);
@@ -158,7 +158,7 @@ export class ProductsService {
         let variantsWithMatchingSku: Array<{ productId: string }>;
         try {
           variantsWithMatchingSku = await this.db
-      .select({ productId: productVariants.productId })
+            .select({ productId: productVariants.productId })
             .from(productVariants)
             .where(ilike(productVariants.sku, searchPattern));
         } catch (error) {
@@ -217,7 +217,7 @@ export class ProductsService {
       let productsInStock: Array<{ productId: string }>;
       try {
         productsInStock = await this.db
-      .select({ productId: productVariants.productId })
+          .select({ productId: productVariants.productId })
           .from(productVariants)
           .where(sql`${productVariants.inventory} > 0`);
       } catch (error) {
@@ -372,7 +372,7 @@ export class ProductsService {
     if (filterDto.inStock !== undefined) {
       // Get products with at least one variant with inventory > 0
       const productsInStock = await this.db
-      .select({ productId: productVariants.productId })
+        .select({ productId: productVariants.productId })
         .from(productVariants)
         .where(sql`${productVariants.inventory} > 0`);
 
@@ -634,7 +634,7 @@ export class ProductsService {
     // Validate category exists if provided
     if (updateProductDto.categoryId) {
       const [category] = await this.db
-      .select()
+        .select()
         .from(categories)
         .where(eq(categories.id, updateProductDto.categoryId))
         .limit(1);
@@ -737,7 +737,7 @@ export class ProductsService {
     // Availability filter
     if (searchDto.inStock !== undefined) {
       const productsInStock = await this.db
-      .select({ productId: productVariants.productId })
+        .select({ productId: productVariants.productId })
         .from(productVariants)
         .where(sql`${productVariants.inventory} > 0`);
 
@@ -805,7 +805,7 @@ export class ProductsService {
           : searchPatterns[0];
 
         const variantsWithMatchingSku = await this.db
-      .select({
+          .select({
             productId: productVariants.productId,
             sku: productVariants.sku,
           })
@@ -824,7 +824,7 @@ export class ProductsService {
     if (skuMatches.size > 0) {
       const skuProductIds = Array.from(skuMatches.keys());
       const skuProducts = await this.db
-      .select({
+        .select({
           id: products.id,
           title: products.title,
           description: products.description,
@@ -1204,7 +1204,7 @@ export class ProductsService {
     const operation = async () => {
       // Validate product exists
       const [product] = await this.db
-      .select()
+        .select()
         .from(products)
         .where(eq(products.id, productId))
         .limit(1);
@@ -1216,7 +1216,7 @@ export class ProductsService {
       // Validate variant exists if provided
       if (variantId) {
         const [variant] = await this.db
-      .select()
+          .select()
           .from(productVariants)
           .where(eq(productVariants.id, variantId))
           .limit(1);
@@ -1240,7 +1240,7 @@ export class ProductsService {
 
       // Check existing image count and validate limits
       const existingImages = await this.db
-      .select()
+        .select()
         .from(productImages)
         .where(
           variantId
@@ -1274,7 +1274,7 @@ export class ProductsService {
       }
 
       const [newImage] = await this.db
-      .insert(productImages)
+        .insert(productImages)
         .values({
           productId,
           variantId: variantId || null,
@@ -1425,7 +1425,7 @@ export class ProductsService {
       }
 
       const [updated] = await this.db
-      .update(productImages)
+        .update(productImages)
         .set({ order, updatedAt: new Date() })
         .where(eq(productImages.id, imageId))
         .returning();
@@ -1554,7 +1554,7 @@ export class ProductsService {
 
       // Update image URL
       const [updated] = await this.db
-      .update(productImages)
+        .update(productImages)
         .set({
           url: newImageKey,
           updatedAt: new Date(),
@@ -1668,7 +1668,7 @@ export class ProductsService {
     // Validate option type template exists if provided
     if (optionTypeId) {
       const [optionType] = await this.db
-      .select()
+        .select()
         .from(variantOptionTypes)
         .where(eq(variantOptionTypes.id, optionTypeId))
         .limit(1);
@@ -1818,7 +1818,7 @@ export class ProductsService {
     const optionTypesWithValues = await Promise.all(
       optionTypes.map(async (optionType) => {
         const values = await this.db
-      .select()
+          .select()
           .from(variantOptionValues)
           .where(
             eq(variantOptionValues.productVariantOptionTypeId, optionType.id),

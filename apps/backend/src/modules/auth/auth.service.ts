@@ -5,10 +5,10 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { eq, users } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../database/database.module";
+import { eq, users } from "@vcecom/db";
 import * as bcrypt from "bcrypt";
+import { DB_TOKEN } from "../database/database.module";
 
 @Injectable()
 export class AuthService {
@@ -103,7 +103,7 @@ export class AuthService {
 
       // Verify user still exists
       const [user] = await this.db
-      .select()
+        .select()
         .from(users)
         .where(eq(users.id, payload.sub))
         .limit(1);

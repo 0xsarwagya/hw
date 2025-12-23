@@ -4,14 +4,14 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { addresses, and, customers, eq } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../database/database.module";
+import { addresses, and, customers, eq } from "@vcecom/db";
 import { isValidStateName } from "../../common/data/indian-states";
 import {
   formatPincode,
   isValidPincodeFormat,
 } from "../../common/utils/pincode.utils";
+import { DB_TOKEN } from "../database/database.module";
 import { CreateAddressDto } from "./dto/create-address.dto";
 import { UpdateAddressDto } from "./dto/update-address.dto";
 
@@ -61,7 +61,7 @@ export class AddressesService {
     // If this is set as default, unset other default addresses
     if (createDto.type === "shipping" || createDto.type === "both") {
       await this.db
-      .update(addresses)
+        .update(addresses)
         .set({ isDefault: false })
         .where(
           and(
@@ -262,7 +262,7 @@ export class AddressesService {
     // If this is set as default, unset other default addresses
     if (createDto.type === "shipping" || createDto.type === "both") {
       await this.db
-      .update(addresses)
+        .update(addresses)
         .set({ isDefault: false })
         .where(
           and(

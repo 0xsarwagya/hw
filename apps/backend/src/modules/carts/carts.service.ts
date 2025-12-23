@@ -1,12 +1,11 @@
-import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../modules/database/database.module";
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
-  Inject,
 } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
 import {
   addresses,
   and,
@@ -29,6 +28,7 @@ import {
 } from "../../common/logging/logging.helper";
 import { Trace } from "../../common/tracing/trace.decorator";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
+import { DB_TOKEN } from "../../modules/database/database.module";
 import {
   BundleEligibilityService,
   UserBundleSelection,
@@ -76,7 +76,7 @@ export class CartsService {
       let cart: typeof carts.$inferSelect | undefined;
       try {
         const cartResult = await this.db
-      .select()
+          .select()
           .from(carts)
           .where(eq(carts.customerId, customerId))
           .limit(1);
@@ -100,7 +100,7 @@ export class CartsService {
 
         try {
           const cartResult = await this.db
-      .insert(carts)
+            .insert(carts)
             .values({
               customerId,
               expiresAt,
@@ -127,7 +127,7 @@ export class CartsService {
       let cart: typeof carts.$inferSelect | undefined;
       try {
         const cartResult = await this.db
-      .select()
+          .select()
           .from(carts)
           .where(eq(carts.sessionId, sessionId))
           .limit(1);
@@ -151,7 +151,7 @@ export class CartsService {
 
         try {
           const cartResult = await this.db
-      .insert(carts)
+            .insert(carts)
             .values({
               sessionId,
               expiresAt,
@@ -274,7 +274,7 @@ export class CartsService {
     const variantItemsWithProducts =
       variantItems.length > 0
         ? await this.db
-      .select({
+            .select({
               id: cartItems.id,
               quantity: cartItems.quantity,
               price: cartItems.price,
@@ -313,7 +313,7 @@ export class CartsService {
 
     if (productIds.length > 0) {
       productGstRates = await this.db
-      .select({
+        .select({
           id: products.id,
           gstRate: products.gstRate,
         })
@@ -330,7 +330,7 @@ export class CartsService {
       const _metadata = bundleItem.metadata as BundleCartItemMetadata;
       // Get first variant's product for GST
       const [firstVariant] = await this.db
-      .select({
+        .select({
           productId: productVariants.productId,
         })
         .from(productVariants)
@@ -339,7 +339,7 @@ export class CartsService {
 
       if (firstVariant) {
         const [product] = await this.db
-      .select({
+          .select({
             gstRate: products.gstRate,
           })
           .from(products)
@@ -449,7 +449,7 @@ export class CartsService {
       for (const vq of variantQuantities) {
         // Get variant details
         const [variant] = await this.db
-      .select({
+          .select({
             productId: productVariants.productId,
           })
           .from(productVariants)
@@ -682,7 +682,7 @@ export class CartsService {
     // Update cart totals
     try {
       await this.db
-      .update(carts)
+        .update(carts)
         .set({
           subtotal,
           gstAmount: totalGstAmount,
@@ -723,7 +723,7 @@ export class CartsService {
     let customer: { userId: string } | undefined;
     try {
       const customerResult = await this.db
-      .select({ userId: customers.userId })
+        .select({ userId: customers.userId })
         .from(customers)
         .where(eq(customers.id, customerId))
         .limit(1);
@@ -770,7 +770,7 @@ export class CartsService {
     let cart: typeof carts.$inferSelect | undefined;
     try {
       const cartResult = await this.db
-      .select()
+        .select()
         .from(carts)
         .where(eq(carts.id, cartId))
         .limit(1);
@@ -799,7 +799,7 @@ export class CartsService {
     let items: Array<typeof cartItems.$inferSelect>;
     try {
       items = await this.db
-      .select()
+        .select()
         .from(cartItems)
         .where(eq(cartItems.cartId, cart.id));
     } catch (error) {
@@ -1073,7 +1073,7 @@ export class CartsService {
       | undefined;
     try {
       const variantResult = await this.db
-      .select({
+        .select({
           id: productVariants.id,
           price: productVariants.price,
           productId: productVariants.productId,
@@ -1144,7 +1144,7 @@ export class CartsService {
       );
 
       await this.db
-      .update(cartItems)
+        .update(cartItems)
         .set({ quantity: newQuantity })
         .where(eq(cartItems.id, existingItem.id));
     } else {
@@ -1615,7 +1615,7 @@ export class CartsService {
     let cart: typeof carts.$inferSelect | undefined;
     try {
       const cartResult = await this.db
-      .select()
+        .select()
         .from(carts)
         .where(eq(carts.id, cartId))
         .limit(1);
@@ -1685,7 +1685,7 @@ export class CartsService {
     for (const guestItem of guestItems) {
       // Check if item already exists in customer cart
       const [existingItem] = await this.db
-      .select()
+        .select()
         .from(cartItems)
         .where(
           and(
@@ -1698,7 +1698,7 @@ export class CartsService {
       if (existingItem) {
         // Update quantity (add guest quantity)
         await this.db
-      .update(cartItems)
+          .update(cartItems)
           .set({ quantity: existingItem.quantity + guestItem.quantity })
           .where(eq(cartItems.id, existingItem.id));
       } else {
@@ -1767,7 +1767,10 @@ export class CartsService {
     }
 
     // Apply discount code
-    await this.db.update(carts).set({ discountCode }).where(eq(carts.id, cart.id));
+    await this.db
+      .update(carts)
+      .set({ discountCode })
+      .where(eq(carts.id, cart.id));
 
     // Recalculate totals with discount
     await this.recalculateCartTotals(cart.id, customerId);

@@ -5,12 +5,12 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
-import { categories, eq } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../database/database.module";
+import { categories, eq } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
 import { createErrorContext } from "../../common/logging/logging.helper";
+import { DB_TOKEN } from "../database/database.module";
 import { CreateCategoryDto } from "./dto/create-category.dto";
 import { UpdateCategoryDto } from "./dto/update-category.dto";
 
@@ -47,7 +47,7 @@ export class CategoriesService {
       let existing: typeof categories.$inferSelect | undefined;
       try {
         const existingResult = await this.db
-      .select()
+          .select()
           .from(categories)
           .where(eq(categories.slug, slug))
           .limit(1);
@@ -85,7 +85,7 @@ export class CategoriesService {
       let parent: typeof categories.$inferSelect | undefined;
       try {
         const parentResult = await this.db
-      .select()
+          .select()
           .from(categories)
           .where(eq(categories.id, createCategoryDto.parentId))
           .limit(1);
@@ -121,7 +121,7 @@ export class CategoriesService {
     let newCategory: typeof categories.$inferSelect | undefined;
     try {
       const categoryResult = await this.db
-      .insert(categories)
+        .insert(categories)
         .values({
           name: createCategoryDto.name,
           slug,
@@ -234,7 +234,7 @@ export class CategoriesService {
     let category: typeof categories.$inferSelect | undefined;
     try {
       const categoryResult = await this.db
-      .select()
+        .select()
         .from(categories)
         .where(eq(categories.id, id))
         .limit(1);
@@ -266,7 +266,7 @@ export class CategoriesService {
     let category: typeof categories.$inferSelect | undefined;
     try {
       const categoryResult = await this.db
-      .select()
+        .select()
         .from(categories)
         .where(eq(categories.slug, slug))
         .limit(1);
@@ -299,7 +299,7 @@ export class CategoriesService {
     let existing: typeof categories.$inferSelect | undefined;
     try {
       const existingResult = await this.db
-      .select()
+        .select()
         .from(categories)
         .where(eq(categories.id, id))
         .limit(1);
@@ -330,7 +330,7 @@ export class CategoriesService {
       let parent: typeof categories.$inferSelect | undefined;
       try {
         const parentResult = await this.db
-      .select()
+          .select()
           .from(categories)
           .where(eq(categories.id, updateCategoryDto.parentId))
           .limit(1);
@@ -426,7 +426,7 @@ export class CategoriesService {
     }
 
     // Delete category
-      await this.db.delete(categories).where(eq(categories.id, id));
+    await this.db.delete(categories).where(eq(categories.id, id));
 
     return { message: "Category deleted successfully" };
   }
@@ -444,7 +444,7 @@ export class CategoriesService {
       const currentId = queue.shift();
       if (!currentId) break;
       const children = await this.db
-      .select()
+        .select()
         .from(categories)
         .where(eq(categories.parentId, currentId));
 

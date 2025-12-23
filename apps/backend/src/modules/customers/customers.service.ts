@@ -7,15 +7,15 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { customers, eq, users } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../database/database.module";
+import { customers, eq, users } from "@vcecom/db";
 import * as bcrypt from "bcrypt";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
 import { createErrorContext } from "../../common/logging/logging.helper";
 import { Trace } from "../../common/tracing/trace.decorator";
 import { formatGstin, validateGstin } from "../../common/utils/gstin.utils";
+import { DB_TOKEN } from "../database/database.module";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { RegisterCustomerDto } from "./dto/register-customer.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
@@ -44,7 +44,7 @@ export class CustomersService {
     let existingUser: typeof users.$inferSelect | undefined;
     try {
       const userResult = await this.db
-      .select()
+        .select()
         .from(users)
         .where(eq(users.email, registerDto.email))
         .limit(1);
@@ -70,7 +70,7 @@ export class CustomersService {
     let existingCustomer: typeof customers.$inferSelect | undefined;
     try {
       const customerResult = await this.db
-      .select()
+        .select()
         .from(customers)
         .where(eq(customers.phone, registerDto.phone))
         .limit(1);
@@ -109,7 +109,7 @@ export class CustomersService {
       let existingGstin: typeof customers.$inferSelect | undefined;
       try {
         const gstinResult = await this.db
-      .select()
+          .select()
           .from(customers)
           .where(eq(customers.gstin, formattedGstin))
           .limit(1);
@@ -143,7 +143,7 @@ export class CustomersService {
     let newUser: typeof users.$inferSelect | undefined;
     try {
       const userResult = await this.db
-      .insert(users)
+        .insert(users)
         .values({
           email: registerDto.email,
           passwordHash,
@@ -172,7 +172,7 @@ export class CustomersService {
     let newCustomer: typeof customers.$inferSelect | undefined;
     try {
       const customerResult = await this.db
-      .insert(customers)
+        .insert(customers)
         .values({
           userId: newUser.id,
           email: registerDto.email,
@@ -258,7 +258,7 @@ export class CustomersService {
     let customer: typeof customers.$inferSelect | undefined;
     try {
       const customerResult = await this.db
-      .select()
+        .select()
         .from(customers)
         .where(eq(customers.userId, userId))
         .limit(1);
@@ -292,7 +292,7 @@ export class CustomersService {
     let existingCustomer: typeof customers.$inferSelect | undefined;
     try {
       const customerResult = await this.db
-      .select()
+        .select()
         .from(customers)
         .where(eq(customers.userId, userId))
         .limit(1);
@@ -319,7 +319,7 @@ export class CustomersService {
       let existingPhone: typeof customers.$inferSelect | undefined;
       try {
         const phoneResult = await this.db
-      .select()
+          .select()
           .from(customers)
           .where(eq(customers.phone, updateDto.phone))
           .limit(1);
@@ -360,7 +360,7 @@ export class CustomersService {
         let existingGstin: typeof customers.$inferSelect | undefined;
         try {
           const gstinResult = await this.db
-      .select()
+            .select()
             .from(customers)
             .where(eq(customers.gstin, formattedGstin))
             .limit(1);
@@ -398,7 +398,7 @@ export class CustomersService {
     let updated: typeof customers.$inferSelect | undefined;
     try {
       const updatedResult = await this.db
-      .update(customers)
+        .update(customers)
         .set(updateData)
         .where(eq(customers.userId, userId))
         .returning();
@@ -431,7 +431,7 @@ export class CustomersService {
     let user: typeof users.$inferSelect | undefined;
     try {
       const userResult = await this.db
-      .select()
+        .select()
         .from(users)
         .where(eq(users.id, userId))
         .limit(1);
@@ -476,7 +476,7 @@ export class CustomersService {
     // Update password
     try {
       await this.db
-      .update(users)
+        .update(users)
         .set({ passwordHash: newPasswordHash })
         .where(eq(users.id, userId));
     } catch (error) {
@@ -522,7 +522,7 @@ export class CustomersService {
     let existingCustomer: typeof customers.$inferSelect | undefined;
     try {
       const customerResult = await this.db
-      .select()
+        .select()
         .from(customers)
         .where(eq(customers.email, email))
         .limit(1);
@@ -557,7 +557,7 @@ export class CustomersService {
     let existingUser: typeof users.$inferSelect | undefined;
     try {
       const userResult = await this.db
-      .select()
+        .select()
         .from(users)
         .where(eq(users.email, email))
         .limit(1);
@@ -592,7 +592,7 @@ export class CustomersService {
       let existingPhone: typeof customers.$inferSelect | undefined;
       try {
         const phoneResult = await this.db
-      .select()
+          .select()
           .from(customers)
           .where(eq(customers.phone, phone))
           .limit(1);
@@ -630,7 +630,7 @@ export class CustomersService {
     let newUser: typeof users.$inferSelect | undefined;
     try {
       const userResult = await this.db
-      .insert(users)
+        .insert(users)
         .values({
           email,
           passwordHash: passwordHash || null,
@@ -659,7 +659,7 @@ export class CustomersService {
     let newCustomer: typeof customers.$inferSelect | undefined;
     try {
       const customerResult = await this.db
-      .insert(customers)
+        .insert(customers)
         .values({
           userId: newUser.id,
           email,
@@ -737,7 +737,7 @@ export class CustomersService {
     let customer: typeof customers.$inferSelect | undefined;
     try {
       const customerResult = await this.db
-      .select()
+        .select()
         .from(customers)
         .where(eq(customers.email, email))
         .limit(1);
@@ -770,7 +770,7 @@ export class CustomersService {
     let user: typeof users.$inferSelect | undefined;
     try {
       const userResult = await this.db
-      .select()
+        .select()
         .from(users)
         .where(eq(users.id, customer.userId))
         .limit(1);
@@ -800,7 +800,10 @@ export class CustomersService {
 
     // Update user with password
     try {
-      await this.db.update(users).set({ passwordHash }).where(eq(users.id, user.id));
+      await this.db
+        .update(users)
+        .set({ passwordHash })
+        .where(eq(users.id, user.id));
     } catch (error) {
       this.logger.error(
         createErrorContext(
@@ -818,7 +821,7 @@ export class CustomersService {
     let updatedCustomer: typeof customers.$inferSelect | undefined;
     try {
       const updatedResult = await this.db
-      .update(customers)
+        .update(customers)
         .set({
           isGuest: false,
           emailVerified: true,

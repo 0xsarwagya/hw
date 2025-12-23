@@ -1,10 +1,10 @@
-import type { Database } from "@vcecom/db";
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
-  Inject,
 } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
 import {
   and,
   bundleSetItems,

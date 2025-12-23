@@ -1,10 +1,10 @@
-import type { Database } from "@vcecom/db";
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
-  Inject,
 } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
 import {
   asc,
   bundleSetItems,
@@ -340,7 +340,7 @@ export class BundleDefinitionService {
     const setsWithItems = await Promise.all(
       sets.map(async (set) => {
         const items = await this.db
-      .select()
+          .select()
           .from(bundleSetItems)
           .where(eq(bundleSetItems.setId, set.id));
 

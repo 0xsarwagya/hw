@@ -1,9 +1,9 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { and, desc, eq, gte, lte, shipments, sql } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../../modules/database/database.module";
+import { and, desc, eq, gte, lte, shipments, sql } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "../../../common/constants";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 
 // Shipment status enum values - defined inline to match DTO
 const SHIPMENT_STATUS_VALUES = [

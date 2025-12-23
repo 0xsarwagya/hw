@@ -1,10 +1,10 @@
-import type { Database } from "@vcecom/db";
 import {
   BadRequestException,
   Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
 import {
   and,
   customerGroupPriceLists,
@@ -117,7 +117,7 @@ export class CustomerGroupService {
     // Check name uniqueness if name is being updated
     if (updateDto.name && updateDto.name !== existing.name) {
       const [nameConflict] = await this.db
-      .select()
+        .select()
         .from(customerGroups)
         .where(eq(customerGroups.name, updateDto.name))
         .limit(1);
@@ -201,7 +201,7 @@ export class CustomerGroupService {
     if (existing) {
       // Update priority if already assigned
       await this.db
-      .update(customerGroupPriceLists)
+        .update(customerGroupPriceLists)
         .set({ priority: assignDto.priority || 1 })
         .where(eq(customerGroupPriceLists.id, existing.id));
     } else {

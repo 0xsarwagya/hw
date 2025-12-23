@@ -1,6 +1,5 @@
-import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../modules/database/database.module";
 import { Inject, Injectable } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
 import {
   and,
   customers,
@@ -15,6 +14,7 @@ import {
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
 import { createErrorContext } from "../../common/logging/logging.helper";
+import { DB_TOKEN } from "../../modules/database/database.module";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
 import { StorageService } from "../storage/storage.service";
 import {
@@ -267,7 +267,7 @@ export class ExportsService {
     }>;
     try {
       ordersList = await this.db
-      .select({
+        .select({
           id: orders.id,
           orderNumber: orders.orderNumber,
           status: orders.status,
@@ -307,7 +307,7 @@ export class ExportsService {
           | undefined;
         try {
           const customerResult = await this.db
-      .select({
+            .select({
               email: customers.email,
               name: customers.name,
               phone: customers.phone,
@@ -368,7 +368,7 @@ export class ExportsService {
     }>;
     try {
       productsList = await this.db
-      .select({
+        .select({
           id: products.id,
           title: products.title,
           price: products.price,
@@ -401,7 +401,7 @@ export class ExportsService {
         }>;
         try {
           variants = await this.db
-      .select({
+            .select({
               id: productVariants.id,
               sku: productVariants.sku,
               price: productVariants.price,
@@ -477,7 +477,7 @@ export class ExportsService {
     return Promise.all(
       variants.map(async (variant) => {
         const [product] = await this.db
-      .select({ title: products.title })
+          .select({ title: products.title })
           .from(products)
           .where(eq(products.id, variant.productId))
           .limit(1);

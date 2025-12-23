@@ -1,8 +1,8 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, reviews, variantReviewAggregate } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../../modules/database/database.module";
+import { and, eq, reviews, variantReviewAggregate } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { ReviewAggregateDto } from "../dto/review-aggregate.dto";
 import { ReviewCacheService } from "./review-cache.service";
 
@@ -37,7 +37,7 @@ export class ReviewAggregationService {
     if (reviewCount === 0) {
       // No reviews - set to zero/default
       await this.db
-      .insert(variantReviewAggregate)
+        .insert(variantReviewAggregate)
         .values({
           variantId,
           averageRating: 0,

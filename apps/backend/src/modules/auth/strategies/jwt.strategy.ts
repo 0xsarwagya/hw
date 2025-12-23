@@ -1,11 +1,11 @@
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
-import { adminSessions, eq, users } from "@vcecom/db";
 import type { Database } from "@vcecom/db";
-import { DB_TOKEN } from "../../database/database.module";
+import { adminSessions, eq, users } from "@vcecom/db";
 import { Request } from "express";
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { AdminSessionsService } from "../../admin-auth/admin-sessions.service";
+import { DB_TOKEN } from "../../database/database.module";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -47,7 +47,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // If it's an admin, validate the session
     if (user.role !== "customer" && payload.sessionId) {
       const session = await this.db
-      .select()
+        .select()
         .from(adminSessions)
         .where(eq(adminSessions.id, payload.sessionId))
         .limit(1);
