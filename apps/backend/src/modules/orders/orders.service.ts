@@ -2892,6 +2892,8 @@ export class OrdersService {
 
     // Commit inventory (convert reserved → consumed)
     // This happens AFTER payment confirmation
+    // CRITICAL: Inventory MUST be decremented when order is placed
+    // If this fails, inventory will be out of sync and needs manual reconciliation
     try {
       // Release all cart reservations (individual reservation keys)
       await this.inventoryStore.releaseCartReservations(cart.id);
@@ -2920,15 +2922,31 @@ export class OrdersService {
           );
         }
       }
+
+      this.logger.info(
+        createLogContext(this.contextService, "commitInventory", {
+          orderId,
+          variantItemsCount: cartItemsWithVariants.length,
+          bundleItemsCount: bundleCartItems.length,
+        }),
+        "Inventory successfully decremented for order",
+      );
     } catch (error) {
+      // CRITICAL ERROR: Inventory decrement failed
+      // Order is already created, but inventory wasn't decremented
+      // This needs to be reconciled manually or via a background job
       this.logger.error(
         createErrorContext(this.contextService, "commitInventory", error, {
           orderId,
+          variantItemsCount: cartItemsWithVariants.length,
+          bundleItemsCount: bundleCartItems.length,
+          critical: true,
         }),
-        "Failed to commit inventory for order",
+        "CRITICAL: Failed to commit inventory for order - manual reconciliation required",
       );
       // Continue - inventory commit failure should be handled separately
       // Order is already created, inventory can be reconciled later
+      // TODO: Consider adding a background job to reconcile failed inventory commits
     }
 
     // Clear cart - use cartId from session

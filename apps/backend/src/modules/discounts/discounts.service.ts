@@ -610,8 +610,16 @@ export class DiscountsService {
     }
 
     // STEP 2: Filter by eligibility using Redis sets (if variant IDs provided)
+    // This is an optimization - if Redis cache isn't available, we'll check eligibility
+    // in the discount engine based on product/category/collection/tag matching
     if (cartVariantIds && cartVariantIds.length > 0) {
-      rules = await this.filterByEligibility(rules, cartVariantIds);
+      try {
+        rules = await this.filterByEligibility(rules, cartVariantIds);
+      } catch (error) {
+        // If eligibility filtering fails (Redis unavailable), continue with all rules
+        // The discount engine will filter based on product matching
+        // This ensures automatic discounts work even if Redis cache isn't warmed up
+      }
     }
 
     // STEP 3: Apply constraints (dates, limits, amounts)
@@ -700,6 +708,8 @@ export class DiscountsService {
 
   /**
    * Filter discounts by eligibility using Redis sets
+   * Falls back to including all discounts if Redis cache is unavailable
+   * (The discount engine will filter based on product/category/collection/tag matching)
    */
   private async filterByEligibility(
     rules: DiscountResponseDto[],
@@ -707,28 +717,40 @@ export class DiscountsService {
   ): Promise<DiscountResponseDto[]> {
     const variantIdSet = new Set(variantIds);
     const eligible: DiscountResponseDto[] = [];
+    let hasCacheMiss = false;
 
     for (const rule of rules) {
-      // Check eligibility from Redis
-      const eligibilitySet = await this.eligibilityStore.getEligibility(
-        rule.id,
-      );
+      try {
+        // Check eligibility from Redis
+        const eligibilitySet = await this.eligibilityStore.getEligibility(
+          rule.id,
+        );
 
-      if (!eligibilitySet) {
-        // Not cached - skip for now (will be populated by warmup worker)
-        // Or could compute on-demand if needed, but for performance, skip
-        continue;
-      }
+        if (!eligibilitySet) {
+          // Not cached - include it anyway, discount engine will check eligibility
+          // This ensures automatic discounts work even if Redis cache isn't warmed up
+          hasCacheMiss = true;
+          eligible.push(rule);
+          continue;
+        }
 
-      // Check if any cart variant is eligible
-      const hasEligibleVariant = Array.from(variantIdSet).some((vid) =>
-        eligibilitySet.has(vid),
-      );
+        // Check if any cart variant is eligible
+        const hasEligibleVariant = Array.from(variantIdSet).some((vid) =>
+          eligibilitySet.has(vid),
+        );
 
-      if (hasEligibleVariant) {
+        if (hasEligibleVariant) {
+          eligible.push(rule);
+        }
+      } catch (error) {
+        // Redis error - include discount anyway, let discount engine filter it
+        hasCacheMiss = true;
         eligible.push(rule);
       }
     }
+
+    // Note: If cache misses occur, discounts are still included
+    // The discount engine will filter them based on product/category/collection/tag matching
 
     return eligible;
   }

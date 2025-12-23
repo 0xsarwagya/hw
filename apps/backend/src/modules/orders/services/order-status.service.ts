@@ -7,6 +7,10 @@ import {
 import { and, eq, orderItems, orders } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
+import {
+  createErrorContext,
+  createLogContext,
+} from "../../../common/logging/logging.helper";
 import { DB_TOKEN } from "../../../modules/database/database.module";
 import type { Database } from "../../../modules/database/db";
 import { OrderResponseDto } from "../dto/order-response.dto";
@@ -94,6 +98,9 @@ export class OrderStatusService {
     this.validateStatusTransition(order.status, updateStatusDto.status);
 
     // Update order status
+    // Note: Inventory is decremented when order is PLACED (in finalizeOrderFromPayment)
+    // and restored when order is CANCELLED (in OrderCancelService)
+    // Status changes (including DELIVERED) do not affect inventory
     const [updatedOrder] = await this.db
       .update(orders)
       .set({
@@ -143,6 +150,9 @@ export class OrderStatusService {
     this.validateStatusTransition(order.status, updateStatusDto.status);
 
     // Update order status
+    // Note: Inventory is decremented when order is PLACED (in finalizeOrderFromPayment)
+    // and restored when order is CANCELLED (in OrderCancelService)
+    // Status changes (including DELIVERED) do not affect inventory
     const [updatedOrder] = await this.db
       .update(orders)
       .set({
