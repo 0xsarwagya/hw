@@ -5,7 +5,6 @@ import { ApplyDiscountDto } from "./dto/apply-discount.dto";
 
 // Mock database to avoid DATABASE_URL requirement
 jest.mock("@vcecom/db", () => ({
-  db: {
     select: jest.fn(),
     insert: jest.fn(),
     update: jest.fn(),

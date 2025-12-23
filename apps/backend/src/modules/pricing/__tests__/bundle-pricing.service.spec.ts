@@ -9,7 +9,6 @@ import { CustomerGroupService } from "../services/customer-group.service";
 
 // Mock database
 jest.mock("@vcecom/db", () => ({
-  db: {
     select: jest.fn(() => ({
       from: jest.fn(() => ({
         innerJoin: jest.fn(() => ({

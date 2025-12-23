@@ -6,7 +6,6 @@ import { getCommonTestProviders } from "../../../common/testing/test-helpers";
 
 // Mock database
 jest.mock("@vcecom/db", () => ({
-  db: {
     select: jest.fn(),
   },
   eq: jest.fn((field, value) => ({ field, value })),

@@ -6,16 +6,18 @@ import {
 } from "@nestjs/common";
 import { AdminMfaService } from "./admin-mfa.service";
 import { getCommonTestProviders } from "../../common/testing/test-helpers";
+import { DB_TOKEN } from "../../modules/database/database.module";
 import { authenticator } from "otplib";
 import * as qrcode from "qrcode";
 
 // Mock database
+const mockDb = {
+  select: jest.fn(),
+  insert: jest.fn(),
+  update: jest.fn(),
+};
+
 jest.mock("@vcecom/db", () => ({
-  db: {
-    select: jest.fn(),
-    insert: jest.fn(),
-    update: jest.fn(),
-  },
   admin2fa: {},
   users: {},
   eq: jest.fn(),
@@ -37,15 +39,20 @@ jest.mock("qrcode", () => ({
 
 describe("AdminMfaService", () => {
   let service: AdminMfaService;
-  let mockDb: any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AdminMfaService, ...getCommonTestProviders()],
+      providers: [
+        AdminMfaService,
+        ...getCommonTestProviders(),
+        {
+          provide: DB_TOKEN,
+          useValue: mockDb,
+        },
+      ],
     }).compile();
 
     service = module.get<AdminMfaService>(AdminMfaService);
-    mockDb = require("@vcecom/db").db;
     jest.clearAllMocks();
   });
 

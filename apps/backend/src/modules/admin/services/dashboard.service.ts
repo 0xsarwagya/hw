@@ -3,12 +3,11 @@ import {
   Injectable,
   InternalServerErrorException,
 } from "@nestjs/common";
-import type { Database } from "@vcecom/db";
+import type { Database } from "../../../modules/database/db";
 import {
   and,
   categories,
   customers,
-  db,
   desc,
   eq,
   gte,

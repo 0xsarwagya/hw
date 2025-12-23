@@ -6,7 +6,7 @@ import {
   NestInterceptor,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import type { Database } from "@vcecom/db";
+import type { Database } from "../../../modules/database/db";
 import { discounts, eq, orders, products } from "@vcecom/db";
 import { Observable } from "rxjs";
 import { tap } from "rxjs/operators";

@@ -1,7 +1,6 @@
-import { Injectable, Optional } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import {
   and,
-  db,
   eq,
   inArray,
   PaymentMethod,
@@ -9,6 +8,8 @@ import {
   products,
   productVariants,
 } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
+import type { Database } from "../../../modules/database/db";
 import { PinoLogger } from "nestjs-pino";
 import {
   PaymentFeeBreakdownDto,
@@ -39,6 +40,7 @@ export interface CodEligibilityContext {
 export class PaymentChargeService {
   constructor(
     private readonly logger: PinoLogger,
+    @Inject(DB_TOKEN) private readonly db: Database,
     @Optional() private readonly auditService?: PaymentFeeAuditService,
   ) {}
 
@@ -51,7 +53,7 @@ export class PaymentChargeService {
     currency: string = "INR",
   ): Promise<{ fee: number; breakdown: PaymentFeeBreakdownDto }> {
     // Fetch active charge configuration for the method and currency
-    const [chargeConfig] = await db
+    const [chargeConfig] = await this.db
       .select()
       .from(paymentMethodCharges)
       .where(
@@ -142,7 +144,7 @@ export class PaymentChargeService {
     context?: CodEligibilityContext,
   ): Promise<PaymentMethodWithFeeDto[]> {
     // Fetch all active charge configurations for the currency
-    const chargeConfigs = await db
+    const chargeConfigs = await this.db
       .select()
       .from(paymentMethodCharges)
       .where(
@@ -262,7 +264,7 @@ export class PaymentChargeService {
     // Check 1: Digital products restriction
     if (chargeConfig.codDisallowDigital && cartItems.length > 0) {
       const variantIds = cartItems.map((item) => item.productVariantId);
-      const variantsWithProducts = await db
+      const variantsWithProducts = await this.db
         .select({
           variantId: productVariants.id,
           productId: productVariants.productId,
@@ -304,7 +306,7 @@ export class PaymentChargeService {
     // Check 2: Preorder items restriction
     if (chargeConfig.codDisallowPreorder && cartItems.length > 0) {
       const variantIds = cartItems.map((item) => item.productVariantId);
-      const variantsWithProducts = await db
+      const variantsWithProducts = await this.db
         .select({
           variantId: productVariants.id,
           productId: productVariants.productId,

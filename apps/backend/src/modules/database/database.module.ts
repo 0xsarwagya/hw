@@ -1,11 +1,12 @@
 import { Global, Module } from "@nestjs/common";
-import { db } from "@vcecom/db";
 import { ContextModule } from "../../common/logging/context.module";
 import { LoggerModule } from "../../common/logging/logger.module";
+import { DB_TOKEN } from "./database.constants";
 import { DatabaseService } from "./database.service";
+import { getDatabase, type Database } from "./db";
 
-// Token for database instance injection
-export const DB_TOKEN = "DB";
+// Re-export DB_TOKEN for backward compatibility
+export { DB_TOKEN } from "./database.constants";
 
 @Global()
 @Module({
@@ -14,7 +15,11 @@ export const DB_TOKEN = "DB";
     DatabaseService,
     {
       provide: DB_TOKEN,
-      useValue: db, // Single instance from @vcecom/db - NestJS ensures singleton
+      useFactory: (): Database => {
+        // Use factory to ensure true singleton - creates instance once and reuses it
+        // This is critical for connection pool management in NestJS
+        return getDatabase();
+      },
     },
   ],
   exports: [DatabaseService, DB_TOKEN], // Export DB_TOKEN so other modules can inject it

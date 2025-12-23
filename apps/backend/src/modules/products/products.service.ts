@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { Database } from "@vcecom/db";
+import type { Database } from "../database/db";
 import {
   and,
   asc,
@@ -16,6 +16,7 @@ import {
   ilike,
   inArray,
   lte,
+  notInArray,
   or,
   productCollections,
   productImages,
@@ -185,7 +186,6 @@ export class ProductsService {
 
         if (variantsWithMatchingSku.length > 0) {
           const productIds = variantsWithMatchingSku.map((v) => v.productId);
-          const { inArray } = await import("@vcecom/db");
           searchConditions.push(inArray(products.id, productIds));
         }
       }
@@ -264,7 +264,6 @@ export class ProductsService {
       } else {
         // Filter to only products out of stock (not in the in-stock list)
         if (productIdsInStock.length > 0) {
-          const { notInArray } = await import("@vcecom/db");
           conditions.push(
             notInArray(products.id, productIdsInStock as string[]),
           );
@@ -377,7 +376,7 @@ export class ProductsService {
         .where(sql`${productVariants.inventory} > 0`);
 
       // Get unique product IDs
-      const productIdsInStock = Array.from(
+      const productIdsInStock: string[] = Array.from(
         new Set(productsInStock.map((p) => p.productId)),
       );
 
@@ -401,7 +400,6 @@ export class ProductsService {
       } else {
         // Filter to only products out of stock (not in the in-stock list)
         if (productIdsInStock.length > 0) {
-          const { notInArray } = await import("@vcecom/db");
           conditions.push(
             notInArray(products.id, productIdsInStock as string[]),
           );
@@ -742,7 +740,7 @@ export class ProductsService {
         .where(sql`${productVariants.inventory} > 0`);
 
       // Get unique product IDs
-      const productIdsInStock = Array.from(
+      const productIdsInStock: string[] = Array.from(
         new Set(productsInStock.map((p) => p.productId)),
       );
 
@@ -764,7 +762,6 @@ export class ProductsService {
           };
         }
       } else if (productIdsInStock.length > 0) {
-        const { notInArray } = await import("@vcecom/db");
         conditions.push(notInArray(products.id, productIdsInStock));
       }
     }
@@ -873,14 +870,17 @@ export class ProductsService {
     const fuseResults = fuse.search(searchDto.query);
 
     // Map results with relevance scores
+    type ProductType = (typeof allProducts)[0];
     const resultsWithScores: Array<{
-      product: (typeof allProducts)[0];
+      product: ProductType;
       relevanceScore: number;
       matchingSku?: string | null;
     }> = fuseResults
-      .filter((result) => result.item?.title)
+      .filter((result) => 
+        result.item !== null && result.item !== undefined && typeof result.item === 'object' && 'title' in result.item
+      )
       .map((result) => {
-        const product = result.item;
+        const product = result.item as ProductType;
         const fuseScore = result.score || 1.0; // Lower score = better match in Fuse.js
         const customScore = calculateRelevanceScore(
           product,
@@ -1089,11 +1089,13 @@ export class ProductsService {
    * S3 keys typically start with a prefix like "products/", "avatars/", etc.
    */
   private isS3Key(url: string): boolean {
-    // Check if it looks like an S3 key (has prefix pattern, no http/https)
+    // Check if it looks like a storage key (not a full URL)
+    // Any string that doesn't start with http:// or https:// is considered a storage key
+    // This includes both paths (with /) and plain filenames (without /)
     return (
       !url.startsWith("http://") &&
       !url.startsWith("https://") &&
-      url.includes("/")
+      url.trim().length > 0 // Must be non-empty
     );
   }
 

@@ -1,26 +1,33 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { AdminActivityService } from "./admin-activity.service";
 import { getCommonTestProviders } from "../../common/testing/test-helpers";
+import { DB_TOKEN } from "../../modules/database/database.module";
+import { adminActivityLogs } from "@vcecom/db";
 
 // Mock database
-jest.mock("@vcecom/db", () => ({
-  db: {
-    insert: jest.fn(),
-  },
-  adminActivityLogs: {},
-}));
+const mockDb = {
+  insert: jest.fn(),
+  select: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
+};
 
 describe("AdminActivityService", () => {
   let service: AdminActivityService;
-  let mockDb: any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AdminActivityService, ...getCommonTestProviders()],
+      providers: [
+        AdminActivityService,
+        ...getCommonTestProviders(),
+        {
+          provide: DB_TOKEN,
+          useValue: mockDb,
+        },
+      ],
     }).compile();
 
     service = module.get<AdminActivityService>(AdminActivityService);
-    mockDb = require("@vcecom/db").db;
     jest.clearAllMocks();
   });
 

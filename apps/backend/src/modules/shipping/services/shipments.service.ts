@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { Database } from "@vcecom/db";
+import type { Database } from "../../../modules/database/db";
 import { and, desc, eq, gte, lte, shipments, sql } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "../../../common/constants";

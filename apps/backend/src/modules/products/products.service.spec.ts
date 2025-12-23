@@ -10,7 +10,6 @@ import { MediaCacheInvalidationService } from "./services/media-cache-invalidati
 
 // Mock database
 jest.mock("@vcecom/db", () => ({
-  db: {
     select: jest.fn(),
     insert: jest.fn(),
     update: jest.fn(),

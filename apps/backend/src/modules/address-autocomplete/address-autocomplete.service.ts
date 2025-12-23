@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Database } from "@vcecom/db";
+import type { Database } from "../../modules/database/db";
 import { and, ilike, pincodes, sql } from "@vcecom/db";
 import { DB_TOKEN } from "../database/database.module";
 import {

@@ -2,16 +2,18 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { UnauthorizedException } from "@nestjs/common";
 import { AdminSessionsService } from "./admin-sessions.service";
 import { getCommonTestProviders } from "../../common/testing/test-helpers";
+import { DB_TOKEN } from "../../modules/database/database.module";
 import * as argon2 from "argon2";
 
 // Mock database
+const mockDb = {
+  insert: jest.fn(),
+  select: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
+};
+
 jest.mock("@vcecom/db", () => ({
-  db: {
-    insert: jest.fn(),
-    select: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-  },
   adminSessions: {},
   eq: jest.fn(),
   gte: jest.fn(),
@@ -25,15 +27,20 @@ jest.mock("argon2", () => ({
 
 describe("AdminSessionsService", () => {
   let service: AdminSessionsService;
-  let mockDb: any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AdminSessionsService, ...getCommonTestProviders()],
+      providers: [
+        AdminSessionsService,
+        ...getCommonTestProviders(),
+        {
+          provide: DB_TOKEN,
+          useValue: mockDb,
+        },
+      ],
     }).compile();
 
     service = module.get<AdminSessionsService>(AdminSessionsService);
-    mockDb = require("@vcecom/db").db;
     jest.clearAllMocks();
   });
 

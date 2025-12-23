@@ -9,7 +9,6 @@ import { RulesetRebuilder } from "./services/ruleset-rebuilder.service";
 
 // Mock database to avoid DATABASE_URL requirement
 jest.mock("@vcecom/db", () => ({
-  db: {
     select: jest.fn(),
     insert: jest.fn(),
     update: jest.fn(),

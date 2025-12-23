@@ -36,7 +36,6 @@ jest.mock("razorpay", () => {
 
 // Mock database
 jest.mock("@vcecom/db", () => ({
-  db: {
     select: jest.fn(),
     update: jest.fn(),
     insert: jest.fn(),

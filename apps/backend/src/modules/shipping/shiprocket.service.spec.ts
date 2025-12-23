@@ -10,7 +10,6 @@ global.fetch = jest.fn();
 
 // Mock database module
 jest.mock("@vcecom/db", () => ({
-  db: {
     select: jest.fn(),
     insert: jest.fn(),
     update: jest.fn(),

@@ -10,14 +10,16 @@ import { AdminSessionsService } from "./admin-sessions.service";
 import { AdminActivityService } from "./admin-activity.service";
 import { AdminMfaService } from "./admin-mfa.service";
 import { getCommonTestProviders } from "../../common/testing/test-helpers";
+import { DB_TOKEN } from "../../modules/database/database.module";
 import * as passwordUtils from "./utils/password.utils";
 
 // Mock database
+const mockDb = {
+  select: jest.fn(),
+  update: jest.fn(),
+};
+
 jest.mock("@vcecom/db", () => ({
-  db: {
-    select: jest.fn(),
-    update: jest.fn(),
-  },
   users: {},
   eq: jest.fn(),
 }));
@@ -80,6 +82,10 @@ describe("AdminAuthService", () => {
           provide: AdminMfaService,
           useValue: mockMfaService,
         },
+        {
+          provide: DB_TOKEN,
+          useValue: mockDb,
+        },
         ...getCommonTestProviders(),
       ],
     }).compile();
@@ -89,7 +95,6 @@ describe("AdminAuthService", () => {
     sessionsService = module.get(AdminSessionsService);
     activityService = module.get(AdminActivityService);
     mfaService = module.get(AdminMfaService);
-    mockDb = require("@vcecom/db").db;
     jest.clearAllMocks();
   });
 

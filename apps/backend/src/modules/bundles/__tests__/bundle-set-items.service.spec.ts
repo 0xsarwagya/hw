@@ -14,7 +14,6 @@ import { BundleSetItemsService } from "../services/bundle-set-items.service";
 import { AddBundleSetItemDto } from "../dto/add-bundle-set-item.dto";
 
 jest.mock("@vcecom/db", () => ({
-  db: {
     select: jest.fn(),
     insert: jest.fn(),
     delete: jest.fn(),

@@ -24,7 +24,6 @@ jest.mock("@vcecom/db", () => {
     delete: jest.fn(),
   };
   return {
-    db: mockDb,
     customers: {},
     users: {},
     eq: jest.fn(),

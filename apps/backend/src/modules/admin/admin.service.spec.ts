@@ -18,7 +18,6 @@ import { RedisStoreService } from "../redis-store/redis-store.service";
 
 // Mock database module
 jest.mock("@vcecom/db", () => ({
-  db: {
     select: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),

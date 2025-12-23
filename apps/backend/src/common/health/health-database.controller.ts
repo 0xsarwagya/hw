@@ -1,6 +1,6 @@
 import { Controller, Get, Inject } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import type { Database } from "@vcecom/db";
+import type { Database } from "../../modules/database/db";
 import { sql } from "@vcecom/db";
 import { DB_TOKEN } from "../../modules/database/database.module";
 import { DatabaseService } from "../../modules/database/database.service";

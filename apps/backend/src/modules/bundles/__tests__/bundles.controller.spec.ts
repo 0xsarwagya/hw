@@ -8,7 +8,6 @@ import { CreateBundleSetDto } from "../dto/create-bundle-set.dto";
 import { AddBundleSetItemDto } from "../dto/add-bundle-set-item.dto";
 
 jest.mock("@vcecom/db", () => ({
-  db: {
     select: jest.fn(),
     insert: jest.fn(),
     update: jest.fn(),

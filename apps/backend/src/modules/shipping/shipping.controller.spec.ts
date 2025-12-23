@@ -7,7 +7,6 @@ import { ShipmentsService } from "./services/shipments.service";
 
 // Mock the database globally
 jest.mock("@vcecom/db", () => ({
-  db: {
     select: jest.fn().mockReturnThis(),
     from: jest.fn().mockReturnThis(),
     where: jest.fn().mockResolvedValue([]),

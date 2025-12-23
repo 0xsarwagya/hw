@@ -14,6 +14,8 @@ import {
   Query,
   Request,
 } from "@nestjs/common";
+import { DB_TOKEN } from "../../modules/database/database.module";
+import type { Database } from "../../modules/database/db";
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -71,6 +73,7 @@ export class ProductsController {
     private readonly variantsService: VariantsService,
     @Inject(forwardRef(() => ReviewsService))
     private readonly reviewsService: ReviewsService,
+    @Inject(DB_TOKEN) private readonly db: Database,
   ) {}
 
   @Public()
@@ -274,8 +277,8 @@ export class ProductsController {
     // Get customer ID if authenticated
     let customerId: string | undefined;
     if (req?.user?.userId) {
-      const { customers, db, eq } = await import("@vcecom/db");
-      const [customer] = await db
+      const { customers, eq } = await import("@vcecom/db");
+      const [customer] = await this.db
         .select({ id: customers.id })
         .from(customers)
         .where(eq(customers.userId, req.user.userId))

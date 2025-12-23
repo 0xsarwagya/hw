@@ -7,7 +7,6 @@ import { AuthService } from "./auth.service";
 
 // Mock dependencies
 jest.mock("@vcecom/db", () => ({
-  db: {
     select: jest.fn(),
     insert: jest.fn(),
   },

@@ -1,50 +1,32 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import * as schema from "../schema/index";
+import * as schema from "@vcecom/db";
 
+/**
+ * Create a PostgreSQL connection pool optimized for Railway shared tier
+ * Railway shared PostgreSQL has a hard limit of ~15 connections
+ * We use max: 10 to leave headroom for Railway overhead and other processes
+ */
 function createPool(): Pool {
   const databaseUrl = process.env.DATABASE_URL;
-  // During build time, allow pool creation without DATABASE_URL
-  // The error will be thrown when the pool is actually used
-  const isBuildTime =
-    process.env.NODE_ENV === undefined ||
-    process.argv.some((arg) => arg.includes("build") || arg.includes("tsc"));
 
-  if (!databaseUrl && !isBuildTime) {
+  if (!databaseUrl) {
     throw new Error(
       "DATABASE_URL environment variable is not set. Please set it to a valid PostgreSQL connection string.",
     );
   }
 
-  // If no DATABASE_URL during build, create a pool that will fail on actual use
-  if (!databaseUrl) {
-    return new Pool({
-      connectionString: "postgresql://placeholder",
-    });
-  }
-
-  // Determine optimal pool size based on environment
-  // Production: Use smaller pool (10-15) to prevent connection exhaustion
-  // Development: Use slightly larger pool (20) for convenience
-  const isProduction = process.env.NODE_ENV === "production";
-  const maxConnections = isProduction ? 15 : 20;
-
+  // Optimized for Railway shared tier (15 max connections)
   const pool = new Pool({
     connectionString: databaseUrl,
-    // Connection pool settings
-    // Keep pool size small to prevent max connection errors
-    // Production: 15 connections max (prevents hitting database limits)
-    // Development: 20 connections max (more lenient for local dev)
-    max: maxConnections,
-    min: 0, // Connections created on-demand (no pre-warming)
-    idleTimeoutMillis: 30000, // Close idle clients after 30 seconds (balance between reuse and cleanup)
-    connectionTimeoutMillis: 10000, // Fail fast if connection can't be established (10 seconds)
+    max: 10, // Leave 5 for Railway overhead
+    min: 0, // No pre-warming - connections created on-demand
+    idleTimeoutMillis: 20000, // Close idle clients after 20 seconds
+    connectionTimeoutMillis: 5000, // Fail fast if connection can't be established
     allowExitOnIdle: true, // Allow process to exit when pool is idle
-    // Statement timeout is set per-connection in the 'connect' event handler below
   });
 
   // Increase max listeners to prevent EventEmitter warnings
-  // This is needed when multiple modules access the pool
   pool.setMaxListeners(50);
 
   // Handle pool errors to prevent unhandled rejections
@@ -55,6 +37,7 @@ function createPool(): Pool {
   // Monitor pool for connection exhaustion warnings
   let lastWarningTime = 0;
   const WARNING_INTERVAL = 60000; // Only warn once per minute
+  const maxConnections = 10;
 
   pool.on("acquire", (client) => {
     const total = pool.totalCount || 0;
@@ -101,49 +84,33 @@ function createPool(): Pool {
   return pool;
 }
 
-// Create pool lazily - only when first accessed
-// This allows environment variables to be loaded before the pool is created
+// Singleton pool instance - created once and reused
 let poolInstance: Pool | null = null;
 
-function getPool(): Pool {
+/**
+ * Get the database pool instance (singleton)
+ * Creates the pool on first access
+ */
+export function getDatabasePool(): Pool {
   if (!poolInstance) {
     poolInstance = createPool();
   }
   return poolInstance;
 }
 
-// Use a getter to ensure pool is created lazily
-const pool = new Proxy({} as Pool, {
-  get(_target, prop) {
-    return getPool()[prop as keyof Pool];
-  },
-});
-
-// Lazy initialization of drizzle - only create when db is actually accessed
+// Singleton Drizzle instance - created once and reused
 let dbInstance: ReturnType<typeof drizzle> | null = null;
 
-function getDb() {
+/**
+ * Get the Drizzle database instance (singleton)
+ * Creates the instance on first access
+ */
+export function getDatabase(): ReturnType<typeof drizzle> {
   if (!dbInstance) {
+    const pool = getDatabasePool();
     dbInstance = drizzle(pool, { schema });
   }
   return dbInstance;
-}
-
-// Export db as a Proxy to ensure lazy initialization
-export const db = new Proxy({} as ReturnType<typeof drizzle>, {
-  get(_target, prop) {
-    return getDb()[prop as keyof ReturnType<typeof drizzle>];
-  },
-});
-
-export type Database = typeof db;
-
-/**
- * Get the database pool instance for cleanup and monitoring
- * @returns The PostgreSQL connection pool instance
- */
-export function getDatabasePool(): Pool | null {
-  return poolInstance;
 }
 
 /**
@@ -206,9 +173,7 @@ export function getPoolStats(): {
   const idleCount = poolInstance.idleCount || 0;
   const waitingCount = poolInstance.waitingCount || 0;
   const usedCount = totalCount - idleCount;
-
-  // Get max connections from pool config
-  const maxConnections = (poolInstance as any).options?.max || 15;
+  const maxConnections = 10; // Match the pool config
   const usagePercent = maxConnections > 0
     ? (usedCount / maxConnections) * 100
     : 0;
@@ -239,22 +204,6 @@ export function isPoolHealthy(): boolean {
   return !(poolInstance as PoolWithEnding)._ending;
 }
 
-// Re-export commonly used drizzle functions
-export {
-  and,
-  asc,
-  desc,
-  eq,
-  gt,
-  gte,
-  ilike,
-  inArray,
-  isNull,
-  lt,
-  lte,
-  ne,
-  not,
-  notInArray,
-  or,
-  sql,
-} from "drizzle-orm";
+// Export Database type for dependency injection
+export type Database = ReturnType<typeof drizzle>;
+

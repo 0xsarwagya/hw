@@ -16,7 +16,6 @@ import { ReconciliationService } from "./reconciliation.service";
 
 // Mock database
 jest.mock("@vcecom/db", () => ({
-  db: {
     select: jest.fn(),
   },
   eq: jest.fn(),

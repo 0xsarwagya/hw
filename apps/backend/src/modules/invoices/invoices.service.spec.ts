@@ -23,7 +23,6 @@ import { InvoicesService } from "./invoices.service";
 
 // Mock dependencies
 jest.mock("@vcecom/db", () => ({
-  db: {
     select: jest.fn(),
     insert: jest.fn(),
   },

@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { Database } from "@vcecom/db";
+import type { Database } from "../../modules/database/db";
 import { addresses, and, customers, eq } from "@vcecom/db";
 import { isValidStateName } from "../../common/data/indian-states";
 import {

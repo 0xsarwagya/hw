@@ -1,12 +1,13 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import {
   customers,
-  db,
   eq,
   inArray,
   products,
   productVariants,
 } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
+import type { Database } from "../../../modules/database/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import { createErrorContext } from "../../../common/logging/logging.helper";
@@ -37,6 +38,7 @@ export class BundlePricingService {
     private readonly customerGroupService: CustomerGroupService,
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    @Inject(DB_TOKEN) private readonly db: Database,
   ) {}
 
   /**
@@ -104,7 +106,7 @@ export class BundlePricingService {
       throw new NotFoundException("No variants found in bundle selections");
     }
 
-    const variants = await db
+    const variants = await this.db
       .select({
         id: productVariants.id,
         productId: productVariants.productId,
@@ -205,7 +207,7 @@ export class BundlePricingService {
    */
   private async getCustomerGroupId(customerId: string): Promise<string | null> {
     try {
-      const [customer] = await db
+      const [customer] = await this.db
         .select()
         .from(customers)
         .where(eq(customers.id, customerId))

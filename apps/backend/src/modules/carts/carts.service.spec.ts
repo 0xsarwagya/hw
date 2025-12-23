@@ -15,7 +15,6 @@ import { CartsService } from "./carts.service";
 
 // Mock database
 jest.mock("@vcecom/db", () => ({
-  db: {
     select: jest.fn(),
     insert: jest.fn(),
     update: jest.fn(),

@@ -5,7 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
-import type { Database } from "@vcecom/db";
+import type { Database } from "../../modules/database/db";
 import { admin2fa, eq, users } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { authenticator } from "otplib";

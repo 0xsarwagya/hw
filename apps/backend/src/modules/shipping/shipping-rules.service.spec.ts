@@ -12,7 +12,6 @@ jest.mock("@vcecom/db", () => {
   };
 
   return {
-    db: {
       select: jest.fn(() => createMockChain()),
       insert: jest.fn(),
       update: jest.fn(),

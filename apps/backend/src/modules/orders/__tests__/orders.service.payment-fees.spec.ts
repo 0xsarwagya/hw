@@ -38,7 +38,6 @@ jest.mock("@vcecom/db", () => {
   const actual = jest.requireActual("@vcecom/db");
   return {
     ...actual,
-    db: {
       select: jest.fn(),
       insert: jest.fn(),
       update: jest.fn(),

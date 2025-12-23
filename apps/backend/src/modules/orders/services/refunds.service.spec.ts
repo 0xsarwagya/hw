@@ -23,7 +23,6 @@ jest.mock("@vcecom/db", () => {
   };
 
   return {
-    db: {
       select: jest.fn(() => ({
         from: jest.fn(() => ({
           where: jest.fn(() => Promise.resolve([])),

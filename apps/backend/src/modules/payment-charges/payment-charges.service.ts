@@ -1,15 +1,17 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
 import {
   ChargeType,
-  db,
   eq,
   PaymentMethod,
   paymentMethodCharges,
 } from "@vcecom/db";
+import { DB_TOKEN } from "../../modules/database/database.module";
+import type { Database } from "../../modules/database/db";
 import { PinoLogger } from "nestjs-pino";
 import { PaymentChargeService } from "../payments/services/payment-charge.service";
 import {
@@ -22,10 +24,11 @@ export class PaymentChargesService {
   constructor(
     private readonly logger: PinoLogger,
     private readonly paymentChargeService: PaymentChargeService,
+    @Inject(DB_TOKEN) private readonly db: Database,
   ) {}
 
   async findAll() {
-    const charges = await db
+    const charges = await this.db
       .select()
       .from(paymentMethodCharges)
       .orderBy(paymentMethodCharges.method);
@@ -41,7 +44,7 @@ export class PaymentChargesService {
   }
 
   async findOne(id: string) {
-    const [charge] = await db
+    const [charge] = await this.db
       .select()
       .from(paymentMethodCharges)
       .where(eq(paymentMethodCharges.id, id))
@@ -76,7 +79,7 @@ export class PaymentChargesService {
         ? Math.round(dto.codMaxAmount * 100)
         : null;
 
-    const [charge] = await db
+    const [charge] = await this.db
       .insert(paymentMethodCharges)
       .values({
         method: dto.method as unknown as PaymentMethod,
@@ -112,7 +115,7 @@ export class PaymentChargesService {
 
   async update(id: string, dto: UpdatePaymentChargeDto) {
     // Get existing charge from database (in paise)
-    const [existingDb] = await db
+    const [existingDb] = await this.db
       .select()
       .from(paymentMethodCharges)
       .where(eq(paymentMethodCharges.id, id))
@@ -178,7 +181,7 @@ export class PaymentChargesService {
       updatedAt: new Date(),
     };
 
-    const [updated] = await db
+    const [updated] = await this.db
       .update(paymentMethodCharges)
       .set(updateData)
       .where(eq(paymentMethodCharges.id, id))
@@ -202,7 +205,7 @@ export class PaymentChargesService {
   async remove(id: string) {
     await this.findOne(id); // Throws if not found
 
-    await db
+    await this.db
       .delete(paymentMethodCharges)
       .where(eq(paymentMethodCharges.id, id));
 

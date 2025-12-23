@@ -4,18 +4,18 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from "@nestjs/common";
-import {
-  closeDatabasePool,
-  getDatabasePool,
-  getPoolStats,
-  isPoolHealthy,
-} from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
 import {
   createErrorContext,
   createLogContext,
 } from "../../common/logging/logging.helper";
+import {
+  closeDatabasePool,
+  getDatabasePool,
+  getPoolStats,
+  isPoolHealthy,
+} from "./db";
 
 @Injectable()
 export class DatabaseService

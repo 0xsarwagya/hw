@@ -17,7 +17,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
-import type { Database } from "@vcecom/db";
+import type { Database } from "../../modules/database/db";
 import { admin2fa, eq, users } from "@vcecom/db";
 import type { Request } from "express";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";

@@ -16,7 +16,6 @@ import { CreateBundleDto } from "../dto/create-bundle.dto";
 
 // Mock database
 jest.mock("@vcecom/db", () => ({
-  db: {
     select: jest.fn(),
     insert: jest.fn(),
     update: jest.fn(),

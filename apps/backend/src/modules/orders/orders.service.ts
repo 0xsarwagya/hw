@@ -7,12 +7,11 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { Database } from "@vcecom/db";
+import type { Database } from "../../modules/database/db";
 import {
   addresses,
   and,
   cartItems,
-  db,
   desc,
   eq,
   ilike,
@@ -258,7 +257,7 @@ export class OrdersService {
         billingAddressId = billingAddrId;
 
         // Fetch shipping address for state calculation
-        const [fetchedShippingAddress] = await db
+        const [fetchedShippingAddress] = await this.db
           .select()
           .from(addresses)
           .where(eq(addresses.id, shippingAddressId))
@@ -378,7 +377,7 @@ export class OrdersService {
 
       // Get cart items with metadata
       const cartItemIds = cart.items.map((item) => item.id);
-      const allCartItems = await db
+      const allCartItems = await this.db
         .select({
           id: cartItems.id,
           productVariantId: cartItems.productVariantId,
@@ -422,7 +421,7 @@ export class OrdersService {
       const variantItemIds = variantCartItems.map((i) => i.id);
       const cartItemsWithVariantsResult =
         variantItemIds.length > 0
-          ? await db
+          ? await this.db
               .select({
                 cartItemId: cartItems.id,
                 productVariantId: cartItems.productVariantId,
@@ -478,7 +477,7 @@ export class OrdersService {
         subtotal += itemSubtotal;
 
         // Get GST rate from first variant's product
-        const [firstVariant] = await db
+        const [firstVariant] = await this.db
           .select({
             productId: productVariants.productId,
           })
@@ -487,7 +486,7 @@ export class OrdersService {
           .limit(1);
 
         if (firstVariant) {
-          const [product] = await db
+          const [product] = await this.db
             .select({
               gstRate: products.gstRate,
             })
@@ -533,7 +532,7 @@ export class OrdersService {
 
         const bundleVariantIds: string[] = [];
         for (const vq of variantQuantities) {
-          const [variant] = await db
+          const [variant] = await this.db
             .select({
               productId: productVariants.productId,
             })
@@ -543,7 +542,7 @@ export class OrdersService {
 
           if (variant) {
             bundleVariantIds.push(vq.variantId);
-            const [product] = await db
+            const [product] = await this.db
               .select({
                 categoryId: products.categoryId,
               })
@@ -571,7 +570,7 @@ export class OrdersService {
         ...cartItemsWithVariants.map((item) => item.productVariantId),
         ...flattenedBundleVariants.map((v) => v.variantId),
       ];
-      const variantProductMap = await db
+      const variantProductMap = await this.db
         .select({
           variantId: productVariants.id,
           productId: productVariants.productId,
@@ -584,7 +583,7 @@ export class OrdersService {
       );
 
       // Get product details
-      const productDetails = await db
+      const productDetails = await this.db
         .select({
           productId: products.id,
           categoryId: products.categoryId,
@@ -764,7 +763,7 @@ export class OrdersService {
         // Product details already loaded above
 
         // Fetch collections for products
-        const productCollectionData = await db
+        const productCollectionData = await this.db
           .select({
             productId: productCollections.productId,
             collectionId: productCollections.collectionId,
@@ -781,7 +780,7 @@ export class OrdersService {
         }
 
         // Fetch tags for products
-        const productTagData = await db
+        const productTagData = await this.db
           .select({
             productId: productTags.productId,
             tagId: productTags.tagId,
@@ -1541,7 +1540,7 @@ export class OrdersService {
 
     // Get cart items with metadata
     const cartItemIds = cart.items.map((item) => item.id);
-    const allCartItems = await db
+    const allCartItems = await this.db
       .select({
         id: cartItems.id,
         productVariantId: cartItems.productVariantId,
@@ -1585,7 +1584,7 @@ export class OrdersService {
     const variantItemIds = variantCartItems.map((i) => i.id);
     const cartItemsWithVariantsResult =
       variantItemIds.length > 0
-        ? await db
+        ? await this.db
             .select({
               cartItemId: cartItems.id,
               productVariantId: cartItems.productVariantId,
@@ -1607,7 +1606,7 @@ export class OrdersService {
       : [];
 
     // Get shipping address for GST calculation
-    const [shippingAddress] = await db
+    const [shippingAddress] = await this.db
       .select()
       .from(addresses)
       .where(eq(addresses.id, metadata.shippingAddressId))
@@ -1723,7 +1722,7 @@ export class OrdersService {
     const orderNumber = await this.generateOrderNumber();
 
     // Create order in database
-    const [order] = await db
+    const [order] = await this.db
       .insert(orders)
       .values({
         customerId,
@@ -1846,7 +1845,7 @@ export class OrdersService {
         // Use snapshot breakdown
         for (const variantBreakdown of bundleBreakdown.variantBreakdown) {
           // Get variant details for GST
-          const [variant] = await db
+          const [variant] = await this.db
             .select({
               productId: productVariants.productId,
             })
@@ -1855,7 +1854,7 @@ export class OrdersService {
             .limit(1);
 
           if (variant) {
-            const [product] = await db
+            const [product] = await this.db
               .select({
                 gstRate: products.gstRate,
               })
@@ -1910,7 +1909,7 @@ export class OrdersService {
           );
 
         for (const vq of variantQuantities) {
-          const [variant] = await db
+          const [variant] = await this.db
             .select({
               productId: productVariants.productId,
             })
@@ -1919,7 +1918,7 @@ export class OrdersService {
             .limit(1);
 
           if (variant) {
-            const [product] = await db
+            const [product] = await this.db
               .select({
                 gstRate: products.gstRate,
               })
@@ -2087,7 +2086,7 @@ export class OrdersService {
     }
 
     // Get order items for response
-    const orderItemsList = await db
+    const orderItemsList = await this.db
       .select()
       .from(orderItems)
       .where(eq(orderItems.orderId, orderId));
@@ -2167,7 +2166,7 @@ export class OrdersService {
         "Order already exists for payment intent",
       );
       // Fetch and return existing order
-      const [order] = await db
+      const [order] = await this.db
         .select()
         .from(orders)
         .where(eq(orders.id, existingOrderId))
@@ -2180,14 +2179,14 @@ export class OrdersService {
       }
 
       // Get order items for GST calculation
-      const orderItemsList = await db
+      const orderItemsList = await this.db
         .select()
         .from(orderItems)
         .where(eq(orderItems.orderId, order.id));
 
       // Calculate GST breakdown (reconstruct from order data)
       const sellerState = this.getSellerState();
-      const [shippingAddress] = await db
+      const [shippingAddress] = await this.db
         .select()
         .from(addresses)
         .where(eq(addresses.id, order.shippingAddressId))
@@ -2262,7 +2261,7 @@ export class OrdersService {
 
     // Get cart items with metadata
     const cartItemIds = cart.items.map((item) => item.id);
-    const allCartItems = await db
+    const allCartItems = await this.db
       .select({
         id: cartItems.id,
         productVariantId: cartItems.productVariantId,
@@ -2306,7 +2305,7 @@ export class OrdersService {
     const variantItemIds = variantCartItems.map((i) => i.id);
     const cartItemsWithVariantsResult =
       variantItemIds.length > 0
-        ? await db
+        ? await this.db
             .select({
               cartItemId: cartItems.id,
               productVariantId: cartItems.productVariantId,
@@ -2328,7 +2327,7 @@ export class OrdersService {
       : [];
 
     // Get shipping address for GST calculation
-    const [shippingAddress] = await db
+    const [shippingAddress] = await this.db
       .select()
       .from(addresses)
       .where(eq(addresses.id, metadata.shippingAddressId))
@@ -2483,7 +2482,7 @@ export class OrdersService {
     let orderId: string;
     try {
       // Create order in database with discount snapshot
-      const [order] = await db
+      const [order] = await this.db
         .insert(orders)
         .values({
           customerId,
@@ -2763,7 +2762,7 @@ export class OrdersService {
         // Use snapshot breakdown
         for (const variantBreakdown of bundleBreakdown.variantBreakdown) {
           // Get variant details for GST
-          const [variant] = await db
+          const [variant] = await this.db
             .select({
               productId: productVariants.productId,
             })
@@ -2772,7 +2771,7 @@ export class OrdersService {
             .limit(1);
 
           if (variant) {
-            const [product] = await db
+            const [product] = await this.db
               .select({
                 gstRate: products.gstRate,
               })
@@ -2827,7 +2826,7 @@ export class OrdersService {
           );
 
         for (const vq of variantQuantities) {
-          const [variant] = await db
+          const [variant] = await this.db
             .select({
               productId: productVariants.productId,
             })
@@ -2836,7 +2835,7 @@ export class OrdersService {
             .limit(1);
 
           if (variant) {
-            const [product] = await db
+            const [product] = await this.db
               .select({
                 gstRate: products.gstRate,
               })
@@ -2886,7 +2885,7 @@ export class OrdersService {
       }
     }
 
-    const insertedOrderItems = await db
+    const insertedOrderItems = await this.db
       .insert(orderItems)
       .values(orderItemsToInsert)
       .returning();
@@ -3030,7 +3029,7 @@ export class OrdersService {
 
       let order: typeof orders.$inferSelect | undefined;
       try {
-        const orderResult = await db
+        const orderResult = await this.db
           .select()
           .from(orders)
           .where(and(eq(orders.id, orderId), eq(orders.customerId, customerId)))
@@ -3066,7 +3065,7 @@ export class OrdersService {
         updatedAt: Date;
       }>;
       try {
-        items = await db
+        items = await this.db
           .select({
             id: orderItems.id,
             orderId: orderItems.orderId,
@@ -3096,7 +3095,7 @@ export class OrdersService {
       // Get shipping address for GST calculation
       let shippingAddress: { state: string } | undefined;
       try {
-        const addressResult = await db
+        const addressResult = await this.db
           .select({ state: addresses.state })
           .from(addresses)
           .where(eq(addresses.id, order.shippingAddressId))
@@ -3276,7 +3275,7 @@ export class OrdersService {
     try {
       let order: typeof orders.$inferSelect | undefined;
       try {
-        const orderResult = await db
+        const orderResult = await this.db
           .select()
           .from(orders)
           .where(eq(orders.id, orderId))
@@ -3312,7 +3311,7 @@ export class OrdersService {
         updatedAt: Date;
       }>;
       try {
-        items = await db
+        items = await this.db
           .select({
             id: orderItems.id,
             orderId: orderItems.orderId,
@@ -3342,7 +3341,7 @@ export class OrdersService {
       // Get shipping address for GST calculation
       let shippingAddress: { state: string } | undefined;
       try {
-        const addressResult = await db
+        const addressResult = await this.db
           .select({ state: addresses.state })
           .from(addresses)
           .where(eq(addresses.id, order.shippingAddressId))
@@ -3568,7 +3567,7 @@ export class OrdersService {
 
       let customerOrders: Array<typeof orders.$inferSelect>;
       try {
-        customerOrders = await db
+        customerOrders = await this.db
           .select()
           .from(orders)
           .where(whereConditions)
@@ -3602,7 +3601,7 @@ export class OrdersService {
               updatedAt: Date;
             }>;
             try {
-              items = await db
+              items = await this.db
                 .select({
                   id: orderItems.id,
                   orderId: orderItems.orderId,
@@ -3925,7 +3924,7 @@ export class OrdersService {
     const prefix = `ORD-${year}-`;
 
     // Get the latest order number for this year
-    const latestOrders = await db
+    const latestOrders = await this.db
       .select({ orderNumber: orders.orderNumber })
       .from(orders)
       .where(ilike(orders.orderNumber, `${prefix}%`))

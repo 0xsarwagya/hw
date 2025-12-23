@@ -6,7 +6,6 @@ import { DiscountType, DiscountValueType } from "./dto/create-discount.dto";
 
 // Mock the database
 jest.mock("@vcecom/db", () => ({
-  db: {
     select: jest.fn(),
     insert: jest.fn(),
     update: jest.fn(),

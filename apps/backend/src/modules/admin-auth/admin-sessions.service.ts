@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
-import type { Database } from "@vcecom/db";
+import type { Database } from "../../modules/database/db";
 import { adminSessions, eq, gte } from "@vcecom/db";
 import * as argon2 from "argon2";
 import { PinoLogger } from "nestjs-pino";

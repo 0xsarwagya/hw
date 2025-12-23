@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Database } from "@vcecom/db";
+import type { Database } from "../../../modules/database/db";
 import { eq, productVariants } from "@vcecom/db";
 import { DB_TOKEN } from "../../../modules/database/database.module";
 import { VariantPricingDto } from "../dto/variant-pricing.dto";
