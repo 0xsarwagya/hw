@@ -73,7 +73,7 @@ export class OrderAddressService {
         : order.billingAddressId;
 
     // Update address
-    const [updatedAddress] = await db
+    const [updatedAddress] = await this.db
       .update(addresses)
       .set({
         street: addressData.street,
@@ -106,7 +106,7 @@ export class OrderAddressService {
     });
 
     // Fetch updated order
-    const [updatedOrder] = await db
+    const [updatedOrder] = await this.db
       .select()
       .from(orders)
       .where(eq(orders.id, orderId))

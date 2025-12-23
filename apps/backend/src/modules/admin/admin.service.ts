@@ -1,11 +1,10 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import { Inject, Injectable, InternalServerErrorException } from "@nestjs/common";
 import {
   addresses,
   and,
   cartItems,
   carts,
   customers,
-  db,
   desc,
   eq,
   gte,
@@ -18,6 +17,8 @@ import {
   products,
   sql,
 } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
 import {
@@ -55,6 +56,7 @@ export class AdminService {
     private readonly redisStoreService: RedisStoreService,
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -140,11 +142,11 @@ export class AdminService {
       let total = 0;
       try {
         const countQuery = whereCondition
-          ? db
-              .select({ count: sql<number>`count(*)` })
+          ? this.db
+      .select({ count: sql<number>`count(*)` })
               .from(orders)
               .where(whereCondition)
-          : db.select({ count: sql<number>`count(*)` }).from(orders);
+          : this.db.select({ count: sql<number>`count(*)` }).from(orders);
         const countResult = await countQuery;
         total = Number(countResult[0]?.count || 0);
       } catch (error) {
@@ -167,8 +169,8 @@ export class AdminService {
       let allOrders: Array<typeof orders.$inferSelect>;
       try {
         const ordersQuery = whereCondition
-          ? db.select().from(orders).where(whereCondition)
-          : db.select().from(orders);
+          ? this.db.select().from(orders).where(whereCondition)
+          : this.db.select().from(orders);
         allOrders = await ordersQuery
           .limit(limit)
           .offset(offset)
@@ -224,8 +226,8 @@ export class AdminService {
               updatedAt: Date;
             }>;
             try {
-              items = await db
-                .select({
+              items = await this.db
+      .select({
                   id: orderItems.id,
                   orderId: orderItems.orderId,
                   productVariantId: orderItems.productVariantId,
@@ -255,8 +257,8 @@ export class AdminService {
             // Get shipping address for GST calculation
             let shippingAddress: { state: string } | undefined;
             try {
-              const addressResult = await db
-                .select({ state: addresses.state })
+              const addressResult = await this.db
+      .select({ state: addresses.state })
                 .from(addresses)
                 .where(eq(addresses.id, order.shippingAddressId))
                 .limit(1);
@@ -550,15 +552,15 @@ export class AdminService {
 
     // Get total count
     const countQuery = whereCondition
-      ? db.select().from(customers).where(whereCondition)
-      : db.select().from(customers);
+      ? this.db.select().from(customers).where(whereCondition)
+      : this.db.select().from(customers);
     const allCustomersForCount = await countQuery;
     const total = allCustomersForCount.length;
 
     // Get customers with pagination
     const customersQuery = whereCondition
-      ? db.select().from(customers).where(whereCondition)
-      : db.select().from(customers);
+      ? this.db.select().from(customers).where(whereCondition)
+      : this.db.select().from(customers);
     const allCustomers = await customersQuery
       .limit(limit)
       .offset(offset)
@@ -580,14 +582,14 @@ export class AdminService {
    */
   async getStats(): Promise<AdminStatsResponseDto> {
     // Get total products
-    const allProducts = await db.select().from(products);
+    const allProducts = await this.db.select().from(products);
     const totalProducts = allProducts.length;
     const activeProducts = allProducts.filter(
       (p) => p.status === "active",
     ).length;
 
     // Get total orders
-    const allOrders = await db.select().from(orders);
+    const allOrders = await this.db.select().from(orders);
     const totalOrders = allOrders.length;
     const pendingOrders = allOrders.filter(
       (o) => o.status === "pending",
@@ -611,7 +613,7 @@ export class AdminService {
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
     // Get total customers
-    const allCustomers = await db.select().from(customers);
+    const allCustomers = await this.db.select().from(customers);
     const totalCustomers = allCustomers.length;
 
     return {
@@ -635,7 +637,7 @@ export class AdminService {
     const { productIds, operation } = dto;
 
     // Verify products exist
-    const existingProducts = await db
+    const existingProducts = await this.db
       .select()
       .from(products)
       .where(inArray(products.id, productIds));
@@ -648,16 +650,16 @@ export class AdminService {
 
     switch (operation) {
       case BulkProductOperation.ACTIVATE:
-        await db
-          .update(products)
+        await this.db
+      .update(products)
           .set({ status: "active", updatedAt: new Date() })
           .where(inArray(products.id, productIds));
         affected = productIds.length;
         break;
 
       case BulkProductOperation.ARCHIVE:
-        await db
-          .update(products)
+        await this.db
+      .update(products)
           .set({ status: "archived", updatedAt: new Date() })
           .where(inArray(products.id, productIds));
         affected = productIds.length;
@@ -665,7 +667,7 @@ export class AdminService {
 
       case BulkProductOperation.DELETE:
         // Note: In production, you might want to soft delete instead
-        await db.delete(products).where(inArray(products.id, productIds));
+        await this.db.delete(products).where(inArray(products.id, productIds));
         affected = productIds.length;
         break;
 
@@ -751,7 +753,7 @@ export class AdminService {
     }
 
     // Get carts from database
-    const allCarts = await db
+    const allCarts = await this.db
       .select()
       .from(carts)
       .where(inArray(carts.id, cartIds));
@@ -764,16 +766,16 @@ export class AdminService {
       if (!cart) continue;
 
       // Get cart items
-      const cartItemsData = await db
-        .select()
+      const cartItemsData = await this.db
+      .select()
         .from(cartItems)
         .where(eq(cartItems.cartId, cart.id));
 
       // Get customer email if exists
       let customerEmail: string | null = null;
       if (cart.customerId) {
-        const [customer] = await db
-          .select({ email: customers.email })
+        const [customer] = await this.db
+      .select({ email: customers.email })
           .from(customers)
           .where(eq(customers.id, cart.customerId))
           .limit(1);
@@ -923,7 +925,7 @@ export class AdminService {
     }
 
     // Get cart from database
-    const [cart] = await db
+    const [cart] = await this.db
       .select()
       .from(carts)
       .where(eq(carts.id, cartId))
@@ -934,7 +936,7 @@ export class AdminService {
     }
 
     // Get cart items
-    const cartItemsData = await db
+    const cartItemsData = await this.db
       .select()
       .from(cartItems)
       .where(eq(cartItems.cartId, cart.id));
@@ -942,8 +944,8 @@ export class AdminService {
     // Get customer email if exists
     let customerEmail: string | null = null;
     if (cart.customerId) {
-      const [customer] = await db
-        .select({ email: customers.email })
+      const [customer] = await this.db
+      .select({ email: customers.email })
         .from(customers)
         .where(eq(customers.id, cart.customerId))
         .limit(1);

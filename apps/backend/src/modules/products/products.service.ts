@@ -86,7 +86,7 @@ export class ProductsService {
     // Validate category exists if provided
     if (createProductDto.categoryId) {
       const [category] = await this.db
-        .select()
+      .select()
         .from(categories)
         .where(eq(categories.id, createProductDto.categoryId))
         .limit(1);
@@ -107,7 +107,7 @@ export class ProductsService {
     }
 
     // Create product
-    const [newProduct] = await db
+    const [newProduct] = await this.db
       .insert(products)
       .values({
         title: createProductDto.title,
@@ -157,8 +157,8 @@ export class ProductsService {
         // Get product IDs that have matching SKUs
         let variantsWithMatchingSku: Array<{ productId: string }>;
         try {
-          variantsWithMatchingSku = await db
-            .select({ productId: productVariants.productId })
+          variantsWithMatchingSku = await this.db
+      .select({ productId: productVariants.productId })
             .from(productVariants)
             .where(ilike(productVariants.sku, searchPattern));
         } catch (error) {
@@ -216,8 +216,8 @@ export class ProductsService {
       // Get products with at least one variant with inventory > 0
       let productsInStock: Array<{ productId: string }>;
       try {
-        productsInStock = await db
-          .select({ productId: productVariants.productId })
+        productsInStock = await this.db
+      .select({ productId: productVariants.productId })
           .from(productVariants)
           .where(sql`${productVariants.inventory} > 0`);
       } catch (error) {
@@ -280,7 +280,7 @@ export class ProductsService {
     }
 
     // Get total count using COUNT(*) for performance
-    const countResult = await db
+    const countResult = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(products)
       .where(whereCondition || undefined);
@@ -371,8 +371,8 @@ export class ProductsService {
     // Availability filter (in stock/out of stock)
     if (filterDto.inStock !== undefined) {
       // Get products with at least one variant with inventory > 0
-      const productsInStock = await db
-        .select({ productId: productVariants.productId })
+      const productsInStock = await this.db
+      .select({ productId: productVariants.productId })
         .from(productVariants)
         .where(sql`${productVariants.inventory} > 0`);
 
@@ -417,7 +417,7 @@ export class ProductsService {
     }
 
     // Get total count using COUNT(*) for performance
-    const countResult = await db
+    const countResult = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(products)
       .where(whereCondition || undefined);
@@ -473,7 +473,7 @@ export class ProductsService {
    */
   @Trace({ operation: "ProductsService.findOne" })
   async findOne(id: string) {
-    const [product] = await db
+    const [product] = await this.db
       .select()
       .from(products)
       .where(eq(products.id, id))
@@ -484,7 +484,7 @@ export class ProductsService {
     }
 
     // Get all product images
-    const images = await db
+    const images = await this.db
       .select({
         url: productImages.url,
       })
@@ -621,7 +621,7 @@ export class ProductsService {
    */
   async update(id: string, updateProductDto: UpdateProductDto) {
     // Check if product exists
-    const [existing] = await db
+    const [existing] = await this.db
       .select()
       .from(products)
       .where(eq(products.id, id))
@@ -633,8 +633,8 @@ export class ProductsService {
 
     // Validate category exists if provided
     if (updateProductDto.categoryId) {
-      const [category] = await db
-        .select()
+      const [category] = await this.db
+      .select()
         .from(categories)
         .where(eq(categories.id, updateProductDto.categoryId))
         .limit(1);
@@ -664,7 +664,7 @@ export class ProductsService {
       updateData.categoryId = updateProductDto.categoryId || null;
 
     // Update product
-    const [updated] = await db
+    const [updated] = await this.db
       .update(products)
       .set(updateData)
       .where(eq(products.id, id))
@@ -678,7 +678,7 @@ export class ProductsService {
    */
   async remove(id: string) {
     // Check if product exists
-    const [existing] = await db
+    const [existing] = await this.db
       .select()
       .from(products)
       .where(eq(products.id, id))
@@ -736,8 +736,8 @@ export class ProductsService {
 
     // Availability filter
     if (searchDto.inStock !== undefined) {
-      const productsInStock = await db
-        .select({ productId: productVariants.productId })
+      const productsInStock = await this.db
+      .select({ productId: productVariants.productId })
         .from(productVariants)
         .where(sql`${productVariants.inventory} > 0`);
 
@@ -774,7 +774,7 @@ export class ProductsService {
       conditions.length > 0 ? and(...conditions) : undefined;
 
     // Get all matching products (we'll filter and rank in memory for better relevance)
-    const allProducts = await db
+    const allProducts = await this.db
       .select({
         id: products.id,
         title: products.title,
@@ -804,8 +804,8 @@ export class ProductsService {
           ? `%${searchDto.query}%`
           : searchPatterns[0];
 
-        const variantsWithMatchingSku = await db
-          .select({
+        const variantsWithMatchingSku = await this.db
+      .select({
             productId: productVariants.productId,
             sku: productVariants.sku,
           })
@@ -823,8 +823,8 @@ export class ProductsService {
     // Add products found via SKU search
     if (skuMatches.size > 0) {
       const skuProductIds = Array.from(skuMatches.keys());
-      const skuProducts = await db
-        .select({
+      const skuProducts = await this.db
+      .select({
           id: products.id,
           title: products.title,
           description: products.description,
@@ -1009,7 +1009,7 @@ export class ProductsService {
     }
 
     // Fetch all product images (not variant images) for these products
-    const allImages = await db
+    const allImages = await this.db
       .select({
         productId: productImages.productId,
         url: productImages.url,
@@ -1102,7 +1102,7 @@ export class ProductsService {
    * Converts S3 keys to public URLs, keeps existing URLs as-is
    */
   async getProductImages(productId: string) {
-    const images = await db
+    const images = await this.db
       .select()
       .from(productImages)
       .where(eq(productImages.productId, productId))
@@ -1136,7 +1136,7 @@ export class ProductsService {
    */
   async getVariantImages(productId: string, variantId: string) {
     // Validate variant exists and belongs to product
-    const [variant] = await db
+    const [variant] = await this.db
       .select()
       .from(productVariants)
       .where(
@@ -1153,7 +1153,7 @@ export class ProductsService {
       );
     }
 
-    const images = await db
+    const images = await this.db
       .select()
       .from(productImages)
       .where(
@@ -1203,8 +1203,8 @@ export class ProductsService {
   ) {
     const operation = async () => {
       // Validate product exists
-      const [product] = await db
-        .select()
+      const [product] = await this.db
+      .select()
         .from(products)
         .where(eq(products.id, productId))
         .limit(1);
@@ -1215,8 +1215,8 @@ export class ProductsService {
 
       // Validate variant exists if provided
       if (variantId) {
-        const [variant] = await db
-          .select()
+        const [variant] = await this.db
+      .select()
           .from(productVariants)
           .where(eq(productVariants.id, variantId))
           .limit(1);
@@ -1239,8 +1239,8 @@ export class ProductsService {
       }
 
       // Check existing image count and validate limits
-      const existingImages = await db
-        .select()
+      const existingImages = await this.db
+      .select()
         .from(productImages)
         .where(
           variantId
@@ -1273,8 +1273,8 @@ export class ProductsService {
         finalOrder = maxOrder + 1;
       }
 
-      const [newImage] = await db
-        .insert(productImages)
+      const [newImage] = await this.db
+      .insert(productImages)
         .values({
           productId,
           variantId: variantId || null,
@@ -1335,7 +1335,7 @@ export class ProductsService {
    * Also deletes from S3 if it's an S3 key
    */
   async deleteProductImage(imageId: string) {
-    const [image] = await db
+    const [image] = await this.db
       .select()
       .from(productImages)
       .where(eq(productImages.id, imageId))
@@ -1365,7 +1365,7 @@ export class ProductsService {
    */
   async getProductCollections(productId: string) {
     // Check if product exists
-    const [product] = await db
+    const [product] = await this.db
       .select()
       .from(products)
       .where(eq(products.id, productId))
@@ -1376,7 +1376,7 @@ export class ProductsService {
     }
 
     // Get collections for this product
-    const productCollectionsData = await db
+    const productCollectionsData = await this.db
       .select({
         id: collections.id,
         name: collections.name,
@@ -1401,7 +1401,7 @@ export class ProductsService {
    * Update product image order
    */
   async updateImageOrder(imageId: string, order: number) {
-    const [image] = await db
+    const [image] = await this.db
       .select()
       .from(productImages)
       .where(eq(productImages.id, imageId))
@@ -1424,8 +1424,8 @@ export class ProductsService {
         }
       }
 
-      const [updated] = await db
-        .update(productImages)
+      const [updated] = await this.db
+      .update(productImages)
         .set({ order, updatedAt: new Date() })
         .where(eq(productImages.id, imageId))
         .returning();
@@ -1467,7 +1467,7 @@ export class ProductsService {
    * Update product image (alt text and/or order)
    */
   async updateImage(imageId: string, altText?: string, order?: number) {
-    const [image] = await db
+    const [image] = await this.db
       .select()
       .from(productImages)
       .where(eq(productImages.id, imageId))
@@ -1493,7 +1493,7 @@ export class ProductsService {
       updateData.order = order;
     }
 
-    const [updated] = await db
+    const [updated] = await this.db
       .update(productImages)
       .set(updateData)
       .where(eq(productImages.id, imageId))
@@ -1520,7 +1520,7 @@ export class ProductsService {
    * Deletes the old S3 file and updates the URL
    */
   async replaceProductImage(imageId: string, newImageKey: string) {
-    const [image] = await db
+    const [image] = await this.db
       .select()
       .from(productImages)
       .where(eq(productImages.id, imageId))
@@ -1553,8 +1553,8 @@ export class ProductsService {
       }
 
       // Update image URL
-      const [updated] = await db
-        .update(productImages)
+      const [updated] = await this.db
+      .update(productImages)
         .set({
           url: newImageKey,
           updatedAt: new Date(),
@@ -1612,7 +1612,7 @@ export class ProductsService {
    * Create a global variant option type template
    */
   async createVariantOptionType(name: string, description?: string) {
-    const [existing] = await db
+    const [existing] = await this.db
       .select()
       .from(variantOptionTypes)
       .where(eq(variantOptionTypes.name, name))
@@ -1624,7 +1624,7 @@ export class ProductsService {
       );
     }
 
-    const [newOptionType] = await db
+    const [newOptionType] = await this.db
       .insert(variantOptionTypes)
       .values({
         name,
@@ -1639,7 +1639,7 @@ export class ProductsService {
    * Get all global variant option type templates
    */
   async getVariantOptionTypes() {
-    return db
+    return this.db
       .select()
       .from(variantOptionTypes)
       .orderBy(asc(variantOptionTypes.name));
@@ -1655,7 +1655,7 @@ export class ProductsService {
     displayOrder?: number,
   ) {
     // Validate product exists
-    const [product] = await db
+    const [product] = await this.db
       .select()
       .from(products)
       .where(eq(products.id, productId))
@@ -1667,8 +1667,8 @@ export class ProductsService {
 
     // Validate option type template exists if provided
     if (optionTypeId) {
-      const [optionType] = await db
-        .select()
+      const [optionType] = await this.db
+      .select()
         .from(variantOptionTypes)
         .where(eq(variantOptionTypes.id, optionTypeId))
         .limit(1);
@@ -1681,7 +1681,7 @@ export class ProductsService {
     }
 
     // Check if product already has an option type with this name
-    const [existing] = await db
+    const [existing] = await this.db
       .select()
       .from(productVariantOptionTypes)
       .where(
@@ -1699,7 +1699,7 @@ export class ProductsService {
     }
 
     // Get max display order for this product
-    const existingOptionTypes = await db
+    const existingOptionTypes = await this.db
       .select()
       .from(productVariantOptionTypes)
       .where(eq(productVariantOptionTypes.productId, productId));
@@ -1709,7 +1709,7 @@ export class ProductsService {
         ? Math.max(...existingOptionTypes.map((ot) => ot.displayOrder))
         : -1;
 
-    const [newProductOptionType] = await db
+    const [newProductOptionType] = await this.db
       .insert(productVariantOptionTypes)
       .values({
         productId,
@@ -1731,7 +1731,7 @@ export class ProductsService {
     displayOrder?: number,
   ) {
     // Validate option type exists
-    const [optionType] = await db
+    const [optionType] = await this.db
       .select()
       .from(productVariantOptionTypes)
       .where(eq(productVariantOptionTypes.id, productVariantOptionTypeId))
@@ -1744,7 +1744,7 @@ export class ProductsService {
     }
 
     // Check if value already exists for this option type
-    const [existing] = await db
+    const [existing] = await this.db
       .select()
       .from(variantOptionValues)
       .where(
@@ -1765,7 +1765,7 @@ export class ProductsService {
     }
 
     // Get max display order for this option type
-    const existingValues = await db
+    const existingValues = await this.db
       .select()
       .from(variantOptionValues)
       .where(
@@ -1780,7 +1780,7 @@ export class ProductsService {
         ? Math.max(...existingValues.map((v) => v.displayOrder))
         : -1;
 
-    const [newValue] = await db
+    const [newValue] = await this.db
       .insert(variantOptionValues)
       .values({
         productVariantOptionTypeId,
@@ -1797,7 +1797,7 @@ export class ProductsService {
    */
   async getProductVariantOptionTypes(productId: string) {
     // Validate product exists
-    const [product] = await db
+    const [product] = await this.db
       .select()
       .from(products)
       .where(eq(products.id, productId))
@@ -1808,7 +1808,7 @@ export class ProductsService {
     }
 
     // Get option types with their values
-    const optionTypes = await db
+    const optionTypes = await this.db
       .select()
       .from(productVariantOptionTypes)
       .where(eq(productVariantOptionTypes.productId, productId))
@@ -1817,8 +1817,8 @@ export class ProductsService {
     // Get values for each option type
     const optionTypesWithValues = await Promise.all(
       optionTypes.map(async (optionType) => {
-        const values = await db
-          .select()
+        const values = await this.db
+      .select()
           .from(variantOptionValues)
           .where(
             eq(variantOptionValues.productVariantOptionTypeId, optionType.id),
@@ -1843,7 +1843,7 @@ export class ProductsService {
     productVariantOptionTypeId: string,
   ) {
     // Validate option type belongs to product
-    const [optionType] = await db
+    const [optionType] = await this.db
       .select()
       .from(productVariantOptionTypes)
       .where(
@@ -1861,7 +1861,7 @@ export class ProductsService {
     }
 
     // Delete will cascade to values and assignments
-    await db
+    await this.db
       .delete(productVariantOptionTypes)
       .where(eq(productVariantOptionTypes.id, productVariantOptionTypeId));
 
@@ -1876,7 +1876,7 @@ export class ProductsService {
     valueId: string,
   ) {
     // Validate value belongs to option type
-    const [value] = await db
+    const [value] = await this.db
       .select()
       .from(variantOptionValues)
       .where(
@@ -1897,7 +1897,7 @@ export class ProductsService {
     }
 
     // Delete will cascade to assignments
-    await db
+    await this.db
       .delete(variantOptionValues)
       .where(eq(variantOptionValues.id, valueId));
 
@@ -1910,7 +1910,7 @@ export class ProductsService {
    */
   async getRecommendations(productId: string): Promise<ProductResponseDto[]> {
     // Get the current product
-    const [product] = await db
+    const [product] = await this.db
       .select({
         id: products.id,
         categoryId: products.categoryId,
@@ -1929,7 +1929,7 @@ export class ProductsService {
     }
 
     // Get up to 8 products from the same category, excluding the current product
-    const recommendedProducts = await db
+    const recommendedProducts = await this.db
       .select()
       .from(products)
       .where(

@@ -54,7 +54,7 @@ export class BundleSetsService {
     }
 
     // Get current max sortOrder for this bundle
-    const existingSets = await db
+    const existingSets = await this.db
       .select()
       .from(bundleSets)
       .where(eq(bundleSets.bundleId, bundleId));
@@ -64,7 +64,7 @@ export class BundleSetsService {
         ? Math.max(...existingSets.map((s) => s.sortOrder))
         : -1;
 
-    const [newSet] = await db
+    const [newSet] = await this.db
       .insert(bundleSets)
       .values({
         bundleId,
@@ -94,7 +94,7 @@ export class BundleSetsService {
     dto: UpdateBundleSetDto,
   ): Promise<{ message: string }> {
     // Validate bundle exists
-    const [bundle] = await db
+    const [bundle] = await this.db
       .select()
       .from(bundles)
       .where(eq(bundles.id, bundleId))
@@ -105,7 +105,7 @@ export class BundleSetsService {
     }
 
     // Validate set exists and belongs to bundle
-    const [set] = await db
+    const [set] = await this.db
       .select()
       .from(bundleSets)
       .where(and(eq(bundleSets.id, setId), eq(bundleSets.bundleId, bundleId)))
@@ -133,8 +133,8 @@ export class BundleSetsService {
 
     // Validate set has at least 1 item if updating maxQuantity
     if (dto.maxQuantity !== undefined && dto.maxQuantity < set.maxQuantity) {
-      const items = await db
-        .select()
+      const items = await this.db
+      .select()
         .from(bundleSetItems)
         .where(eq(bundleSetItems.setId, setId));
 
@@ -145,7 +145,7 @@ export class BundleSetsService {
       }
     }
 
-    await db
+    await this.db
       .update(bundleSets)
       .set({
         title: dto.title ?? set.title,
@@ -168,7 +168,7 @@ export class BundleSetsService {
    */
   async remove(bundleId: string, setId: string): Promise<{ message: string }> {
     // Validate bundle exists
-    const [bundle] = await db
+    const [bundle] = await this.db
       .select()
       .from(bundles)
       .where(eq(bundles.id, bundleId))
@@ -179,7 +179,7 @@ export class BundleSetsService {
     }
 
     // Validate set exists and belongs to bundle
-    const [set] = await db
+    const [set] = await this.db
       .select()
       .from(bundleSets)
       .where(and(eq(bundleSets.id, setId), eq(bundleSets.bundleId, bundleId)))
@@ -203,7 +203,7 @@ export class BundleSetsService {
    * Validate set has at least 1 item
    */
   async validateSetHasItems(setId: string): Promise<void> {
-    const items = await db
+    const items = await this.db
       .select()
       .from(bundleSetItems)
       .where(eq(bundleSetItems.setId, setId));

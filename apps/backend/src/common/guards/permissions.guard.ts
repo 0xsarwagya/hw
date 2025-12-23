@@ -70,7 +70,7 @@ export class PermissionsGuard implements CanActivate {
     try {
       // Get user with role
       const [user] = await this.db
-        .select({
+      .select({
           role: users.role,
           roleId: users.roleId,
         })
@@ -97,7 +97,7 @@ export class PermissionsGuard implements CanActivate {
       // Get role permissions
       const { adminRoles } = await import("@vcecom/db");
       const [role] = await this.db
-        .select()
+      .select()
         .from(adminRoles)
         .where(eq(adminRoles.id, user.roleId))
         .limit(1);

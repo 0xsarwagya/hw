@@ -68,7 +68,7 @@ export class OrderNotesService {
     }
 
     // Verify order exists
-    const [order] = await db
+    const [order] = await this.db
       .select()
       .from(orders)
       .where(eq(orders.id, orderId))
@@ -78,7 +78,7 @@ export class OrderNotesService {
       throw new NotFoundException(`Order with ID ${orderId} not found`);
     }
 
-    const [createdNote] = await db
+    const [createdNote] = await this.db
       .insert(orderNotes)
       .values({
         orderId,

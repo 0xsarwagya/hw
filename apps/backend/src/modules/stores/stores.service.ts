@@ -45,7 +45,7 @@ export class StoresService {
 
       // Try to get default store first
       let [store] = await this.db
-        .select()
+      .select()
         .from(stores)
         .where(eq(stores.isDefault, true))
         .limit(1);
@@ -58,7 +58,7 @@ export class StoresService {
       // If still no store, create a default one using ENV vars
       if (!store) {
         const [created] = await this.db
-          .insert(stores)
+      .insert(stores)
           .values({
             name: storeName,
             domain: storeDomain,
@@ -102,14 +102,14 @@ export class StoresService {
       // If setting a new default, unset all other defaults first
       if (dto.isDefault === true) {
         await this.db
-          .update(stores)
+      .update(stores)
           .set({ isDefault: false })
           .where(eq(stores.isDefault, true));
       }
 
       // Update store
       const [updated] = await this.db
-        .update(stores)
+      .update(stores)
         .set({
           name: dto.name ?? currentStore.name,
           domain: dto.domain ?? currentStore.domain,

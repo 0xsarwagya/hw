@@ -33,6 +33,10 @@ export interface DriftReportEntry {
 
 @Injectable()
 export class AdminDriftReportService {
+  constructor(
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
+  ) {}
+
   /**
    * Get drift report with filtering
    */
@@ -76,7 +80,7 @@ export class AdminDriftReportService {
       conditions.push(eq(discountAuditLogs.severity, query.severity));
     }
 
-    const logs = await db
+    const logs = await this.db
       .select()
       .from(discountAuditLogs)
       .where(and(...conditions))
@@ -84,7 +88,7 @@ export class AdminDriftReportService {
       .limit(limit)
       .offset(offset);
 
-    const totalResult = await db
+    const totalResult = await this.db
       .select()
       .from(discountAuditLogs)
       .where(and(...conditions));

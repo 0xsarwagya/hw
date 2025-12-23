@@ -72,7 +72,7 @@ export class OrderArchiveService {
     adminId: string,
   ): Promise<OrderResponseDto> {
     // Get order (no customer validation for admin)
-    const [order] = await db
+    const [order] = await this.db
       .select()
       .from(orders)
       .where(eq(orders.id, orderId))
@@ -102,7 +102,7 @@ export class OrderArchiveService {
     const customerId = await this.validationService.getCustomerId(userId);
 
     // Get order and validate ownership
-    const [order] = await db
+    const [order] = await this.db
       .select()
       .from(orders)
       .where(and(eq(orders.id, orderId), eq(orders.customerId, customerId)))
@@ -126,7 +126,7 @@ export class OrderArchiveService {
    */
   async unarchiveOrderForAdmin(orderId: string): Promise<OrderResponseDto> {
     // Get order (no customer validation for admin)
-    const [order] = await db
+    const [order] = await this.db
       .select()
       .from(orders)
       .where(eq(orders.id, orderId))
@@ -158,7 +158,7 @@ export class OrderArchiveService {
     isAdmin: boolean,
   ): Promise<OrderResponseDto> {
     // Update order archive status
-    const [updatedOrder] = await db
+    const [updatedOrder] = await this.db
       .update(orders)
       .set({
         archived: true,
@@ -184,7 +184,7 @@ export class OrderArchiveService {
     });
 
     // Get order items
-    const items = await db
+    const items = await this.db
       .select()
       .from(orderItems)
       .where(eq(orderItems.orderId, orderId));
@@ -225,7 +225,7 @@ export class OrderArchiveService {
     isAdmin: boolean,
   ): Promise<OrderResponseDto> {
     // Update order archive status
-    const [updatedOrder] = await db
+    const [updatedOrder] = await this.db
       .update(orders)
       .set({
         archived: false,
@@ -250,7 +250,7 @@ export class OrderArchiveService {
     });
 
     // Get order items
-    const items = await db
+    const items = await this.db
       .select()
       .from(orderItems)
       .where(eq(orderItems.orderId, orderId));

@@ -85,6 +85,7 @@ export class AdminOrdersController {
     private readonly duplicateService: OrderDuplicateService,
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   @Get(":id")
@@ -111,8 +112,8 @@ export class AdminOrdersController {
     try {
       let order: typeof orders.$inferSelect | undefined;
       try {
-        const orderResult = await db
-          .select()
+        const orderResult = await this.db
+      .select()
           .from(orders)
           .where(eq(orders.id, id))
           .limit(1);
@@ -147,8 +148,8 @@ export class AdminOrdersController {
         updatedAt: Date;
       }>;
       try {
-        items = await db
-          .select({
+        items = await this.db
+      .select({
             id: orderItems.id,
             orderId: orderItems.orderId,
             productVariantId: orderItems.productVariantId,
@@ -177,8 +178,8 @@ export class AdminOrdersController {
       // Get shipping address for GST calculation
       let shippingAddress: { state: string } | undefined;
       try {
-        const addressResult = await db
-          .select({ state: addresses.state })
+        const addressResult = await this.db
+      .select({ state: addresses.state })
           .from(addresses)
           .where(eq(addresses.id, order.shippingAddressId))
           .limit(1);

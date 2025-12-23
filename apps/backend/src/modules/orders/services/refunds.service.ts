@@ -56,7 +56,7 @@ export class RefundsService implements OnModuleInit {
    */
   async findByOrderId(orderId: string) {
     // Verify order exists
-    const [order] = await db
+    const [order] = await this.db
       .select()
       .from(orders)
       .where(eq(orders.id, orderId))
@@ -66,7 +66,7 @@ export class RefundsService implements OnModuleInit {
       throw new NotFoundException(`Order with ID ${orderId} not found`);
     }
 
-    const refundsList = await db
+    const refundsList = await this.db
       .select()
       .from(refunds)
       .where(eq(refunds.orderId, orderId))
@@ -98,7 +98,7 @@ export class RefundsService implements OnModuleInit {
     }
 
     // Get order
-    const [order] = await db
+    const [order] = await this.db
       .select()
       .from(orders)
       .where(eq(orders.id, orderId))
@@ -109,7 +109,7 @@ export class RefundsService implements OnModuleInit {
     }
 
     // Calculate total already refunded
-    const existingRefunds = await db
+    const existingRefunds = await this.db
       .select()
       .from(refunds)
       .where(eq(refunds.orderId, orderId));
@@ -157,7 +157,7 @@ export class RefundsService implements OnModuleInit {
     );
 
     // Create refund record
-    const [createdRefund] = await db
+    const [createdRefund] = await this.db
       .insert(refunds)
       .values({
         orderId,
@@ -240,7 +240,7 @@ export class RefundsService implements OnModuleInit {
    * @returns Updated refund
    */
   async processRefund(refundId: string) {
-    const [refund] = await db
+    const [refund] = await this.db
       .select()
       .from(refunds)
       .where(eq(refunds.id, refundId))
@@ -256,7 +256,7 @@ export class RefundsService implements OnModuleInit {
       );
     }
 
-    const [order] = await db
+    const [order] = await this.db
       .select()
       .from(orders)
       .where(eq(orders.id, refund.orderId))
@@ -264,8 +264,8 @@ export class RefundsService implements OnModuleInit {
 
     if (!order || !order.razorpayOrderId || !this.razorpay) {
       // Mark as failed if no payment provider
-      await db
-        .update(refunds)
+      await this.db
+      .update(refunds)
         .set({
           status: "failed",
           updatedAt: new Date(),
@@ -277,8 +277,8 @@ export class RefundsService implements OnModuleInit {
 
     try {
       // Get payment ID from payments table
-      const [payment] = await db
-        .select()
+      const [payment] = await this.db
+      .select()
         .from(payments)
         .where(
           and(eq(payments.orderId, order.id), eq(payments.status, "captured")),
@@ -302,8 +302,8 @@ export class RefundsService implements OnModuleInit {
       );
 
       // Update refund with provider refund ID
-      const [updatedRefund] = await db
-        .update(refunds)
+      const [updatedRefund] = await this.db
+      .update(refunds)
         .set({
           status: "completed",
           providerRefundId: razorpayRefund.id,
@@ -337,8 +337,8 @@ export class RefundsService implements OnModuleInit {
       return updatedRefund;
     } catch (error) {
       // Mark refund as failed
-      await db
-        .update(refunds)
+      await this.db
+      .update(refunds)
         .set({
           status: "failed",
           updatedAt: new Date(),

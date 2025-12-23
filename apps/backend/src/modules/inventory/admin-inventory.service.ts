@@ -1,9 +1,12 @@
+import type { Database } from "@vcecom/db";
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
   OnModuleInit,
+  Inject,
 } from "@nestjs/common";
+import { DB_TOKEN } from "../../modules/database/database.module";
 import {
   and,
   asc,
@@ -79,6 +82,7 @@ export class AdminInventoryService implements OnModuleInit {
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
     private readonly notificationsService: NotificationsService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   async onModuleInit() {
@@ -128,8 +132,8 @@ export class AdminInventoryService implements OnModuleInit {
       }
 
       // Build query
-      const baseQuery = db
-        .select({
+      const baseQuery = this.db
+      .select({
           variantId: productVariants.id,
           productId: productVariants.productId,
           sku: productVariants.sku,
@@ -149,8 +153,8 @@ export class AdminInventoryService implements OnModuleInit {
       // because those filters require Redis data enrichment
       let countResult: Array<{ count: number }>;
       try {
-        countResult = await db
-          .select({ count: sql<number>`count(*)::int` })
+        countResult = await this.db
+      .select({ count: sql<number>`count(*)::int` })
           .from(productVariants)
           .innerJoin(products, eq(productVariants.productId, products.id))
           .where(conditions.length > 0 ? and(...conditions) : undefined);
@@ -305,8 +309,8 @@ export class AdminInventoryService implements OnModuleInit {
   async getInventoryItem(variantId: string): Promise<InventoryItemResponseDto> {
     try {
       // Get variant and product from DB
-      const [variant] = await db
-        .select({
+      const [variant] = await this.db
+      .select({
           variantId: productVariants.id,
           productId: productVariants.productId,
           sku: productVariants.sku,
@@ -339,8 +343,8 @@ export class AdminInventoryService implements OnModuleInit {
       const lowStock = available <= threshold;
 
       // Get last adjustment
-      const [lastAdjustment] = await db
-        .select()
+      const [lastAdjustment] = await this.db
+      .select()
         .from(inventoryAdjustments)
         .where(eq(inventoryAdjustments.variantId, variantId))
         .orderBy(desc(inventoryAdjustments.createdAt))
@@ -428,7 +432,7 @@ export class AdminInventoryService implements OnModuleInit {
       }
 
       // Atomic operation: DB transaction + Redis pipeline
-      const adjustment = await db.transaction(async (tx) => {
+      const adjustment = await this.db.transaction(async (tx) => {
         // Create adjustment record
         const [adjustment] = await tx
           .insert(inventoryAdjustments)
@@ -485,8 +489,8 @@ export class AdminInventoryService implements OnModuleInit {
               }
             | undefined;
           try {
-            const variantResult = await db
-              .select({
+            const variantResult = await this.db
+      .select({
                 sku: productVariants.sku,
                 productId: productVariants.productId,
               })
@@ -510,8 +514,8 @@ export class AdminInventoryService implements OnModuleInit {
           if (variant) {
             let product: { title: string } | undefined;
             try {
-              const productResult = await db
-                .select({ title: products.title })
+              const productResult = await this.db
+      .select({ title: products.title })
                 .from(products)
                 .where(eq(products.id, variant.productId))
                 .limit(1);
@@ -605,8 +609,8 @@ export class AdminInventoryService implements OnModuleInit {
     for (const adjustment of dto.adjustments) {
       try {
         // Find variant by SKU
-        const [variant] = await db
-          .select({ id: productVariants.id })
+        const [variant] = await this.db
+      .select({ id: productVariants.id })
           .from(productVariants)
           .where(eq(productVariants.sku, adjustment.sku))
           .limit(1);
@@ -704,8 +708,8 @@ export class AdminInventoryService implements OnModuleInit {
       }
 
       // Get total count
-      const countQuery = db
-        .select({ count: sql<number>`count(*)::int` })
+      const countQuery = this.db
+      .select({ count: sql<number>`count(*)::int` })
         .from(inventoryAdjustments)
         .where(and(...conditions));
 
@@ -718,8 +722,8 @@ export class AdminInventoryService implements OnModuleInit {
       const [{ count }] = await countQuery;
 
       // Get paginated logs
-      const logs = await db
-        .select()
+      const logs = await this.db
+      .select()
         .from(inventoryAdjustments)
         .where(and(...conditions))
         .orderBy(desc(inventoryAdjustments.createdAt))
@@ -959,8 +963,8 @@ export class AdminInventoryService implements OnModuleInit {
       const availableStock = totalStock - committedStock;
 
       // Get fastest/slowest moving SKUs from order_items
-      const fastestMoving = await db
-        .select({
+      const fastestMoving = await this.db
+      .select({
           sku: productVariants.sku,
           variantId: productVariants.id,
           productTitle: products.title,
@@ -976,8 +980,8 @@ export class AdminInventoryService implements OnModuleInit {
         .orderBy(desc(sql`sum(${orderItems.quantity})`))
         .limit(10);
 
-      const slowestMoving = await db
-        .select({
+      const slowestMoving = await this.db
+      .select({
           sku: productVariants.sku,
           variantId: productVariants.id,
           productTitle: products.title,
@@ -1034,12 +1038,12 @@ export class AdminInventoryService implements OnModuleInit {
       }
 
       // Get from DB (singleton - should only be one row)
-      const [settings] = await db.select().from(inventorySettings).limit(1);
+      const [settings] = await this.db.select().from(inventorySettings).limit(1);
 
       if (!settings) {
         // Create default settings if none exist
-        const [newSettings] = await db
-          .insert(inventorySettings)
+        const [newSettings] = await this.db
+      .insert(inventorySettings)
           .values({
             globalLowStockThreshold: 5,
             perVariantOverrides: null,
@@ -1097,13 +1101,13 @@ export class AdminInventoryService implements OnModuleInit {
   ): Promise<InventorySettingsResponseDto> {
     try {
       // Check if settings exist (singleton pattern)
-      const [existing] = await db.select().from(inventorySettings).limit(1);
+      const [existing] = await this.db.select().from(inventorySettings).limit(1);
 
       let settings: typeof inventorySettings.$inferSelect;
       if (existing) {
         // Update existing
-        [settings] = await db
-          .update(inventorySettings)
+        [settings] = await this.db
+      .update(inventorySettings)
           .set({
             globalLowStockThreshold: dto.globalLowStockThreshold,
             perVariantOverrides: dto.perVariantOverrides || null,
@@ -1114,8 +1118,8 @@ export class AdminInventoryService implements OnModuleInit {
           .returning();
       } else {
         // Insert new
-        [settings] = await db
-          .insert(inventorySettings)
+        [settings] = await this.db
+      .insert(inventorySettings)
           .values({
             globalLowStockThreshold: dto.globalLowStockThreshold,
             perVariantOverrides: dto.perVariantOverrides || null,
@@ -1162,8 +1166,8 @@ export class AdminInventoryService implements OnModuleInit {
    */
   async getVariantsIndex(): Promise<VariantsIndexResponseDto> {
     try {
-      const variants = await db
-        .select({
+      const variants = await this.db
+      .select({
           variantId: productVariants.id,
           sku: productVariants.sku,
           productTitle: products.title,

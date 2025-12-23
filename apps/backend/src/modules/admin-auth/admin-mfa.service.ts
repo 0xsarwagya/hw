@@ -50,8 +50,8 @@ export class AdminMfaService {
 
     // Store secret temporarily (not enabled yet)
     try {
-      await db
-        .insert(admin2fa)
+      await this.db
+      .insert(admin2fa)
         .values({
           adminId,
           secret,
@@ -126,8 +126,8 @@ export class AdminMfaService {
     );
 
     try {
-      await db
-        .insert(admin2fa)
+      await this.db
+      .insert(admin2fa)
         .values({ adminId, secret, backupCodes, enabled: true })
         .onConflictDoUpdate({
           target: admin2fa.adminId,
@@ -157,7 +157,7 @@ export class AdminMfaService {
    * Disable 2FA for an admin
    */
   async disable2FA(adminId: string, code: string): Promise<boolean> {
-    const [existing2fa] = await db
+    const [existing2fa] = await this.db
       .select()
       .from(admin2fa)
       .where(eq(admin2fa.adminId, adminId))
@@ -186,8 +186,8 @@ export class AdminMfaService {
     }
 
     try {
-      await db
-        .update(admin2fa)
+      await this.db
+      .update(admin2fa)
         .set({ enabled: false, secret: "", backupCodes: [] }) // Clear secret and backup codes
         .where(eq(admin2fa.adminId, adminId));
 
@@ -211,7 +211,7 @@ export class AdminMfaService {
    * Verify a TOTP code or backup code for an admin
    */
   async verify2FA(adminId: string, code: string): Promise<boolean> {
-    const [admin2faConfig] = await db
+    const [admin2faConfig] = await this.db
       .select()
       .from(admin2fa)
       .where(eq(admin2fa.adminId, adminId))
@@ -229,8 +229,8 @@ export class AdminMfaService {
       const updatedBackupCodes = admin2faConfig.backupCodes?.filter(
         (_, i) => i !== backupCodeIndex,
       );
-      await db
-        .update(admin2fa)
+      await this.db
+      .update(admin2fa)
         .set({ backupCodes: updatedBackupCodes })
         .where(eq(admin2fa.adminId, adminId));
 
@@ -277,8 +277,8 @@ export class AdminMfaService {
    */
   async is2FAEnabled(adminId: string): Promise<boolean> {
     try {
-      const [mfaRecord] = await db
-        .select({ enabled: admin2fa.enabled })
+      const [mfaRecord] = await this.db
+      .select({ enabled: admin2fa.enabled })
         .from(admin2fa)
         .where(eq(admin2fa.adminId, adminId))
         .limit(1);

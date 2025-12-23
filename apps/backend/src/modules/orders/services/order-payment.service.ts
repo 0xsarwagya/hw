@@ -71,7 +71,7 @@ export class OrderPaymentService {
     }
 
     // Update payment status to captured
-    await db
+    await this.db
       .update(payments)
       .set({
         status: "captured",
@@ -81,8 +81,8 @@ export class OrderPaymentService {
 
     // Update order status to confirmed if it's still pending (consistent with online payment flow)
     if (order.status === "pending") {
-      await db
-        .update(orders)
+      await this.db
+      .update(orders)
         .set({
           status: "confirmed",
           updatedAt: new Date(),
@@ -103,7 +103,7 @@ export class OrderPaymentService {
     });
 
     // Fetch updated order
-    const [updatedOrder] = await db
+    const [updatedOrder] = await this.db
       .select()
       .from(orders)
       .where(eq(orders.id, orderId))

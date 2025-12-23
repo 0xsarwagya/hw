@@ -61,7 +61,7 @@ export class OrderGstService {
     isIntraState: boolean;
   }> {
     // Get order items with GST rates
-    const items = await db
+    const items = await this.db
       .select({
         quantity: orderItems.quantity,
         price: orderItems.price,
@@ -71,7 +71,7 @@ export class OrderGstService {
       .where(eq(orderItems.orderId, orderId));
 
     // Get shipping address state
-    const [shippingAddress] = await db
+    const [shippingAddress] = await this.db
       .select({ state: addresses.state })
       .from(addresses)
       .where(eq(addresses.id, shippingAddressId))

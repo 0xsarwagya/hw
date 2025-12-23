@@ -36,7 +36,10 @@ import {
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth("JWT-auth")
 export class AdminMfaController {
-  constructor(private readonly mfaService: AdminMfaService) {}
+  constructor(
+    private readonly mfaService: AdminMfaService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
+  ) {}
 
   @Get("status")
   @ApiOperation({
@@ -92,7 +95,7 @@ export class AdminMfaController {
     }
 
     // Get admin email for QR code
-    const [admin] = await db
+    const [admin] = await this.db
       .select({ email: users.email })
       .from(users)
       .where(eq(users.id, adminId))
@@ -139,7 +142,7 @@ export class AdminMfaController {
     }
 
     // Get the secret from the database
-    const [mfaRecord] = await db
+    const [mfaRecord] = await this.db
       .select({ secret: admin2fa.secret })
       .from(admin2fa)
       .where(eq(admin2fa.adminId, adminId))

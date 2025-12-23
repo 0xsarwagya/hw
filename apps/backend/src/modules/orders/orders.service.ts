@@ -1,3 +1,5 @@
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 // External libraries
 import {
   BadRequestException,
@@ -141,6 +143,7 @@ export class OrdersService {
     private readonly statusService: OrderStatusService,
     private readonly gstService: OrderGstService,
     private readonly timelineService: OrderTimelineService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   // ============================================================================
@@ -1968,10 +1971,10 @@ export class OrdersService {
       }
     }
 
-    await db.insert(orderItems).values(orderItemsToInsert);
+    await this.db.insert(orderItems).values(orderItemsToInsert);
 
     // Create COD payment record (status: pending, will be marked as captured when delivered)
-    await db.insert(payments).values({
+    await this.db.insert(payments).values({
       orderId,
       method: COD_PAYMENT_METHOD,
       status: "pending",
@@ -2614,7 +2617,7 @@ export class OrdersService {
           "Concurrent order creation detected, using existing order",
         );
         // Delete the duplicate order we just created
-        await db.delete(orders).where(eq(orders.id, orderId));
+        await this.db.delete(orders).where(eq(orders.id, orderId));
         // Return existing order
         return this.finalizeOrderFromPayment(
           checkoutSessionId,

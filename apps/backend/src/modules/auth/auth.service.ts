@@ -54,7 +54,7 @@ export class AuthService {
     }
 
     // Check if user already exists
-    const [existingUser] = await db
+    const [existingUser] = await this.db
       .select()
       .from(users)
       .where(eq(users.email, email))
@@ -68,7 +68,7 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(password, 10);
 
     // Create user
-    const [newUser] = await db
+    const [newUser] = await this.db
       .insert(users)
       .values({
         email,
@@ -102,8 +102,8 @@ export class AuthService {
       const payload = this.jwtService.verify(refreshToken);
 
       // Verify user still exists
-      const [user] = await db
-        .select()
+      const [user] = await this.db
+      .select()
         .from(users)
         .where(eq(users.id, payload.sub))
         .limit(1);

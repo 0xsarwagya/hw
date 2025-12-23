@@ -301,7 +301,7 @@ export class CheckoutController {
         try {
           const { addresses } = await import("@vcecom/db");
           const [address] = await this.db
-            .select({
+      .select({
               country: addresses.country,
               state: addresses.state,
               pincode: addresses.pincode,
@@ -327,7 +327,7 @@ export class CheckoutController {
     if (userId && cart.customerId) {
       try {
         const [customer] = await this.db
-          .select({ customerGroupId: customers.customerGroupId })
+      .select({ customerGroupId: customers.customerGroupId })
           .from(customers)
           .where(eq(customers.id, cart.customerId))
           .limit(1);

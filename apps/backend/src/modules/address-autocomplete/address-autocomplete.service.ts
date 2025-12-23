@@ -76,7 +76,7 @@ export class AddressAutocompleteService {
       whereConditions.push(ilike(pincodes.state, `%${state}%`));
     }
 
-    const districts = await db
+    const districts = await this.db
       .select({
         district: pincodes.district,
         state: pincodes.state,
@@ -97,7 +97,7 @@ export class AddressAutocompleteService {
     }));
 
     // Get total count
-    const [totalResult] = await db
+    const [totalResult] = await this.db
       .select({
         count: sql<number>`COUNT(DISTINCT ${pincodes.district})::int`,
       })
@@ -114,7 +114,7 @@ export class AddressAutocompleteService {
    * Get all states (for dropdown/select lists)
    */
   async getAllStates(): Promise<StateSuggestionDto[]> {
-    const states = await db
+    const states = await this.db
       .select({
         state: pincodes.state,
         stateCode: pincodes.stateCode,
@@ -135,7 +135,7 @@ export class AddressAutocompleteService {
    * Get districts for a specific state
    */
   async getDistrictsByState(state: string): Promise<DistrictSuggestionDto[]> {
-    const districts = await db
+    const districts = await this.db
       .select({
         district: pincodes.district,
         state: pincodes.state,

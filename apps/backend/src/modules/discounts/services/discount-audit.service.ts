@@ -1,4 +1,6 @@
-import { Injectable } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
+import { Inject, Injectable } from "@nestjs/common";
 import {
   db,
   discountAuditEventTypeEnum,
@@ -26,6 +28,7 @@ export class DiscountAuditService {
   constructor(
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -33,7 +36,7 @@ export class DiscountAuditService {
    */
   async logEvent(entry: DiscountAuditLogEntry): Promise<void> {
     try {
-      await db.insert(discountAuditLogs).values({
+      await this.db.insert(discountAuditLogs).values({
         timestamp: new Date(),
         event:
           entry.event as (typeof discountAuditEventTypeEnum.enumValues)[number],

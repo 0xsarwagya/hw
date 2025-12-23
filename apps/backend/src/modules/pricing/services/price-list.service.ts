@@ -51,7 +51,7 @@ export class PriceListService {
    * Get all price lists
    */
   async findAll(): Promise<PriceListResponseDto[]> {
-    const lists = await db
+    const lists = await this.db
       .select()
       .from(priceLists)
       .orderBy(desc(priceLists.priority));
@@ -63,7 +63,7 @@ export class PriceListService {
    * Get active price lists (for current date)
    */
   async findActive(now: Date = new Date()): Promise<PriceListResponseDto[]> {
-    const lists = await db
+    const lists = await this.db
       .select()
       .from(priceLists)
       .where(
@@ -92,7 +92,7 @@ export class PriceListService {
    * Get price list by ID
    */
   async findOne(id: string): Promise<PriceListResponseDto> {
-    const [list] = await db
+    const [list] = await this.db
       .select()
       .from(priceLists)
       .where(eq(priceLists.id, id))
@@ -208,7 +208,7 @@ export class PriceListService {
     // Validate price list exists
     await this.findOne(priceListId);
 
-    const [item] = await db
+    const [item] = await this.db
       .select()
       .from(priceListItems)
       .where(
@@ -236,7 +236,7 @@ export class PriceListService {
   private async enrichPriceList(
     list: typeof priceLists.$inferSelect,
   ): Promise<PriceListResponseDto> {
-    const items = await db
+    const items = await this.db
       .select()
       .from(priceListItems)
       .where(eq(priceListItems.priceListId, list.id));

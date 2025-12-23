@@ -1,10 +1,11 @@
-import { Injectable } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
+import { Inject, Injectable } from "@nestjs/common";
 import {
-  db,
   pricingAuditEventTypeEnum,
   pricingAuditLogs,
   pricingAuditSeverityEnum,
 } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import { createErrorContext } from "../../../common/logging/logging.helper";
@@ -24,6 +25,7 @@ export class PricingAuditService {
   constructor(
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -31,7 +33,7 @@ export class PricingAuditService {
    */
   async logEvent(entry: PricingAuditLogEntry): Promise<void> {
     try {
-      await db.insert(pricingAuditLogs).values({
+      await this.db.insert(pricingAuditLogs).values({
         timestamp: new Date(),
         event:
           entry.event as (typeof pricingAuditEventTypeEnum.enumValues)[number],

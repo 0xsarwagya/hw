@@ -20,6 +20,7 @@ export class NimbusPostService implements OnModuleInit {
   constructor(
     private readonly nimbusPostConfigService: NimbusPostConfigService,
     private readonly appConfigService: AppConfigService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {
     this.baseUrl = this.nimbusPostConfigService.getBaseUrl();
   }
@@ -322,7 +323,7 @@ export class NimbusPostService implements OnModuleInit {
     }
 
     // Get order details with shipping address
-    const [order] = await db
+    const [order] = await this.db
       .select({
         id: orders.id,
         orderNumber: orders.orderNumber,
@@ -339,7 +340,7 @@ export class NimbusPostService implements OnModuleInit {
     }
 
     // Get shipping address
-    const [shippingAddress] = await db
+    const [shippingAddress] = await this.db
       .select()
       .from(addresses)
       .where(eq(addresses.id, order.shippingAddressId))
@@ -352,7 +353,7 @@ export class NimbusPostService implements OnModuleInit {
     // Get order items to calculate weight if not provided
     let calculatedWeight = weight;
     if (!calculatedWeight) {
-      const items = await db
+      const items = await this.db
         .select({
           quantity: orderItems.quantity,
         })
@@ -424,7 +425,7 @@ export class NimbusPostService implements OnModuleInit {
     const labelUrl = createResponse.label_url;
 
     // Store shipment in database
-    await db
+    await this.db
       .insert(shipments)
       .values({
         orderId: orderId,
@@ -437,7 +438,7 @@ export class NimbusPostService implements OnModuleInit {
       .returning();
 
     // Update order shipping provider
-    await db
+    await this.db
       .update(orders)
       .set({
         shippingProvider: "nimbus_post",
@@ -466,7 +467,7 @@ export class NimbusPostService implements OnModuleInit {
       selling_price: string;
     }>
   > {
-    const items = await db
+    const items = await this.db
       .select({
         quantity: orderItems.quantity,
         price: orderItems.price,
@@ -559,14 +560,14 @@ export class NimbusPostService implements OnModuleInit {
     const mappedStatus = statusMap[trackingData.tracking_status] || "pending";
 
     // Update shipment status in database if exists
-    const [existingShipment] = await db
+    const [existingShipment] = await this.db
       .select()
       .from(shipments)
       .where(eq(shipments.awbNumber, awbNumber))
       .limit(1);
 
     if (existingShipment) {
-      await db
+      await this.db
         .update(shipments)
         .set({
           status: mappedStatus as

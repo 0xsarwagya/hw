@@ -1,4 +1,6 @@
-import { Injectable } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../modules/database/database.module";
+import { Inject, Injectable } from "@nestjs/common";
 import {
   and,
   customers,
@@ -36,6 +38,7 @@ export class ExportsService {
     private readonly pdfGenerator: PdfGenerator,
     private readonly zipGenerator: ZipGenerator,
     private readonly inventoryStore: InventoryStore,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -263,8 +266,8 @@ export class ExportsService {
       customerId: string;
     }>;
     try {
-      ordersList = await db
-        .select({
+      ordersList = await this.db
+      .select({
           id: orders.id,
           orderNumber: orders.orderNumber,
           status: orders.status,
@@ -303,8 +306,8 @@ export class ExportsService {
             }
           | undefined;
         try {
-          const customerResult = await db
-            .select({
+          const customerResult = await this.db
+      .select({
               email: customers.email,
               name: customers.name,
               phone: customers.phone,
@@ -364,8 +367,8 @@ export class ExportsService {
       createdAt: Date;
     }>;
     try {
-      productsList = await db
-        .select({
+      productsList = await this.db
+      .select({
           id: products.id,
           title: products.title,
           price: products.price,
@@ -397,8 +400,8 @@ export class ExportsService {
           inventory: number;
         }>;
         try {
-          variants = await db
-            .select({
+          variants = await this.db
+      .select({
               id: productVariants.id,
               sku: productVariants.sku,
               price: productVariants.price,
@@ -437,7 +440,7 @@ export class ExportsService {
   private async fetchCustomersData(): Promise<Record<string, unknown>[]> {
     let customersList: Array<typeof customers.$inferSelect>;
     try {
-      customersList = await db.select().from(customers);
+      customersList = await this.db.select().from(customers);
     } catch (error) {
       this.logger.error(
         createErrorContext(
@@ -462,7 +465,7 @@ export class ExportsService {
   }
 
   private async fetchInventoryData(): Promise<Record<string, unknown>[]> {
-    const variants = await db
+    const variants = await this.db
       .select({
         id: productVariants.id,
         sku: productVariants.sku,
@@ -473,8 +476,8 @@ export class ExportsService {
 
     return Promise.all(
       variants.map(async (variant) => {
-        const [product] = await db
-          .select({ title: products.title })
+        const [product] = await this.db
+      .select({ title: products.title })
           .from(products)
           .where(eq(products.id, variant.productId))
           .limit(1);

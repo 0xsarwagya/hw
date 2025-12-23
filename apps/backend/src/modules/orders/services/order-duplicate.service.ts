@@ -54,7 +54,7 @@ export class OrderDuplicateService {
     const prefix = `ORD-${year}-`;
 
     // Get the latest order number for this year
-    const latestOrders = await db
+    const latestOrders = await this.db
       .select({ orderNumber: orders.orderNumber })
       .from(orders)
       .where(ilike(orders.orderNumber, `${prefix}%`))
@@ -91,7 +91,7 @@ export class OrderDuplicateService {
     const customerId = await this.validationService.getCustomerId(userId);
 
     // Get original order and validate ownership
-    const [originalOrder] = await db
+    const [originalOrder] = await this.db
       .select()
       .from(orders)
       .where(and(eq(orders.id, orderId), eq(orders.customerId, customerId)))
@@ -120,7 +120,7 @@ export class OrderDuplicateService {
     duplicateDto: DuplicateOrderDto,
   ): Promise<OrderResponseDto> {
     // Get original order (no customer validation for admin)
-    const [originalOrder] = await db
+    const [originalOrder] = await this.db
       .select()
       .from(orders)
       .where(eq(orders.id, orderId))
@@ -153,7 +153,7 @@ export class OrderDuplicateService {
     isAdmin: boolean,
   ): Promise<OrderResponseDto> {
     // Get original order items
-    const originalItems = await db
+    const originalItems = await this.db
       .select()
       .from(orderItems)
       .where(eq(orderItems.orderId, originalOrder.id));
@@ -200,8 +200,8 @@ export class OrderDuplicateService {
           const actuallyAvailable = (available || 0) - reserved;
 
           if (actuallyAvailable < item.quantity) {
-            const [variant] = await db
-              .select()
+            const [variant] = await this.db
+      .select()
               .from(productVariants)
               .where(eq(productVariants.id, item.productVariantId))
               .limit(1);
@@ -222,8 +222,8 @@ export class OrderDuplicateService {
         const actuallyAvailable = (available || 0) - reserved;
 
         if (actuallyAvailable < item.quantity) {
-          const [variant] = await db
-            .select()
+          const [variant] = await this.db
+      .select()
             .from(productVariants)
             .where(eq(productVariants.id, item.productVariantId))
             .limit(1);
@@ -273,7 +273,7 @@ export class OrderDuplicateService {
     const total = finalSubtotal + gstAmount + shippingCost + paymentFee / 100;
 
     // Create new order
-    const [newOrder] = await db
+    const [newOrder] = await this.db
       .insert(orders)
       .values({
         customerId,
@@ -326,7 +326,7 @@ export class OrderDuplicateService {
     });
 
     // Get order items for response
-    const items = await db
+    const items = await this.db
       .select()
       .from(orderItems)
       .where(eq(orderItems.orderId, newOrder.id));

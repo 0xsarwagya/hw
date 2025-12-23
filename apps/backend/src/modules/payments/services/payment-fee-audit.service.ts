@@ -1,10 +1,11 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import {
-  db,
   paymentFeeAuditEventTypeEnum,
   paymentFeeAuditLogs,
   paymentFeeAuditSeverityEnum,
 } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import { createErrorContext } from "../../../common/logging/logging.helper";
@@ -42,6 +43,7 @@ export class PaymentFeeAuditService {
   constructor(
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -49,7 +51,7 @@ export class PaymentFeeAuditService {
    */
   async logEvent(entry: PaymentFeeAuditLogEntry): Promise<void> {
     try {
-      await db.insert(paymentFeeAuditLogs).values({
+      await this.db.insert(paymentFeeAuditLogs).values({
         timestamp: new Date(),
         event:
           entry.event as (typeof paymentFeeAuditEventTypeEnum.enumValues)[number],

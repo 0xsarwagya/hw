@@ -47,7 +47,7 @@ export class PermissionsService {
   async getRole(id: string): Promise<RoleResponseDto> {
     try {
       const [role] = await this.db
-        .select()
+      .select()
         .from(adminRoles)
         .where(eq(adminRoles.id, id))
         .limit(1);
@@ -75,8 +75,8 @@ export class PermissionsService {
   async createRole(dto: CreateRoleDto): Promise<RoleResponseDto> {
     try {
       // Check if role name already exists
-      const [existing] = await db
-        .select()
+      const [existing] = await this.db
+      .select()
         .from(adminRoles)
         .where(eq(adminRoles.name, dto.name))
         .limit(1);
@@ -90,8 +90,8 @@ export class PermissionsService {
       // Validate permissions structure
       this.validatePermissions(dto.permissions);
 
-      const [created] = await db
-        .insert(adminRoles)
+      const [created] = await this.db
+      .insert(adminRoles)
         .values({
           name: dto.name,
           permissions: dto.permissions as Record<string, unknown>,
@@ -120,8 +120,8 @@ export class PermissionsService {
   async updateRole(id: string, dto: UpdateRoleDto): Promise<RoleResponseDto> {
     try {
       // Check if role exists
-      const [existing] = await db
-        .select()
+      const [existing] = await this.db
+      .select()
         .from(adminRoles)
         .where(eq(adminRoles.id, id))
         .limit(1);
@@ -132,8 +132,8 @@ export class PermissionsService {
 
       // Check if new name conflicts with another role
       if (dto.name && dto.name !== existing.name) {
-        const [conflicting] = await db
-          .select()
+        const [conflicting] = await this.db
+      .select()
           .from(adminRoles)
           .where(eq(adminRoles.name, dto.name))
           .limit(1);
@@ -150,8 +150,8 @@ export class PermissionsService {
         this.validatePermissions(dto.permissions);
       }
 
-      const [updated] = await db
-        .update(adminRoles)
+      const [updated] = await this.db
+      .update(adminRoles)
         .set({
           name: dto.name ?? existing.name,
           permissions: dto.permissions
@@ -187,8 +187,8 @@ export class PermissionsService {
   async deleteRole(id: string): Promise<void> {
     try {
       // Check if role exists
-      const [existing] = await db
-        .select()
+      const [existing] = await this.db
+      .select()
         .from(adminRoles)
         .where(eq(adminRoles.id, id))
         .limit(1);
@@ -199,8 +199,8 @@ export class PermissionsService {
 
       // Check if any users are using this role
       const { users } = await import("@vcecom/db");
-      const usersWithRole = await db
-        .select()
+      const usersWithRole = await this.db
+      .select()
         .from(users)
         .where(eq(users.roleId, id))
         .limit(1);
@@ -245,8 +245,8 @@ export class PermissionsService {
   ): Promise<boolean> {
     try {
       const { users } = await import("@vcecom/db");
-      const [user] = await db
-        .select({
+      const [user] = await this.db
+      .select({
           role: users.role,
           roleId: users.roleId,
         })
@@ -269,8 +269,8 @@ export class PermissionsService {
       }
 
       // Get role permissions
-      const [role] = await db
-        .select()
+      const [role] = await this.db
+      .select()
         .from(adminRoles)
         .where(eq(adminRoles.id, user.roleId))
         .limit(1);

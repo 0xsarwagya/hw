@@ -1,4 +1,6 @@
-import { Injectable } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
+import { Inject, Injectable } from "@nestjs/common";
 import {
   db,
   inArray,
@@ -14,7 +16,9 @@ import { DiscountResponseDto } from "../dto/discount-response.dto";
 
 @Injectable()
 export class DiscountEligibilityBuilder {
-  constructor(private readonly logger: PinoLogger) {}
+  constructor(private readonly logger: PinoLogger,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
+  ) {}
 
   /**
    * Build eligibility set for a discount (returns variant IDs)
@@ -37,8 +41,8 @@ export class DiscountEligibilityBuilder {
       }
 
       // Get all variants for eligible products
-      const variants = await db
-        .select({ variantId: productVariants.id })
+      const variants = await this.db
+      .select({ variantId: productVariants.id })
         .from(productVariants)
         .where(inArray(productVariants.productId, eligibleProductIds));
 
@@ -92,7 +96,7 @@ export class DiscountEligibilityBuilder {
 
     if (!hasSpecificFilters) {
       // Get all active products
-      const allProducts = await db.select({ id: products.id }).from(products);
+      const allProducts = await this.db.select({ id: products.id }).from(products);
       return allProducts.map((p) => p.id);
     }
 
@@ -108,8 +112,8 @@ export class DiscountEligibilityBuilder {
 
     // Check collection IDs (via product_collections junction)
     if (discount.collectionIds && discount.collectionIds.length > 0) {
-      const productsInCollections = await db
-        .select({ productId: productCollections.productId })
+      const productsInCollections = await this.db
+      .select({ productId: productCollections.productId })
         .from(productCollections)
         .where(
           inArray(productCollections.collectionId, discount.collectionIds),
@@ -129,8 +133,8 @@ export class DiscountEligibilityBuilder {
 
     // Check tag IDs (via product_tags junction)
     if (discount.tagIds && discount.tagIds.length > 0) {
-      const productsWithTags = await db
-        .select({ productId: productTags.productId })
+      const productsWithTags = await this.db
+      .select({ productId: productTags.productId })
         .from(productTags)
         .where(inArray(productTags.tagId, discount.tagIds));
 
@@ -149,7 +153,7 @@ export class DiscountEligibilityBuilder {
       return [];
     }
 
-    const matchingProducts = await db
+    const matchingProducts = await this.db
       .select({ id: products.id })
       .from(products)
       .where(or(...conditions));

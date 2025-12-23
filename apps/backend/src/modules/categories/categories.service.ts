@@ -47,7 +47,7 @@ export class CategoriesService {
       let existing: typeof categories.$inferSelect | undefined;
       try {
         const existingResult = await this.db
-          .select()
+      .select()
           .from(categories)
           .where(eq(categories.slug, slug))
           .limit(1);
@@ -84,8 +84,8 @@ export class CategoriesService {
     if (createCategoryDto.parentId) {
       let parent: typeof categories.$inferSelect | undefined;
       try {
-        const parentResult = await db
-          .select()
+        const parentResult = await this.db
+      .select()
           .from(categories)
           .where(eq(categories.id, createCategoryDto.parentId))
           .limit(1);
@@ -120,8 +120,8 @@ export class CategoriesService {
     // Create category
     let newCategory: typeof categories.$inferSelect | undefined;
     try {
-      const categoryResult = await db
-        .insert(categories)
+      const categoryResult = await this.db
+      .insert(categories)
         .values({
           name: createCategoryDto.name,
           slug,
@@ -177,7 +177,7 @@ export class CategoriesService {
   async findTree() {
     let allCategories: Array<typeof categories.$inferSelect>;
     try {
-      allCategories = await db.select().from(categories);
+      allCategories = await this.db.select().from(categories);
     } catch (error) {
       this.logger.error(
         createErrorContext(
@@ -233,8 +233,8 @@ export class CategoriesService {
   async findOne(id: string) {
     let category: typeof categories.$inferSelect | undefined;
     try {
-      const categoryResult = await db
-        .select()
+      const categoryResult = await this.db
+      .select()
         .from(categories)
         .where(eq(categories.id, id))
         .limit(1);
@@ -265,8 +265,8 @@ export class CategoriesService {
   async findBySlug(slug: string) {
     let category: typeof categories.$inferSelect | undefined;
     try {
-      const categoryResult = await db
-        .select()
+      const categoryResult = await this.db
+      .select()
         .from(categories)
         .where(eq(categories.slug, slug))
         .limit(1);
@@ -298,8 +298,8 @@ export class CategoriesService {
     // Check if category exists
     let existing: typeof categories.$inferSelect | undefined;
     try {
-      const existingResult = await db
-        .select()
+      const existingResult = await this.db
+      .select()
         .from(categories)
         .where(eq(categories.id, id))
         .limit(1);
@@ -329,8 +329,8 @@ export class CategoriesService {
 
       let parent: typeof categories.$inferSelect | undefined;
       try {
-        const parentResult = await db
-          .select()
+        const parentResult = await this.db
+      .select()
           .from(categories)
           .where(eq(categories.id, updateCategoryDto.parentId))
           .limit(1);
@@ -388,7 +388,7 @@ export class CategoriesService {
     if (updateCategoryDto.imageUrl !== undefined)
       updateData.imageUrl = updateCategoryDto.imageUrl || null;
 
-    const [updated] = await db
+    const [updated] = await this.db
       .update(categories)
       .set(updateData)
       .where(eq(categories.id, id))
@@ -402,7 +402,7 @@ export class CategoriesService {
    */
   async remove(id: string) {
     // Check if category exists
-    const [existing] = await db
+    const [existing] = await this.db
       .select()
       .from(categories)
       .where(eq(categories.id, id))
@@ -413,7 +413,7 @@ export class CategoriesService {
     }
 
     // Check if category has children
-    const [child] = await db
+    const [child] = await this.db
       .select()
       .from(categories)
       .where(eq(categories.parentId, id))
@@ -443,8 +443,8 @@ export class CategoriesService {
     while (queue.length > 0) {
       const currentId = queue.shift();
       if (!currentId) break;
-      const children = await db
-        .select()
+      const children = await this.db
+      .select()
         .from(categories)
         .where(eq(categories.parentId, currentId));
 

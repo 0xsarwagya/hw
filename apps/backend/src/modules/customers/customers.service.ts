@@ -44,7 +44,7 @@ export class CustomersService {
     let existingUser: typeof users.$inferSelect | undefined;
     try {
       const userResult = await this.db
-        .select()
+      .select()
         .from(users)
         .where(eq(users.email, registerDto.email))
         .limit(1);
@@ -69,8 +69,8 @@ export class CustomersService {
     // Check if customer with phone already exists
     let existingCustomer: typeof customers.$inferSelect | undefined;
     try {
-      const customerResult = await db
-        .select()
+      const customerResult = await this.db
+      .select()
         .from(customers)
         .where(eq(customers.phone, registerDto.phone))
         .limit(1);
@@ -108,8 +108,8 @@ export class CustomersService {
       // Check if GSTIN already exists
       let existingGstin: typeof customers.$inferSelect | undefined;
       try {
-        const gstinResult = await db
-          .select()
+        const gstinResult = await this.db
+      .select()
           .from(customers)
           .where(eq(customers.gstin, formattedGstin))
           .limit(1);
@@ -142,8 +142,8 @@ export class CustomersService {
     // Create user first
     let newUser: typeof users.$inferSelect | undefined;
     try {
-      const userResult = await db
-        .insert(users)
+      const userResult = await this.db
+      .insert(users)
         .values({
           email: registerDto.email,
           passwordHash,
@@ -171,8 +171,8 @@ export class CustomersService {
     // Create customer profile
     let newCustomer: typeof customers.$inferSelect | undefined;
     try {
-      const customerResult = await db
-        .insert(customers)
+      const customerResult = await this.db
+      .insert(customers)
         .values({
           userId: newUser.id,
           email: registerDto.email,
@@ -257,8 +257,8 @@ export class CustomersService {
   async getProfile(userId: string) {
     let customer: typeof customers.$inferSelect | undefined;
     try {
-      const customerResult = await db
-        .select()
+      const customerResult = await this.db
+      .select()
         .from(customers)
         .where(eq(customers.userId, userId))
         .limit(1);
@@ -291,8 +291,8 @@ export class CustomersService {
     // Get existing customer
     let existingCustomer: typeof customers.$inferSelect | undefined;
     try {
-      const customerResult = await db
-        .select()
+      const customerResult = await this.db
+      .select()
         .from(customers)
         .where(eq(customers.userId, userId))
         .limit(1);
@@ -318,8 +318,8 @@ export class CustomersService {
     if (updateDto.phone && updateDto.phone !== existingCustomer.phone) {
       let existingPhone: typeof customers.$inferSelect | undefined;
       try {
-        const phoneResult = await db
-          .select()
+        const phoneResult = await this.db
+      .select()
           .from(customers)
           .where(eq(customers.phone, updateDto.phone))
           .limit(1);
@@ -359,8 +359,8 @@ export class CustomersService {
         // Check if GSTIN already exists (excluding current customer)
         let existingGstin: typeof customers.$inferSelect | undefined;
         try {
-          const gstinResult = await db
-            .select()
+          const gstinResult = await this.db
+      .select()
             .from(customers)
             .where(eq(customers.gstin, formattedGstin))
             .limit(1);
@@ -397,8 +397,8 @@ export class CustomersService {
     // Update customer
     let updated: typeof customers.$inferSelect | undefined;
     try {
-      const updatedResult = await db
-        .update(customers)
+      const updatedResult = await this.db
+      .update(customers)
         .set(updateData)
         .where(eq(customers.userId, userId))
         .returning();
@@ -430,8 +430,8 @@ export class CustomersService {
     // Get user
     let user: typeof users.$inferSelect | undefined;
     try {
-      const userResult = await db
-        .select()
+      const userResult = await this.db
+      .select()
         .from(users)
         .where(eq(users.id, userId))
         .limit(1);
@@ -475,8 +475,8 @@ export class CustomersService {
 
     // Update password
     try {
-      await db
-        .update(users)
+      await this.db
+      .update(users)
         .set({ passwordHash: newPasswordHash })
         .where(eq(users.id, userId));
     } catch (error) {
@@ -521,8 +521,8 @@ export class CustomersService {
     // Check if customer exists by email
     let existingCustomer: typeof customers.$inferSelect | undefined;
     try {
-      const customerResult = await db
-        .select()
+      const customerResult = await this.db
+      .select()
         .from(customers)
         .where(eq(customers.email, email))
         .limit(1);
@@ -556,8 +556,8 @@ export class CustomersService {
     // Check if user exists by email
     let existingUser: typeof users.$inferSelect | undefined;
     try {
-      const userResult = await db
-        .select()
+      const userResult = await this.db
+      .select()
         .from(users)
         .where(eq(users.email, email))
         .limit(1);
@@ -591,8 +591,8 @@ export class CustomersService {
     if (phone) {
       let existingPhone: typeof customers.$inferSelect | undefined;
       try {
-        const phoneResult = await db
-          .select()
+        const phoneResult = await this.db
+      .select()
           .from(customers)
           .where(eq(customers.phone, phone))
           .limit(1);
@@ -629,8 +629,8 @@ export class CustomersService {
     // Create user first
     let newUser: typeof users.$inferSelect | undefined;
     try {
-      const userResult = await db
-        .insert(users)
+      const userResult = await this.db
+      .insert(users)
         .values({
           email,
           passwordHash: passwordHash || null,
@@ -658,8 +658,8 @@ export class CustomersService {
     // Create customer profile
     let newCustomer: typeof customers.$inferSelect | undefined;
     try {
-      const customerResult = await db
-        .insert(customers)
+      const customerResult = await this.db
+      .insert(customers)
         .values({
           userId: newUser.id,
           email,
@@ -736,8 +736,8 @@ export class CustomersService {
     // Find customer by email
     let customer: typeof customers.$inferSelect | undefined;
     try {
-      const customerResult = await db
-        .select()
+      const customerResult = await this.db
+      .select()
         .from(customers)
         .where(eq(customers.email, email))
         .limit(1);
@@ -769,8 +769,8 @@ export class CustomersService {
     // Get user
     let user: typeof users.$inferSelect | undefined;
     try {
-      const userResult = await db
-        .select()
+      const userResult = await this.db
+      .select()
         .from(users)
         .where(eq(users.id, customer.userId))
         .limit(1);
@@ -817,8 +817,8 @@ export class CustomersService {
     // Update customer: set isGuest=false, emailVerified=true
     let updatedCustomer: typeof customers.$inferSelect | undefined;
     try {
-      const updatedResult = await db
-        .update(customers)
+      const updatedResult = await this.db
+      .update(customers)
         .set({
           isGuest: false,
           emailVerified: true,

@@ -184,8 +184,8 @@ export class ActivityLoggingInterceptor implements NestInterceptor {
     try {
       switch (entityType.toLowerCase()) {
         case "product": {
-          const [product] = await db
-            .select()
+          const [product] = await this.db
+      .select()
             .from(products)
             .where(eq(products.id, entityId))
             .limit(1);
@@ -193,8 +193,8 @@ export class ActivityLoggingInterceptor implements NestInterceptor {
         }
 
         case "discount": {
-          const [discount] = await db
-            .select()
+          const [discount] = await this.db
+      .select()
             .from(discounts)
             .where(eq(discounts.id, entityId))
             .limit(1);
@@ -202,8 +202,8 @@ export class ActivityLoggingInterceptor implements NestInterceptor {
         }
 
         case "order": {
-          const [order] = await db
-            .select()
+          const [order] = await this.db
+      .select()
             .from(orders)
             .where(eq(orders.id, entityId))
             .limit(1);

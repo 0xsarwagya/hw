@@ -24,6 +24,7 @@ export class ShiprocketService implements OnModuleInit {
   constructor(
     private readonly shiprocketConfigService: ShiprocketConfigService,
     private readonly appConfigService: AppConfigService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {
     this.baseUrl = this.shiprocketConfigService.getBaseUrl();
   }
@@ -326,7 +327,7 @@ export class ShiprocketService implements OnModuleInit {
     }
 
     // Get order details with shipping address
-    const [order] = await db
+    const [order] = await this.db
       .select({
         id: orders.id,
         orderNumber: orders.orderNumber,
@@ -343,7 +344,7 @@ export class ShiprocketService implements OnModuleInit {
     }
 
     // Get shipping address
-    const [shippingAddress] = await db
+    const [shippingAddress] = await this.db
       .select()
       .from(addresses)
       .where(eq(addresses.id, order.shippingAddressId))
@@ -356,7 +357,7 @@ export class ShiprocketService implements OnModuleInit {
     // Get order items to calculate weight if not provided
     let calculatedWeight = weight;
     if (!calculatedWeight) {
-      const items = await db
+      const items = await this.db
         .select({
           quantity: orderItems.quantity,
         })
@@ -459,7 +460,7 @@ export class ShiprocketService implements OnModuleInit {
     const labelUrl = labelResponse.response.label_url;
 
     // Store shipment in database
-    await db
+    await this.db
       .insert(shipments)
       .values({
         orderId: orderId,
@@ -472,7 +473,7 @@ export class ShiprocketService implements OnModuleInit {
       .returning();
 
     // Update order shipping provider
-    await db
+    await this.db
       .update(orders)
       .set({
         shippingProvider: "shiprocket",
@@ -501,7 +502,7 @@ export class ShiprocketService implements OnModuleInit {
       selling_price: string;
     }>
   > {
-    const items = await db
+    const items = await this.db
       .select({
         quantity: orderItems.quantity,
         price: orderItems.price,
@@ -591,14 +592,14 @@ export class ShiprocketService implements OnModuleInit {
     const mappedStatus = statusMap[trackingData.tracking_status] || "pending";
 
     // Update shipment status in database if exists
-    const [existingShipment] = await db
+    const [existingShipment] = await this.db
       .select()
       .from(shipments)
       .where(eq(shipments.awbNumber, awbNumber))
       .limit(1);
 
     if (existingShipment) {
-      await db
+      await this.db
         .update(shipments)
         .set({
           status: mappedStatus as
@@ -755,7 +756,7 @@ export class ShiprocketService implements OnModuleInit {
     });
 
     // Update shipment status in database
-    const [updatedShipment] = await db
+    const [updatedShipment] = await this.db
       .update(shipments)
       .set({
         status: "cancelled",

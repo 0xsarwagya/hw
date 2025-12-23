@@ -1,13 +1,14 @@
+import type { Database } from "@vcecom/db";
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
 import {
   and,
   customers,
-  db,
   desc,
   eq,
   gte,
@@ -17,6 +18,7 @@ import {
   reviews,
   sql,
 } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import {
@@ -49,6 +51,7 @@ export class ReviewsService {
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
     private readonly notificationsService: NotificationsService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -72,8 +75,8 @@ export class ReviewsService {
     // Check if review already exists for this customer + variant
     let existingReview: typeof reviews.$inferSelect | undefined;
     try {
-      const existingReviewResult = await db
-        .select()
+      const existingReviewResult = await this.db
+      .select()
         .from(reviews)
         .where(
           and(
@@ -110,8 +113,8 @@ export class ReviewsService {
     // Create review
     let newReview: typeof reviews.$inferSelect | undefined;
     try {
-      const reviewResult = await db
-        .insert(reviews)
+      const reviewResult = await this.db
+      .insert(reviews)
         .values({
           customerId,
           orderId: createReviewDto.orderId,
@@ -151,8 +154,8 @@ export class ReviewsService {
     // Refresh review to check if still pending after auto-approve attempt
     let checkReview: typeof reviews.$inferSelect | undefined;
     try {
-      const checkReviewResult = await db
-        .select()
+      const checkReviewResult = await this.db
+      .select()
         .from(reviews)
         .where(eq(reviews.id, newReview.id))
         .limit(1);
@@ -200,7 +203,7 @@ export class ReviewsService {
     }
 
     // Refresh review to get updated status
-    const [refreshedReview] = await db
+    const [refreshedReview] = await this.db
       .select()
       .from(reviews)
       .where(eq(reviews.id, newReview.id))
@@ -249,7 +252,7 @@ export class ReviewsService {
     );
 
     // Get total count
-    const [countResult] = await db
+    const [countResult] = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(reviews)
       .where(whereConditions);
@@ -288,7 +291,7 @@ export class ReviewsService {
     }
 
     // Fetch reviews
-    const reviewList = await db
+    const reviewList = await this.db
       .select()
       .from(reviews)
       .where(whereConditions)
@@ -326,7 +329,7 @@ export class ReviewsService {
     reviewId: string,
     customerId?: string,
   ): Promise<ReviewResponseDto> {
-    const [review] = await db
+    const [review] = await this.db
       .select()
       .from(reviews)
       .where(eq(reviews.id, reviewId))
@@ -351,7 +354,7 @@ export class ReviewsService {
     customerId: string,
     updateReviewDto: UpdateReviewDto,
   ): Promise<ReviewResponseDto> {
-    const [review] = await db
+    const [review] = await this.db
       .select()
       .from(reviews)
       .where(eq(reviews.id, reviewId))
@@ -400,7 +403,7 @@ export class ReviewsService {
     if (updateReviewDto.images !== undefined)
       updateData.images = updateReviewDto.images || null;
 
-    const [updatedReview] = await db
+    const [updatedReview] = await this.db
       .update(reviews)
       .set({
         ...updateData,
@@ -436,7 +439,7 @@ export class ReviewsService {
    * Delete a review (soft delete - customer can delete own, admin can hard delete)
    */
   async remove(reviewId: string, customerId: string): Promise<void> {
-    const [review] = await db
+    const [review] = await this.db
       .select()
       .from(reviews)
       .where(eq(reviews.id, reviewId))
@@ -452,7 +455,7 @@ export class ReviewsService {
     }
 
     // Delete review
-    await db.delete(reviews).where(eq(reviews.id, reviewId));
+    await this.db.delete(reviews).where(eq(reviews.id, reviewId));
 
     // If approved, update aggregates
     if (review.status === "approved") {
@@ -479,7 +482,7 @@ export class ReviewsService {
     reviewId: string,
     customerId: string,
   ): Promise<{ helpful: boolean }> {
-    const [review] = await db
+    const [review] = await this.db
       .select()
       .from(reviews)
       .where(eq(reviews.id, reviewId))
@@ -490,7 +493,7 @@ export class ReviewsService {
     }
 
     // Check if already marked helpful
-    const [existingVote] = await db
+    const [existingVote] = await this.db
       .select()
       .from(reviewHelpfulVotes)
       .where(
@@ -506,7 +509,7 @@ export class ReviewsService {
     }
 
     // Add helpful vote
-    await db.insert(reviewHelpfulVotes).values({
+    await this.db.insert(reviewHelpfulVotes).values({
       reviewId,
       customerId,
     });
@@ -544,7 +547,7 @@ export class ReviewsService {
     reviewId: string,
     customerId: string,
   ): Promise<{ helpful: boolean }> {
-    const [review] = await db
+    const [review] = await this.db
       .select()
       .from(reviews)
       .where(eq(reviews.id, reviewId))
@@ -555,7 +558,7 @@ export class ReviewsService {
     }
 
     // Remove helpful vote
-    await db
+    await this.db
       .delete(reviewHelpfulVotes)
       .where(
         and(
@@ -603,7 +606,7 @@ export class ReviewsService {
     variantId: string,
   ): Promise<void> {
     // Check order exists and belongs to customer
-    const [order] = await db
+    const [order] = await this.db
       .select()
       .from(orders)
       .where(and(eq(orders.id, orderId), eq(orders.customerId, customerId)))
@@ -621,7 +624,7 @@ export class ReviewsService {
     }
 
     // Check variant exists in order items
-    const [orderItem] = await db
+    const [orderItem] = await this.db
       .select()
       .from(orderItems)
       .where(
@@ -647,14 +650,14 @@ export class ReviewsService {
     customerId?: string,
   ): Promise<ReviewResponseDto> {
     // Get customer name
-    const [customer] = await db
+    const [customer] = await this.db
       .select({ name: customers.name })
       .from(customers)
       .where(eq(customers.id, review.customerId))
       .limit(1);
 
     // Get helpful count
-    const helpfulVotes = await db
+    const helpfulVotes = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(reviewHelpfulVotes)
       .where(eq(reviewHelpfulVotes.reviewId, review.id));
@@ -664,8 +667,8 @@ export class ReviewsService {
     // Check if current user marked as helpful
     let isHelpful = false;
     if (customerId) {
-      const [vote] = await db
-        .select()
+      const [vote] = await this.db
+      .select()
         .from(reviewHelpfulVotes)
         .where(
           and(

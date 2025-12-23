@@ -61,8 +61,8 @@ export class AdminSessionsService {
     expiresAt.setDate(expiresAt.getDate() + this.refreshTokenExpiryDays);
 
     try {
-      const [session] = await db
-        .insert(adminSessions)
+      const [session] = await this.db
+      .insert(adminSessions)
         .values({
           adminId,
           refreshTokenHash,
@@ -107,8 +107,8 @@ export class AdminSessionsService {
     refreshTokenHash: string,
   ): Promise<{ id: string; adminId: string; deviceId: string } | null> {
     try {
-      const [session] = await db
-        .select({
+      const [session] = await this.db
+      .select({
           id: adminSessions.id,
           adminId: adminSessions.adminId,
           deviceId: adminSessions.deviceId,
@@ -122,8 +122,8 @@ export class AdminSessionsService {
       }
 
       // Check if session is expired
-      const [fullSession] = await db
-        .select({
+      const [fullSession] = await this.db
+      .select({
           expiresAt: adminSessions.expiresAt,
         })
         .from(adminSessions)
@@ -160,8 +160,8 @@ export class AdminSessionsService {
     const newRefreshTokenHash = await argon2.hash(newRefreshToken);
 
     try {
-      await db
-        .update(adminSessions)
+      await this.db
+      .update(adminSessions)
         .set({
           refreshTokenHash: newRefreshTokenHash,
           lastUsedAt: new Date(),
@@ -192,8 +192,8 @@ export class AdminSessionsService {
    */
   async updateLastUsedAt(sessionId: string): Promise<void> {
     try {
-      await db
-        .update(adminSessions)
+      await this.db
+      .update(adminSessions)
         .set({ lastUsedAt: new Date() })
         .where(eq(adminSessions.id, sessionId));
     } catch (error) {
@@ -233,8 +233,8 @@ export class AdminSessionsService {
    */
   async deleteAllSessions(adminId: string): Promise<number> {
     try {
-      const result = await db
-        .delete(adminSessions)
+      const result = await this.db
+      .delete(adminSessions)
         .where(eq(adminSessions.adminId, adminId))
         .returning();
 
@@ -263,8 +263,8 @@ export class AdminSessionsService {
    */
   async getActiveSessions(adminId: string): Promise<SessionInfo[]> {
     try {
-      const sessions = await db
-        .select({
+      const sessions = await this.db
+      .select({
           id: adminSessions.id,
           deviceId: adminSessions.deviceId,
           userAgent: adminSessions.userAgent,
@@ -322,7 +322,7 @@ export class AdminSessionsService {
     // Get all non-expired sessions and check each refresh token hash
     // This approach is necessary for rotation detection
     const now = new Date();
-    const allSessions = await db
+    const allSessions = await this.db
       .select({
         id: adminSessions.id,
         adminId: adminSessions.adminId,

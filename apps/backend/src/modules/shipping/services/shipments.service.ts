@@ -72,7 +72,7 @@ export class ShipmentsService {
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     // Get total count
-    const totalCount = await db
+    const totalCount = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(shipments)
       .where(whereClause);
@@ -80,7 +80,7 @@ export class ShipmentsService {
     const total = Number(totalCount[0]?.count || 0);
 
     // Get shipments
-    const shipmentsList = await db
+    const shipmentsList = await this.db
       .select()
       .from(shipments)
       .where(whereClause)
@@ -105,7 +105,7 @@ export class ShipmentsService {
    * @returns Shipment details
    */
   async findOne(id: string) {
-    const [shipment] = await db
+    const [shipment] = await this.db
       .select()
       .from(shipments)
       .where(eq(shipments.id, id))
@@ -124,7 +124,7 @@ export class ShipmentsService {
    * @returns Array of shipments
    */
   async findByOrderId(orderId: string) {
-    const shipmentsList = await db
+    const shipmentsList = await this.db
       .select()
       .from(shipments)
       .where(eq(shipments.orderId, orderId))

@@ -1,14 +1,19 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+} from "@nestjs/common";
 import {
   and,
   customers,
-  db,
   desc,
   eq,
   reviewHelpfulVotes,
   reviews,
   sql,
 } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { AUTO_APPROVE_THRESHOLD } from "../../../common/constants";
 import { ContextService } from "../../../common/logging/context.service";
@@ -26,6 +31,7 @@ export class ReviewModerationService {
     private readonly eventsService: ReviewEventsService,
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -44,7 +50,7 @@ export class ReviewModerationService {
     const offset = (page - 1) * limit;
 
     // Get total count
-    const [countResult] = await db
+    const [countResult] = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(reviews)
       .where(eq(reviews.status, "pending"));
@@ -52,7 +58,7 @@ export class ReviewModerationService {
     const totalPages = Math.ceil(total / limit);
 
     // Get pending reviews
-    const pendingReviews = await db
+    const pendingReviews = await this.db
       .select()
       .from(reviews)
       .where(eq(reviews.status, "pending"))
@@ -79,7 +85,7 @@ export class ReviewModerationService {
    * Updates aggregate and cache
    */
   async approveReview(reviewId: string): Promise<ReviewResponseDto> {
-    const [review] = await db
+    const [review] = await this.db
       .select()
       .from(reviews)
       .where(eq(reviews.id, reviewId))
@@ -94,7 +100,7 @@ export class ReviewModerationService {
     }
 
     // Update status
-    const [updatedReview] = await db
+    const [updatedReview] = await this.db
       .update(reviews)
       .set({
         status: "approved",
@@ -134,7 +140,7 @@ export class ReviewModerationService {
    * Reject a review
    */
   async rejectReview(reviewId: string): Promise<ReviewResponseDto> {
-    const [review] = await db
+    const [review] = await this.db
       .select()
       .from(reviews)
       .where(eq(reviews.id, reviewId))
@@ -149,7 +155,7 @@ export class ReviewModerationService {
     }
 
     // Update status
-    const [updatedReview] = await db
+    const [updatedReview] = await this.db
       .update(reviews)
       .set({
         status: "rejected",
@@ -189,7 +195,7 @@ export class ReviewModerationService {
    * Hard delete a review (admin only)
    */
   async deleteReview(reviewId: string): Promise<void> {
-    const [review] = await db
+    const [review] = await this.db
       .select()
       .from(reviews)
       .where(eq(reviews.id, reviewId))
@@ -200,7 +206,7 @@ export class ReviewModerationService {
     }
 
     // Delete review
-    await db.delete(reviews).where(eq(reviews.id, reviewId));
+    await this.db.delete(reviews).where(eq(reviews.id, reviewId));
 
     // If was approved, recompute aggregate
     if (review.status === "approved") {
@@ -223,7 +229,7 @@ export class ReviewModerationService {
    * Returns true if customer has >= AUTO_APPROVE_THRESHOLD approved reviews
    */
   async shouldAutoApprove(customerId: string): Promise<boolean> {
-    const [result] = await db
+    const [result] = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(reviews)
       .where(
@@ -239,7 +245,7 @@ export class ReviewModerationService {
    * Called after review creation
    */
   async tryAutoApprove(reviewId: string): Promise<boolean> {
-    const [review] = await db
+    const [review] = await this.db
       .select()
       .from(reviews)
       .where(eq(reviews.id, reviewId))
@@ -305,7 +311,7 @@ export class ReviewModerationService {
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     // Get total count
-    const countQuery = db
+    const countQuery = this.db
       .select({ count: sql<number>`count(*)` })
       .from(reviews);
     if (whereClause) {
@@ -316,7 +322,7 @@ export class ReviewModerationService {
     const totalPages = Math.ceil(total / limit);
 
     // Get reviews
-    const query = db
+    const query = this.db
       .select()
       .from(reviews)
       .orderBy(desc(reviews.createdAt))
@@ -348,14 +354,14 @@ export class ReviewModerationService {
     review: typeof reviews.$inferSelect,
   ): Promise<ReviewResponseDto> {
     // Get customer name
-    const [customer] = await db
+    const [customer] = await this.db
       .select({ name: customers.name })
       .from(customers)
       .where(eq(customers.id, review.customerId))
       .limit(1);
 
     // Get helpful count
-    const helpfulVotes = await db
+    const helpfulVotes = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(reviewHelpfulVotes)
       .where(eq(reviewHelpfulVotes.reviewId, review.id));

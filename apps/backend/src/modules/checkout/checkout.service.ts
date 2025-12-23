@@ -452,8 +452,8 @@ export class CheckoutService {
           metadata.shippingAddressId !== "temp"
         ) {
           try {
-            const addressResult = await db
-              .select({ pincode: addresses.pincode, state: addresses.state })
+            const addressResult = await this.db
+      .select({ pincode: addresses.pincode, state: addresses.state })
               .from(addresses)
               .where(eq(addresses.id, metadata.shippingAddressId))
               .limit(1);
@@ -557,8 +557,8 @@ export class CheckoutService {
     if (metadata.shippingAddressId && metadata.shippingAddressId !== "temp") {
       // Get address from database
       try {
-        const addressResult = await db
-          .select({ pincode: addresses.pincode })
+        const addressResult = await this.db
+      .select({ pincode: addresses.pincode })
           .from(addresses)
           .where(eq(addresses.id, metadata.shippingAddressId))
           .limit(1);

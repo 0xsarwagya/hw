@@ -1,8 +1,11 @@
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../modules/database/database.module";
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
+  Inject,
 } from "@nestjs/common";
 import {
   addresses,
@@ -57,6 +60,7 @@ export class CartsService {
     private readonly bundlePricingService: BundlePricingService,
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
   private readonly CART_EXPIRY_DAYS = 30; // Cart expires after 30 days
 
@@ -71,8 +75,8 @@ export class CartsService {
       // Customer cart
       let cart: typeof carts.$inferSelect | undefined;
       try {
-        const cartResult = await db
-          .select()
+        const cartResult = await this.db
+      .select()
           .from(carts)
           .where(eq(carts.customerId, customerId))
           .limit(1);
@@ -95,8 +99,8 @@ export class CartsService {
         expiresAt.setDate(expiresAt.getDate() + this.CART_EXPIRY_DAYS);
 
         try {
-          const cartResult = await db
-            .insert(carts)
+          const cartResult = await this.db
+      .insert(carts)
             .values({
               customerId,
               expiresAt,
@@ -122,8 +126,8 @@ export class CartsService {
       // Guest cart
       let cart: typeof carts.$inferSelect | undefined;
       try {
-        const cartResult = await db
-          .select()
+        const cartResult = await this.db
+      .select()
           .from(carts)
           .where(eq(carts.sessionId, sessionId))
           .limit(1);
@@ -146,8 +150,8 @@ export class CartsService {
         expiresAt.setDate(expiresAt.getDate() + this.CART_EXPIRY_DAYS);
 
         try {
-          const cartResult = await db
-            .insert(carts)
+          const cartResult = await this.db
+      .insert(carts)
             .values({
               sessionId,
               expiresAt,
@@ -180,7 +184,7 @@ export class CartsService {
    * Get customer ID from user ID
    */
   private async getCustomerId(userId: string): Promise<string | null> {
-    const [customer] = await db
+    const [customer] = await this.db
       .select()
       .from(customers)
       .where(eq(customers.userId, userId))
@@ -208,7 +212,7 @@ export class CartsService {
     }
 
     // Get default shipping address
-    const [defaultAddress] = await db
+    const [defaultAddress] = await this.db
       .select({ state: addresses.state })
       .from(addresses)
       .where(
@@ -230,7 +234,7 @@ export class CartsService {
     customerId: string | null = null,
   ) {
     // Get all cart items with metadata
-    const items = await db
+    const items = await this.db
       .select({
         id: cartItems.id,
         quantity: cartItems.quantity,
@@ -269,8 +273,8 @@ export class CartsService {
     // Get variant items with product info
     const variantItemsWithProducts =
       variantItems.length > 0
-        ? await db
-            .select({
+        ? await this.db
+      .select({
               id: cartItems.id,
               quantity: cartItems.quantity,
               price: cartItems.price,
@@ -308,8 +312,8 @@ export class CartsService {
     let productGstRates: Array<{ id: string; gstRate: number }> = [];
 
     if (productIds.length > 0) {
-      productGstRates = await db
-        .select({
+      productGstRates = await this.db
+      .select({
           id: products.id,
           gstRate: products.gstRate,
         })
@@ -325,8 +329,8 @@ export class CartsService {
     for (const bundleItem of bundleItems) {
       const _metadata = bundleItem.metadata as BundleCartItemMetadata;
       // Get first variant's product for GST
-      const [firstVariant] = await db
-        .select({
+      const [firstVariant] = await this.db
+      .select({
           productId: productVariants.productId,
         })
         .from(productVariants)
@@ -334,8 +338,8 @@ export class CartsService {
         .limit(1);
 
       if (firstVariant) {
-        const [product] = await db
-          .select({
+        const [product] = await this.db
+      .select({
             gstRate: products.gstRate,
           })
           .from(products)
@@ -413,7 +417,7 @@ export class CartsService {
     const totalGstAmount = totalCgst + totalSgst + totalIgst;
 
     // Get cart to check for discount code
-    const [cart] = await db
+    const [cart] = await this.db
       .select({ discountCode: carts.discountCode })
       .from(carts)
       .where(eq(carts.id, cartId))
@@ -444,8 +448,8 @@ export class CartsService {
       const bundleVariantIds: string[] = [];
       for (const vq of variantQuantities) {
         // Get variant details
-        const [variant] = await db
-          .select({
+        const [variant] = await this.db
+      .select({
             productId: productVariants.productId,
           })
           .from(productVariants)
@@ -478,7 +482,7 @@ export class CartsService {
       ...flattenedBundleItems.map((i) => i.productVariantId),
     ];
 
-    const allVariants = await db
+    const allVariants = await this.db
       .select({
         id: productVariants.id,
         productId: productVariants.productId,
@@ -498,7 +502,7 @@ export class CartsService {
     ];
 
     // Fetch product metadata (collections, tags) for discount engine
-    const productDetails = await db
+    const productDetails = await this.db
       .select({
         productId: products.id,
         categoryId: products.categoryId,
@@ -509,7 +513,7 @@ export class CartsService {
     const productMap = new Map(productDetails.map((p) => [p.productId, p]));
 
     // Fetch collections for products
-    const productCollectionData = await db
+    const productCollectionData = await this.db
       .select({
         productId: productCollections.productId,
         collectionId: productCollections.collectionId,
@@ -526,7 +530,7 @@ export class CartsService {
     }
 
     // Fetch tags for products
-    const productTagData = await db
+    const productTagData = await this.db
       .select({
         productId: productTags.productId,
         tagId: productTags.tagId,
@@ -677,8 +681,8 @@ export class CartsService {
 
     // Update cart totals
     try {
-      await db
-        .update(carts)
+      await this.db
+      .update(carts)
         .set({
           subtotal,
           gstAmount: totalGstAmount,
@@ -718,8 +722,8 @@ export class CartsService {
   ): Promise<string | undefined> {
     let customer: { userId: string } | undefined;
     try {
-      const customerResult = await db
-        .select({ userId: customers.userId })
+      const customerResult = await this.db
+      .select({ userId: customers.userId })
         .from(customers)
         .where(eq(customers.id, customerId))
         .limit(1);
@@ -765,8 +769,8 @@ export class CartsService {
     // Get cart from database
     let cart: typeof carts.$inferSelect | undefined;
     try {
-      const cartResult = await db
-        .select()
+      const cartResult = await this.db
+      .select()
         .from(carts)
         .where(eq(carts.id, cartId))
         .limit(1);
@@ -794,8 +798,8 @@ export class CartsService {
     // Get cart items
     let items: Array<typeof cartItems.$inferSelect>;
     try {
-      items = await db
-        .select()
+      items = await this.db
+      .select()
         .from(cartItems)
         .where(eq(cartItems.cartId, cart.id));
     } catch (error) {
@@ -834,7 +838,7 @@ export class CartsService {
     );
 
     // Get updated cart
-    const [updatedCart] = await db
+    const [updatedCart] = await this.db
       .select()
       .from(carts)
       .where(eq(carts.id, cart.id))
@@ -1068,8 +1072,8 @@ export class CartsService {
         }
       | undefined;
     try {
-      const variantResult = await db
-        .select({
+      const variantResult = await this.db
+      .select({
           id: productVariants.id,
           price: productVariants.price,
           productId: productVariants.productId,
@@ -1096,7 +1100,7 @@ export class CartsService {
     }
 
     // Check if item already exists in cart
-    const [existingItem] = await db
+    const [existingItem] = await this.db
       .select()
       .from(cartItems)
       .where(
@@ -1139,8 +1143,8 @@ export class CartsService {
         addItemDto.productVariantId,
       );
 
-      await db
-        .update(cartItems)
+      await this.db
+      .update(cartItems)
         .set({ quantity: newQuantity })
         .where(eq(cartItems.id, existingItem.id));
     } else {
@@ -1173,7 +1177,7 @@ export class CartsService {
       );
 
       // Create new cart item
-      await db.insert(cartItems).values({
+      await this.db.insert(cartItems).values({
         cartId: cart.id,
         productVariantId: addItemDto.productVariantId,
         quantity: addItemDto.quantity,
@@ -1275,7 +1279,7 @@ export class CartsService {
       bundleTitle: bundle.title,
     };
 
-    await db.insert(cartItems).values({
+    await this.db.insert(cartItems).values({
       cartId,
       productVariantId: firstVariantId, // Required by schema, but bundle uses metadata
       quantity: bundleQuantity,
@@ -1357,7 +1361,7 @@ export class CartsService {
       );
 
     // Update cart item
-    await db
+    await this.db
       .update(cartItems)
       .set({
         quantity: newQuantity,
@@ -1396,7 +1400,7 @@ export class CartsService {
     }
 
     // Check if item exists and belongs to cart
-    const [item] = await db
+    const [item] = await this.db
       .select({
         id: cartItems.id,
         productVariantId: cartItems.productVariantId,
@@ -1470,7 +1474,7 @@ export class CartsService {
     );
 
     // Update quantity
-    await db
+    await this.db
       .update(cartItems)
       .set({ quantity: updateDto.quantity })
       .where(eq(cartItems.id, itemId));
@@ -1505,7 +1509,7 @@ export class CartsService {
     }
 
     // Check if item exists and belongs to cart
-    const [item] = await db
+    const [item] = await this.db
       .select({
         id: cartItems.id,
         productVariantId: cartItems.productVariantId,
@@ -1566,7 +1570,7 @@ export class CartsService {
     }
 
     // Delete item
-    await db.delete(cartItems).where(eq(cartItems.id, itemId));
+    await this.db.delete(cartItems).where(eq(cartItems.id, itemId));
 
     // Recalculate totals
     await this.recalculateCartTotals(cart.id, customerId);
@@ -1587,10 +1591,10 @@ export class CartsService {
     const cart = await this.getOrCreateCart(customerId, sessionId);
 
     // Delete all cart items
-    await db.delete(cartItems).where(eq(cartItems.cartId, cart.id));
+    await this.db.delete(cartItems).where(eq(cartItems.cartId, cart.id));
 
     // Reset cart totals
-    await db
+    await this.db
       .update(carts)
       .set({
         subtotal: 0,
@@ -1610,8 +1614,8 @@ export class CartsService {
     // Get cart from database to find its customerId/sessionId
     let cart: typeof carts.$inferSelect | undefined;
     try {
-      const cartResult = await db
-        .select()
+      const cartResult = await this.db
+      .select()
         .from(carts)
         .where(eq(carts.id, cartId))
         .limit(1);
@@ -1658,7 +1662,7 @@ export class CartsService {
     }
 
     // Get guest cart
-    const [guestCart] = await db
+    const [guestCart] = await this.db
       .select()
       .from(carts)
       .where(eq(carts.sessionId, sessionId))
@@ -1672,7 +1676,7 @@ export class CartsService {
     const customerCart = await this.getOrCreateCart(customerId, null);
 
     // Get guest cart items
-    const guestItems = await db
+    const guestItems = await this.db
       .select()
       .from(cartItems)
       .where(eq(cartItems.cartId, guestCart.id));
@@ -1680,8 +1684,8 @@ export class CartsService {
     // Merge items
     for (const guestItem of guestItems) {
       // Check if item already exists in customer cart
-      const [existingItem] = await db
-        .select()
+      const [existingItem] = await this.db
+      .select()
         .from(cartItems)
         .where(
           and(
@@ -1693,13 +1697,13 @@ export class CartsService {
 
       if (existingItem) {
         // Update quantity (add guest quantity)
-        await db
-          .update(cartItems)
+        await this.db
+      .update(cartItems)
           .set({ quantity: existingItem.quantity + guestItem.quantity })
           .where(eq(cartItems.id, existingItem.id));
       } else {
         // Create new item in customer cart
-        await db.insert(cartItems).values({
+        await this.db.insert(cartItems).values({
           cartId: customerCart.id,
           productVariantId: guestItem.productVariantId,
           quantity: guestItem.quantity,
@@ -1709,7 +1713,7 @@ export class CartsService {
     }
 
     // Delete guest cart
-    await db.delete(carts).where(eq(carts.id, guestCart.id));
+    await this.db.delete(carts).where(eq(carts.id, guestCart.id));
 
     // Recalculate customer cart totals
     await this.recalculateCartTotals(customerCart.id, customerId);
@@ -1737,7 +1741,7 @@ export class CartsService {
       : undefined;
 
     // Get cart subtotal for validation
-    const items = await db
+    const items = await this.db
       .select({
         price: cartItems.price,
         quantity: cartItems.quantity,
@@ -1763,7 +1767,7 @@ export class CartsService {
     }
 
     // Apply discount code
-    await db.update(carts).set({ discountCode }).where(eq(carts.id, cart.id));
+    await this.db.update(carts).set({ discountCode }).where(eq(carts.id, cart.id));
 
     // Recalculate totals with discount
     await this.recalculateCartTotals(cart.id, customerId);
@@ -1783,7 +1787,7 @@ export class CartsService {
     const cart = await this.getOrCreateCart(customerId, sessionId);
 
     // Remove discount code
-    await db
+    await this.db
       .update(carts)
       .set({ discountCode: null, discountAmount: 0 })
       .where(eq(carts.id, cart.id));

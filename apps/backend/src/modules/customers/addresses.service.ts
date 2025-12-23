@@ -60,8 +60,8 @@ export class AddressesService {
 
     // If this is set as default, unset other default addresses
     if (createDto.type === "shipping" || createDto.type === "both") {
-      await db
-        .update(addresses)
+      await this.db
+      .update(addresses)
         .set({ isDefault: false })
         .where(
           and(
@@ -72,7 +72,7 @@ export class AddressesService {
     }
 
     // Create address
-    const [newAddress] = await db
+    const [newAddress] = await this.db
       .insert(addresses)
       .values({
         customerId,
@@ -96,7 +96,7 @@ export class AddressesService {
   async findAll(userId: string) {
     const customerId = await this.getCustomerId(userId);
 
-    const allAddresses = await db
+    const allAddresses = await this.db
       .select()
       .from(addresses)
       .where(eq(addresses.customerId, customerId));
@@ -110,7 +110,7 @@ export class AddressesService {
   async findOne(userId: string, addressId: string) {
     const customerId = await this.getCustomerId(userId);
 
-    const [address] = await db
+    const [address] = await this.db
       .select()
       .from(addresses)
       .where(
@@ -132,7 +132,7 @@ export class AddressesService {
     const customerId = await this.getCustomerId(userId);
 
     // Check if address exists and belongs to customer
-    const [existing] = await db
+    const [existing] = await this.db
       .select()
       .from(addresses)
       .where(
@@ -167,7 +167,7 @@ export class AddressesService {
     if (updateDto.country !== undefined) updateData.country = updateDto.country;
 
     // Update address
-    const [updated] = await db
+    const [updated] = await this.db
       .update(addresses)
       .set(updateData)
       .where(eq(addresses.id, addressId))
@@ -183,7 +183,7 @@ export class AddressesService {
     const customerId = await this.getCustomerId(userId);
 
     // Check if address exists and belongs to customer
-    const [existing] = await db
+    const [existing] = await this.db
       .select()
       .from(addresses)
       .where(
@@ -208,7 +208,7 @@ export class AddressesService {
     const customerId = await this.getCustomerId(userId);
 
     // Check if address exists and belongs to customer
-    const [existing] = await db
+    const [existing] = await this.db
       .select()
       .from(addresses)
       .where(
@@ -221,7 +221,7 @@ export class AddressesService {
     }
 
     // Unset all other default addresses for this customer
-    await db
+    await this.db
       .update(addresses)
       .set({ isDefault: false })
       .where(
@@ -232,7 +232,7 @@ export class AddressesService {
       );
 
     // Set this address as default
-    const [updated] = await db
+    const [updated] = await this.db
       .update(addresses)
       .set({ isDefault: true })
       .where(eq(addresses.id, addressId))
@@ -261,8 +261,8 @@ export class AddressesService {
 
     // If this is set as default, unset other default addresses
     if (createDto.type === "shipping" || createDto.type === "both") {
-      await db
-        .update(addresses)
+      await this.db
+      .update(addresses)
         .set({ isDefault: false })
         .where(
           and(
@@ -273,7 +273,7 @@ export class AddressesService {
     }
 
     // Create address
-    const [newAddress] = await db
+    const [newAddress] = await this.db
       .insert(addresses)
       .values({
         customerId,

@@ -33,7 +33,7 @@ export class OrderValidationService {
   async getCustomerId(userId: string): Promise<string> {
     try {
       const [customer] = await this.db
-        .select()
+      .select()
         .from(customers)
         .where(eq(customers.userId, userId))
         .limit(1);
@@ -64,8 +64,8 @@ export class OrderValidationService {
    */
   async getCustomerGroupId(customerId: string): Promise<string | null> {
     try {
-      const [customer] = await db
-        .select()
+      const [customer] = await this.db
+      .select()
         .from(customers)
         .where(eq(customers.id, customerId))
         .limit(1);
@@ -97,7 +97,7 @@ export class OrderValidationService {
     shippingAddress: { state: string };
     billingAddress: { state: string };
   }> {
-    const [shippingAddress] = await db
+    const [shippingAddress] = await this.db
       .select()
       .from(addresses)
       .where(
@@ -114,7 +114,7 @@ export class OrderValidationService {
       );
     }
 
-    const [billingAddress] = await db
+    const [billingAddress] = await this.db
       .select()
       .from(addresses)
       .where(

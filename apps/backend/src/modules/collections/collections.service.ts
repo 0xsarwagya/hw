@@ -1,9 +1,12 @@
+import type { Database } from "@vcecom/db";
 import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  Inject,
 } from "@nestjs/common";
+import { DB_TOKEN } from "../../modules/database/database.module";
 import {
   and,
   collections,
@@ -48,6 +51,7 @@ export class CollectionsService {
   constructor(
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
   /**
    * Generate a slug from a name
@@ -74,8 +78,8 @@ export class CollectionsService {
     while (true) {
       let existing: typeof collections.$inferSelect | undefined;
       try {
-        const existingResult = await db
-          .select()
+        const existingResult = await this.db
+      .select()
           .from(collections)
           .where(eq(collections.slug, slug))
           .limit(1);
@@ -142,8 +146,8 @@ export class CollectionsService {
         }
       | undefined;
     try {
-      const collectionResult = await db
-        .insert(collections)
+      const collectionResult = await this.db
+      .insert(collections)
         .values({
           name: createCollectionDto.name,
           slug,
@@ -221,8 +225,8 @@ export class CollectionsService {
       conditions.length > 0 ? and(...conditions) : undefined;
     let totalResult: Array<{ count: number }>;
     try {
-      totalResult = await db
-        .select({ count: sql<number>`count(*)` })
+      totalResult = await this.db
+      .select({ count: sql<number>`count(*)` })
         .from(collections)
         .where(whereCondition);
     } catch (error) {
@@ -264,8 +268,8 @@ export class CollectionsService {
       productCount: number;
     }>;
     try {
-      collectionsData = await db
-        .select({
+      collectionsData = await this.db
+      .select({
           id: collections.id,
           name: collections.name,
           slug: collections.slug,
@@ -319,7 +323,7 @@ export class CollectionsService {
    * Get collection by ID
    */
   async findOne(id: string) {
-    const [collection] = await db
+    const [collection] = await this.db
       .select({
         id: collections.id,
         name: collections.name,
@@ -342,7 +346,7 @@ export class CollectionsService {
     }
 
     // Get product count
-    const productCountResult = await db
+    const productCountResult = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(productCollections)
       .where(eq(productCollections.collectionId, id));
@@ -363,7 +367,7 @@ export class CollectionsService {
    * Get collection by slug
    */
   async findBySlug(slug: string) {
-    const [collection] = await db
+    const [collection] = await this.db
       .select()
       .from(collections)
       .where(eq(collections.slug, slug))
@@ -374,7 +378,7 @@ export class CollectionsService {
     }
 
     // Get product count
-    const productCountResult = await db
+    const productCountResult = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(productCollections)
       .where(eq(productCollections.collectionId, collection.id));
@@ -392,7 +396,7 @@ export class CollectionsService {
    */
   async update(id: string, updateCollectionDto: UpdateCollectionDto) {
     // Check if collection exists
-    const [existing] = await db
+    const [existing] = await this.db
       .select()
       .from(collections)
       .where(eq(collections.id, id))
@@ -454,7 +458,7 @@ export class CollectionsService {
     if (updateCollectionDto.position !== undefined)
       updateData.position = updateCollectionDto.position;
 
-    const [updated] = await db
+    const [updated] = await this.db
       .update(collections)
       .set(updateData)
       .where(eq(collections.id, id))
@@ -486,7 +490,7 @@ export class CollectionsService {
    */
   async remove(id: string) {
     // Check if collection exists
-    const [existing] = await db
+    const [existing] = await this.db
       .select()
       .from(collections)
       .where(eq(collections.id, id))
@@ -497,7 +501,7 @@ export class CollectionsService {
     }
 
     // Delete collection (cascade will remove product associations)
-    await db.delete(collections).where(eq(collections.id, id));
+    await this.db.delete(collections).where(eq(collections.id, id));
 
     return { message: "Collection deleted successfully" };
   }
@@ -601,8 +605,8 @@ export class CollectionsService {
 
         case CollectionRuleField.TAGS: {
           // For tags, we need to check productTags junction table
-          const tagProducts = await db
-            .select({ productId: productTags.productId })
+          const tagProducts = await this.db
+      .select({ productId: productTags.productId })
             .from(productTags)
             .innerJoin(tags, eq(productTags.tagId, tags.id))
             .where(
@@ -624,32 +628,32 @@ export class CollectionsService {
           let inventoryProducts: { productId: string }[] = [];
 
           if (rule.operator === CollectionRuleOperator.EQUALS) {
-            inventoryProducts = await db
-              .select({ productId: productVariants.productId })
+            inventoryProducts = await this.db
+      .select({ productId: productVariants.productId })
               .from(productVariants)
               .groupBy(productVariants.productId)
               .having(
                 sql`sum(${productVariants.inventory}) = ${inventoryValue}`,
               );
           } else if (rule.operator === CollectionRuleOperator.NOT_EQUALS) {
-            inventoryProducts = await db
-              .select({ productId: productVariants.productId })
+            inventoryProducts = await this.db
+      .select({ productId: productVariants.productId })
               .from(productVariants)
               .groupBy(productVariants.productId)
               .having(
                 sql`sum(${productVariants.inventory}) != ${inventoryValue}`,
               );
           } else if (rule.operator === CollectionRuleOperator.GREATER_THAN) {
-            inventoryProducts = await db
-              .select({ productId: productVariants.productId })
+            inventoryProducts = await this.db
+      .select({ productId: productVariants.productId })
               .from(productVariants)
               .groupBy(productVariants.productId)
               .having(
                 sql`sum(${productVariants.inventory}) > ${inventoryValue}`,
               );
           } else if (rule.operator === CollectionRuleOperator.LESS_THAN) {
-            inventoryProducts = await db
-              .select({ productId: productVariants.productId })
+            inventoryProducts = await this.db
+      .select({ productId: productVariants.productId })
               .from(productVariants)
               .groupBy(productVariants.productId)
               .having(
@@ -693,7 +697,7 @@ export class CollectionsService {
     }
 
     // Get matching products
-    const matchingProducts = await db
+    const matchingProducts = await this.db
       .select({ id: products.id })
       .from(products)
       .where(whereCondition);
@@ -706,7 +710,7 @@ export class CollectionsService {
    */
   async getProducts(collectionId: string) {
     // Check if collection exists
-    const [collection] = await db
+    const [collection] = await this.db
       .select({
         id: collections.id,
         name: collections.name,
@@ -741,8 +745,8 @@ export class CollectionsService {
         return [];
       }
 
-      const collectionProducts = await db
-        .select({
+      const collectionProducts = await this.db
+      .select({
           id: products.id,
           title: products.title,
           price: products.price,
@@ -758,7 +762,7 @@ export class CollectionsService {
     }
 
     // For manual collections, get products from productCollections
-    const collectionProducts = await db
+    const collectionProducts = await this.db
       .select({
         id: products.id,
         title: products.title,
@@ -779,7 +783,7 @@ export class CollectionsService {
    * Preview automatic collection (get count of matching products)
    */
   async preview(id: string) {
-    const [collection] = await db
+    const [collection] = await this.db
       .select({
         id: collections.id,
         name: collections.name,
@@ -824,7 +828,7 @@ export class CollectionsService {
    */
   async addProducts(collectionId: string, addProductsDto: AddProductsDto) {
     // Check if collection exists
-    const [collection] = await db
+    const [collection] = await this.db
       .select()
       .from(collections)
       .where(eq(collections.id, collectionId))
@@ -837,7 +841,7 @@ export class CollectionsService {
     }
 
     // Validate all products exist
-    const existingProducts = await db
+    const existingProducts = await this.db
       .select({ id: products.id })
       .from(products)
       .where(inArray(products.id, addProductsDto.productIds));
@@ -854,7 +858,7 @@ export class CollectionsService {
     }
 
     // Check which products are already in collection
-    const existingAssociations = await db
+    const existingAssociations = await this.db
       .select({ productId: productCollections.productId })
       .from(productCollections)
       .where(eq(productCollections.collectionId, collectionId));
@@ -877,7 +881,7 @@ export class CollectionsService {
     }
 
     // Add products to collection
-    await db.insert(productCollections).values(
+    await this.db.insert(productCollections).values(
       newProductIds.map((productId) => ({
         collectionId,
         productId,
@@ -896,7 +900,7 @@ export class CollectionsService {
    */
   async removeProduct(collectionId: string, productId: string) {
     // Check if collection exists
-    const [collection] = await db
+    const [collection] = await this.db
       .select()
       .from(collections)
       .where(eq(collections.id, collectionId))
@@ -909,7 +913,7 @@ export class CollectionsService {
     }
 
     // Check if product exists
-    const [product] = await db
+    const [product] = await this.db
       .select()
       .from(products)
       .where(eq(products.id, productId))
@@ -920,7 +924,7 @@ export class CollectionsService {
     }
 
     // Remove product from collection
-    await db
+    await this.db
       .delete(productCollections)
       .where(
         sql`${productCollections.collectionId} = ${collectionId} AND ${productCollections.productId} = ${productId}`,

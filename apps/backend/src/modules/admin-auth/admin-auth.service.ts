@@ -48,6 +48,7 @@ export class AdminAuthService {
     private readonly mfaService: AdminMfaService,
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {
     this.accessTokenExpiresIn =
       process.env.ADMIN_ACCESS_TOKEN_EXPIRES_IN || "15m";
@@ -65,7 +66,7 @@ export class AdminAuthService {
     role: string;
     passwordHash: string;
   }> {
-    const [admin] = await db
+    const [admin] = await this.db
       .select()
       .from(users)
       .where(eq(users.email, email))
@@ -97,8 +98,8 @@ export class AdminAuthService {
     if (isBcryptHash(admin.passwordHash)) {
       try {
         const newHash = await migratePasswordHash(password, admin.passwordHash);
-        await db
-          .update(users)
+        await this.db
+      .update(users)
           .set({ passwordHash: newHash })
           .where(eq(users.id, admin.id));
 
@@ -223,8 +224,8 @@ export class AdminAuthService {
         await this.sessionsService.validateRefreshToken(refreshToken);
 
       // Get admin info
-      const [admin] = await db
-        .select()
+      const [admin] = await this.db
+      .select()
         .from(users)
         .where(eq(users.id, session.adminId))
         .limit(1);
@@ -326,7 +327,7 @@ export class AdminAuthService {
   ): Promise<AdminLoginResult> {
     // Validate credentials first
     // We need to get admin without password validation here, as password was already validated in initial login
-    const [adminUser] = await db
+    const [adminUser] = await this.db
       .select()
       .from(users)
       .where(eq(users.email, email))
@@ -371,7 +372,7 @@ export class AdminAuthService {
     activeSessionsCount: number;
     has2fa: boolean;
   }> {
-    const [admin] = await db
+    const [admin] = await this.db
       .select()
       .from(users)
       .where(eq(users.id, adminId))

@@ -37,7 +37,7 @@ export class ReviewAggregationService {
     if (reviewCount === 0) {
       // No reviews - set to zero/default
       await this.db
-        .insert(variantReviewAggregate)
+      .insert(variantReviewAggregate)
         .values({
           variantId,
           averageRating: 0,
@@ -96,7 +96,7 @@ export class ReviewAggregationService {
     const averageRating = totalRating / reviewCount;
 
     // Update database
-    await db
+    await this.db
       .insert(variantReviewAggregate)
       .values({
         variantId,
@@ -152,7 +152,7 @@ export class ReviewAggregationService {
     }
 
     // Get from database
-    const [aggregate] = await db
+    const [aggregate] = await this.db
       .select()
       .from(variantReviewAggregate)
       .where(eq(variantReviewAggregate.variantId, variantId))

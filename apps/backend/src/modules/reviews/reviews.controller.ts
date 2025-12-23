@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
   NotFoundException,
   Param,
   Patch,
@@ -13,6 +14,9 @@ import {
   Request,
   UseGuards,
 } from "@nestjs/common";
+import type { Database } from "@vcecom/db";
+import { customers, eq } from "@vcecom/db";
+import { DB_TOKEN } from "../../modules/database/database.module";
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -52,6 +56,7 @@ export class ReviewsController {
   constructor(
     private readonly reviewsService: ReviewsService,
     private readonly aggregationService: ReviewAggregationService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   @Public()
@@ -311,8 +316,7 @@ export class ReviewsController {
    * Get customer ID from user ID
    */
   private async getCustomerId(userId: string): Promise<string> {
-    const { customers, db, eq } = await import("@vcecom/db");
-    const [customer] = await db
+    const [customer] = await this.db
       .select({ id: customers.id })
       .from(customers)
       .where(eq(customers.userId, userId))

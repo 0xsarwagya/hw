@@ -111,7 +111,7 @@ export class MediaTransactionService {
   async lockVariantImages(productId: string, variantId: string): Promise<void> {
     try {
       // Use SELECT FOR UPDATE to acquire row-level lock
-      await db.execute(
+      await this.db.execute(
         sql`SELECT * FROM ${productImages} WHERE ${productImages.productId} = ${productId} AND ${productImages.variantId} = ${variantId} FOR UPDATE`,
       );
 

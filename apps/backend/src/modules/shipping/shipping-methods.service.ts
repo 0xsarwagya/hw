@@ -40,7 +40,7 @@ export class ShippingMethodsService {
       );
     }
 
-    const [method] = await db
+    const [method] = await this.db
       .insert(shippingMethods)
       .values({
         name: dto.name,
@@ -71,7 +71,7 @@ export class ShippingMethodsService {
       ? undefined
       : eq(shippingMethods.isActive, true);
 
-    return await db
+    return await this.db
       .select()
       .from(shippingMethods)
       .where(conditions)
@@ -82,7 +82,7 @@ export class ShippingMethodsService {
    * Get a single shipping method by ID
    */
   async findOne(id: string) {
-    const [method] = await db
+    const [method] = await this.db
       .select()
       .from(shippingMethods)
       .where(eq(shippingMethods.id, id))
@@ -104,8 +104,8 @@ export class ShippingMethodsService {
 
     // If code is being updated, check for duplicates
     if (dto.code) {
-      const existing = await db
-        .select()
+      const existing = await this.db
+      .select()
         .from(shippingMethods)
         .where(
           and(eq(shippingMethods.code, dto.code), eq(shippingMethods.id, id)),
@@ -114,8 +114,8 @@ export class ShippingMethodsService {
 
       if (existing.length === 0) {
         // Check if another method has this code
-        const duplicate = await db
-          .select()
+        const duplicate = await this.db
+      .select()
           .from(shippingMethods)
           .where(eq(shippingMethods.code, dto.code))
           .limit(1);
@@ -128,7 +128,7 @@ export class ShippingMethodsService {
       }
     }
 
-    const [updated] = await db
+    const [updated] = await this.db
       .update(shippingMethods)
       .set({
         ...dto,

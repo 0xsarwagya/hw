@@ -78,8 +78,8 @@ export class OrderCancelService {
   private async releaseInventory(orderId: string): Promise<void> {
     try {
       // Get order items
-      const items = await db
-        .select()
+      const items = await this.db
+      .select()
         .from(orderItems)
         .where(eq(orderItems.orderId, orderId));
 
@@ -151,7 +151,7 @@ export class OrderCancelService {
     const customerId = await this.validationService.getCustomerId(userId);
 
     // Get order and validate ownership
-    const [order] = await db
+    const [order] = await this.db
       .select()
       .from(orders)
       .where(and(eq(orders.id, orderId), eq(orders.customerId, customerId)))
@@ -180,7 +180,7 @@ export class OrderCancelService {
     adminId: string,
   ): Promise<OrderResponseDto> {
     // Get order (no customer validation for admin)
-    const [order] = await db
+    const [order] = await this.db
       .select()
       .from(orders)
       .where(eq(orders.id, orderId))
@@ -216,7 +216,7 @@ export class OrderCancelService {
     await this.releaseInventory(orderId);
 
     // Check if payment was captured and handle refund
-    const [payment] = await db
+    const [payment] = await this.db
       .select()
       .from(payments)
       .where(
@@ -240,7 +240,7 @@ export class OrderCancelService {
     }
 
     // Update order status to cancelled
-    const [updatedOrder] = await db
+    const [updatedOrder] = await this.db
       .update(orders)
       .set({
         status: "cancelled",
@@ -266,7 +266,7 @@ export class OrderCancelService {
     });
 
     // Get order items
-    const items = await db
+    const items = await this.db
       .select()
       .from(orderItems)
       .where(eq(orderItems.orderId, orderId));

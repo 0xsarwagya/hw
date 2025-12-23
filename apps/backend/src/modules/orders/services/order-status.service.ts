@@ -80,7 +80,7 @@ export class OrderStatusService {
     const customerId = await this.validationService.getCustomerId(userId);
 
     // Get current order
-    const [order] = await db
+    const [order] = await this.db
       .select()
       .from(orders)
       .where(and(eq(orders.id, orderId), eq(orders.customerId, customerId)))
@@ -94,7 +94,7 @@ export class OrderStatusService {
     this.validateStatusTransition(order.status, updateStatusDto.status);
 
     // Update order status
-    const [updatedOrder] = await db
+    const [updatedOrder] = await this.db
       .update(orders)
       .set({
         status: updateStatusDto.status,
@@ -104,7 +104,7 @@ export class OrderStatusService {
       .returning();
 
     // Get order items
-    const items = await db
+    const items = await this.db
       .select()
       .from(orderItems)
       .where(eq(orderItems.orderId, orderId));
@@ -129,7 +129,7 @@ export class OrderStatusService {
     updateStatusDto: UpdateOrderStatusDto,
   ): Promise<OrderResponseDto> {
     // Get current order (no customer validation for admin)
-    const [order] = await db
+    const [order] = await this.db
       .select()
       .from(orders)
       .where(eq(orders.id, orderId))
@@ -143,7 +143,7 @@ export class OrderStatusService {
     this.validateStatusTransition(order.status, updateStatusDto.status);
 
     // Update order status
-    const [updatedOrder] = await db
+    const [updatedOrder] = await this.db
       .update(orders)
       .set({
         status: updateStatusDto.status,
@@ -153,7 +153,7 @@ export class OrderStatusService {
       .returning();
 
     // Get order items
-    const items = await db
+    const items = await this.db
       .select()
       .from(orderItems)
       .where(eq(orderItems.orderId, orderId));

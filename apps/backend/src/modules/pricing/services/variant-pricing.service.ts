@@ -72,7 +72,7 @@ export class VariantPricingService {
     variantId: string,
     now: Date = new Date(),
   ): Promise<VariantPricingDto> {
-    const [variant] = await db
+    const [variant] = await this.db
       .select()
       .from(productVariants)
       .where(eq(productVariants.id, variantId))

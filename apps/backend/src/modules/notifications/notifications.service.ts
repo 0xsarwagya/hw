@@ -34,7 +34,7 @@ export class NotificationsService {
   async create(dto: CreateNotificationDto): Promise<NotificationResponseDto> {
     try {
       const [notification] = await this.db
-        .insert(notifications)
+      .insert(notifications)
         .values({
           adminId: dto.adminId || null,
           type: dto.type,
@@ -101,7 +101,7 @@ export class NotificationsService {
     const whereCondition = and(...conditions);
 
     // Get total count
-    const countQuery = db
+    const countQuery = this.db
       .select({ count: sql<number>`count(*)` })
       .from(notifications)
       .where(whereCondition);
@@ -120,7 +120,7 @@ export class NotificationsService {
     }
 
     // Get notifications
-    const notificationsQuery = db
+    const notificationsQuery = this.db
       .select()
       .from(notifications)
       .where(whereCondition)
@@ -150,7 +150,7 @@ export class NotificationsService {
    */
   async markRead(adminId: string, notificationId: string): Promise<void> {
     // Verify notification exists and belongs to admin or is broadcast
-    const [notification] = await db
+    const [notification] = await this.db
       .select()
       .from(notifications)
       .where(
@@ -167,7 +167,7 @@ export class NotificationsService {
       );
     }
 
-    await db
+    await this.db
       .update(notifications)
       .set({ read: true })
       .where(eq(notifications.id, notificationId));
@@ -177,7 +177,7 @@ export class NotificationsService {
    * Mark all notifications as read for an admin
    */
   async markAllRead(adminId: string): Promise<void> {
-    await db
+    await this.db
       .update(notifications)
       .set({ read: true })
       .where(
@@ -193,7 +193,7 @@ export class NotificationsService {
    */
   async delete(adminId: string, notificationId: string): Promise<void> {
     // Verify notification exists and belongs to admin or is broadcast
-    const [notification] = await db
+    const [notification] = await this.db
       .select()
       .from(notifications)
       .where(
