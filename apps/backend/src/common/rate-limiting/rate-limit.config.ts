@@ -119,19 +119,19 @@ export const RATE_LIMIT_PRESETS = {
   },
 
   /**
-   * Admin GET endpoints - high throughput for admin UI
+   * Admin GET endpoints - unlimited for admin UI (temporarily set to infinity)
    */
   ADMIN_GET: {
-    limit: isDevelopment ? 5000 : 1000,
+    limit: Number.MAX_SAFE_INTEGER, // Effectively unlimited
     window: 300, // 5 minutes
     keyType: "userId" as RateLimitKeyType,
   },
 
   /**
-   * Admin POST/PATCH/DELETE - moderate limits
+   * Admin POST/PATCH/DELETE - unlimited (temporarily set to infinity)
    */
   ADMIN_MUTATE: {
-    limit: isDevelopment ? 1000 : 200,
+    limit: Number.MAX_SAFE_INTEGER, // Effectively unlimited
     window: 300, // 5 minutes
     keyType: "userId" as RateLimitKeyType,
   },
