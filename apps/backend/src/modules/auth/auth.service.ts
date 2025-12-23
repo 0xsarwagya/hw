@@ -1,18 +1,24 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { db, eq, users } from "@vcecom/db";
+import { eq, users } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 import * as bcrypt from "bcrypt";
 
 @Injectable()
 export class AuthService {
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
+  ) {}
 
   async validateUser(email: string, password: string) {
-    const [user] = await db
+    const [user] = await this.db
       .select()
       .from(users)
       .where(eq(users.email, email))

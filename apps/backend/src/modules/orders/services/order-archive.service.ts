@@ -1,9 +1,12 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { and, db, eq, orderItems, orders } from "@vcecom/db";
+import { and, eq, orderItems, orders } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import { createLogContext } from "../../../common/logging/logging.helper";
@@ -25,6 +28,7 @@ export class OrderArchiveService {
     private readonly validationService: OrderValidationService,
     private readonly timelineService: OrderTimelineService,
     private readonly gstService: OrderGstService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -40,7 +44,7 @@ export class OrderArchiveService {
     const customerId = await this.validationService.getCustomerId(userId);
 
     // Get order and validate ownership
-    const [order] = await db
+    const [order] = await this.db
       .select()
       .from(orders)
       .where(and(eq(orders.id, orderId), eq(orders.customerId, customerId)))

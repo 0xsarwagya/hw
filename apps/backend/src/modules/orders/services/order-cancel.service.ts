@@ -1,9 +1,12 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { and, db, eq, orderItems, orders, payments } from "@vcecom/db";
+import { and, eq, orderItems, orders, payments } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import {
@@ -34,6 +37,7 @@ export class OrderCancelService {
     private readonly timelineService: OrderTimelineService,
     private readonly gstService: OrderGstService,
     private readonly bundlePricingService: BundlePricingService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**

@@ -1,9 +1,12 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { and, db, desc, eq, shippingMethods } from "@vcecom/db";
+import { and, desc, eq, shippingMethods } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import {
   AvailableShippingMethod,
@@ -17,6 +20,7 @@ export class ShippingMethodsService {
   constructor(
     private readonly logger: PinoLogger,
     private readonly shippingRulesService: ShippingRulesService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -24,7 +28,7 @@ export class ShippingMethodsService {
    */
   async create(dto: CreateShippingMethodDto) {
     // Check if code already exists
-    const existing = await db
+    const existing = await this.db
       .select()
       .from(shippingMethods)
       .where(eq(shippingMethods.code, dto.code))
@@ -143,7 +147,7 @@ export class ShippingMethodsService {
   async remove(id: string) {
     await this.findOne(id);
 
-    await db.delete(shippingMethods).where(eq(shippingMethods.id, id));
+    await this.db.delete(shippingMethods).where(eq(shippingMethods.id, id));
 
     this.logger.info(`Deleted shipping method: ${id}`);
   }

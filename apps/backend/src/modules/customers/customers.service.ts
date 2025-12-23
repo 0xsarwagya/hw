@@ -1,12 +1,15 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { customers, db, eq, users } from "@vcecom/db";
+import { customers, eq, users } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 import * as bcrypt from "bcrypt";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
@@ -23,6 +26,7 @@ export class CustomersService {
     private jwtService: JwtService,
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -39,7 +43,7 @@ export class CustomersService {
     // Check if user already exists
     let existingUser: typeof users.$inferSelect | undefined;
     try {
-      const userResult = await db
+      const userResult = await this.db
         .select()
         .from(users)
         .where(eq(users.email, registerDto.email))
@@ -190,7 +194,7 @@ export class CustomersService {
       );
       // Rollback: delete user if customer creation fails
       try {
-        await db.delete(users).where(eq(users.id, newUser.id));
+        await this.db.delete(users).where(eq(users.id, newUser.id));
       } catch (rollbackError) {
         this.logger?.error(
           createErrorContext(
@@ -208,7 +212,7 @@ export class CustomersService {
     if (!newCustomer) {
       // Rollback: delete user if customer creation fails
       try {
-        await db.delete(users).where(eq(users.id, newUser.id));
+        await this.db.delete(users).where(eq(users.id, newUser.id));
       } catch (rollbackError) {
         this.logger?.error(
           createErrorContext(
@@ -678,7 +682,7 @@ export class CustomersService {
       );
       // Rollback: delete user if customer creation fails
       try {
-        await db.delete(users).where(eq(users.id, newUser.id));
+        await this.db.delete(users).where(eq(users.id, newUser.id));
       } catch (rollbackError) {
         this.logger?.error(
           createErrorContext(
@@ -696,7 +700,7 @@ export class CustomersService {
     if (!newCustomer) {
       // Rollback: delete user if customer creation fails
       try {
-        await db.delete(users).where(eq(users.id, newUser.id));
+        await this.db.delete(users).where(eq(users.id, newUser.id));
       } catch (rollbackError) {
         this.logger?.error(
           createErrorContext(
@@ -796,7 +800,7 @@ export class CustomersService {
 
     // Update user with password
     try {
-      await db.update(users).set({ passwordHash }).where(eq(users.id, user.id));
+      await this.db.update(users).set({ passwordHash }).where(eq(users.id, user.id));
     } catch (error) {
       this.logger.error(
         createErrorContext(

@@ -1,12 +1,15 @@
 import { randomUUID } from "node:crypto";
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { db, eq, users } from "@vcecom/db";
+import { eq, users } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
 import {

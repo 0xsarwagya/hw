@@ -1,5 +1,7 @@
-import { Injectable } from "@nestjs/common";
-import { adminActivityLogs, db } from "@vcecom/db";
+import { Inject, Injectable } from "@nestjs/common";
+import { adminActivityLogs } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
 import {
@@ -25,6 +27,7 @@ export class AdminActivityService {
   constructor(
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -48,7 +51,7 @@ export class AdminActivityService {
 
     try {
       // Log to database (append-only)
-      await db.insert(adminActivityLogs).values({
+      await this.db.insert(adminActivityLogs).values({
         adminId,
         action,
         entityId: entityId || null,

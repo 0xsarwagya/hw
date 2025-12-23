@@ -7,7 +7,9 @@ import {
   NotFoundException,
   OnModuleInit,
 } from "@nestjs/common";
-import { db, eq, orders, payments } from "@vcecom/db";
+import { eq, orders, payments } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import Razorpay from "razorpay";
 import { AppConfigService } from "../../common/config/app.config.service";
@@ -44,6 +46,7 @@ export class PaymentsService implements OnModuleInit {
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
     private readonly appConfigService: AppConfigService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -1029,7 +1032,7 @@ export class PaymentsService implements OnModuleInit {
     } else {
       // Create new payment record
       try {
-        await db.insert(payments).values({
+        await this.db.insert(payments).values({
           orderId,
           razorpayPaymentId: paymentEntity.id,
           razorpayOrderId: paymentEntity.order_id,
@@ -1277,7 +1280,7 @@ export class PaymentsService implements OnModuleInit {
     } else {
       // Create payment record with failed status
       try {
-        await db.insert(payments).values({
+        await this.db.insert(payments).values({
           orderId: order.id,
           razorpayPaymentId: paymentEntity.id,
           razorpayOrderId: paymentEntity.order_id,
@@ -1382,7 +1385,7 @@ export class PaymentsService implements OnModuleInit {
       }
     } else {
       try {
-        await db.insert(payments).values({
+        await this.db.insert(payments).values({
           orderId: order.id,
           razorpayPaymentId: paymentEntity.id,
           razorpayOrderId: paymentEntity.order_id,

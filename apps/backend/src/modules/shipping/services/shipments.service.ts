@@ -1,5 +1,7 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { and, db, desc, eq, gte, lte, shipments, sql } from "@vcecom/db";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { and, desc, eq, gte, lte, shipments, sql } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "../../../common/constants";
 
@@ -28,7 +30,10 @@ interface ShipmentFilters {
 
 @Injectable()
 export class ShipmentsService {
-  constructor(readonly _logger: PinoLogger) {}
+  constructor(
+    readonly _logger: PinoLogger,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
+  ) {}
 
   /**
    * Get all shipments with optional filters

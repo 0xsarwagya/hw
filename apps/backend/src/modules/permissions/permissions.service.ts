@@ -1,9 +1,12 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { adminRoles, db, eq } from "@vcecom/db";
+import { adminRoles, eq } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
 import { createErrorContext } from "../../common/logging/logging.helper";
@@ -18,6 +21,7 @@ export class PermissionsService {
   constructor(
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -25,7 +29,7 @@ export class PermissionsService {
    */
   async getRoles(): Promise<RoleResponseDto[]> {
     try {
-      const roles = await db.select().from(adminRoles).orderBy(adminRoles.name);
+      const roles = await this.db.select().from(adminRoles).orderBy(adminRoles.name);
 
       return roles.map((role) => this.mapToResponseDto(role));
     } catch (error) {
@@ -42,7 +46,7 @@ export class PermissionsService {
    */
   async getRole(id: string): Promise<RoleResponseDto> {
     try {
-      const [role] = await db
+      const [role] = await this.db
         .select()
         .from(adminRoles)
         .where(eq(adminRoles.id, id))
@@ -207,7 +211,7 @@ export class PermissionsService {
         );
       }
 
-      await db.delete(adminRoles).where(eq(adminRoles.id, id));
+      await this.db.delete(adminRoles).where(eq(adminRoles.id, id));
     } catch (error) {
       if (
         error instanceof BadRequestException ||

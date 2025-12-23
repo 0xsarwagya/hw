@@ -1,5 +1,7 @@
-import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
-import { addresses, db, eq, orderItems, orders, shipments } from "@vcecom/db";
+import { Inject, Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
+import { addresses, eq, orderItems, orders, shipments } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../modules/database/database.module";
 import { AppConfigService } from "../../common/config/app.config.service";
 import { NimbusPostConfigService } from "./nimbus-post-config.service";
 

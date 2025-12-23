@@ -1,9 +1,12 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { and, db, desc, eq, priceListItems, priceLists } from "@vcecom/db";
+import { and, desc, eq, priceListItems, priceLists } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import {
   CreatePriceListDto,
   CreatePriceListItemDto,
@@ -13,13 +16,16 @@ import { PriceListChangeTracker } from "./price-list-change-tracker.service";
 
 @Injectable()
 export class PriceListService {
-  constructor(private readonly changeTracker: PriceListChangeTracker) {}
+  constructor(
+    private readonly changeTracker: PriceListChangeTracker,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
+  ) {}
 
   /**
    * Create a new price list
    */
   async create(createDto: CreatePriceListDto): Promise<PriceListResponseDto> {
-    const [newPriceList] = await db
+    const [newPriceList] = await this.db
       .insert(priceLists)
       .values({
         name: createDto.name,
@@ -122,7 +128,7 @@ export class PriceListService {
     if (updateDto.endDate !== undefined)
       updateData.endDate = updateDto.endDate || null;
 
-    await db.update(priceLists).set(updateData).where(eq(priceLists.id, id));
+    await this.db.update(priceLists).set(updateData).where(eq(priceLists.id, id));
 
     const updated = await this.findOne(id);
 
@@ -138,7 +144,7 @@ export class PriceListService {
   async remove(id: string): Promise<{ message: string }> {
     const existing = await this.findOne(id);
 
-    await db.delete(priceLists).where(eq(priceLists.id, id));
+    await this.db.delete(priceLists).where(eq(priceLists.id, id));
 
     // Track price list deletion
     await this.changeTracker.trackPriceListDeleted(existing);
@@ -180,7 +186,7 @@ export class PriceListService {
       }
     }
 
-    await db.insert(priceListItems).values({
+    await this.db.insert(priceListItems).values({
       priceListId,
       productVariantId: createItemDto.productVariantId || null,
       productId: createItemDto.productId || null,
@@ -219,7 +225,7 @@ export class PriceListService {
       );
     }
 
-    await db.delete(priceListItems).where(eq(priceListItems.id, itemId));
+    await this.db.delete(priceListItems).where(eq(priceListItems.id, itemId));
 
     return this.findOne(priceListId);
   }

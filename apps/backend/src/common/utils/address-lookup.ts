@@ -1,4 +1,5 @@
-import { addresses, db, eq } from "@vcecom/db";
+import { addresses, eq } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../logging/context.service";
 import { createLogContext } from "../logging/logging.helper";
@@ -13,6 +14,7 @@ export interface AddressState {
  */
 export async function safeAddressStateLookup(
   addressId: string,
+  db: Database, // Accept db as parameter instead of importing directly
   logger: PinoLogger,
   contextService: ContextService,
   context: {
@@ -51,6 +53,7 @@ export async function safeAddressStateLookup(
 export async function safeAddressLookup<T extends Record<string, unknown>>(
   addressId: string,
   selectFields: Record<string, unknown>,
+  db: Database, // Accept db as parameter instead of importing directly
   logger: PinoLogger,
   contextService: ContextService,
   context: {

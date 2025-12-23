@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   InternalServerErrorException,
   NotFoundException,
   Param,
@@ -19,7 +20,9 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import { addresses, db, eq, orderItems, orders } from "@vcecom/db";
+import { addresses, eq, orderItems, orders } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../modules/database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";

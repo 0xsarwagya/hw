@@ -1,10 +1,13 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
-import { categories, db, eq } from "@vcecom/db";
+import { categories, eq } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
 import { createErrorContext } from "../../common/logging/logging.helper";
@@ -16,6 +19,7 @@ export class CategoriesService {
   constructor(
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
   /**
    * Generate a slug from a name
@@ -42,7 +46,7 @@ export class CategoriesService {
     while (true) {
       let existing: typeof categories.$inferSelect | undefined;
       try {
-        const existingResult = await db
+        const existingResult = await this.db
           .select()
           .from(categories)
           .where(eq(categories.slug, slug))
@@ -152,7 +156,7 @@ export class CategoriesService {
    */
   async findAll() {
     try {
-      return await db.select().from(categories);
+      return await this.db.select().from(categories);
     } catch (error) {
       this.logger.error(
         createErrorContext(
@@ -422,7 +426,7 @@ export class CategoriesService {
     }
 
     // Delete category
-    await db.delete(categories).where(eq(categories.id, id));
+      await this.db.delete(categories).where(eq(categories.id, id));
 
     return { message: "Category deleted successfully" };
   }

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -8,7 +9,6 @@ import {
   asc,
   categories,
   collections,
-  db,
   desc,
   eq,
   gte,
@@ -25,6 +25,8 @@ import {
   variantOptionTypes,
   variantOptionValues,
 } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 import Fuse from "fuse.js";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
@@ -70,6 +72,7 @@ import { MediaTransactionService } from "./services/media-transaction.service";
 export class ProductsService {
   constructor(
     private readonly storageService: StorageService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
     private readonly priceListService?: PriceListService,
     private readonly mediaTransactionService?: MediaTransactionService,
     private readonly mediaCacheInvalidationService?: MediaCacheInvalidationService,
@@ -82,7 +85,7 @@ export class ProductsService {
   async create(createProductDto: CreateProductDto) {
     // Validate category exists if provided
     if (createProductDto.categoryId) {
-      const [category] = await db
+      const [category] = await this.db
         .select()
         .from(categories)
         .where(eq(categories.id, createProductDto.categoryId))
@@ -302,7 +305,7 @@ export class ProductsService {
     }
 
     // Get products
-    const productsQuery = db.select().from(products);
+    const productsQuery = this.db.select().from(products);
     if (whereCondition) {
       productsQuery.where(whereCondition);
     }
@@ -443,7 +446,7 @@ export class ProductsService {
     }
 
     // Get products
-    const productsQuery = db.select().from(products);
+    const productsQuery = this.db.select().from(products);
     if (whereCondition) {
       productsQuery.where(whereCondition);
     }
@@ -686,7 +689,7 @@ export class ProductsService {
     }
 
     // Delete product (variants and images will be cascade deleted)
-    await db.delete(products).where(eq(products.id, id));
+    await this.db.delete(products).where(eq(products.id, id));
 
     return { message: "Product deleted successfully" };
   }
@@ -1352,7 +1355,7 @@ export class ProductsService {
     }
 
     // Delete from database
-    await db.delete(productImages).where(eq(productImages.id, imageId));
+    await this.db.delete(productImages).where(eq(productImages.id, imageId));
 
     return { message: "Image deleted successfully" };
   }

@@ -1,5 +1,7 @@
-import { Injectable } from "@nestjs/common";
-import { and, db, ilike, pincodes, sql } from "@vcecom/db";
+import { Inject, Injectable } from "@nestjs/common";
+import { and, ilike, pincodes, sql } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 import {
   DistrictAutocompleteQueryDto,
   StateAutocompleteQueryDto,
@@ -13,6 +15,10 @@ import {
 
 @Injectable()
 export class AddressAutocompleteService {
+  constructor(
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
+  ) {}
+
   /**
    * Get state suggestions based on query
    */
@@ -23,7 +29,7 @@ export class AddressAutocompleteService {
     const searchQuery = `%${query}%`;
 
     // Get distinct states matching the query with their codes and district counts
-    const states = await db
+    const states = await this.db
       .select({
         state: pincodes.state,
         stateCode: pincodes.stateCode,
@@ -42,7 +48,7 @@ export class AddressAutocompleteService {
     }));
 
     // Get total count for pagination info
-    const [totalResult] = await db
+    const [totalResult] = await this.db
       .select({
         count: sql<number>`COUNT(DISTINCT ${pincodes.state})::int`,
       })

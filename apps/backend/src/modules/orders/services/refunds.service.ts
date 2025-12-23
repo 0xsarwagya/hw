@@ -1,10 +1,13 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
   OnModuleInit,
 } from "@nestjs/common";
-import { and, db, desc, eq, orders, payments, refunds } from "@vcecom/db";
+import { and, desc, eq, orders, payments, refunds } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import Razorpay from "razorpay";
 import { AppConfigService } from "../../../common/config/app.config.service";
@@ -28,6 +31,7 @@ export class RefundsService implements OnModuleInit {
     private readonly appConfigService: AppConfigService,
     private readonly timelineService: OrderTimelineService,
     private readonly notificationsService: NotificationsService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**

@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
   Post,
   Req,
   UseGuards,
@@ -16,7 +17,9 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
-import { admin2fa, db, eq, users } from "@vcecom/db";
+import { admin2fa, eq, users } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../modules/database/database.module";
 import type { Request } from "express";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { AdminMfaService } from "./admin-mfa.service";

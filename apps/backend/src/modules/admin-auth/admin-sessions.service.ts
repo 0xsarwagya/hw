@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { adminSessions, db, eq, gte } from "@vcecom/db";
+import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
+import { adminSessions, eq, gte } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 import * as argon2 from "argon2";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
@@ -33,6 +35,7 @@ export class AdminSessionsService {
   constructor(
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {
     this.refreshTokenExpiryDays =
       parseInt(process.env.ADMIN_REFRESH_TOKEN_EXPIRY_DAYS || "90", 10) || 90;
@@ -208,7 +211,7 @@ export class AdminSessionsService {
    */
   async deleteSession(sessionId: string): Promise<void> {
     try {
-      await db.delete(adminSessions).where(eq(adminSessions.id, sessionId));
+      await this.db.delete(adminSessions).where(eq(adminSessions.id, sessionId));
 
       this.logger.info(
         createLogContext(this.contextService, "deleteSession", { sessionId }),

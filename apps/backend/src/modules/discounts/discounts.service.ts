@@ -8,7 +8,6 @@ import {
 } from "@nestjs/common";
 import {
   and,
-  db,
   desc,
   discountCategories,
   discountCollections,
@@ -28,6 +27,8 @@ import {
   or,
   sql,
 } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 
 // Internal modules - Redis stores
 import { DiscountRuleStore } from "../redis-store/stores/discount-rule-store";
@@ -66,6 +67,7 @@ export class DiscountsService {
     @Inject(forwardRef(() => RulesetRebuilder))
     private readonly rulesetRebuilder: RulesetRebuilder,
     private readonly profiler: DiscountProfiler,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   // ============================================================================
@@ -450,7 +452,7 @@ export class DiscountsService {
     const existingEnriched = await this.enrichDiscountWithRelations(id);
 
     // Delete discount (cascade will delete relationships)
-    await db.delete(discounts).where(eq(discounts.id, id));
+    await this.db.delete(discounts).where(eq(discounts.id, id));
 
     // Track rule deletion
     try {
@@ -634,6 +636,7 @@ export class DiscountsService {
           discount,
           cartSubtotal,
           userId,
+          this.db, // Pass injected db instance
         );
 
         if (isEligible) {
@@ -742,7 +745,7 @@ export class DiscountsService {
     orderId: string,
     userId?: string,
   ): Promise<void> {
-    await db.insert(discountUsages).values({
+    await this.db.insert(discountUsages).values({
       discountId,
       orderId,
       userId: userId || null,
@@ -774,7 +777,7 @@ export class DiscountsService {
   ): Promise<void> {
     // Products
     if (dto.productIds && dto.productIds.length > 0) {
-      await db.insert(discountProducts).values(
+      await this.db.insert(discountProducts).values(
         dto.productIds.map((productId) => ({
           discountId,
           productId,
@@ -784,7 +787,7 @@ export class DiscountsService {
 
     // Categories
     if (dto.categoryIds && dto.categoryIds.length > 0) {
-      await db.insert(discountCategories).values(
+      await this.db.insert(discountCategories).values(
         dto.categoryIds.map((categoryId) => ({
           discountId,
           categoryId,
@@ -794,7 +797,7 @@ export class DiscountsService {
 
     // Collections
     if (dto.collectionIds && dto.collectionIds.length > 0) {
-      await db.insert(discountCollections).values(
+      await this.db.insert(discountCollections).values(
         dto.collectionIds.map((collectionId) => ({
           discountId,
           collectionId,
@@ -804,7 +807,7 @@ export class DiscountsService {
 
     // Tags
     if (dto.tagIds && dto.tagIds.length > 0) {
-      await db.insert(discountTags).values(
+      await this.db.insert(discountTags).values(
         dto.tagIds.map((tagId) => ({
           discountId,
           tagId,
@@ -822,7 +825,7 @@ export class DiscountsService {
   ): Promise<void> {
     // Buy products
     if (dto.buyProductIds && dto.buyProductIds.length > 0) {
-      await db.insert(discountProducts).values(
+      await this.db.insert(discountProducts).values(
         dto.buyProductIds.map((productId) => ({
           discountId,
           productId,
@@ -832,7 +835,7 @@ export class DiscountsService {
 
     // Buy categories
     if (dto.buyCategoryIds && dto.buyCategoryIds.length > 0) {
-      await db.insert(discountCategories).values(
+      await this.db.insert(discountCategories).values(
         dto.buyCategoryIds.map((categoryId) => ({
           discountId,
           categoryId,
@@ -842,7 +845,7 @@ export class DiscountsService {
 
     // Buy collections
     if (dto.buyCollectionIds && dto.buyCollectionIds.length > 0) {
-      await db.insert(discountCollections).values(
+      await this.db.insert(discountCollections).values(
         dto.buyCollectionIds.map((collectionId) => ({
           discountId,
           collectionId,
@@ -852,7 +855,7 @@ export class DiscountsService {
 
     // Buy tags
     if (dto.buyTagIds && dto.buyTagIds.length > 0) {
-      await db.insert(discountTags).values(
+      await this.db.insert(discountTags).values(
         dto.buyTagIds.map((tagId) => ({
           discountId,
           tagId,
@@ -862,7 +865,7 @@ export class DiscountsService {
 
     // Get products
     if (dto.getProductIds && dto.getProductIds.length > 0) {
-      await db.insert(discountGetProducts).values(
+      await this.db.insert(discountGetProducts).values(
         dto.getProductIds.map((productId) => ({
           discountId,
           productId,
@@ -872,7 +875,7 @@ export class DiscountsService {
 
     // Get categories
     if (dto.getCategoryIds && dto.getCategoryIds.length > 0) {
-      await db.insert(discountGetCategories).values(
+      await this.db.insert(discountGetCategories).values(
         dto.getCategoryIds.map((categoryId) => ({
           discountId,
           categoryId,
@@ -882,7 +885,7 @@ export class DiscountsService {
 
     // Get collections
     if (dto.getCollectionIds && dto.getCollectionIds.length > 0) {
-      await db.insert(discountGetCollections).values(
+      await this.db.insert(discountGetCollections).values(
         dto.getCollectionIds.map((collectionId) => ({
           discountId,
           collectionId,
@@ -892,7 +895,7 @@ export class DiscountsService {
 
     // Get tags
     if (dto.getTagIds && dto.getTagIds.length > 0) {
-      await db.insert(discountGetTags).values(
+      await this.db.insert(discountGetTags).values(
         dto.getTagIds.map((tagId) => ({
           discountId,
           tagId,
@@ -1117,7 +1120,7 @@ export class DiscountsService {
       valueType: rule.valueType as DiscountValueType,
     }));
 
-    await db.insert(discountTieredRules).values(rules);
+    await this.db.insert(discountTieredRules).values(rules);
   }
 
   /**
@@ -1132,6 +1135,6 @@ export class DiscountsService {
       excludedDiscountId: excludedId,
     }));
 
-    await db.insert(discountExclusions).values(exclusions);
+    await this.db.insert(discountExclusions).values(exclusions);
   }
 }

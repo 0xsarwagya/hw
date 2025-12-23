@@ -1,11 +1,11 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
 import {
   and,
-  db,
   desc,
   eq,
   ilike,
@@ -13,6 +13,8 @@ import {
   orders,
   productVariants,
 } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import { createLogContext } from "../../../common/logging/logging.helper";
@@ -40,6 +42,7 @@ export class OrderDuplicateService {
     private readonly timelineService: OrderTimelineService,
     private readonly gstService: OrderGstService,
     private readonly bundlePricingService: BundlePricingService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -307,7 +310,7 @@ export class OrderDuplicateService {
       metadata: item.metadata, // Preserve bundle metadata if present
     }));
 
-    await db.insert(orderItems).values(orderItemsToInsert);
+    await this.db.insert(orderItems).values(orderItemsToInsert);
 
     // Create timeline event on original order
     await this.timelineService.addEvent(originalOrder.id, {

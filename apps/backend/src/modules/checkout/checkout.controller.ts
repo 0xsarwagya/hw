@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Post,
   Query,
   Request,
@@ -14,7 +15,9 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import { customers, db, eq } from "@vcecom/db";
+import { customers, eq } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 import { Public } from "../../common/decorators/public.decorator";
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
@@ -45,6 +48,7 @@ export class CheckoutController {
     private readonly paymentChargeService: PaymentChargeService,
     private readonly checkoutStore: CheckoutStore,
     private readonly checkoutService: CheckoutService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   @Post("start")
@@ -296,7 +300,7 @@ export class CheckoutController {
       if (shippingAddressId) {
         try {
           const { addresses } = await import("@vcecom/db");
-          const [address] = await db
+          const [address] = await this.db
             .select({
               country: addresses.country,
               state: addresses.state,
@@ -322,7 +326,7 @@ export class CheckoutController {
     // Get customer group IDs if user is authenticated
     if (userId && cart.customerId) {
       try {
-        const [customer] = await db
+        const [customer] = await this.db
           .select({ customerGroupId: customers.customerGroupId })
           .from(customers)
           .where(eq(customers.id, cart.customerId))

@@ -1,11 +1,14 @@
 import {
   CallHandler,
   ExecutionContext,
+  Inject,
   Injectable,
   NestInterceptor,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { db, discounts, eq, orders, products } from "@vcecom/db";
+import { discounts, eq, orders, products } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { Observable } from "rxjs";
 import { tap } from "rxjs/operators";
 import { ContextService } from "../../../common/logging/context.service";
@@ -21,6 +24,7 @@ export class ActivityLoggingInterceptor implements NestInterceptor {
     private readonly reflector: Reflector,
     private readonly activityService: AdminActivityService,
     readonly _contextService: ContextService, // Renamed to _contextService to avoid unused private member lint error
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {

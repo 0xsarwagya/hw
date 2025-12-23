@@ -1,9 +1,12 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { addresses, and, customers, db, eq } from "@vcecom/db";
+import { addresses, and, customers, eq } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 import { isValidStateName } from "../../common/data/indian-states";
 import {
   formatPincode,
@@ -14,11 +17,15 @@ import { UpdateAddressDto } from "./dto/update-address.dto";
 
 @Injectable()
 export class AddressesService {
+  constructor(
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
+  ) {}
+
   /**
    * Get customer ID from user ID
    */
   private async getCustomerId(userId: string): Promise<string> {
-    const [customer] = await db
+    const [customer] = await this.db
       .select()
       .from(customers)
       .where(eq(customers.userId, userId))
@@ -189,7 +196,7 @@ export class AddressesService {
     }
 
     // Delete address
-    await db.delete(addresses).where(eq(addresses.id, addressId));
+    await this.db.delete(addresses).where(eq(addresses.id, addressId));
 
     return { message: "Address deleted successfully" };
   }

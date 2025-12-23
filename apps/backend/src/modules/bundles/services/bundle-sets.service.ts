@@ -1,9 +1,12 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { and, bundleSetItems, bundleSets, bundles, db, eq } from "@vcecom/db";
+import { and, bundleSetItems, bundleSets, bundles, eq } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { BundleCacheStore } from "../../redis-store/stores/bundle-cache-store";
 import { CreateBundleSetDto } from "../dto/create-bundle-set.dto";
 import { UpdateBundleSetDto } from "../dto/update-bundle-set.dto";
@@ -14,6 +17,7 @@ export class BundleSetsService {
   constructor(
     private readonly bundleDefinitionService: BundleDefinitionService,
     private readonly bundleCacheStore: BundleCacheStore,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -24,7 +28,7 @@ export class BundleSetsService {
     dto: CreateBundleSetDto,
   ): Promise<{ id: string; message: string }> {
     // Validate bundle exists
-    const [bundle] = await db
+    const [bundle] = await this.db
       .select()
       .from(bundles)
       .where(eq(bundles.id, bundleId))
@@ -187,7 +191,7 @@ export class BundleSetsService {
       );
     }
 
-    await db.delete(bundleSets).where(eq(bundleSets.id, setId));
+    await this.db.delete(bundleSets).where(eq(bundleSets.id, setId));
 
     // Invalidate bundle cache
     await this.bundleCacheStore.invalidateBundle(bundleId);

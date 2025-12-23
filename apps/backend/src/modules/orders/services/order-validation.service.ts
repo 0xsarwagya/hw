@@ -1,5 +1,7 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { addresses, and, customers, db, eq } from "@vcecom/db";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { addresses, and, customers, eq } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { AppConfigService } from "../../../common/config/app.config.service";
 import { ContextService } from "../../../common/logging/context.service";
@@ -19,6 +21,7 @@ export class OrderValidationService {
     readonly _customersService: CustomersService,
     readonly _addressesService: AddressesService,
     private readonly appConfigService: AppConfigService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -29,7 +32,7 @@ export class OrderValidationService {
    */
   async getCustomerId(userId: string): Promise<string> {
     try {
-      const [customer] = await db
+      const [customer] = await this.db
         .select()
         .from(customers)
         .where(eq(customers.userId, userId))

@@ -1,10 +1,13 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
-import { admin2fa, db, eq, users } from "@vcecom/db";
+import { admin2fa, eq, users } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { authenticator } from "otplib";
 import * as qrcode from "qrcode";
@@ -19,6 +22,7 @@ export class AdminMfaService {
   constructor(
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -27,7 +31,7 @@ export class AdminMfaService {
   async generateSecret(
     adminId: string,
   ): Promise<{ secret: string; otpAuthUrl: string }> {
-    const [admin] = await db
+    const [admin] = await this.db
       .select()
       .from(users)
       .where(eq(users.id, adminId))

@@ -84,4 +84,3 @@ export const env = {
     return import.meta.env.DEV;
   },
 } as const;
-

@@ -1,5 +1,7 @@
-import { Injectable } from "@nestjs/common";
-import { addresses, db, eq, orderItems } from "@vcecom/db";
+import { Inject, Injectable } from "@nestjs/common";
+import { addresses, eq, orderItems } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../../../modules/database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { calculateGstBreakdown } from "../../../common/utils/gst.utils";
 import { OrderValidationService } from "./order-validation.service";
@@ -13,6 +15,7 @@ export class OrderGstService {
   constructor(
     readonly _logger: PinoLogger,
     private readonly validationService: OrderValidationService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**

@@ -33,7 +33,7 @@ const PaymentGateway: React.FC = () => {
     const token = getToken();
     // Use validated env in production, fallback for development
     const apiUrl = import.meta.env.PROD
-      ? (import.meta.env.VITE_API_URL || "http://localhost:3001")
+      ? import.meta.env.VITE_API_URL || "http://localhost:3001"
       : import.meta.env.VITE_API_URL || "http://localhost:3001";
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {

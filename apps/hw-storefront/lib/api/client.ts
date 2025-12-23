@@ -2,9 +2,9 @@
  * API client setup with interceptors for auth headers
  */
 
+import { env } from "../env";
 import { getGuestSessionId, getToken } from "../utils/storage";
 import { endpoints } from "./endpoints";
-import { env } from "../env";
 
 // Use validated environment variable (validates in production)
 const API_BASE_URL = import.meta.env.PROD

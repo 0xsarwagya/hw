@@ -1,10 +1,13 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { addresses, db, eq } from "@vcecom/db";
+import { addresses, eq } from "@vcecom/db";
+import type { Database } from "@vcecom/db";
+import { DB_TOKEN } from "../database/database.module";
 import { PinoLogger } from "nestjs-pino";
 import { isCodPayment } from "../../common/constants/orders.constants";
 import { ContextService } from "../../common/logging/context.service";
@@ -72,6 +75,7 @@ export class CheckoutService {
     private readonly ordersService: OrdersService,
     private readonly logger: PinoLogger,
     private readonly contextService: ContextService,
+    @Inject(DB_TOKEN) private readonly db: Database, // Inject DB instance via DI
   ) {}
 
   /**
@@ -615,6 +619,7 @@ export class CheckoutService {
     if (metadata.shippingAddressId && metadata.shippingAddressId !== "temp") {
       state = await safeAddressStateLookup(
         metadata.shippingAddressId,
+        this.db, // Pass injected db instance
         this.logger,
         this.contextService,
         {
