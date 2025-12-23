@@ -4,7 +4,6 @@ import {
   NotFoundException,
   OnModuleInit,
 } from "@nestjs/common";
-import type { Database } from "../../modules/database/db";
 import { addresses, eq, orderItems, orders, shipments } from "@vcecom/db";
 import { AppConfigService } from "../../common/config/app.config.service";
 import {
@@ -12,6 +11,7 @@ import {
   SHIPROCKET_PICKUP_LOCATIONS_ENDPOINT,
 } from "../../common/constants/shipping.constants";
 import { DB_TOKEN } from "../../modules/database/database.module";
+import type { Database } from "../../modules/database/db";
 import { ShiprocketConfigService } from "./shiprocket-config.service";
 
 export interface ShiprocketAuthToken {

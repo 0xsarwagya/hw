@@ -5,9 +5,9 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import type { Database } from "../../modules/database/db";
 import { eq, users } from "@vcecom/db";
 import * as bcrypt from "bcrypt";
+import type { Database } from "../../modules/database/db";
 import { DB_TOKEN } from "../database/database.module";
 
 @Injectable()

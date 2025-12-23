@@ -1,8 +1,8 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Database } from "../../../modules/database/db";
 import { and, eq, reviews, variantReviewAggregate } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { DB_TOKEN } from "../../../modules/database/database.module";
+import type { Database } from "../../../modules/database/db";
 import { ReviewAggregateDto } from "../dto/review-aggregate.dto";
 import { ReviewCacheService } from "./review-cache.service";
 

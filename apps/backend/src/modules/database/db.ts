@@ -1,6 +1,6 @@
+import * as schema from "@vcecom/db";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import * as schema from "@vcecom/db";
 
 /**
  * Create a PostgreSQL connection pool optimized for Railway shared tier
@@ -49,10 +49,7 @@ function createPool(): Pool {
     const usagePercent = (used / maxConnections) * 100;
     const now = Date.now();
 
-    if (
-      usagePercent >= 80 &&
-      now - lastWarningTime > WARNING_INTERVAL
-    ) {
+    if (usagePercent >= 80 && now - lastWarningTime > WARNING_INTERVAL) {
       lastWarningTime = now;
       console.warn(
         `[DB Pool] High connection usage: ${used}/${maxConnections} (${usagePercent.toFixed(1)}%) - ${waiting} waiting`,
@@ -174,9 +171,8 @@ export function getPoolStats(): {
   const waitingCount = poolInstance.waitingCount || 0;
   const usedCount = totalCount - idleCount;
   const maxConnections = 10; // Match the pool config
-  const usagePercent = maxConnections > 0
-    ? (usedCount / maxConnections) * 100
-    : 0;
+  const usagePercent =
+    maxConnections > 0 ? (usedCount / maxConnections) * 100 : 0;
 
   return {
     totalCount,
@@ -206,4 +202,3 @@ export function isPoolHealthy(): boolean {
 
 // Export Database type for dependency injection
 export type Database = ReturnType<typeof drizzle>;
-

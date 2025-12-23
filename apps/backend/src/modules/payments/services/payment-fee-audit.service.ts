@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Database } from "../../../modules/database/db";
 import {
   paymentFeeAuditEventTypeEnum,
   paymentFeeAuditLogs,
@@ -9,6 +8,7 @@ import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
 import { createErrorContext } from "../../../common/logging/logging.helper";
 import { DB_TOKEN } from "../../../modules/database/database.module";
+import type { Database } from "../../../modules/database/db";
 import { PaymentFeeBreakdownDto } from "../dto/payment-charge.dto";
 
 export enum PaymentFeeAuditEventType {

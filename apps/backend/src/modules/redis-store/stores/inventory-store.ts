@@ -1,15 +1,20 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { BadRequestException, Inject, Injectable, OnModuleInit } from "@nestjs/common";
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  OnModuleInit,
+} from "@nestjs/common";
 import Redis from "ioredis";
 import { PinoLogger } from "nestjs-pino";
-import { DB_TOKEN } from "../../../modules/database/database.constants";
-import type { Database } from "../../../modules/database/db";
 import { ContextService } from "../../../common/logging/context.service";
 import {
   createErrorContext,
   createLogContext,
 } from "../../../common/logging/logging.helper";
+import { DB_TOKEN } from "../../../modules/database/database.constants";
+import type { Database } from "../../../modules/database/db";
 import { KEY_PATTERNS, TTL } from "../constants/key-patterns";
 import { IInventoryStore } from "../interfaces/redis-store.interface";
 import { RedisStoreService } from "../redis-store.service";

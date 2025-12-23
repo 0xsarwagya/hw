@@ -1,6 +1,6 @@
-import type { Database } from "../../modules/database/db";
 import { addresses, eq } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
+import type { Database } from "../../modules/database/db";
 import { ContextService } from "../logging/context.service";
 import { createLogContext } from "../logging/logging.helper";
 

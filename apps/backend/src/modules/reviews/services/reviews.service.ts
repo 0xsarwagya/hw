@@ -5,7 +5,6 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { Database } from "../../../modules/database/db";
 import {
   and,
   customers,
@@ -25,6 +24,7 @@ import {
   createLogContext,
 } from "../../../common/logging/logging.helper";
 import { DB_TOKEN } from "../../../modules/database/database.module";
+import type { Database } from "../../../modules/database/db";
 import { NotificationsService } from "../../notifications/notifications.service";
 import { NotificationType } from "../../notifications/types/notification.types";
 import { CreateReviewDto } from "../dto/create-review.dto";

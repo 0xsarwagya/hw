@@ -7,7 +7,6 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { Database } from "../../modules/database/db";
 import {
   addresses,
   and,
@@ -37,6 +36,7 @@ import {
 } from "../../common/logging/logging.helper";
 import { Trace } from "../../common/tracing/trace.decorator";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
+import type { Database } from "../../modules/database/db";
 // Internal modules - Feature modules
 import { CartsService } from "../carts/carts.service";
 import { BundleCartItemMetadata } from "../carts/dto/bundle-cart-item.dto";

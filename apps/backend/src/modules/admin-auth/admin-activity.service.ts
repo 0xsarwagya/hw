@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Database } from "../../modules/database/db";
 import { adminActivityLogs } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
@@ -7,6 +6,7 @@ import {
   createErrorContext,
   createLogContext,
 } from "../../common/logging/logging.helper";
+import type { Database } from "../../modules/database/db";
 import { DB_TOKEN } from "../database/database.module";
 
 export interface LogActivityParams {

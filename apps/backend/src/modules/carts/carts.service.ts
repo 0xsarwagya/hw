@@ -5,7 +5,6 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { Database } from "../../modules/database/db";
 import {
   addresses,
   and,
@@ -28,6 +27,7 @@ import {
 import { Trace } from "../../common/tracing/trace.decorator";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { DB_TOKEN } from "../../modules/database/database.module";
+import type { Database } from "../../modules/database/db";
 import {
   BundleEligibilityService,
   UserBundleSelection,

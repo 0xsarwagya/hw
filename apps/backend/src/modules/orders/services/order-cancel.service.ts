@@ -4,7 +4,6 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { Database } from "../../../modules/database/db";
 import { and, eq, orderItems, orders, payments } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
@@ -13,6 +12,7 @@ import {
   createLogContext,
 } from "../../../common/logging/logging.helper";
 import { DB_TOKEN } from "../../../modules/database/database.module";
+import type { Database } from "../../../modules/database/db";
 import { BundleCartItemMetadata } from "../../carts/dto/bundle-cart-item.dto";
 import { BundlePricingService } from "../../pricing/services/bundle-pricing.service";
 import { InventoryStore } from "../../redis-store/stores/inventory-store";

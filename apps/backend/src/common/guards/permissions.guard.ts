@@ -7,9 +7,9 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import type { Database } from "../../modules/database/db";
 import { eq, users } from "@vcecom/db";
 import { DB_TOKEN } from "../../modules/database/database.module";
+import type { Database } from "../../modules/database/db";
 import {
   PERMISSIONS_KEY,
   PermissionsMetadata,

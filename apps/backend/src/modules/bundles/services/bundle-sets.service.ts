@@ -4,9 +4,9 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { Database } from "../../../modules/database/db";
 import { and, bundleSetItems, bundleSets, bundles, eq } from "@vcecom/db";
 import { DB_TOKEN } from "../../../modules/database/database.module";
+import type { Database } from "../../../modules/database/db";
 import { BundleCacheStore } from "../../redis-store/stores/bundle-cache-store";
 import { CreateBundleSetDto } from "../dto/create-bundle-set.dto";
 import { UpdateBundleSetDto } from "../dto/update-bundle-set.dto";

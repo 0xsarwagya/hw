@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Database } from "../../../modules/database/db";
 import {
   inArray,
   or,
@@ -10,6 +9,7 @@ import {
 } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { DB_TOKEN } from "../../../modules/database/database.module";
+import type { Database } from "../../../modules/database/db";
 import { DiscountScope } from "../dto/create-discount.dto";
 import { DiscountResponseDto } from "../dto/discount-response.dto";
 

@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Database } from "../../../modules/database/db";
 import { productImages, sql } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../../common/logging/context.service";
@@ -8,6 +7,7 @@ import {
   createLogContext,
 } from "../../../common/logging/logging.helper";
 import { DB_TOKEN } from "../../../modules/database/database.module";
+import type { Database } from "../../../modules/database/db";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 100;

@@ -5,7 +5,6 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
-import type { Database } from "../../modules/database/db";
 import {
   and,
   collections,
@@ -31,6 +30,7 @@ import {
   normalizePaginationParams,
 } from "../../common/utils/pagination.utils";
 import { DB_TOKEN } from "../../modules/database/database.module";
+import type { Database } from "../../modules/database/db";
 import { AddProductsDto } from "./dto/add-products.dto";
 import {
   CollectionRuleDto,

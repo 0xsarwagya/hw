@@ -4,7 +4,6 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { Database } from "../../modules/database/db";
 import {
   eq,
   inArray,
@@ -14,6 +13,7 @@ import {
   variantOptionValues,
 } from "@vcecom/db";
 import { DB_TOKEN } from "../../modules/database/database.module";
+import type { Database } from "../../modules/database/db";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
 import { CreateVariantDto } from "./dto/create-variant.dto";
 import { UpdateVariantDto } from "./dto/update-variant.dto";

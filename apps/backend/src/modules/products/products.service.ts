@@ -4,7 +4,6 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { Database } from "../database/db";
 import {
   and,
   asc,
@@ -52,6 +51,7 @@ import {
   parseSearchQuery,
 } from "../../common/utils/search.utils";
 import { DB_TOKEN } from "../database/database.module";
+import type { Database } from "../database/db";
 import { calculatePriceAfterOverride } from "../pricing/engine/override-strategies/price-override.strategy";
 import { PriceListService } from "../pricing/services/price-list.service";
 import { StorageService } from "../storage/storage.service";
@@ -876,8 +876,12 @@ export class ProductsService {
       relevanceScore: number;
       matchingSku?: string | null;
     }> = fuseResults
-      .filter((result) => 
-        result.item !== null && result.item !== undefined && typeof result.item === 'object' && 'title' in result.item
+      .filter(
+        (result) =>
+          result.item !== null &&
+          result.item !== undefined &&
+          typeof result.item === "object" &&
+          "title" in result.item,
       )
       .map((result) => {
         const product = result.item as ProductType;

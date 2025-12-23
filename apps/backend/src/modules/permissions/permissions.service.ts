@@ -4,11 +4,11 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { Database } from "../../modules/database/db";
 import { adminRoles, eq } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
 import { createErrorContext } from "../../common/logging/logging.helper";
+import type { Database } from "../../modules/database/db";
 import { DB_TOKEN } from "../database/database.module";
 import {
   CreateRoleDto,

@@ -4,13 +4,13 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { Database } from "../../modules/database/db";
 import { addresses, and, customers, eq } from "@vcecom/db";
 import { isValidStateName } from "../../common/data/indian-states";
 import {
   formatPincode,
   isValidPincodeFormat,
 } from "../../common/utils/pincode.utils";
+import type { Database } from "../../modules/database/db";
 import { DB_TOKEN } from "../database/database.module";
 import { CreateAddressDto } from "./dto/create-address.dto";
 import { UpdateAddressDto } from "./dto/update-address.dto";

@@ -81,7 +81,9 @@ function LoginForm() {
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Login failed" }));
+        const error = await response
+          .json()
+          .catch(() => ({ message: "Login failed" }));
         throw new Error(error.message || "Login failed");
       }
 

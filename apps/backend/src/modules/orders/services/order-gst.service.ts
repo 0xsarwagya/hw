@@ -1,9 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Database } from "../../../modules/database/db";
 import { addresses, eq, orderItems } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { calculateGstBreakdown } from "../../../common/utils/gst.utils";
 import { DB_TOKEN } from "../../../modules/database/database.module";
+import type { Database } from "../../../modules/database/db";
 import { OrderValidationService } from "./order-validation.service";
 
 /**

@@ -7,7 +7,6 @@ import {
   NotFoundException,
   OnModuleInit,
 } from "@nestjs/common";
-import type { Database } from "../../modules/database/db";
 import { eq, orders, payments } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import Razorpay from "razorpay";
@@ -18,6 +17,7 @@ import {
   createLogContext,
 } from "../../common/logging/logging.helper";
 import { Trace } from "../../common/tracing/trace.decorator";
+import type { Database } from "../../modules/database/db";
 import { DB_TOKEN } from "../database/database.module";
 import { OrdersService } from "../orders/orders.service";
 import { CheckoutState } from "../redis-store/constants/checkout-states";

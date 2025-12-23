@@ -7,7 +7,6 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import type { Database } from "../../modules/database/db";
 import { customers, eq, users } from "@vcecom/db";
 import * as bcrypt from "bcrypt";
 import { PinoLogger } from "nestjs-pino";
@@ -15,6 +14,7 @@ import { ContextService } from "../../common/logging/context.service";
 import { createErrorContext } from "../../common/logging/logging.helper";
 import { Trace } from "../../common/tracing/trace.decorator";
 import { formatGstin, validateGstin } from "../../common/utils/gstin.utils";
+import type { Database } from "../../modules/database/db";
 import { DB_TOKEN } from "../database/database.module";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { RegisterCustomerDto } from "./dto/register-customer.dto";

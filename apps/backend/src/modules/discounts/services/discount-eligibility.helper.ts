@@ -1,5 +1,5 @@
-import type { Database } from "../../../modules/database/db";
 import { and, discountUsages, eq } from "@vcecom/db";
+import type { Database } from "../../../modules/database/db";
 import { DiscountResponseDto } from "../dto/discount-response.dto";
 
 /**

@@ -9,8 +9,6 @@ import {
   shippingZoneRates,
   stateShippingRules,
 } from "@vcecom/db";
-import { DB_TOKEN } from "../../modules/database/database.module";
-import type { Database } from "../../modules/database/db";
 import { PinoLogger } from "nestjs-pino";
 import { DEFAULT_SHIPPING_ZONE } from "../../common/constants";
 // Internal modules - Common
@@ -18,6 +16,8 @@ import {
   checkPincodeServiceability,
   ServiceabilityResult,
 } from "../../common/utils/pincode.utils";
+import { DB_TOKEN } from "../../modules/database/database.module";
+import type { Database } from "../../modules/database/db";
 
 // Relative imports
 import {
@@ -145,7 +145,10 @@ export class ShippingRulesService {
     }
 
     // Apply state-specific rules
-    const stateRuleData = await getStateRulesFromDatabase(this.db, serviceability.state);
+    const stateRuleData = await getStateRulesFromDatabase(
+      this.db,
+      serviceability.state,
+    );
     let additionalDays = 0;
     let finalCodAvailable = serviceability.codAvailable ?? false;
 
@@ -184,7 +187,7 @@ export class ShippingRulesService {
    * Get all active shipping rules
    */
   async getShippingRules() {
-      return await this.db
+    return await this.db
       .select()
       .from(shippingRules)
       .where(eq(shippingRules.isActive, true))
@@ -195,7 +198,7 @@ export class ShippingRulesService {
    * Get shipping zone rates
    */
   async getShippingZoneRates() {
-      return await this.db
+    return await this.db
       .select()
       .from(shippingZoneRates)
       .where(eq(shippingZoneRates.isActive, true))
@@ -206,7 +209,7 @@ export class ShippingRulesService {
    * Get state shipping rules
    */
   async getStateShippingRules() {
-      return await this.db
+    return await this.db
       .select()
       .from(stateShippingRules)
       .where(eq(stateShippingRules.isActive, true))

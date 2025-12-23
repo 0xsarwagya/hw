@@ -1,9 +1,9 @@
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
-import type { Database } from "../../../modules/database/db";
 import { adminSessions, eq, users } from "@vcecom/db";
 import { Request } from "express";
 import { ExtractJwt, Strategy } from "passport-jwt";
+import type { Database } from "../../../modules/database/db";
 import { AdminSessionsService } from "../../admin-auth/admin-sessions.service";
 import { DB_TOKEN } from "../../database/database.module";
 

@@ -11,12 +11,12 @@ import {
   sql,
   users,
 } from "@vcecom/db";
-import { DB_TOKEN } from "../../modules/database/database.module";
-import type { Database } from "../../modules/database/db";
 import {
   generatePaginationMetadata,
   normalizePaginationParams,
 } from "../../common/utils/pagination.utils";
+import { DB_TOKEN } from "../../modules/database/database.module";
+import type { Database } from "../../modules/database/db";
 import {
   ActivityLogResponseDto,
   AdminQueryActivityLogsDto,

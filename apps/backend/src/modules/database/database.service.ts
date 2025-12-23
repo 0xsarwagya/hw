@@ -98,37 +98,29 @@ export class DatabaseService
         // Log warning if pool usage is high
         if (stats.usagePercent >= 80) {
           this.logger.warn(
-            createLogContext(
-              this.contextService,
-              "databasePoolHighUsage",
-              {
-                totalConnections: stats.totalCount,
-                usedConnections: stats.usedCount,
-                idleConnections: stats.idleCount,
-                waitingConnections: stats.waitingCount,
-                usagePercent: stats.usagePercent,
-                maxConnections: stats.maxConnections,
-                healthy: isHealthy,
-              },
-            ),
+            createLogContext(this.contextService, "databasePoolHighUsage", {
+              totalConnections: stats.totalCount,
+              usedConnections: stats.usedCount,
+              idleConnections: stats.idleCount,
+              waitingConnections: stats.waitingCount,
+              usagePercent: stats.usagePercent,
+              maxConnections: stats.maxConnections,
+              healthy: isHealthy,
+            }),
             `Database pool usage is high: ${stats.usedCount}/${stats.maxConnections} (${stats.usagePercent.toFixed(1)}%)`,
           );
         } else {
           // Log info periodically for monitoring
           this.logger.debug(
-            createLogContext(
-              this.contextService,
-              "databasePoolStats",
-              {
-                totalConnections: stats.totalCount,
-                usedConnections: stats.usedCount,
-                idleConnections: stats.idleCount,
-                waitingConnections: stats.waitingCount,
-                usagePercent: stats.usagePercent,
-                maxConnections: stats.maxConnections,
-                healthy: isHealthy,
-              },
-            ),
+            createLogContext(this.contextService, "databasePoolStats", {
+              totalConnections: stats.totalCount,
+              usedConnections: stats.usedCount,
+              idleConnections: stats.idleCount,
+              waitingConnections: stats.waitingCount,
+              usagePercent: stats.usagePercent,
+              maxConnections: stats.maxConnections,
+              healthy: isHealthy,
+            }),
             `Database pool stats: ${stats.usedCount}/${stats.maxConnections} connections used (${stats.usagePercent.toFixed(1)}%)`,
           );
         }

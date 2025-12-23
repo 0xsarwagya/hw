@@ -16,12 +16,12 @@ if (!process.env.DATABASE_URL) {
 }
 
 import * as bcrypt from "bcrypt";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { and, eq } from "drizzle-orm";
+import * as schema from "./schema";
 import { paymentMethodCharges, users } from "./schema";
 import type { NewPaymentMethodCharge } from "./schema/payment-method-charges";
-import * as schema from "./schema";
 
 // Create database connection for seeding
 const pool = new Pool({

@@ -4,4 +4,3 @@
  * when importing from database.module.ts
  */
 export const DB_TOKEN = "DB";
-

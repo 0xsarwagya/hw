@@ -5,7 +5,6 @@ import {
   NotFoundException,
   OnModuleInit,
 } from "@nestjs/common";
-import type { Database } from "../../modules/database/db";
 import {
   and,
   asc,
@@ -31,6 +30,7 @@ import {
   normalizePaginationParams,
 } from "../../common/utils/pagination.utils";
 import { DB_TOKEN } from "../../modules/database/database.module";
+import type { Database } from "../../modules/database/db";
 import { NotificationsService } from "../notifications/notifications.service";
 import { NotificationType } from "../notifications/types/notification.types";
 import { KEY_PATTERNS } from "../redis-store/constants/key-patterns";

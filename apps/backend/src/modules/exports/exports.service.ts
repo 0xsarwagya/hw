@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Database } from "../../modules/database/db";
 import {
   and,
   customers,
@@ -14,6 +13,7 @@ import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
 import { createErrorContext } from "../../common/logging/logging.helper";
 import { DB_TOKEN } from "../../modules/database/database.module";
+import type { Database } from "../../modules/database/db";
 import { InventoryStore } from "../redis-store/stores/inventory-store";
 import { StorageService } from "../storage/storage.service";
 import {

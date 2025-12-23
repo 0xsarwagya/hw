@@ -5,7 +5,6 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { Database } from "../../modules/database/db";
 import { addresses, eq } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { isCodPayment } from "../../common/constants/orders.constants";
@@ -21,6 +20,7 @@ import {
   isValidPincodeFormat,
   ServiceabilityResult,
 } from "../../common/utils/pincode.utils";
+import type { Database } from "../../modules/database/db";
 import { CartsService } from "../carts/carts.service";
 import { AddressesService } from "../customers/addresses.service";
 import { DB_TOKEN } from "../database/database.module";

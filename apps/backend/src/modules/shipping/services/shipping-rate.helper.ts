@@ -6,7 +6,6 @@ import {
   shippingZoneRates,
   stateShippingRules,
 } from "@vcecom/db";
-import type { Database } from "../../../modules/database/db";
 import {
   DEFAULT_FALLBACK_SHIPPING_RATE_INR,
   DEFAULT_SHIPPING_ZONE,
@@ -14,6 +13,7 @@ import {
   GRAMS_PER_KILOGRAM,
 } from "../../../common/constants";
 import { getShippingRateByZone } from "../../../common/utils/pincode.utils";
+import type { Database } from "../../../modules/database/db";
 
 export interface ZoneRateData {
   baseRate: number;

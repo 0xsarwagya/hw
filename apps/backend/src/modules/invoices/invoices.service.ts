@@ -18,13 +18,13 @@ import {
   productVariants,
   sql,
 } from "@vcecom/db";
-import { DB_TOKEN } from "../../modules/database/database.module";
-import type { Database } from "../../modules/database/db";
 import { PinoLogger } from "nestjs-pino";
 import PDFDocument from "pdfkit";
 import { ContextService } from "../../common/logging/context.service";
 import { createErrorContext } from "../../common/logging/logging.helper";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
+import { DB_TOKEN } from "../../modules/database/database.module";
+import type { Database } from "../../modules/database/db";
 import { InvoiceResponseDto } from "./dto/invoice-response.dto";
 
 @Injectable()
@@ -705,14 +705,14 @@ export class InvoicesService {
   /**
    * Get invoice by order ID
    */
-    async findByOrderId(orderId: string): Promise<InvoiceResponseDto | null> {
-      const [invoice] = await this.db
-        .select()
-        .from(invoices)
-        .where(eq(invoices.orderId, orderId))
-        .limit(1);
+  async findByOrderId(orderId: string): Promise<InvoiceResponseDto | null> {
+    const [invoice] = await this.db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.orderId, orderId))
+      .limit(1);
 
-      if (!invoice) {
+    if (!invoice) {
       return null;
     }
 
@@ -725,14 +725,14 @@ export class InvoicesService {
   /**
    * Get invoice PDF file path
    */
-    async getInvoicePdfPath(invoiceId: string): Promise<string> {
-      const [invoice] = await this.db
-        .select({ pdfPath: invoices.pdfPath })
-        .from(invoices)
-        .where(eq(invoices.id, invoiceId))
-        .limit(1);
+  async getInvoicePdfPath(invoiceId: string): Promise<string> {
+    const [invoice] = await this.db
+      .select({ pdfPath: invoices.pdfPath })
+      .from(invoices)
+      .where(eq(invoices.id, invoiceId))
+      .limit(1);
 
-      if (!invoice) {
+    if (!invoice) {
       throw new NotFoundException("Invoice not found");
     }
 

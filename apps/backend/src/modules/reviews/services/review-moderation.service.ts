@@ -1,5 +1,4 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
-import type { Database } from "../../../modules/database/db";
 import {
   and,
   customers,
@@ -14,6 +13,7 @@ import { AUTO_APPROVE_THRESHOLD } from "../../../common/constants";
 import { ContextService } from "../../../common/logging/context.service";
 import { createLogContext } from "../../../common/logging/logging.helper";
 import { DB_TOKEN } from "../../../modules/database/database.module";
+import type { Database } from "../../../modules/database/db";
 import { ReviewResponseDto } from "../dto/review-response.dto";
 import { ReviewAggregationService } from "./review-aggregation.service";
 import { ReviewCacheService } from "./review-cache.service";

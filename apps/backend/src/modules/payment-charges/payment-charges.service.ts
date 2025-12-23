@@ -10,9 +10,9 @@ import {
   PaymentMethod,
   paymentMethodCharges,
 } from "@vcecom/db";
+import { PinoLogger } from "nestjs-pino";
 import { DB_TOKEN } from "../../modules/database/database.module";
 import type { Database } from "../../modules/database/db";
-import { PinoLogger } from "nestjs-pino";
 import { PaymentChargeService } from "../payments/services/payment-charge.service";
 import {
   CreatePaymentChargeDto,

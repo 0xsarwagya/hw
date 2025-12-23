@@ -6,14 +6,14 @@ import {
 } from "@nestjs/common";
 import { addresses, eq, orderItems, orders } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
-import { DB_TOKEN } from "../../modules/database/database.module";
-import type { Database } from "../../modules/database/db";
 import { ContextService } from "../../common/logging/context.service";
 import {
   createErrorContext,
   createLogContext,
 } from "../../common/logging/logging.helper";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
+import { DB_TOKEN } from "../../modules/database/database.module";
+import type { Database } from "../../modules/database/db";
 import { CheckoutState } from "../redis-store/constants/checkout-states";
 import { CheckoutStore } from "../redis-store/stores/checkout-store";
 import { OrderResponseDto } from "./dto/order-response.dto";

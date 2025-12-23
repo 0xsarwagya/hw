@@ -20,7 +20,6 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import type { Database } from "../../modules/database/db";
 import { addresses, eq, orderItems, orders } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
@@ -35,6 +34,7 @@ import {
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 import { calculateGstBreakdown } from "../../common/utils/gst.utils";
 import { DB_TOKEN } from "../../modules/database/database.module";
+import type { Database } from "../../modules/database/db";
 import { CreateOrderNoteDto } from "../admin/dto/create-order-note.dto";
 import { CreateRefundDto } from "../admin/dto/create-refund.dto";
 import { MarkOrderPaidResponseDto } from "../admin/dto/mark-order-paid.dto";

@@ -15,12 +15,12 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import type { Database } from "../../modules/database/db";
 import { customers, eq } from "@vcecom/db";
 import { Public } from "../../common/decorators/public.decorator";
 import { RateLimit } from "../../common/decorators/rate-limit.decorator";
 import { RATE_LIMIT_PRESETS } from "../../common/rate-limiting/rate-limit.config";
 import { extractSessionId } from "../../common/utils/session.utils";
+import type { Database } from "../../modules/database/db";
 import { CartsService } from "../carts/carts.service";
 import { DB_TOKEN } from "../database/database.module";
 import { PaymentFeeBreakdownDto } from "../payments/dto/payment-charge.dto";

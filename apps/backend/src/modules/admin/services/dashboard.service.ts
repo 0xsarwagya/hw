@@ -3,7 +3,6 @@ import {
   Injectable,
   InternalServerErrorException,
 } from "@nestjs/common";
-import type { Database } from "../../../modules/database/db";
 import {
   and,
   categories,
@@ -29,6 +28,7 @@ import {
   createLogContext,
 } from "../../../common/logging/logging.helper";
 import { DB_TOKEN } from "../../../modules/database/database.module";
+import type { Database } from "../../../modules/database/db";
 import { CustomerSupportDashboardResponseDto } from "../dto/dashboard-customer-support.dto";
 import { OperationsDashboardResponseDto } from "../dto/dashboard-operations.dto";
 import { OverviewDashboardResponseDto } from "../dto/dashboard-overview.dto";

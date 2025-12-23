@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
-import type { Database } from "../../modules/database/db";
 import { adminSessions, eq, gte } from "@vcecom/db";
 import * as argon2 from "argon2";
 import { PinoLogger } from "nestjs-pino";
@@ -9,6 +8,7 @@ import {
   createErrorContext,
   createLogContext,
 } from "../../common/logging/logging.helper";
+import type { Database } from "../../modules/database/db";
 import { DB_TOKEN } from "../database/database.module";
 
 export interface CreateSessionParams {

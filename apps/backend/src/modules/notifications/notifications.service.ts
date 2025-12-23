@@ -1,5 +1,4 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { Database } from "../../modules/database/db";
 import { and, desc, eq, isNull, notifications, or, sql } from "@vcecom/db";
 import { PinoLogger } from "nestjs-pino";
 import { ContextService } from "../../common/logging/context.service";
@@ -8,6 +7,7 @@ import {
   generatePaginationMetadata,
   normalizePaginationParams,
 } from "../../common/utils/pagination.utils";
+import type { Database } from "../../modules/database/db";
 import { DB_TOKEN } from "../database/database.module";
 import {
   CreateNotificationDto,

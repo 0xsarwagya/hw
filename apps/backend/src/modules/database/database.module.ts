@@ -3,7 +3,7 @@ import { ContextModule } from "../../common/logging/context.module";
 import { LoggerModule } from "../../common/logging/logger.module";
 import { DB_TOKEN } from "./database.constants";
 import { DatabaseService } from "./database.service";
-import { getDatabase, type Database } from "./db";
+import { type Database, getDatabase } from "./db";
 
 // Re-export DB_TOKEN for backward compatibility
 export { DB_TOKEN } from "./database.constants";

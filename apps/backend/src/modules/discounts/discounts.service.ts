@@ -6,7 +6,6 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { Database } from "../../modules/database/db";
 import {
   and,
   desc,
@@ -28,6 +27,7 @@ import {
   or,
   sql,
 } from "@vcecom/db";
+import type { Database } from "../../modules/database/db";
 import { DB_TOKEN } from "../database/database.module";
 
 // Internal modules - Redis stores
