@@ -28,16 +28,16 @@ function createPool(): Pool {
     // Connection pool settings
     // Keep pool size small - most apps don't need more than 10-20 connections
     // High values (50+) often mask connection leaks and cause pool exhaustion
-    max: 10,
+    max: 50,
     min: 0, // Connections created on-demand
-    idleTimeoutMillis: 10000, // Close idle clients after 10 seconds (faster cleanup)
-    connectionTimeoutMillis: 5000, // Fail fast if connection can't be established
+    idleTimeoutMillis: 1000, // Close idle clients after 1 second (faster cleanup)
+    connectionTimeoutMillis: 1000, // Fail fast if connection can't be established
     allowExitOnIdle: true, // Allow process to exit when pool is idle
   });
 
   // Increase max listeners to prevent EventEmitter warnings
   // This is needed when multiple modules access the pool
-  pool.setMaxListeners(20);
+  pool.setMaxListeners(50);
 
   // Handle pool errors to prevent unhandled rejections
   pool.on("error", (err) => {
