@@ -38,6 +38,7 @@ import { EligibilityStore } from "../redis-store/stores/eligibility-store";
 import {
   CreateDiscountDto,
   DiscountApplicationType,
+  DiscountCalculationBasis,
   DiscountScope,
   DiscountType,
   DiscountValueType,
@@ -127,6 +128,10 @@ export class DiscountsService {
         minQuantity: createDiscountDto.minQuantity || null,
         customerGroupIds: createDiscountDto.customerGroupIds || null,
         scope: createDiscountDto.scope || "PRODUCT",
+        calculationBasis:
+          (createDiscountDto.calculationBasis || "TOTAL") as
+            | "SUBTOTAL"
+            | "TOTAL",
         priority: createDiscountDto.priority || 1,
         canStack: createDiscountDto.canStack ?? true,
         mutuallyExclusive: createDiscountDto.mutuallyExclusive ?? false,
@@ -136,7 +141,7 @@ export class DiscountsService {
         usageLimit: createDiscountDto.usageLimit || null,
         usageCount: 0,
         perUserLimit: createDiscountDto.perUserLimit || null,
-      })
+      } as any)
       .returning();
 
     // Create relationships for product-level discounts
@@ -356,6 +361,8 @@ export class DiscountsService {
         updateDiscountDto.maxDiscountAmount || null;
     if (updateDiscountDto.scope !== undefined)
       updateData.scope = updateDiscountDto.scope;
+    if (updateDiscountDto.calculationBasis !== undefined)
+      (updateData as any).calculationBasis = updateDiscountDto.calculationBasis;
     if (updateDiscountDto.startDate !== undefined)
       updateData.startDate = startDate;
     if (updateDiscountDto.endDate !== undefined) updateData.endDate = endDate;
@@ -1058,6 +1065,8 @@ export class DiscountsService {
         ? Number(discount.maxDiscountAmount)
         : null,
       scope: discount.scope as DiscountScope,
+      calculationBasis: ((discount as any).calculationBasis ||
+        "TOTAL") as DiscountCalculationBasis,
       priority: discount.priority,
       canStack: discount.canStack,
       mutuallyExclusive: discount.mutuallyExclusive,

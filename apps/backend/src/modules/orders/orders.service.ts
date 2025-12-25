@@ -35,7 +35,14 @@ import {
   createLogContext,
 } from "../../common/logging/logging.helper";
 import { Trace } from "../../common/tracing/trace.decorator";
-import { calculateGstBreakdown } from "../../common/utils/gst.utils";
+import {
+  calculateBasePrice,
+  calculateCgstSgst,
+  calculateGstBreakdown,
+  calculateGstFromInclusivePrice,
+  calculateIgst,
+  isIntraStateTransaction,
+} from "../../common/utils/gst.utils";
 import type { Database } from "../../modules/database/db";
 // Internal modules - Feature modules
 import { CartsService } from "../carts/carts.service";
@@ -428,6 +435,7 @@ export class OrdersService {
                 quantity: cartItems.quantity,
                 price: cartItems.price,
                 productGstRate: products.gstRate,
+                productPricingType: products.pricingType,
               })
               .from(cartItems)
               .innerJoin(
@@ -456,27 +464,49 @@ export class OrdersService {
 
       // Calculate subtotal and GST for variant items
       for (const item of cartItemsWithVariants) {
-        const itemSubtotal = item.price * item.quantity;
-        subtotal += itemSubtotal;
+        const pricingType = item.productPricingType || "exclusive";
+        const itemPrice = item.price * item.quantity;
+        let baseAmount: number;
+
+        if (pricingType === "inclusive" && item.productGstRate > 0) {
+          // Extract base price from inclusive price
+          const basePricePerUnit = calculateBasePrice(
+            item.price,
+            item.productGstRate,
+          );
+          baseAmount = basePricePerUnit * item.quantity;
+          subtotal += baseAmount;
+        } else {
+          // Tax-exclusive or 0% GST - use price as-is
+          baseAmount = itemPrice;
+          subtotal += baseAmount;
+        }
 
         // Calculate GST breakdown
-        const gstBreakdown = calculateGstBreakdown(
-          itemSubtotal,
-          item.productGstRate,
-          sellerState,
-          buyerState,
-        );
-        totalCgst += gstBreakdown.cgst;
-        totalSgst += gstBreakdown.sgst;
-        totalIgst += gstBreakdown.igst;
+        if (item.productGstRate > 0) {
+          const isIntraState = isIntraStateTransaction(
+            sellerState,
+            buyerState,
+          );
+          if (isIntraState) {
+            const { cgst, sgst } = calculateCgstSgst(
+              baseAmount,
+              item.productGstRate,
+            );
+            totalCgst += cgst;
+            totalSgst += sgst;
+          } else {
+            const igst = calculateIgst(baseAmount, item.productGstRate);
+            totalIgst += igst;
+          }
+        }
       }
 
       // Calculate subtotal and GST for bundle items
       for (const bundleItem of bundleCartItems) {
-        const itemSubtotal = bundleItem.price * bundleItem.quantity;
-        subtotal += itemSubtotal;
+        const itemPrice = bundleItem.price * bundleItem.quantity;
 
-        // Get GST rate from first variant's product
+        // Get GST rate and pricing type from first variant's product
         const [firstVariant] = await this.db
           .select({
             productId: productVariants.productId,
@@ -489,22 +519,52 @@ export class OrdersService {
           const [product] = await this.db
             .select({
               gstRate: products.gstRate,
+              pricingType: products.pricingType,
             })
             .from(products)
             .where(eq(products.id, firstVariant.productId))
             .limit(1);
 
           if (product) {
-            const gstBreakdown = calculateGstBreakdown(
-              itemSubtotal,
-              product.gstRate,
-              sellerState,
-              buyerState,
-            );
-            totalCgst += gstBreakdown.cgst;
-            totalSgst += gstBreakdown.sgst;
-            totalIgst += gstBreakdown.igst;
+            const pricingType = product.pricingType || "exclusive";
+            let baseAmount: number;
+
+            if (pricingType === "inclusive" && product.gstRate > 0) {
+              // Extract base price from inclusive price
+              const basePricePerUnit = calculateBasePrice(
+                bundleItem.price,
+                product.gstRate,
+              );
+              baseAmount = basePricePerUnit * bundleItem.quantity;
+              subtotal += baseAmount;
+            } else {
+              // Tax-exclusive or 0% GST - use price as-is
+              baseAmount = itemPrice;
+              subtotal += baseAmount;
+            }
+
+            // Calculate GST breakdown
+            if (product.gstRate > 0) {
+              const isIntraState = isIntraStateTransaction(
+                sellerState,
+                buyerState,
+              );
+              if (isIntraState) {
+                const { cgst, sgst } = calculateCgstSgst(
+                  baseAmount,
+                  product.gstRate,
+                );
+                totalCgst += cgst;
+                totalSgst += sgst;
+              } else {
+                const igst = calculateIgst(baseAmount, product.gstRate);
+                totalIgst += igst;
+              }
+            }
           }
+        } else {
+          // Fallback: if variant not found, use price as-is
+          subtotal += itemPrice;
         }
       }
 

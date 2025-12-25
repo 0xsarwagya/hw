@@ -1,6 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import {
   DiscountApplicationType,
+  DiscountCalculationBasis,
   DiscountScope,
   DiscountType,
   DiscountValueType,
@@ -94,6 +95,14 @@ export class DiscountResponseDto {
     example: DiscountScope.PRODUCT,
   })
   scope: DiscountScope;
+
+  @ApiProperty({
+    description:
+      "Calculate discount on SUBTOTAL (price excluding tax) or TOTAL (price including tax)",
+    enum: DiscountCalculationBasis,
+    example: DiscountCalculationBasis.TOTAL,
+  })
+  calculationBasis: DiscountCalculationBasis;
 
   @ApiProperty({
     description: "Priority level (lower = higher priority)",

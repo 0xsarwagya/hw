@@ -39,6 +39,11 @@ export enum DiscountScope {
   PRODUCT = "PRODUCT",
 }
 
+export enum DiscountCalculationBasis {
+  SUBTOTAL = "SUBTOTAL",
+  TOTAL = "TOTAL",
+}
+
 export class CreateDiscountDto {
   @ApiProperty({
     description: "Discount code (unique identifier)",
@@ -166,6 +171,21 @@ export class CreateDiscountDto {
     message: `Scope must be one of: ${Object.values(DiscountScope).join(", ")}`,
   })
   scope?: DiscountScope = DiscountScope.PRODUCT;
+
+  @ApiProperty({
+    description:
+      "Calculate discount on SUBTOTAL (price excluding tax) or TOTAL (price including tax)",
+    enum: DiscountCalculationBasis,
+    example: DiscountCalculationBasis.TOTAL,
+    default: DiscountCalculationBasis.TOTAL,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(DiscountCalculationBasis, {
+    message: `Calculation basis must be one of: ${Object.values(DiscountCalculationBasis).join(", ")}`,
+  })
+  calculationBasis?: DiscountCalculationBasis =
+    DiscountCalculationBasis.TOTAL;
 
   @ApiProperty({
     description: "Priority level (lower = higher priority, like Shopify)",

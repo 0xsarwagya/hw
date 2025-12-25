@@ -25,7 +25,14 @@ import {
   createLogContext,
 } from "../../common/logging/logging.helper";
 import { Trace } from "../../common/tracing/trace.decorator";
-import { calculateGstBreakdown } from "../../common/utils/gst.utils";
+import {
+  calculateBasePrice,
+  calculateCgstSgst,
+  calculateGstBreakdown,
+  calculateGstFromInclusivePrice,
+  calculateIgst,
+  isIntraStateTransaction,
+} from "../../common/utils/gst.utils";
 import { DB_TOKEN } from "../../modules/database/database.module";
 import type { Database } from "../../modules/database/db";
 import {
@@ -293,38 +300,39 @@ export class CartsService {
             )
         : [];
 
-    // Calculate subtotal (bundles already have unit price calculated)
-    const bundleSubtotal = bundleItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0,
-    );
-    const variantSubtotal = variantItemsWithProducts.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0,
-    );
-    const subtotal = bundleSubtotal + variantSubtotal;
-
-    // Get GST rates from products (for variant items)
+    // Get GST rates and pricing types from products (for variant items)
     const productIds = [
       ...new Set(variantItemsWithProducts.map((item) => item.productId)),
     ];
-    let productGstRates: Array<{ id: string; gstRate: number }> = [];
+    let productGstRates: Array<{
+      id: string;
+      gstRate: number;
+      pricingType: "inclusive" | "exclusive";
+    }> = [];
 
     if (productIds.length > 0) {
       productGstRates = await this.db
         .select({
           id: products.id,
           gstRate: products.gstRate,
+          pricingType: products.pricingType,
         })
         .from(products)
         .where(inArray(products.id, productIds));
     }
 
     const gstRateMap = new Map(productGstRates.map((p) => [p.id, p.gstRate]));
+    const pricingTypeMap = new Map(
+      productGstRates.map((p) => [p.id, p.pricingType]),
+    );
 
-    // For bundles, get GST rates from their component variants
-    // Use first variant's product GST rate for simplicity
+    // For bundles, get GST rates and pricing types from their component variants
+    // Use first variant's product GST rate and pricing type for simplicity
     const bundleGstRates = new Map<string, number>();
+    const bundlePricingTypes = new Map<
+      string,
+      "inclusive" | "exclusive"
+    >();
     for (const bundleItem of bundleItems) {
       const _metadata = bundleItem.metadata as BundleCartItemMetadata;
       // Get first variant's product for GST
@@ -340,6 +348,7 @@ export class CartsService {
         const [product] = await this.db
           .select({
             gstRate: products.gstRate,
+            pricingType: products.pricingType,
           })
           .from(products)
           .where(eq(products.id, firstVariant.productId))
@@ -347,9 +356,48 @@ export class CartsService {
 
         if (product) {
           bundleGstRates.set(bundleItem.id, product.gstRate);
+          bundlePricingTypes.set(bundleItem.id, product.pricingType);
         }
       }
     }
+
+    // Calculate subtotal
+    // For tax-inclusive items, use base price (price - GST)
+    // For tax-exclusive items, use price as-is
+    let bundleSubtotal = 0;
+    for (const bundleItem of bundleItems) {
+      const gstRate = bundleGstRates.get(bundleItem.id) || 0;
+      const pricingType =
+        bundlePricingTypes.get(bundleItem.id) || "exclusive";
+      const itemPrice = bundleItem.price * bundleItem.quantity;
+
+      if (pricingType === "inclusive" && gstRate > 0) {
+        // Extract base price from inclusive price
+        const basePrice = calculateBasePrice(bundleItem.price, gstRate);
+        bundleSubtotal += basePrice * bundleItem.quantity;
+      } else {
+        // Tax-exclusive or 0% GST - use price as-is
+        bundleSubtotal += itemPrice;
+      }
+    }
+
+    let variantSubtotal = 0;
+    for (const item of variantItemsWithProducts) {
+      const gstRate = gstRateMap.get(item.productId) || 0;
+      const pricingType = pricingTypeMap.get(item.productId) || "exclusive";
+      const itemPrice = item.price * item.quantity;
+
+      if (pricingType === "inclusive" && gstRate > 0) {
+        // Extract base price from inclusive price
+        const basePrice = calculateBasePrice(item.price, gstRate);
+        variantSubtotal += basePrice * item.quantity;
+      } else {
+        // Tax-exclusive or 0% GST - use price as-is
+        variantSubtotal += itemPrice;
+      }
+    }
+
+    const subtotal = bundleSubtotal + variantSubtotal;
 
     // Get buyer state
     const buyerState = await this.getBuyerState(customerId);
@@ -363,53 +411,88 @@ export class CartsService {
     // Calculate GST for variant items
     for (const item of variantItemsWithProducts) {
       const gstRate = gstRateMap.get(item.productId) || 0;
-      const itemAmount = item.price * item.quantity;
+      const pricingType = pricingTypeMap.get(item.productId) || "exclusive";
+      const itemPrice = item.price * item.quantity;
 
-      if (gstRate > 0 && buyerState) {
-        const breakdown = calculateGstBreakdown(
-          itemAmount,
-          gstRate,
-          sellerState,
-          buyerState,
-        );
-        totalCgst += breakdown.cgst;
-        totalSgst += breakdown.sgst;
-        totalIgst += breakdown.igst;
-      } else if (gstRate > 0) {
-        // No buyer state - use IGST (inter-state)
-        const breakdown = calculateGstBreakdown(
-          itemAmount,
-          gstRate,
-          sellerState,
-          "", // Empty buyer state triggers inter-state
-        );
-        totalIgst += breakdown.igst;
+      if (gstRate > 0) {
+        let baseAmount: number;
+        let gstAmount: number;
+
+        if (pricingType === "inclusive") {
+          // Extract base price and GST from inclusive price
+          const basePricePerUnit = calculateBasePrice(item.price, gstRate);
+          baseAmount = basePricePerUnit * item.quantity;
+          gstAmount = calculateGstFromInclusivePrice(item.price, gstRate) * item.quantity;
+        } else {
+          // Tax-exclusive: calculate GST on top
+          baseAmount = itemPrice;
+          gstAmount = (baseAmount * gstRate) / 100;
+        }
+
+        if (buyerState) {
+          const isIntraState = isIntraStateTransaction(sellerState, buyerState);
+          if (isIntraState) {
+            // Split GST into CGST and SGST (each is half of total GST)
+            const { cgst, sgst } = calculateCgstSgst(baseAmount, gstRate);
+            totalCgst += cgst;
+            totalSgst += sgst;
+          } else {
+            // Inter-state: use IGST
+            const igst = calculateIgst(baseAmount, gstRate);
+            totalIgst += igst;
+          }
+        } else {
+          // No buyer state - use IGST (inter-state)
+          const igst = calculateIgst(baseAmount, gstRate);
+          totalIgst += igst;
+        }
       }
     }
 
     // Calculate GST for bundle items
     for (const bundleItem of bundleItems) {
       const gstRate = bundleGstRates.get(bundleItem.id) || 0;
-      const itemAmount = bundleItem.price * bundleItem.quantity;
+      const pricingType =
+        bundlePricingTypes.get(bundleItem.id) || "exclusive";
+      const itemPrice = bundleItem.price * bundleItem.quantity;
 
-      if (gstRate > 0 && buyerState) {
-        const breakdown = calculateGstBreakdown(
-          itemAmount,
-          gstRate,
-          sellerState,
-          buyerState,
-        );
-        totalCgst += breakdown.cgst;
-        totalSgst += breakdown.sgst;
-        totalIgst += breakdown.igst;
-      } else if (gstRate > 0) {
-        const breakdown = calculateGstBreakdown(
-          itemAmount,
-          gstRate,
-          sellerState,
-          "",
-        );
-        totalIgst += breakdown.igst;
+      if (gstRate > 0) {
+        let baseAmount: number;
+        let gstAmount: number;
+
+        if (pricingType === "inclusive") {
+          // Extract base price and GST from inclusive price
+          const basePricePerUnit = calculateBasePrice(
+            bundleItem.price,
+            gstRate,
+          );
+          baseAmount = basePricePerUnit * bundleItem.quantity;
+          gstAmount =
+            calculateGstFromInclusivePrice(bundleItem.price, gstRate) *
+            bundleItem.quantity;
+        } else {
+          // Tax-exclusive: calculate GST on top
+          baseAmount = itemPrice;
+          gstAmount = (baseAmount * gstRate) / 100;
+        }
+
+        if (buyerState) {
+          const isIntraState = isIntraStateTransaction(sellerState, buyerState);
+          if (isIntraState) {
+            // Split GST into CGST and SGST (each is half of total GST)
+            const { cgst, sgst } = calculateCgstSgst(baseAmount, gstRate);
+            totalCgst += cgst;
+            totalSgst += sgst;
+          } else {
+            // Inter-state: use IGST
+            const igst = calculateIgst(baseAmount, gstRate);
+            totalIgst += igst;
+          }
+        } else {
+          // No buyer state - use IGST (inter-state)
+          const igst = calculateIgst(baseAmount, gstRate);
+          totalIgst += igst;
+        }
       }
     }
 
