@@ -7,11 +7,34 @@ import { DiscountResponseDto } from "../../modules/discounts/dto/discount-respon
 
 /**
  * Calculate discount amount based on discount type and value
+ * @param discount - Discount DTO with calculationBasis
+ * @param applicableAmount - Amount to apply discount to (line total or subtotal)
+ * @param gstInfo - Optional GST information for the item(s)
  */
 export function calculateDiscountAmount(
   discount: DiscountResponseDto,
   applicableAmount: number,
+  gstInfo?: { gstRate: number; pricingType: "inclusive" | "exclusive" },
 ): number {
+  let amountToDiscount = applicableAmount;
+
+  // Adjust amount based on calculationBasis and pricing type
+  if (discount.calculationBasis === "TOTAL" && gstInfo) {
+    // Discount should be calculated on total (including GST)
+    if (gstInfo.pricingType === "exclusive") {
+      // Tax-exclusive: add GST to get total
+      amountToDiscount = applicableAmount * (1 + gstInfo.gstRate / 100);
+    }
+    // For tax-inclusive pricing, applicableAmount already includes GST, so use as-is
+  } else if (discount.calculationBasis === "SUBTOTAL" && gstInfo) {
+    // Discount should be calculated on subtotal (excluding GST)
+    if (gstInfo.pricingType === "inclusive") {
+      // Tax-inclusive: extract base price (remove GST)
+      amountToDiscount = applicableAmount / (1 + gstInfo.gstRate / 100);
+    }
+    // For tax-exclusive pricing, applicableAmount is already base price, so use as-is
+  }
+
   if (discount.valueType === DiscountValueType.AMOUNT) {
     // Fixed amount discount
     let discountAmount = discount.value;
@@ -22,10 +45,10 @@ export function calculateDiscountAmount(
     }
 
     // Don't exceed applicable amount
-    return Math.min(discountAmount, applicableAmount);
+    return Math.min(discountAmount, amountToDiscount);
   } else {
     // Percentage discount
-    let discountAmount = (applicableAmount * discount.value) / 100;
+    let discountAmount = (amountToDiscount * discount.value) / 100;
 
     // Apply max discount cap if set
     if (discount.maxDiscountAmount) {

@@ -1,3 +1,7 @@
+import {
+  calculateBasePrice,
+  calculateGstFromInclusivePrice,
+} from "../../../common/utils/gst.utils";
 import { DiscountType } from "../dto/create-discount.dto";
 import { applyCartDiscounts } from "./cart-discount-applier";
 import { resolveConflicts } from "./conflict-resolver";
@@ -172,12 +176,33 @@ export function runDiscountEngine(
   // Cart-level discounts are applied to this subtotal, not the original
   const subtotal = roundToTwoDecimals(subtotalAfterTiered);
 
+  // Calculate total GST amount from original items for cart-level discount calculation
+  // This is needed when calculationBasis is TOTAL
+  let totalGstAmount = 0;
+  for (const item of cart.items) {
+    if (item.gstRate > 0) {
+      if (item.pricingType === "inclusive") {
+        // Extract GST from inclusive price
+        const gstPerUnit = calculateGstFromInclusivePrice(
+          item.price,
+          item.gstRate,
+        );
+        totalGstAmount += gstPerUnit * item.quantity;
+      } else {
+        // Calculate GST on exclusive price
+        const baseAmount = item.price * item.quantity;
+        totalGstAmount += (baseAmount * item.gstRate) / 100;
+      }
+    }
+  }
+
   // Apply cart-level discounts last
   // These are applied to the entire cart subtotal (after product discounts)
   // Example: "10% off entire order" applies to the discounted subtotal
   const { cartDiscounts, subtotalAfterCartDiscounts } = applyCartDiscounts(
     subtotal,
     resolved.cartDiscounts,
+    totalGstAmount,
   );
   steps.push({
     step: "6",

@@ -472,7 +472,7 @@ export class OrdersService {
           // Extract base price from inclusive price
           const basePricePerUnit = calculateBasePrice(
             item.price,
-            item.productGstRate,
+          item.productGstRate,
           );
           baseAmount = basePricePerUnit * item.quantity;
           subtotal += baseAmount;
@@ -485,9 +485,9 @@ export class OrdersService {
         // Calculate GST breakdown
         if (item.productGstRate > 0) {
           const isIntraState = isIntraStateTransaction(
-            sellerState,
-            buyerState,
-          );
+          sellerState,
+          buyerState,
+        );
           if (isIntraState) {
             const { cgst, sgst } = calculateCgstSgst(
               baseAmount,
@@ -533,7 +533,7 @@ export class OrdersService {
               // Extract base price from inclusive price
               const basePricePerUnit = calculateBasePrice(
                 bundleItem.price,
-                product.gstRate,
+              product.gstRate,
               );
               baseAmount = basePricePerUnit * bundleItem.quantity;
               subtotal += baseAmount;
@@ -546,9 +546,9 @@ export class OrdersService {
             // Calculate GST breakdown
             if (product.gstRate > 0) {
               const isIntraState = isIntraStateTransaction(
-                sellerState,
-                buyerState,
-              );
+              sellerState,
+              buyerState,
+            );
               if (isIntraState) {
                 const { cgst, sgst } = calculateCgstSgst(
                   baseAmount,
@@ -559,7 +559,7 @@ export class OrdersService {
               } else {
                 const igst = calculateIgst(baseAmount, product.gstRate);
                 totalIgst += igst;
-              }
+          }
             }
           }
         } else {
@@ -642,11 +642,13 @@ export class OrdersService {
         new Set(variantProductMap.map((v) => v.productId)),
       );
 
-      // Get product details
+      // Get product details (including GST info for discount engine)
       const productDetails = await this.db
         .select({
           productId: products.id,
           categoryId: products.categoryId,
+          gstRate: products.gstRate,
+          pricingType: products.pricingType,
         })
         .from(products)
         .where(inArray(products.id, productIds));
@@ -875,6 +877,10 @@ export class OrdersService {
               : [],
             tagIds: productId ? tagsByProduct.get(productId) || [] : [],
             price: item.price,
+            gstRate: product?.gstRate || 0,
+            pricingType: (product?.pricingType || "exclusive") as
+              | "inclusive"
+              | "exclusive",
             quantity: item.quantity,
           };
         });
@@ -883,7 +889,7 @@ export class OrdersService {
         const flattenedBundleItemsForEngine = flattenedBundleVariants.map(
           (v) => {
             const productId = variantToProduct.get(v.variantId);
-            const _product = productId ? productMap.get(productId) : null;
+            const product = productId ? productMap.get(productId) : null;
             return {
               id: `${v.bundleLineId}-${v.variantId}`, // Unique ID for flattened item
               productVariantId: v.variantId,
@@ -894,6 +900,10 @@ export class OrdersService {
                 : [],
               tagIds: productId ? tagsByProduct.get(productId) || [] : [],
               price: v.basePrice,
+              gstRate: product?.gstRate || 0,
+              pricingType: (product?.pricingType || "exclusive") as
+                | "inclusive"
+                | "exclusive",
               quantity: v.quantity,
             };
           },

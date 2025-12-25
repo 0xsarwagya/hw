@@ -15,6 +15,8 @@ export function createUndiscountedLineItems(
     productVariantId: string;
     productId: string;
     price: number;
+    gstRate: number;
+    pricingType: "inclusive" | "exclusive";
     quantity: number;
   }>,
 ): DiscountedLineItem[] {
@@ -25,6 +27,8 @@ export function createUndiscountedLineItems(
     originalPrice: item.price,
     quantity: item.quantity,
     lineTotal: roundToTwoDecimals(item.price * item.quantity),
+    gstRate: item.gstRate,
+    pricingType: item.pricingType,
     discounts: [],
   }));
 }

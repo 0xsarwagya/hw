@@ -15,6 +15,8 @@ export interface DiscountEngineInput {
       collectionIds: string[];
       tagIds: string[];
       price: number;
+      gstRate: number; // GST rate (0, 5, 12, 18, 28)
+      pricingType: "inclusive" | "exclusive"; // Pricing type
       quantity: number;
     }>;
   };
@@ -36,6 +38,8 @@ export interface DiscountedLineItem {
   originalPrice: number;
   quantity: number;
   lineTotal: number; // after all discounts
+  gstRate: number; // GST rate for calculationBasis support
+  pricingType: "inclusive" | "exclusive"; // Pricing type for calculationBasis support
   discounts: Array<{
     discountId: string;
     discountCode: string;

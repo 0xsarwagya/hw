@@ -76,11 +76,28 @@ function applyTieredPricing(
     }
 
     // Calculate discount based on tier
-    const currentLineTotal = item.lineTotal;
-    let discountAmount = 0;
+    // Adjust amount based on calculationBasis
+    let amountToDiscount = item.lineTotal;
+    if (applicableDiscount.calculationBasis === "TOTAL" && item.gstRate > 0) {
+      if (item.pricingType === "exclusive") {
+        // Tax-exclusive: add GST to get total
+        amountToDiscount = item.lineTotal * (1 + item.gstRate / 100);
+      }
+      // For tax-inclusive pricing, lineTotal already includes GST
+    } else if (
+      applicableDiscount.calculationBasis === "SUBTOTAL" &&
+      item.gstRate > 0
+    ) {
+      if (item.pricingType === "inclusive") {
+        // Tax-inclusive: extract base price (remove GST)
+        amountToDiscount = item.lineTotal / (1 + item.gstRate / 100);
+      }
+      // For tax-exclusive pricing, lineTotal is already base price
+    }
 
+    let discountAmount = 0;
     if (matchingTier.valueType === DiscountValueType.PERCENTAGE) {
-      discountAmount = (currentLineTotal * matchingTier.value) / 100;
+      discountAmount = (amountToDiscount * matchingTier.value) / 100;
     } else {
       discountAmount = matchingTier.value;
     }
@@ -94,7 +111,7 @@ function applyTieredPricing(
     }
 
     const roundedDiscount = roundToTwoDecimals(discountAmount);
-    const newLineTotal = ensureNonNegative(currentLineTotal - roundedDiscount);
+    const newLineTotal = ensureNonNegative(item.lineTotal - roundedDiscount);
 
     return {
       ...item,
@@ -180,6 +197,10 @@ function applyBogoDiscounts(
       const discountAmount = calculateDiscountAmount(
         bogoDiscount,
         applicableAmount,
+        {
+          gstRate: lineItem.gstRate,
+          pricingType: lineItem.pricingType,
+        },
       );
 
       const roundedDiscount = roundToTwoDecimals(discountAmount);

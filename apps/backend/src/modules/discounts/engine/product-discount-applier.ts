@@ -20,6 +20,8 @@ export function applyProductDiscounts(
     collectionIds: string[];
     tagIds: string[];
     price: number;
+    gstRate: number;
+    pricingType: "inclusive" | "exclusive";
     quantity: number;
   }>,
   discounts: DiscountResponseDto[],
@@ -42,6 +44,8 @@ export function applyProductDiscounts(
       originalPrice: item.price,
       quantity: item.quantity,
       lineTotal: item.price * item.quantity,
+      gstRate: item.gstRate,
+      pricingType: item.pricingType,
       discounts: [],
     }));
   }
@@ -93,6 +97,10 @@ export function applyProductDiscounts(
       const discountAmount = calculateDiscountAmount(
         highestPriority,
         currentLineTotal,
+        {
+          gstRate: item.gstRate,
+          pricingType: item.pricingType,
+        },
       );
       const roundedDiscount = roundToTwoDecimals(discountAmount);
       currentLineTotal = ensureNonNegative(currentLineTotal - roundedDiscount);
@@ -109,6 +117,10 @@ export function applyProductDiscounts(
       const discountAmount = calculateDiscountAmount(
         discount,
         currentLineTotal, // Apply to already discounted amount
+        {
+          gstRate: item.gstRate,
+          pricingType: item.pricingType,
+        },
       );
       const roundedDiscount = roundToTwoDecimals(discountAmount);
       currentLineTotal = ensureNonNegative(currentLineTotal - roundedDiscount);
@@ -130,6 +142,8 @@ export function applyProductDiscounts(
       originalPrice: item.price,
       quantity: item.quantity,
       lineTotal: finalLineTotal,
+      gstRate: item.gstRate,
+      pricingType: item.pricingType,
       discounts: appliedDiscounts,
     };
   });

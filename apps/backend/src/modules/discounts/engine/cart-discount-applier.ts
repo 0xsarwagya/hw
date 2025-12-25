@@ -7,10 +7,14 @@ import { ensureNonNegative, roundToTwoDecimals } from "./rounding.utils";
 /**
  * Apply cart-level discounts to subtotal
  * Cart discounts are applied AFTER product-level and tiered/BOGO discounts
+ * @param subtotal - Subtotal after product/tiered discounts (base price, excluding GST)
+ * @param discounts - Cart-level discounts to apply
+ * @param totalGstAmount - Total GST amount from original items (for TOTAL calculationBasis)
  */
 export function applyCartDiscounts(
   subtotal: number,
   discounts: DiscountResponseDto[],
+  totalGstAmount: number = 0,
 ): {
   cartDiscounts: AppliedCartDiscount[];
   subtotalAfterCartDiscounts: number;
@@ -55,9 +59,14 @@ export function applyCartDiscounts(
     const highestPriority = nonStackableDiscounts.reduce((prev, curr) =>
       prev.priority < curr.priority ? prev : curr,
     );
+    // For TOTAL calculationBasis, calculate discount on (subtotal + GST)
+    const applicableAmount =
+      highestPriority.calculationBasis === "TOTAL"
+        ? currentSubtotal + totalGstAmount
+        : currentSubtotal;
     const discountAmount = calculateDiscountAmount(
       highestPriority,
-      currentSubtotal,
+      applicableAmount,
     );
     const roundedDiscount = roundToTwoDecimals(discountAmount);
     currentSubtotal = ensureNonNegative(currentSubtotal - roundedDiscount);
@@ -71,9 +80,14 @@ export function applyCartDiscounts(
 
   // Apply stackable discounts (all eligible)
   for (const discount of stackableDiscounts) {
+    // For TOTAL calculationBasis, calculate discount on (subtotal + GST)
+    const applicableAmount =
+      discount.calculationBasis === "TOTAL"
+        ? currentSubtotal + totalGstAmount
+        : currentSubtotal;
     const discountAmount = calculateDiscountAmount(
       discount,
-      currentSubtotal, // Apply to already discounted subtotal
+      applicableAmount, // Apply to already discounted subtotal
     );
     const roundedDiscount = roundToTwoDecimals(discountAmount);
     currentSubtotal = ensureNonNegative(currentSubtotal - roundedDiscount);

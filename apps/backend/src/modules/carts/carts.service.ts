@@ -631,6 +631,8 @@ export class CartsService {
     // Build cart items with full metadata for discount engine (variant items + flattened bundles)
     const variantItemsForEngine = variantItemsWithProducts.map((item) => {
       const product = productMap.get(item.productId);
+      const gstRate = gstRateMap.get(item.productId) || 0;
+      const pricingType = pricingTypeMap.get(item.productId) || "exclusive";
       return {
         id: item.id,
         productVariantId: item.productVariantId,
@@ -639,6 +641,8 @@ export class CartsService {
         collectionIds: collectionsByProduct.get(item.productId) || [],
         tagIds: tagsByProduct.get(item.productId) || [],
         price: item.price,
+        gstRate,
+        pricingType,
         quantity: item.quantity,
       };
     });
@@ -647,6 +651,10 @@ export class CartsService {
     const enrichedFlattenedBundleItems = flattenedBundleItems.map((item) => {
       const productId = variantToProduct.get(item.productVariantId);
       const product = productId ? productMap.get(productId) : null;
+      const gstRate = productId ? gstRateMap.get(productId) || 0 : 0;
+      const pricingType = productId
+        ? pricingTypeMap.get(productId) || "exclusive"
+        : "exclusive";
       return {
         ...item,
         productId: productId || "",
@@ -655,6 +663,8 @@ export class CartsService {
           ? collectionsByProduct.get(productId) || []
           : [],
         tagIds: productId ? tagsByProduct.get(productId) || [] : [],
+        gstRate,
+        pricingType,
       };
     });
 
@@ -757,7 +767,10 @@ export class CartsService {
       discountAmount = 0;
     }
 
-    // Calculate total after discount (discount applies to subtotal before GST)
+    // Calculate total after discount
+    // Note: discountAmount is calculated by discount engine based on calculationBasis
+    // (SUBTOTAL = discount on base price, TOTAL = discount on base price + GST)
+    // The formula (subtotal - discountAmount) + GST works correctly for both cases
     const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
     const total = subtotalAfterDiscount + totalGstAmount;
 
