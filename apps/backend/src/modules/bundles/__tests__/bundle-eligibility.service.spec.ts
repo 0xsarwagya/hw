@@ -143,11 +143,11 @@ describe("BundleEligibilityService", () => {
       );
     });
 
-    it("should reject selection with duplicates in same set", async () => {
+    it("should allow selection with duplicates in same set", async () => {
       mockBundleDefinitionService.findOne.mockResolvedValue(mockBundle);
 
       const selection: UserBundleSelection = {
-        "set-1": ["variant-1", "variant-1"],
+        "set-1": ["variant-1", "variant-1"], // Duplicate variant allowed
         "set-2": ["variant-3"],
       };
 
@@ -156,8 +156,8 @@ describe("BundleEligibilityService", () => {
         selection,
       );
 
-      expect(result.isValid).toBe(false);
-      expect(result.errors.some((e) => e.includes("duplicate"))).toBe(true);
+      expect(result.isValid).toBe(true);
+      expect(result.errors.some((e) => e.includes("duplicate"))).toBe(false);
     });
 
     it("should return errors if bundle not found", async () => {

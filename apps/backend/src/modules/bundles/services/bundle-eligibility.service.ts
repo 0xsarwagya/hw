@@ -88,11 +88,8 @@ export class BundleEligibilityService {
         );
       }
 
-      // Check for duplicates within set selection
-      const uniqueVariants = new Set(selectedVariants);
-      if (uniqueVariants.size !== selectedVariants.length) {
-        errors.push(`Set "${set.title}" has duplicate variants in selection`);
-      }
+      // Note: Duplicates are allowed - users can select the same variant multiple times
+      // This enables scenarios like "2x Baby Blue L" or "3x Red M"
 
       // Validate each variant is allowed in the set
       const allowedVariantIds = set.items.map((item) => item.variantId);
