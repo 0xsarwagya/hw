@@ -11,14 +11,24 @@ export async function POST(request: NextRequest) {
       .map((c) => `${c.name}=${c.value}`)
       .join("; ");
 
+    // Get admin access token from cookies and add as Authorization header
+    // This ensures authentication works even if cookies aren't properly forwarded
+    const accessToken = cookieStore.get("admin_access_token")?.value;
+    const headers: HeadersInit = {
+      Cookie: cookieHeader,
+    };
+
+    // Add Authorization header if token exists (JWT strategy supports both cookies and Bearer token)
+    if (accessToken) {
+      headers.Authorization = `Bearer ${accessToken}`;
+    }
+
     const formData = await request.formData();
     const url = `${API_URL}/admin/storage/upload`;
 
     const response = await fetch(url, {
       method: "POST",
-      headers: {
-        Cookie: cookieHeader,
-      },
+      headers,
       credentials: "include",
       body: formData,
     });
