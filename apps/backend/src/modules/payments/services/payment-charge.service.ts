@@ -349,6 +349,7 @@ export class PaymentChargeService {
     if (
       chargeConfig.codMaxAmount !== null &&
       chargeConfig.codMaxAmount !== undefined &&
+      chargeConfig.codMaxAmount > 0 &&
       cartTotal > chargeConfig.codMaxAmount
     ) {
       return {

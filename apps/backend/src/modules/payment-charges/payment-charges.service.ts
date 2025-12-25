@@ -252,9 +252,9 @@ export class PaymentChargesService {
     mixMin?: number;
   }) {
     if (dto.chargeType === "FLAT") {
-      if (dto.flatAmount <= 0) {
+      if (dto.flatAmount < 0) {
         throw new BadRequestException(
-          "Flat amount must be greater than 0 for FLAT charge type",
+          "Flat amount cannot be negative for FLAT charge type",
         );
       }
     } else if (dto.chargeType === "PERCENTAGE") {
