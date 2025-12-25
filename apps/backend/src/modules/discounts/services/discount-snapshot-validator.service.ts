@@ -10,12 +10,12 @@ export class DiscountSnapshotValidator {
 
   /**
    * Validate snapshot integrity
-   * Ensures snapshot is valid and matches payment intent amount
+   * Validates snapshot structure and metadata (version, hash, fields)
+   * Note: Amount validation should be done separately where actual payment data is available
    */
   validateSnapshot(
     snapshot: DiscountSnapshot | null,
     appliedDiscounts: DiscountResponseDto[],
-    paymentIntentAmount: number,
   ): void {
     if (!snapshot) {
       throw new BadRequestException("Discount snapshot is required");
@@ -69,12 +69,9 @@ export class DiscountSnapshotValidator {
       }
     }
 
-    // Validate snapshot totals match payment intent amount (within rounding tolerance)
-    const tolerance = 0.01; // 1 paisa tolerance for rounding
-    if (Math.abs(snapshot.total - paymentIntentAmount) > tolerance) {
-      throw new BadRequestException(
-        `Snapshot total (${snapshot.total}) does not match payment intent amount (${paymentIntentAmount}). Difference: ${Math.abs(snapshot.total - paymentIntentAmount)}`,
-      );
-    }
+    // Note: Amount validation is not done here because snapshot.total represents
+    // subtotal after discounts only, not the full payment amount (which includes
+    // GST, shipping, and payment fee). Amount validation should be done where
+    // actual payment data is available (e.g., in finalizeOrderFromPayment).
   }
 }

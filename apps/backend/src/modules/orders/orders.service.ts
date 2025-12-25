@@ -1713,6 +1713,10 @@ export class OrdersService {
     const totalGstAmount = totalCgst + totalSgst + totalIgst;
     const shippingCost = metadata.shippingCost;
 
+    // Extract payment fee from metadata (needed for snapshot validation)
+    // For COD orders, payment fee should typically be 0, but extract it for consistency
+    const paymentFee = metadata.paymentFee || 0;
+
     // Use discount snapshot from checkout metadata
     let discountAmount = 0;
     let discountCode: string | null = null;
@@ -1733,14 +1737,11 @@ export class OrdersService {
         }
       }
 
-      // Validate snapshot integrity
-      const snapshotTotal =
-        metadata.discountSnapshot.total + totalGstAmount + shippingCost;
-
+      // Validate snapshot integrity (structure only, not amounts)
+      // Amount validation happens separately where actual payment data is available
       this.discountSnapshotValidator.validateSnapshot(
         metadata.discountSnapshot,
         [],
-        snapshotTotal,
       );
 
       discountAmount = metadata.discountSnapshot.discountTotal;
@@ -1779,17 +1780,17 @@ export class OrdersService {
     }
     const subtotalAfterDiscount = Math.max(0, finalSubtotal - discountAmount);
 
-    // Get payment fee from metadata (already calculated, in rupees)
-    const paymentFeeInRupees = metadata.paymentFee || 0;
+    // Payment fee already extracted earlier for validation
+    // Extract payment method and breakdown from metadata
     const paymentMethod = metadata.paymentMethod;
     const paymentFeeBreakdown = metadata.paymentFeeBreakdown || null;
 
     // Include payment fee in total (already in rupees)
     const total =
-      subtotalAfterDiscount + totalGstAmount + shippingCost + paymentFeeInRupees;
+      subtotalAfterDiscount + totalGstAmount + shippingCost + paymentFee;
     
     // Convert payment fee to paise for database storage
-    const paymentFeeInPaise = Math.round(paymentFeeInRupees * 100);
+    const paymentFeeInPaise = Math.round(paymentFee * 100);
 
     // Generate order number
     const orderNumber = await this.generateOrderNumber();
@@ -2454,6 +2455,26 @@ export class OrdersService {
     const totalGstAmount = totalCgst + totalSgst + totalIgst;
     const shippingCost = metadata.shippingCost;
 
+    // Extract payment fee from metadata (needed for snapshot validation)
+    // Payment fee should already be calculated and stored in metadata during checkout
+    let paymentFee = 0;
+    if (metadata.paymentFee !== undefined) {
+      paymentFee = metadata.paymentFee;
+    } else if (metadata.paymentMethod) {
+      // Payment method selected but fee not in metadata - calculate it now
+      // Use discount snapshot total as base for calculation
+      const baseSubtotal = metadata.discountSnapshot?.total || 0;
+      const cartTotalInPaise = Math.round(
+        (baseSubtotal + totalGstAmount + shippingCost) * 100,
+      );
+      const { fee } = await this.paymentChargeService.calculateFee(
+        metadata.paymentMethod,
+        cartTotalInPaise,
+        "INR",
+      );
+      paymentFee = fee / 100; // Convert from paise to rupees
+    }
+
     // Use discount snapshot from checkout metadata (don't recalculate)
     // This ensures consistency between payment intent and order creation
     let discountAmount = 0;
@@ -2475,16 +2496,11 @@ export class OrdersService {
         }
       }
 
-      // Validate snapshot integrity
-      // Note: Payment intent amount validation is skipped as amount is not stored in PaymentIntent
-      // The snapshot total itself is what was sent to payment provider, so we validate snapshot structure
-      const snapshotTotal =
-        metadata.discountSnapshot.total + totalGstAmount + shippingCost;
-
+      // Validate snapshot integrity (structure only, not amounts)
+      // Amount validation happens separately where actual payment data is available
       this.discountSnapshotValidator.validateSnapshot(
         metadata.discountSnapshot,
         [], // Applied discounts not needed for validation (snapshot already contains them)
-        snapshotTotal, // Use snapshot total + GST + shipping for validation
       );
 
       discountAmount = metadata.discountSnapshot.discountTotal;
@@ -2533,21 +2549,22 @@ export class OrdersService {
     }
     const subtotalAfterDiscount = Math.max(0, finalSubtotal - discountAmount);
 
-    // Calculate payment fee
-    let paymentFee = 0;
+    // Extract payment method and fee breakdown (paymentFee already extracted earlier for validation)
     let paymentMethod: string | null = null;
     let paymentFeeBreakdown: PaymentFeeBreakdownDto | null = null;
     const _paymentFeeCurrency = "INR"; // Default currency (TODO: Get from store config)
 
     if (metadata.paymentMethod && metadata.paymentFee !== undefined) {
       // Use payment fee from metadata (already calculated during checkout, in rupees)
-      paymentFee = metadata.paymentFee;
+      // paymentFee already set earlier, just extract method and breakdown
       paymentMethod = metadata.paymentMethod;
       paymentFeeBreakdown = metadata.paymentFeeBreakdown || null;
       // TODO: Get currency from metadata or store config
       // For now, default to INR
     } else if (metadata.paymentMethod) {
-      // Payment method selected but fee not calculated - calculate it now
+      // Payment method selected but fee not in metadata - recalculate with accurate subtotal
+      // Note: paymentFee was already calculated earlier using snapshot total for validation
+      // Recalculate here using actual subtotalAfterDiscount for accuracy
       const cartTotalInPaise = Math.round(
         (subtotalAfterDiscount + totalGstAmount + shippingCost) * 100,
       );
@@ -2556,7 +2573,7 @@ export class OrdersService {
         cartTotalInPaise,
         "INR", // TODO: Get currency from store config
       );
-      // Convert fee from paise to rupees
+      // Update paymentFee with more accurate calculation (using actual subtotal)
       paymentFee = fee / 100;
       paymentMethod = metadata.paymentMethod;
       // Convert breakdown from paise to rupees
@@ -2569,12 +2586,72 @@ export class OrdersService {
         mixMin: breakdown.mixMin ? breakdown.mixMin / 100 : undefined,
         mixCap: breakdown.mixCap ? breakdown.mixCap / 100 : undefined,
       };
+    } else {
+      // Extract payment method even if fee is 0
+      paymentMethod = metadata.paymentMethod || null;
     }
 
     // Include payment fee in total (already in rupees)
     const total =
       subtotalAfterDiscount + totalGstAmount + shippingCost + paymentFee;
-    
+
+    // Validate payment amount matches expected amount
+    // Fetch actual payment amount from Razorpay and compare with expected
+    try {
+      const razorpayOrder = await this.paymentsService.getRazorpayOrderDetails(
+        paymentIntentId,
+      );
+      const actualPaymentAmountInPaise = razorpayOrder.amount; // Amount in paise from Razorpay
+      const actualPaymentAmount = actualPaymentAmountInPaise / 100; // Convert to rupees
+      const expectedPaymentAmount = total; // Expected amount in rupees
+
+      const tolerance = 0.01; // 1 paisa tolerance for rounding
+      const difference = Math.abs(expectedPaymentAmount - actualPaymentAmount);
+
+      if (difference > tolerance) {
+        this.logger.error(
+          createErrorContext(
+            this.contextService,
+            "paymentAmountValidation",
+            new Error("Payment amount mismatch"),
+            {
+              checkoutSessionId,
+              paymentIntentId,
+              expectedPaymentAmount,
+              actualPaymentAmount,
+              difference,
+              components: {
+                subtotalAfterDiscount,
+                totalGstAmount,
+                shippingCost,
+                paymentFee,
+              },
+            },
+          ),
+          "Payment amount validation failed",
+        );
+        throw new BadRequestException(
+          `Expected payment amount (${expectedPaymentAmount}) does not match actual payment amount (${actualPaymentAmount}). Difference: ${difference}`,
+        );
+      }
+    } catch (error) {
+      // If error is already BadRequestException (from validation), rethrow it
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      // If fetching Razorpay order fails, log warning but continue
+      // This allows order creation even if Razorpay API is temporarily unavailable
+      this.logger.warn(
+        createErrorContext(
+          this.contextService,
+          "fetchRazorpayOrderForValidation",
+          error,
+          { paymentIntentId, checkoutSessionId },
+        ),
+        "Failed to fetch Razorpay order for amount validation, continuing with order creation",
+      );
+    }
+
     // Convert payment fee to paise for database storage
     const paymentFeeInPaise = Math.round(paymentFee * 100);
 
