@@ -53,7 +53,7 @@ export interface CheckoutMetadata {
   paymentMethod?: string;
 
   /**
-   * Payment fee in paise
+   * Payment fee in rupees (matching API response format)
    */
   paymentFee?: number;
 

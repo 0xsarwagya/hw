@@ -423,12 +423,20 @@ export class CheckoutController {
           `Checkout metadata for session ${dto.checkoutSessionId} not found`,
         );
       }
-      // Store fee in paise in metadata (for database consistency)
+      // Store fee in rupees in metadata (matching API response format)
       await this.checkoutStore.storeCheckoutMetadata(dto.checkoutSessionId, {
         ...metadata,
         paymentMethod: dto.paymentMethod,
-        paymentFee: fee, // Store in paise for database consistency
-        paymentFeeBreakdown: breakdown, // Breakdown also in paise
+        paymentFee: fee / 100, // Store in rupees to match API response
+        paymentFeeBreakdown: {
+          ...breakdown,
+          flatAmount: breakdown.flatAmount
+            ? breakdown.flatAmount / 100
+            : undefined,
+          calculatedFee: breakdown.calculatedFee / 100,
+          mixMin: breakdown.mixMin ? breakdown.mixMin / 100 : undefined,
+          mixCap: breakdown.mixCap ? breakdown.mixCap / 100 : undefined,
+        }, // Breakdown also in rupees
       });
     }
 

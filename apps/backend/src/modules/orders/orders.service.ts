@@ -1070,9 +1070,9 @@ export class OrdersService {
         if (existingMetadata?.paymentMethod) {
           paymentMethod = existingMetadata.paymentMethod;
         }
-        // Get payment fee if available
+        // Get payment fee if available (in rupees from metadata)
         if (existingMetadata?.paymentFee !== undefined) {
-          paymentFee = existingMetadata.paymentFee; // Already in paise
+          paymentFee = existingMetadata.paymentFee; // In rupees
           paymentFeeBreakdown = existingMetadata.paymentFeeBreakdown;
         }
       }
@@ -1171,12 +1171,12 @@ export class OrdersService {
         };
       }
 
-      // Include payment fee in total (convert from paise to rupees)
+      // Include payment fee in total (already in rupees)
       const total =
         subtotalAfterDiscount +
         totalGstAmount +
         shippingCost +
-        paymentFee / 100;
+        paymentFee;
 
       // Verify payment intent amount calculation includes fee
       const expectedAmountInPaise = Math.round(total * 100);
@@ -1184,7 +1184,7 @@ export class OrdersService {
         subtotalAfterDiscount: Math.round(subtotalAfterDiscount * 100),
         totalGstAmount: Math.round(totalGstAmount * 100),
         shippingCost: Math.round(shippingCost * 100),
-        paymentFee,
+        paymentFee: Math.round(paymentFee * 100), // Convert to paise for logging
         total: expectedAmountInPaise,
       };
 
@@ -1268,7 +1268,7 @@ export class OrdersService {
         const expectedAmount =
           Math.round(
             (subtotalAfterDiscount + totalGstAmount + shippingCost) * 100,
-          ) + paymentFee;
+          ) + Math.round(paymentFee * 100); // Convert paymentFee from rupees to paise
         if (amountInPaise !== expectedAmount) {
           this.logger.error(
             createErrorContext(
@@ -1279,7 +1279,7 @@ export class OrdersService {
                 checkoutSessionId,
                 amountInPaise,
                 expectedAmount,
-                paymentFee,
+                paymentFee: Math.round(paymentFee * 100), // Convert to paise for logging
                 subtotalAfterDiscount,
                 totalGstAmount,
                 shippingCost,
@@ -1299,7 +1299,7 @@ export class OrdersService {
           undefined, // receipt will be generated from checkoutSessionId
           {
             order_number: `pending-${Date.now()}`, // Temporary, will be updated after order creation
-            payment_fee: paymentFee.toString(), // Store fee in notes for verification
+            payment_fee: Math.round(paymentFee * 100).toString(), // Store fee in paise in notes for verification
             payment_method: paymentMethod || "unknown",
           },
         );
@@ -1364,13 +1364,13 @@ export class OrdersService {
             paymentIntentId: paymentIntent.paymentIntentId,
             amount: amountInPaise,
             currency: "INR",
-            paymentFee,
+            paymentFee: Math.round(paymentFee * 100), // Convert to paise for payment intent
             paymentMethod,
             components: {
               subtotal: Math.round(subtotalAfterDiscount * 100),
               gst: Math.round(totalGstAmount * 100),
               shipping: Math.round(shippingCost * 100),
-              fee: paymentFee,
+              fee: Math.round(paymentFee * 100), // Convert to paise
               total: amountInPaise,
             },
           }),
@@ -1779,17 +1779,37 @@ export class OrdersService {
     }
     const subtotalAfterDiscount = Math.max(0, finalSubtotal - discountAmount);
 
-    // Get payment fee from metadata (already calculated)
-    const paymentFee = metadata.paymentFee || 0;
+    // Get payment fee from metadata (already calculated, in rupees)
+    const paymentFeeInRupees = metadata.paymentFee || 0;
     const paymentMethod = metadata.paymentMethod;
     const paymentFeeBreakdown = metadata.paymentFeeBreakdown || null;
 
-    // Include payment fee in total (convert from paise to rupees)
+    // Include payment fee in total (already in rupees)
     const total =
-      subtotalAfterDiscount + totalGstAmount + shippingCost + paymentFee / 100;
+      subtotalAfterDiscount + totalGstAmount + shippingCost + paymentFeeInRupees;
+    
+    // Convert payment fee to paise for database storage
+    const paymentFeeInPaise = Math.round(paymentFeeInRupees * 100);
 
     // Generate order number
     const orderNumber = await this.generateOrderNumber();
+
+    // Convert payment fee breakdown to paise for database storage
+    const paymentFeeBreakdownInPaise = paymentFeeBreakdown
+      ? {
+          ...paymentFeeBreakdown,
+          flatAmount: paymentFeeBreakdown.flatAmount
+            ? Math.round(paymentFeeBreakdown.flatAmount * 100)
+            : undefined,
+          calculatedFee: Math.round(paymentFeeBreakdown.calculatedFee * 100),
+          mixMin: paymentFeeBreakdown.mixMin
+            ? Math.round(paymentFeeBreakdown.mixMin * 100)
+            : undefined,
+          mixCap: paymentFeeBreakdown.mixCap
+            ? Math.round(paymentFeeBreakdown.mixCap * 100)
+            : undefined,
+        }
+      : null;
 
     // Create order in database
     const [order] = await this.db
@@ -1803,9 +1823,9 @@ export class OrdersService {
         discountCode,
         discountAmount,
         shippingCost,
-        paymentFee,
+        paymentFee: paymentFeeInPaise,
         paymentMethod,
-        paymentFeeBreakdown,
+        paymentFeeBreakdown: paymentFeeBreakdownInPaise,
         total,
         shippingAddressId: metadata.shippingAddressId,
         billingAddressId: metadata.billingAddressId,
@@ -2520,7 +2540,7 @@ export class OrdersService {
     const _paymentFeeCurrency = "INR"; // Default currency (TODO: Get from store config)
 
     if (metadata.paymentMethod && metadata.paymentFee !== undefined) {
-      // Use payment fee from metadata (already calculated during checkout)
+      // Use payment fee from metadata (already calculated during checkout, in rupees)
       paymentFee = metadata.paymentFee;
       paymentMethod = metadata.paymentMethod;
       paymentFeeBreakdown = metadata.paymentFeeBreakdown || null;
@@ -2536,14 +2556,44 @@ export class OrdersService {
         cartTotalInPaise,
         "INR", // TODO: Get currency from store config
       );
-      paymentFee = fee;
+      // Convert fee from paise to rupees
+      paymentFee = fee / 100;
       paymentMethod = metadata.paymentMethod;
-      paymentFeeBreakdown = breakdown;
+      // Convert breakdown from paise to rupees
+      paymentFeeBreakdown = {
+        ...breakdown,
+        flatAmount: breakdown.flatAmount
+          ? breakdown.flatAmount / 100
+          : undefined,
+        calculatedFee: breakdown.calculatedFee / 100,
+        mixMin: breakdown.mixMin ? breakdown.mixMin / 100 : undefined,
+        mixCap: breakdown.mixCap ? breakdown.mixCap / 100 : undefined,
+      };
     }
 
-    // Include payment fee in total (convert from paise to rupees)
+    // Include payment fee in total (already in rupees)
     const total =
-      subtotalAfterDiscount + totalGstAmount + shippingCost + paymentFee / 100;
+      subtotalAfterDiscount + totalGstAmount + shippingCost + paymentFee;
+    
+    // Convert payment fee to paise for database storage
+    const paymentFeeInPaise = Math.round(paymentFee * 100);
+
+    // Convert payment fee breakdown to paise for database storage
+    const paymentFeeBreakdownInPaise = paymentFeeBreakdown
+      ? {
+          ...paymentFeeBreakdown,
+          flatAmount: paymentFeeBreakdown.flatAmount
+            ? Math.round(paymentFeeBreakdown.flatAmount * 100)
+            : undefined,
+          calculatedFee: Math.round(paymentFeeBreakdown.calculatedFee * 100),
+          mixMin: paymentFeeBreakdown.mixMin
+            ? Math.round(paymentFeeBreakdown.mixMin * 100)
+            : undefined,
+          mixCap: paymentFeeBreakdown.mixCap
+            ? Math.round(paymentFeeBreakdown.mixCap * 100)
+            : undefined,
+        }
+      : null;
 
     // Generate order number
     const orderNumber = await this.generateOrderNumber();
@@ -2563,9 +2613,9 @@ export class OrdersService {
           discountCode,
           discountAmount,
           shippingCost,
-          paymentFee, // Payment fee in paise
+          paymentFee: paymentFeeInPaise, // Payment fee in paise
           paymentMethod, // Selected payment method
-          paymentFeeBreakdown, // Payment fee breakdown
+          paymentFeeBreakdown: paymentFeeBreakdownInPaise, // Payment fee breakdown in paise
           total,
           shippingAddressId: metadata.shippingAddressId,
           billingAddressId: metadata.billingAddressId,
