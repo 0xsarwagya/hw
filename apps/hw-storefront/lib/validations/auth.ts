@@ -5,14 +5,14 @@ import { z } from "zod";
  */
 
 export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  email: z.string().min(1, "Email or phone is required"),
+  password: z.string().min(8, "Password must be at least 8 characters long"),
 });
 
 export const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  role: z.enum(["customer", "admin"]).default("customer"),
+  email: z.string().email("Email must be a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters long"),
+  role: z.enum(["admin", "customer"]).optional().default("customer"),
 });
 
 export const authResponseSchema = z.object({
@@ -23,7 +23,7 @@ export const authResponseSchema = z.object({
 export const userProfileSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
-  role: z.string(),
+  role: z.enum(["admin", "customer"]),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;

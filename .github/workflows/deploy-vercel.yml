@@ -1,0 +1,138 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID_HW_STOREFRONT: ${{ secrets.VERCEL_PROJECT_ID_HW_STOREFRONT }}
+  VERCEL_PROJECT_ID_ADMIN: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # Required for Turborepo change detection
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Link Vercel Project (HW Storefront)
+        run: |
+          vercel link --yes --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }} --project=${{ secrets.VERCEL_PROJECT_ID_HW_STOREFRONT }}
+        working-directory: apps/hw-storefront
+
+      - name: Link Vercel Project (Admin)
+        run: |
+          vercel link --yes --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }} --project=${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
+        working-directory: apps/admin
+
+      - name: Determine Vercel Environment
+        id: vercel-env
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ] || [ "${{ github.ref }}" = "refs/heads/master" ]; then
+            echo "VERCEL_ENV=production" >> $GITHUB_ENV
+            echo "env=production" >> $GITHUB_OUTPUT
+          else
+            echo "VERCEL_ENV=preview" >> $GITHUB_ENV
+            echo "env=preview" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Turbo CI Pipeline
+        run: pnpm turbo run ci --filter=@vestcodes/vcecom-hw-storefront --filter=@vestcodes/vcecom-admin
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID_HW_STOREFRONT: ${{ secrets.VERCEL_PROJECT_ID_HW_STOREFRONT }}
+          VERCEL_PROJECT_ID_ADMIN: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
+
+      - name: Comment PR with Deployment URLs
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            let comment = '## 🚀 Deployment URLs\n\n';
+            let hasDeployments = false;
+            
+            // Check for hw-storefront deployment
+            const storefrontUrlPath = path.join('apps/hw-storefront', '_tmp_deployment-url.txt');
+            if (fs.existsSync(storefrontUrlPath)) {
+              const url = fs.readFileSync(storefrontUrlPath, 'utf8').trim();
+              if (url) {
+                comment += `- **HW Storefront**: ${url}\n`;
+                hasDeployments = true;
+              }
+            }
+            
+            // Check for admin deployment
+            const adminUrlPath = path.join('apps/admin', '_tmp_deployment-url.txt');
+            if (fs.existsSync(adminUrlPath)) {
+              const url = fs.readFileSync(adminUrlPath, 'utf8').trim();
+              if (url) {
+                comment += `- **Admin**: ${url}\n`;
+                hasDeployments = true;
+              }
+            }
+            
+            if (!hasDeployments) {
+              comment += 'No deployments were created (no changes detected or deployment skipped).\n';
+            }
+            
+            // Find existing comment
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.data.find(
+              comment => comment.user.type === 'Bot' && comment.body.includes('🚀 Deployment URLs')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+

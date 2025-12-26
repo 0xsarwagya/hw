@@ -26,6 +26,7 @@ export const productSchema = z.object({
   status: z.enum(["draft", "active", "archived"]),
   categoryId: z.string().uuid().nullable(),
   images: z.array(z.string()).nullable().optional(),
+  thumbnailUrl: z.string().nullable().optional(),
   pricelistPrices: z.array(pricelistPriceSchema).nullable().optional(),
   createdAt: z.string().datetime().or(z.date()),
   updatedAt: z.string().datetime().or(z.date()),
@@ -44,7 +45,7 @@ export const paginatedProductsSchema = z.object({
 export const variantSchema = z.object({
   id: z.string().uuid(),
   productId: z.string().uuid(),
-  sku: z.string().nullable(),
+  sku: z.string(), // Backend returns non-nullable string
   price: z.number(),
   compareAtPrice: z.number().nullable(),
   currency: z.string().default("INR"),
@@ -61,13 +62,17 @@ export const variantSchema = z.object({
 
 export const reviewSchema = z.object({
   id: z.string().uuid(),
+  customerId: z.string().uuid(),
+  customerName: z.string(),
+  orderId: z.string().uuid(),
   variantId: z.string().uuid(),
-  customerId: z.string().uuid().nullable(),
   rating: z.number().min(1).max(5),
-  title: z.string().nullable(),
-  comment: z.string().nullable(),
-  verifiedPurchase: z.boolean(),
+  title: z.string().nullable().optional(),
+  body: z.string(), // Backend uses 'body' not 'comment'
+  images: z.array(z.string()).nullable().optional(),
+  status: z.enum(["pending", "approved", "rejected"]),
   helpfulCount: z.number(),
+  isHelpful: z.boolean().optional(),
   createdAt: z.string().datetime().or(z.date()),
   updatedAt: z.string().datetime().or(z.date()),
 });

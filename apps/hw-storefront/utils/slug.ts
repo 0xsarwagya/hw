@@ -41,7 +41,7 @@ export function extractIdFromSlug(slug: string): string | null {
   const uuidPattern =
     /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
   const match = slug.match(uuidPattern);
-  if (match) return match[1];
+  if (match && match[1]) return match[1];
 
   // If slug ends with short ID (8 chars), we can't reconstruct full ID
   // So we'll need to search by slugified title

@@ -50,6 +50,33 @@
     "//#format-and-lint": {},
     "//#format-and-lint:fix": {
       "cache": false
+    },
+    "ci": {
+      "dependsOn": ["^prebuild", "^test", "test", "^build", "build"],
+      "inputs": [
+        "public/**",
+        "app/**",
+        "components/**",
+        "lib/**",
+        "hooks/**",
+        "package.json",
+        "tsconfig.json",
+        "next.config.ts",
+        "tailwind.config.js",
+        "postcss.config.mjs"
+      ],
+      "outputs": [
+        ".vercel/output",
+        "_tmp_deployment-url.txt",
+        "_tmp_error.txt"
+      ],
+      "env": [
+        "VERCEL_TOKEN",
+        "VERCEL_ENV",
+        "VERCEL_ORG_ID",
+        "VERCEL_PROJECT_ID_HW_STOREFRONT",
+        "VERCEL_PROJECT_ID_ADMIN"
+      ]
     }
   }
 }

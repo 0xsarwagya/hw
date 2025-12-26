@@ -68,7 +68,7 @@ export const paymentMethodSchema = z.object({
   available: z.boolean(),
   fee: z.number(),
   breakdown: paymentFeeBreakdownSchema, // Backend returns 'breakdown', not 'feeBreakdown'
-  unavailableReason: z.string().optional(),
+  unavailableReason: z.string().optional(), // Reason when available is false
   // Optional fields that may not be present
   description: z.string().nullable().optional(),
   restrictions: z

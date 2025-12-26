@@ -1,3 +1,4 @@
+import { useQueries } from "@tanstack/react-query";
 import React, {
   createContext,
   ReactNode,
@@ -14,6 +15,7 @@ import {
   useProducts,
   useRegister,
   useReviews,
+  QUERY_KEYS,
 } from "../hooks/useApi";
 import {
   useAddToCart,
@@ -23,9 +25,10 @@ import {
   useUpdateCartItem,
 } from "../hooks/useCart";
 import { useCustomerProfile } from "../hooks/useCustomer";
+import { endpoints, get } from "../lib/api/client";
+import { productSchema, variantSchema } from "../lib/validations/product";
 import { isAuthenticated } from "../lib/utils/storage";
 import { Address, CartItem, Order, Product, Review, User } from "../types";
-import { createProductSlug } from "../utils/slug";
 
 interface ShopContextType {
   products: Product[];
@@ -48,7 +51,14 @@ interface ShopContextType {
   removeFromCart: (cartId: string) => void;
   updateQuantity: (cartId: string, delta: number) => void;
   clearCart: () => void;
-  addReview: (review: Review) => void;
+  addReview: (review: {
+    variantId: string;
+    orderId: string;
+    rating: number;
+    title?: string;
+    body: string;
+    images?: string[];
+  }) => void;
   addOrder: (order: Order) => void;
   getOrder: (orderId: string) => Order | undefined;
   updateUserProfile: (data: Partial<User>) => void;
@@ -69,6 +79,7 @@ export const productMapper = (
   variants: any[] = [],
 ): Product => {
   // Get images array - handle null, undefined, or empty arrays
+  // This is used for image sliders (product.images)
   let imagesArray: string[] = [];
 
   // Handle images - can be array, null, or undefined
@@ -89,22 +100,35 @@ export const productMapper = (
     }
   }
 
-  // Fallback to thumbnailUrl if no images array
-  if (imagesArray.length === 0 && backendProduct.thumbnailUrl) {
-    imagesArray = [backendProduct.thumbnailUrl];
+  // For product cards: use thumbnailUrl directly from backend
+  // Fallback to images[0] only if thumbnailUrl is null/undefined/empty
+  let cardImage: string = "";
+
+  // Prioritize thumbnailUrl - use it directly if available
+  if (
+    backendProduct.thumbnailUrl !== null &&
+    backendProduct.thumbnailUrl !== undefined &&
+    typeof backendProduct.thumbnailUrl === "string" &&
+    backendProduct.thumbnailUrl.trim() !== ""
+  ) {
+    cardImage = backendProduct.thumbnailUrl;
+  } else if (imagesArray.length > 0 && imagesArray[0]) {
+    // Fallback to first image from images array only if thumbnailUrl is not available
+    cardImage = imagesArray[0];
   }
 
-  // Ensure we always have a firstImage (even if empty string)
-  const firstImage: string = imagesArray.length > 0 ? imagesArray[0] || "" : "";
-
   // Debug: Log to see what we're getting
-  if (imagesArray.length > 0) {
-    console.log("✅ Images found in productMapper:", imagesArray);
+  if (cardImage) {
+    console.log("✅ Card image found:", {
+      thumbnailUrl: backendProduct.thumbnailUrl,
+      cardImage: cardImage,
+      imagesArray: imagesArray,
+    });
   } else {
-    console.warn(
-      "⚠️ No images found in productMapper. Backend images:",
-      backendProduct.images,
-    );
+    console.warn("⚠️ No card image found in productMapper. Backend:", {
+      thumbnailUrl: backendProduct.thumbnailUrl,
+      images: backendProduct.images,
+    });
   }
 
   // Determine pricing: use pricelist price if available, otherwise use base price
@@ -137,21 +161,32 @@ export const productMapper = (
   const originalPrice = pricelistPrice !== null ? basePrice : undefined;
 
   return {
+    // Backend Product fields (required) - title is omitted, use name instead
     id: backendProduct.id,
-    name: backendProduct.title || backendProduct.name || "",
-    price: mainPrice,
+    description: backendProduct.description,
+    price: mainPrice, // Use mainPrice (pricelist or base)
+    gstRate: backendProduct.gstRate,
+    pricingType: backendProduct.pricingType,
+    gstAmount: backendProduct.gstAmount,
+    priceExcludingGst: backendProduct.priceExcludingGst,
+    priceIncludingGst: backendProduct.priceIncludingGst,
+    hsnCode: backendProduct.hsnCode,
+    status: backendProduct.status,
+    categoryId: backendProduct.categoryId,
+    images: backendProduct.images,
+    pricelistPrices: backendProduct.pricelistPrices,
+    createdAt: backendProduct.createdAt,
+    updatedAt: backendProduct.updatedAt,
+    // UI-specific fields
+    name: backendProduct.title || "",
     originalPrice: originalPrice,
-    image: firstImage,
-    images: imagesArray.length > 0 ? imagesArray : undefined,
+    image: cardImage, // Uses thumbnailUrl directly from backend, falls back to images[0] if thumbnailUrl is null
     category: backendProduct.categoryId || "",
     rating: 0, // Will be calculated from reviews
     reviews: 0, // Will be calculated from reviews
-    description: backendProduct.description || "",
     sizes: [], // Will be populated from variants
     colors: [], // Will be populated from variants
-    slug: createProductSlug(backendProduct.title || "", backendProduct.id),
-    pricelistPrices:
-      sortedPricelistPrices.length > 0 ? sortedPricelistPrices : undefined,
+    slug: undefined, // Using ID-based routing now
   };
 };
 
@@ -210,28 +245,151 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({
 
   const authenticated = hasToken && !!authData;
 
-  // Convert backend cart items to UI cart items
-  // Note: This is a simplified conversion - in production, you'd need to fetch product/variant details
+  // Extract unique variant IDs from cart items
+  const cartVariantIds = useMemo(() => {
+    if (!backendCart?.items) return [];
+    const variantIds = new Set<string>();
+    backendCart.items.forEach((item) => {
+      variantIds.add(item.productVariantId);
+      // Also include variants from bundle breakdown if present
+      if (item.bundleVariantBreakdown) {
+        item.bundleVariantBreakdown.forEach((breakdown) => {
+          variantIds.add(breakdown.variantId);
+        });
+      }
+    });
+    return Array.from(variantIds);
+  }, [backendCart]);
+
+  // Fetch all products to get their variants
+  const { data: allProductsData } = useProducts({ limit: 100, inStock: true });
+  const allProducts = allProductsData?.data || [];
+
+  // Fetch variants for all products in parallel
+  const productVariantQueries = useQueries({
+    queries: allProducts.map((product) => ({
+      queryKey: QUERY_KEYS.productVariants(product.id),
+      queryFn: async () => {
+        try {
+          const variants = await get(endpoints.products.variants(product.id));
+          return Array.isArray(variants)
+            ? variants.map((v) => variantSchema.parse(v))
+            : [];
+        } catch (error) {
+          console.error(
+            `Failed to fetch variants for product ${product.id}:`,
+            error,
+          );
+          return [];
+        }
+      },
+      enabled: allProducts.length > 0,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    })),
+  });
+
+  // Create a map of variantId -> { product, variant }
+  const variantProductMap = useMemo(() => {
+    const map = new Map<
+      string,
+      { product: (typeof allProducts)[0]; variant: ReturnType<typeof variantSchema.parse> }
+    >();
+
+    productVariantQueries.forEach((query, index) => {
+      if (query.data && allProducts[index]) {
+        const product = allProducts[index];
+        query.data.forEach((variant) => {
+          map.set(variant.id, { product, variant });
+        });
+      }
+    });
+
+    return map;
+  }, [productVariantQueries, allProducts]);
+
+  // Convert backend cart items to UI cart items with product/variant details
   const cart: CartItem[] = useMemo(() => {
     if (!backendCart?.items) return [];
-    // Map backend cart items to UI format
-    // This is a placeholder - you'll need to fetch product details for each item
-    return backendCart.items.map(
-      (item) =>
-        ({
-          id: item.productVariantId, // Using variant ID as product ID for now
-          name: "Product", // Will be replaced with actual product data
-          price: item.price,
-          image: "",
-          category: "",
-          rating: 0,
-          reviews: 0,
-          selectedSize: item.bundleVariantBreakdown?.[0]?.variantId || "",
-          quantity: item.quantity,
+
+    return backendCart.items.map((item) => {
+      // Get product and variant details for this cart item
+      const variantProduct = variantProductMap.get(item.productVariantId);
+
+      if (variantProduct) {
+        const { product: backendProduct, variant } = variantProduct;
+        const mappedProduct = productMapper(backendProduct, [variant]);
+
+        return {
+          // Backend Product fields
+          id: backendProduct.id,
+          title: backendProduct.title,
+          description: backendProduct.description,
+          price: item.price, // Use cart item price (may differ from product price)
+          gstRate: backendProduct.gstRate,
+          pricingType: backendProduct.pricingType,
+          gstAmount: backendProduct.gstAmount,
+          priceExcludingGst: backendProduct.priceExcludingGst,
+          priceIncludingGst: backendProduct.priceIncludingGst,
+          hsnCode: backendProduct.hsnCode,
+          status: backendProduct.status,
+          categoryId: backendProduct.categoryId,
+          images: backendProduct.images,
+          pricelistPrices: backendProduct.pricelistPrices,
+          createdAt: backendProduct.createdAt,
+          updatedAt: backendProduct.updatedAt,
+          // UI-specific Product fields
+          name: mappedProduct.name,
+          image: mappedProduct.image,
+          category: mappedProduct.category,
+          rating: mappedProduct.rating,
+          reviews: mappedProduct.reviews,
+          slug: mappedProduct.slug,
+          selectedColor: variant.color || undefined,
+          sizes: mappedProduct.sizes,
+          colors: mappedProduct.colors,
+          // CartItem-specific fields
           cartId: item.id,
-        }) as CartItem,
-    );
-  }, [backendCart]);
+          selectedSize: variant.size || "",
+          quantity: item.quantity,
+        } as CartItem;
+      }
+
+      // Fallback if product/variant not found (shouldn't happen, but handle gracefully)
+      return {
+        // Backend Product fields
+        id: item.productVariantId,
+        title: "Product",
+        description: null,
+        price: item.price,
+        gstRate: 0,
+        pricingType: "exclusive" as const,
+        gstAmount: 0,
+        priceExcludingGst: item.price,
+        priceIncludingGst: item.price,
+        hsnCode: null,
+        status: "active" as const,
+        categoryId: null,
+        images: null,
+        pricelistPrices: undefined,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+        // UI-specific Product fields
+        name: "Product",
+        image: "",
+        category: "",
+        rating: 0,
+        reviews: 0,
+        slug: undefined,
+        selectedColor: undefined,
+        sizes: undefined,
+        colors: undefined,
+        // CartItem-specific fields
+        cartId: item.id,
+        selectedSize: "",
+        quantity: item.quantity,
+      } as CartItem;
+    });
+  }, [backendCart, variantProductMap]);
 
   const openCart = () => setIsCartOpen(true);
   const closeCart = () => setIsCartOpen(false);
@@ -305,7 +463,14 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
-  const addReview = (review: Review) => {
+  const addReview = (review: {
+    variantId: string;
+    orderId: string;
+    rating: number;
+    title?: string;
+    body: string;
+    images?: string[];
+  }) => {
     addReviewMutation.mutate(review);
   };
 
@@ -376,7 +541,11 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({
   ): Promise<boolean> => {
     try {
       // Backend register only takes email/password, name is set via customer profile
-      await registerMutation.mutateAsync({ email, password: pass });
+      await registerMutation.mutateAsync({
+        email,
+        password: pass,
+        role: "customer",
+      });
       // Update profile with name after registration
       if (customerData) {
         // Name will be updated via customer profile update

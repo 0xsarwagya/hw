@@ -1,12 +1,14 @@
+"use client";
+
+import Link from "next/link";
 import React from "react";
-import { Link } from "react-router-dom";
 
 const Footer: React.FC = () => {
   return (
     <footer className="mt-auto bg-primary text-white pt-12 pb-8 border-t border-blue-900">
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <Link to="/" className="inline-block">
+          <Link href="/" className="inline-block">
             <img
               src="https://s6.imgcdn.dev/YT5tM2.png"
               alt="Hush & Wear"
@@ -25,7 +27,7 @@ const Footer: React.FC = () => {
               <ul className="space-y-2 text-sm text-blue-100">
                 <li>
                   <Link
-                    to="/contact"
+                    href="/contact"
                     className="hover:text-white transition-colors"
                   >
                     Contact Us
@@ -33,7 +35,7 @@ const Footer: React.FC = () => {
                 </li>
                 <li>
                   <Link
-                    to="/track-order"
+                    href="/track-order"
                     className="hover:text-white transition-colors"
                   >
                     Track Order
@@ -41,7 +43,7 @@ const Footer: React.FC = () => {
                 </li>
                 <li>
                   <Link
-                    to="/policies#returns"
+                    href="/policies#returns"
                     className="hover:text-white transition-colors"
                   >
                     Return Order
@@ -49,7 +51,7 @@ const Footer: React.FC = () => {
                 </li>
                 <li>
                   <Link
-                    to="/policies#returns"
+                    href="/policies#returns"
                     className="hover:text-white transition-colors"
                   >
                     Cancel Order
@@ -82,7 +84,7 @@ const Footer: React.FC = () => {
               <ul className="space-y-2 text-sm text-blue-100">
                 <li>
                   <Link
-                    to="/policies#about"
+                    href="/policies#about"
                     className="hover:text-white transition-colors"
                   >
                     About Us
@@ -90,7 +92,7 @@ const Footer: React.FC = () => {
                 </li>
                 <li>
                   <Link
-                    to="/policies#terms"
+                    href="/policies#terms"
                     className="hover:text-white transition-colors"
                   >
                     Terms & Conditions
@@ -98,7 +100,7 @@ const Footer: React.FC = () => {
                 </li>
                 <li>
                   <Link
-                    to="/policies#privacy"
+                    href="/policies#privacy"
                     className="hover:text-white transition-colors"
                   >
                     Privacy Policy
@@ -106,7 +108,7 @@ const Footer: React.FC = () => {
                 </li>
                 <li>
                   <Link
-                    to="/contact"
+                    href="/contact"
                     className="hover:text-white transition-colors"
                   >
                     We are Hiring
@@ -188,23 +190,23 @@ const Footer: React.FC = () => {
                 Men's Clothing
               </h5>
               <div className="flex flex-wrap gap-x-2 gap-y-1">
-                <Link to="/shop" className="hover:text-white">
+                <Link href="/shop" className="hover:text-white">
                   Top Wear
                 </Link>{" "}
                 <span>|</span>
-                <Link to="/shop" className="hover:text-white">
+                <Link href="/shop" className="hover:text-white">
                   Men's New Arrivals
                 </Link>{" "}
                 <span>|</span>
-                <Link to="/shop" className="hover:text-white">
+                <Link href="/shop" className="hover:text-white">
                   Men's T-Shirts
                 </Link>{" "}
                 <span>|</span>
-                <Link to="/shop" className="hover:text-white">
+                <Link href="/shop" className="hover:text-white">
                   Men's Hoodies
                 </Link>{" "}
                 <span>|</span>
-                <Link to="/shop" className="hover:text-white">
+                <Link href="/shop" className="hover:text-white">
                   Oversized T-Shirts
                 </Link>
               </div>
@@ -214,15 +216,15 @@ const Footer: React.FC = () => {
                 Unisex Clothing
               </h5>
               <div className="flex flex-wrap gap-x-2 gap-y-1">
-                <Link to="/shop" className="hover:text-white">
+                <Link href="/shop" className="hover:text-white">
                   Brands
                 </Link>{" "}
                 <span>|</span>
-                <Link to="/shop" className="hover:text-white">
+                <Link href="/shop" className="hover:text-white">
                   Unisex Hoodies
                 </Link>{" "}
                 <span>|</span>
-                <Link to="/shop" className="hover:text-white">
+                <Link href="/shop" className="hover:text-white">
                   Joggers
                 </Link>
               </div>

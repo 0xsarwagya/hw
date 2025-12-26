@@ -9,6 +9,12 @@ import {
   userProfileSchema,
 } from "../lib/validations/auth";
 import { collectionSchema } from "../lib/validations/collection";
+import type {
+  Product as BackendProduct,
+  PaginatedProducts,
+  ReviewAggregate,
+  Variant,
+} from "../lib/validations/product";
 import {
   paginatedProductsSchema,
   paginatedReviewsSchema,
@@ -45,7 +51,7 @@ export const useProducts = (params?: {
   sortBy?: "price" | "name" | "date";
   sortOrder?: "asc" | "desc";
 }) => {
-  return useQuery({
+  return useQuery<PaginatedProducts>({
     queryKey: [QUERY_KEYS.products, params],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
@@ -66,61 +72,24 @@ export const useProducts = (params?: {
       const url = queryString
         ? `${endpoints.products.list}?${queryString}`
         : endpoints.products.list;
-      const data = await get(url);
+      const data = await get<PaginatedProducts>(url);
       return paginatedProductsSchema.parse(data);
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 
-export const useProduct = (idOrSlug: string | undefined) => {
-  return useQuery({
-    queryKey: QUERY_KEYS.product(idOrSlug || ""),
+export const useProduct = (id: string | undefined) => {
+  return useQuery<BackendProduct | null>({
+    queryKey: QUERY_KEYS.product(id || ""),
     queryFn: async () => {
-      if (!idOrSlug) return null;
+      if (!id) return null;
 
-      // Check if it's a UUID (starts with pattern like xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-      const isUuid =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-          idOrSlug,
-        );
-
-      if (isUuid) {
-        // Direct ID lookup
-        const data = await get(endpoints.products.detail(idOrSlug));
-        return productSchema.parse(data);
-      } else {
-        // It's a slug - need to find product by searching
-        // Try to extract ID from slug (format: title-slug-{shortId})
-        const parts = idOrSlug.split("-");
-        const possibleShortId = parts[parts.length - 1];
-
-        // Search products by title (slugified title should match)
-        const searchQuery = parts.slice(0, -1).join(" "); // Remove short ID part
-        const searchData = await get(
-          `${endpoints.products.list}?search=${encodeURIComponent(searchQuery)}&limit=50`,
-        );
-        const parsed = paginatedProductsSchema.parse(searchData);
-
-        // Find product that matches - check if any product's slugified title matches
-        const matchingProduct = parsed.data.find((p) => {
-          const productSlug = `${p.title
-            .toLowerCase()
-            .replace(/\s+/g, "-")
-            .replace(/[^\w-]/g, "")}-${p.id.slice(-8)}`;
-          return productSlug === idOrSlug;
-        });
-
-        if (matchingProduct) {
-          return matchingProduct;
-        }
-
-        // Fallback: if we have a short ID, try to find by ID pattern
-        // This is not perfect but better than nothing
-        throw new Error("Product not found");
-      }
+      // Direct ID lookup - products now use ID-based routing
+      const data = await get<BackendProduct>(endpoints.products.detail(id));
+      return productSchema.parse(data);
     },
-    enabled: !!idOrSlug,
+    enabled: !!id,
     staleTime: 0, // Always consider data stale to ensure fresh fetch
     refetchOnMount: "always", // Always refetch when component mounts
     refetchOnWindowFocus: false, // Don't refetch on window focus
@@ -131,11 +100,11 @@ export const useProduct = (idOrSlug: string | undefined) => {
 };
 
 export const useProductVariants = (productId: string | undefined) => {
-  return useQuery({
+  return useQuery<Variant[]>({
     queryKey: QUERY_KEYS.productVariants(productId || ""),
     queryFn: async () => {
       if (!productId) return [];
-      const data = await get(endpoints.products.variants(productId));
+      const data = await get<Variant[]>(endpoints.products.variants(productId));
       return Array.isArray(data) ? data.map((v) => variantSchema.parse(v)) : [];
     },
     enabled: !!productId,
@@ -144,11 +113,13 @@ export const useProductVariants = (productId: string | undefined) => {
 };
 
 export const useProductRecommendations = (productId: string | undefined) => {
-  return useQuery({
+  return useQuery<BackendProduct[]>({
     queryKey: ["products", productId, "recommendations"],
     queryFn: async () => {
       if (!productId) return [];
-      const data = await get(endpoints.products.recommendations(productId));
+      const data = await get<BackendProduct[]>(
+        endpoints.products.recommendations(productId),
+      );
       return Array.isArray(data) ? data.map((p) => productSchema.parse(p)) : [];
     },
     enabled: !!productId,
@@ -236,11 +207,13 @@ export const useProductReviews = (productId: string | undefined) => {
 };
 
 export const useReviewAggregate = (variantId: string | undefined) => {
-  return useQuery({
+  return useQuery<ReviewAggregate | null>({
     queryKey: ["reviewAggregate", variantId],
     queryFn: async () => {
       if (!variantId) return null;
-      const data = await get(endpoints.products.reviewAggregate(variantId));
+      const data = await get<ReviewAggregate>(
+        endpoints.products.reviewAggregate(variantId),
+      );
       return reviewAggregateSchema.parse(data);
     },
     enabled: !!variantId,

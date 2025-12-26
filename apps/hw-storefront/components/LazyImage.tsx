@@ -1,3 +1,6 @@
+"use client";
+
+import Image from "next/image";
 import React, { useEffect, useRef, useState } from "react";
 
 interface LazyImageProps {
@@ -22,10 +25,23 @@ const LazyImage: React.FC<LazyImageProps> = ({
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Ensure we always have a valid image source
+  const imageSrc = src && src.trim() !== "" ? src : placeholder;
+
   useEffect(() => {
+    // If src is empty or placeholder, show immediately without intersection observer
+    if (
+      !imageSrc ||
+      imageSrc.trim() === "" ||
+      imageSrc === placeholder ||
+      imageSrc.startsWith("data:image/svg+xml")
+    ) {
+      setIsInView(true);
+      return;
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -45,25 +61,21 @@ const LazyImage: React.FC<LazyImageProps> = ({
     return () => {
       observer.disconnect();
     };
-  }, []);
+  }, [imageSrc, placeholder]);
 
   const handleLoad = () => {
     setIsLoaded(true);
     onLoad?.();
   };
 
-  const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    const imgElement = e.currentTarget;
-    const failedSrc = imgElement.src;
+  const handleError = () => {
     console.error("Image failed to load:", {
-      src: failedSrc,
       originalSrc: src,
-      error: e.nativeEvent,
-      imgElement: imgElement,
+      imageSrc: imageSrc,
     });
 
     // If it's a data URI placeholder, don't show error - it's expected
-    if (src.startsWith("data:image/svg+xml")) {
+    if (imageSrc.startsWith("data:image/svg+xml") || imageSrc === placeholder) {
       console.log("Placeholder image used (expected)");
       return;
     }
@@ -108,28 +120,30 @@ const LazyImage: React.FC<LazyImageProps> = ({
             </div>
           )}
           {isInView && (
-            <img
-              ref={imgRef}
-              src={src}
+            <Image
+              src={imageSrc}
               alt={alt}
+              fill
               onLoad={handleLoad}
               onError={handleError}
-              className={`w-full h-full object-cover transition-opacity duration-300 ${
+              className={`object-cover transition-opacity duration-300 ${
                 isLoaded ? "opacity-100" : "opacity-0"
               }`}
-              loading="lazy"
+              unoptimized={imageSrc.startsWith("data:")}
             />
           )}
         </>
       )}
-      {hasError && !src.startsWith("data:image/svg+xml") && (
+      {hasError && !imageSrc.startsWith("data:image/svg+xml") && (
         <div className="absolute inset-0 bg-gray-100 flex flex-col items-center justify-center p-4">
           <span className="text-gray-400 text-sm mb-2">
             Image not available
           </span>
-          <span className="text-gray-300 text-xs text-center break-all">
-            {src}
-          </span>
+          {src && src.trim() !== "" && (
+            <span className="text-gray-300 text-xs text-center break-all">
+              {src}
+            </span>
+          )}
         </div>
       )}
     </div>

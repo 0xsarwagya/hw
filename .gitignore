@@ -27,6 +27,11 @@ out/
 build
 dist
 
+# Deployment outputs
+_tmp_deployment-url.txt
+_tmp_error.txt
+_tmp_deployments.md
+
 
 # Debug
 npm-debug.log*

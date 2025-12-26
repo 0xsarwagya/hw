@@ -1,3 +1,6 @@
+"use client";
+
+import Image from "next/image";
 import React from "react";
 import { Product } from "../../types";
 
@@ -6,6 +9,11 @@ interface InstagramFeedProps {
 }
 
 const InstagramFeed: React.FC<InstagramFeedProps> = ({ products }) => {
+  // Handle empty products array
+  if (!products || products.length === 0) {
+    return null; // Don't show section if no products
+  }
+
   const socialImages = [
     "https://lh3.googleusercontent.com/aida-public/AB6AXuB3AEFotmLVaCeKFiroqO3nR0fg1kEAQ063Xq7viRYnc6syGuyLplPQBfxzSLiKTiZG06eoEtFMOocr4GD3W1523tuhUeUqUuN34ygdZvc7itoyxgU8w5tBItnw0qeVF8n4tXpcgJWw5e_xgGI9kZGv-uDHYBXVmgVr7Bpxf-DHtrKm6mdHmg4Mv0qIV9VsF_z0EU3AijbtkpQyuHw8Js9ZzyyibAwe5pWSfNaPxaSWdIq1B748PCwg1ArGi59FrGKXKlICqlSNr61B",
     products[5]?.image || "",
@@ -14,6 +22,11 @@ const InstagramFeed: React.FC<InstagramFeedProps> = ({ products }) => {
     products[25]?.image || "",
     products[30]?.image || "",
   ].filter(Boolean);
+
+  // Don't show section if no images available
+  if (socialImages.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-20 border-t border-gray-100">
@@ -29,12 +42,14 @@ const InstagramFeed: React.FC<InstagramFeedProps> = ({ products }) => {
         {socialImages.map((img, idx) => (
           <div
             key={idx}
-            className="aspect-square relative group cursor-pointer overflow-hidden border border-white"
+            className="aspect-[9/16] relative group cursor-pointer overflow-hidden border border-white"
           >
-            <img
+            <Image
               src={img}
               alt="Social Feed"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              fill
+              className="object-cover transition-transform duration-700 group-hover:scale-110"
+              unoptimized
             />
             <div className="absolute inset-0 bg-primary/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center text-white">
               <span className="material-icons text-3xl">favorite</span>

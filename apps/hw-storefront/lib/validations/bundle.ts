@@ -28,6 +28,8 @@ export const bundleSchema = z.object({
   description: z.string().optional(),
   isActive: z.boolean(),
   allowMixAndMatch: z.boolean(),
+  image: z.string().url().nullable().optional(),
+  thumbnailUrl: z.string().url().nullable().optional(),
   sets: z.array(bundleSetSchema),
   createdAt: z.string().datetime().or(z.date()),
   updatedAt: z.string().datetime().or(z.date()),
@@ -43,7 +45,7 @@ export const paginatedBundlesSchema = z.object({
   hasPreviousPage: z.boolean(),
 });
 
-export type Bundle = z.infer<typeof bundleSchema>;
-export type BundleSet = z.infer<typeof bundleSetSchema>;
 export type BundleSetItem = z.infer<typeof bundleSetItemSchema>;
+export type BundleSet = z.infer<typeof bundleSetSchema>;
+export type Bundle = z.infer<typeof bundleSchema>;
 export type PaginatedBundles = z.infer<typeof paginatedBundlesSchema>;

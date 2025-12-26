@@ -53,7 +53,7 @@ export function getGuestSessionId(): string {
   );
   if (!sessionCookie || sessionCookie.split("=")[1] !== sessionId) {
     // Set cookie with same value as localStorage
-    const isProduction = import.meta.env.PROD;
+    const isProduction = process.env.NODE_ENV === "production";
     document.cookie = `session-id=${sessionId}; path=/; max-age=${
       30 * 24 * 60 * 60
     }; ${isProduction ? "secure; " : ""}samesite=lax`;

@@ -1,13 +1,17 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
 import { productMapper, useShop } from "../context/ShopContext";
 import { useCollections, useProducts } from "../hooks/useApi";
+import type { Product as BackendProduct } from "../lib/validations/product";
 import { Product } from "../types";
 import { formatCurrency } from "../utils";
 
 const Header: React.FC = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -23,14 +27,17 @@ const Header: React.FC = () => {
     limit: 50,
     search: searchQuery || undefined,
   });
-  const backendProducts = productsData?.data || [];
+  const backendProducts: BackendProduct[] = productsData?.data || [];
   const searchProducts = backendProducts
     .map((p) => productMapper(p, []))
     .slice(0, 6);
 
   // Fetch collections for navigation
-  const { data: collections = [], isLoading: collectionsLoading } =
-    useCollections();
+  const {
+    data: collections = [],
+    isLoading: collectionsLoading,
+    error: collectionsError,
+  } = useCollections();
 
   // Handle Search Input Change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,7 +63,7 @@ const Header: React.FC = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/shop?search=${encodeURIComponent(searchQuery)}`);
+      router.push(`/shop?search=${encodeURIComponent(searchQuery)}`);
       setSearchResults([]); // Close dropdown
       setIsSearchFocused(false);
     }
@@ -81,7 +88,7 @@ const Header: React.FC = () => {
     setSearchQuery("");
     setSearchResults([]);
     setIsSearchFocused(false);
-  }, [location.pathname]);
+  }, [pathname]);
 
   const NavLinks = () => {
     // Sort collections by position, then by name
@@ -94,11 +101,20 @@ const Header: React.FC = () => {
 
     return (
       <>
+        {/* Shop Link - Always first */}
+        <Link
+          href="/shop"
+          className="text-sm font-bold hover:underline hover:text-primary transition-colors whitespace-nowrap uppercase"
+        >
+          SHOP
+        </Link>
+        <span className="text-gray-300 hidden lg:inline">|</span>
+
         {sortedCollections.length > 0 ? (
           sortedCollections.map((collection, index) => (
             <React.Fragment key={collection.id}>
               <Link
-                to={`/shop?collectionId=${collection.id}`}
+                href={`/shop?collectionId=${collection.id}`}
                 className="text-sm font-bold hover:underline hover:text-primary transition-colors whitespace-nowrap uppercase"
               >
                 {collection.name}
@@ -112,34 +128,43 @@ const Header: React.FC = () => {
           // Fallback to default links if no collections are loaded
           <>
             <Link
-              to="/shop?category=Tees"
+              href="/shop?category=Tees"
               className="text-sm font-bold hover:underline hover:text-primary transition-colors whitespace-nowrap"
             >
               MEN'S
             </Link>
             <span className="text-gray-300 hidden lg:inline">|</span>
             <Link
-              to="/shop?category=Unisex"
+              href="/shop?category=Unisex"
               className="text-sm font-bold hover:underline hover:text-primary transition-colors whitespace-nowrap"
             >
               UNISEX
             </Link>
             <span className="text-gray-300 hidden lg:inline">|</span>
             <Link
-              to="/bundles"
+              href="/bundles"
               className="text-sm font-bold hover:underline hover:text-primary transition-colors whitespace-nowrap"
             >
               BUNDLES
             </Link>
             <span className="text-gray-300 hidden lg:inline">|</span>
             <Link
-              to="/shop?category=Hoodies"
+              href="/shop?category=Hoodies"
               className="text-sm font-bold hover:underline hover:text-primary transition-colors whitespace-nowrap"
             >
               HOODIES
             </Link>
           </>
         )}
+
+        {/* Contact Link - Always last */}
+        <span className="text-gray-300 hidden lg:inline">|</span>
+        <Link
+          href="/contact"
+          className="text-sm font-bold hover:underline hover:text-primary transition-colors whitespace-nowrap uppercase"
+        >
+          CONTACT
+        </Link>
       </>
     );
   };
@@ -199,7 +224,7 @@ const Header: React.FC = () => {
               {/* Logo */}
               <div className="flex-shrink-0 z-10">
                 <Link
-                  to="/"
+                  href="/"
                   className="block hover:scale-105 transition-transform origin-left"
                 >
                   <img
@@ -218,7 +243,7 @@ const Header: React.FC = () => {
               {/* Right Icons */}
               <div className="flex items-center gap-4 z-10">
                 <Link
-                  to={isAuthenticated ? "/account" : "/login"}
+                  href={isAuthenticated ? "/account" : "/login"}
                   className="text-black hover:text-primary p-1 hidden md:block hover:scale-110 transition-transform"
                   title={isAuthenticated ? "My Account" : "Sign In"}
                 >
@@ -254,7 +279,7 @@ const Header: React.FC = () => {
             {mobileMenuOpen && (
               <div className="lg:hidden mt-4 pb-4 space-y-2 border-t pt-4 animate-[slide-down_0.3s_ease-out]">
                 <Link
-                  to="/shop"
+                  href="/shop"
                   className="block text-sm font-medium text-black py-2 hover:text-primary"
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -274,7 +299,7 @@ const Header: React.FC = () => {
                     .map((collection) => (
                       <Link
                         key={collection.id}
-                        to={`/shop?collectionId=${collection.id}`}
+                        href={`/shop?collectionId=${collection.id}`}
                         className="block text-sm font-medium text-black py-2 hover:text-primary uppercase"
                         onClick={() => setMobileMenuOpen(false)}
                       >
@@ -284,7 +309,7 @@ const Header: React.FC = () => {
                 ) : (
                   <>
                     <Link
-                      to="/bundles"
+                      href="/bundles"
                       className="block text-sm font-medium text-black py-2 hover:text-primary"
                       onClick={() => setMobileMenuOpen(false)}
                     >
@@ -293,21 +318,21 @@ const Header: React.FC = () => {
                   </>
                 )}
                 <Link
-                  to="/track-order"
+                  href="/track-order"
                   className="block text-sm font-medium text-black py-2 hover:text-primary"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   TRACK ORDER
                 </Link>
                 <Link
-                  to="/contact"
+                  href="/contact"
                   className="block text-sm font-medium text-black py-2 hover:text-primary"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   CONTACT US
                 </Link>
                 <Link
-                  to="/reviews"
+                  href="/reviews"
                   className="block text-sm font-medium text-black py-2 hover:text-primary"
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -315,7 +340,7 @@ const Header: React.FC = () => {
                 </Link>
                 {isAuthenticated ? (
                   <Link
-                    to="/account"
+                    href="/account"
                     className="block text-sm font-medium text-black py-2 hover:text-primary"
                     onClick={() => setMobileMenuOpen(false)}
                   >
@@ -323,7 +348,7 @@ const Header: React.FC = () => {
                   </Link>
                 ) : (
                   <Link
-                    to="/login"
+                    href="/login"
                     className="block text-sm font-medium text-black py-2 hover:text-primary"
                     onClick={() => setMobileMenuOpen(false)}
                   >
@@ -379,7 +404,7 @@ const Header: React.FC = () => {
                         {searchResults.map((product) => (
                           <li key={product.id}>
                             <Link
-                              to={`/product/${product.id}`}
+                              href={`/product/${product.id}`}
                               className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors group"
                               onClick={() => {
                                 setSearchQuery("");
@@ -438,7 +463,7 @@ const Header: React.FC = () => {
               {/* Right Side Links (Track & Contact) */}
               <div className="flex items-center gap-6 whitespace-nowrap">
                 <Link
-                  to="/track-order"
+                  href="/track-order"
                   className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-600 hover:text-primary transition-colors"
                 >
                   <span className="material-icons text-base">
@@ -447,7 +472,7 @@ const Header: React.FC = () => {
                   Track Order
                 </Link>
                 <Link
-                  to="/contact"
+                  href="/contact"
                   className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-600 hover:text-primary transition-colors"
                 >
                   <span className="material-icons text-base">

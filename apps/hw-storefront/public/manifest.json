@@ -1,0 +1,30 @@
+{
+  "name": "Hush & Wear - Premium Hoodies & T-Shirts Online India",
+  "short_name": "Hush & Wear",
+  "description": "Buy the Best Men's T-Shirt Online in India at Hush & Wear. Shop trend and latest pattern t-shirt at the best online t-shirt store.",
+  "icons": [
+    {
+      "src": "/icon.avif",
+      "sizes": "192x192",
+      "type": "image/avif",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.avif",
+      "sizes": "384x384",
+      "type": "image/avif"
+    },
+    {
+      "src": "/icon.avif",
+      "sizes": "512x512",
+      "type": "image/avif"
+    }
+  ],
+  "theme_color": "#000000",
+  "background_color": "#FFFFFF",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "categories": ["shopping", "lifestyle", "fashion"]
+}

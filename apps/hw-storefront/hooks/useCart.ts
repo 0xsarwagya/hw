@@ -85,3 +85,29 @@ export const useClearCart = () => {
     },
   });
 };
+
+export const useApplyDiscount = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (code: string) => {
+      const data = await post(endpoints.cart.applyCoupon, { code });
+      return cartSchema.parse(data);
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(QUERY_KEYS.cart, data);
+    },
+  });
+};
+
+export const useRemoveDiscount = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const data = await del(endpoints.cart.removeCoupon);
+      return cartSchema.parse(data);
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(QUERY_KEYS.cart, data);
+    },
+  });
+};

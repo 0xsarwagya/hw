@@ -4,6 +4,12 @@ import { z } from "zod";
  * Cart validation schemas matching backend DTOs
  */
 
+// UserBundleSelection: { [setId: string]: string[] }
+export const userBundleSelectionSchema = z.record(
+  z.string(),
+  z.array(z.string()),
+);
+
 export const bundleVariantBreakdownSchema = z.object({
   variantId: z.string().uuid(),
   unitPrice: z.number(),
@@ -15,7 +21,7 @@ export const cartItemSchema = z.object({
   type: z.enum(["variant", "bundle"]),
   productVariantId: z.string().uuid(),
   bundleId: z.string().uuid().optional(),
-  selections: z.record(z.string(), z.array(z.string())).optional(),
+  selections: userBundleSelectionSchema.optional(),
   quantity: z.number(),
   price: z.number(),
   unitBundlePrice: z.number().optional(),
@@ -24,7 +30,7 @@ export const cartItemSchema = z.object({
   updatedAt: z.string().datetime().or(z.date()),
 });
 
-export const gstBreakdownSchema = z.object({
+export const cartGstBreakdownSchema = z.object({
   cgst: z.number(),
   sgst: z.number(),
   igst: z.number(),
@@ -40,7 +46,7 @@ export const cartSchema = z.object({
   gstAmount: z.number(),
   discountCode: z.string().nullable(),
   discountAmount: z.number(),
-  gstBreakdown: gstBreakdownSchema,
+  gstBreakdown: cartGstBreakdownSchema,
   total: z.number(),
   items: z.array(cartItemSchema),
   expiresAt: z.string().datetime().or(z.date()).nullable(),
@@ -48,6 +54,10 @@ export const cartSchema = z.object({
   updatedAt: z.string().datetime().or(z.date()),
 });
 
-export type Cart = z.infer<typeof cartSchema>;
 export type CartItem = z.infer<typeof cartItemSchema>;
-export type GstBreakdown = z.infer<typeof gstBreakdownSchema>;
+export type Cart = z.infer<typeof cartSchema>;
+export type UserBundleSelection = z.infer<typeof userBundleSelectionSchema>;
+export type BundleVariantBreakdown = z.infer<
+  typeof bundleVariantBreakdownSchema
+>;
+export type CartGstBreakdown = z.infer<typeof cartGstBreakdownSchema>;

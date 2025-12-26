@@ -29,9 +29,7 @@ const ReviewModal: React.FC<ReviewModalProps> = ({
     return orders.filter((order) => {
       // Check if order is completed/delivered
       const isCompleted =
-        order.status === "delivered" ||
-        order.status === "completed" ||
-        order.status === "confirmed";
+        order.status === "shipped" || order.status === "confirmed";
       if (!isCompleted) return false;
 
       // Check if order contains this variant

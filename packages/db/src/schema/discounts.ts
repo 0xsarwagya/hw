@@ -59,6 +59,16 @@ export const discountValueTypeEnum = pgEnum("discount_value_type", [
 export const discountScopeEnum = pgEnum("discount_scope", ["ORDER", "PRODUCT"]);
 
 /**
+ * Discount calculation basis enum
+ * - SUBTOTAL: Calculate discount on price excluding tax/GST
+ * - TOTAL: Calculate discount on price including tax/GST
+ */
+export const discountCalculationBasisEnum = pgEnum("discount_calculation_basis", [
+  "SUBTOTAL",
+  "TOTAL",
+]);
+
+/**
  * Main discounts table
  */
 export const discounts = pgTable(
@@ -85,6 +95,11 @@ export const discounts = pgTable(
 
     // Scope
     scope: discountScopeEnum("scope").notNull().default("PRODUCT"), // ORDER or PRODUCT
+
+    // Calculation basis
+    calculationBasis: discountCalculationBasisEnum("calculation_basis")
+      .notNull()
+      .default("TOTAL"), // SUBTOTAL or TOTAL
 
     // Standard discount fields
     // For STANDARD type: applies to products/categories/collections/tags

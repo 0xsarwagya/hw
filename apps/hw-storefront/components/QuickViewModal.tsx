@@ -1,5 +1,7 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useShop } from "../context/ShopContext";
 import { useProductVariants } from "../hooks/useApi";
 import { Product } from "../types";
@@ -21,7 +23,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { addToCart, toggleWishlist, isInWishlist } = useShop();
   const { data: variants = [] } = useProductVariants(product?.id);
 
@@ -46,9 +48,11 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({
       if (availableSizes.length > 0) {
         const defaultSize =
           availableSizes.find((s) => s === "L") || availableSizes[0];
-        setSelectedSize(defaultSize);
+        if (defaultSize) {
+          setSelectedSize(defaultSize);
+        }
       }
-      if (availableColors.length > 0) {
+      if (availableColors.length > 0 && availableColors[0]) {
         setSelectedColor(availableColors[0]);
       }
     }
@@ -87,7 +91,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({
         className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
-      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto relative z-10 flex flex-col md:flex-row shadow-2xl animate-[pop-in_0.3s_ease-out]">
+      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto relative z-10 flex flex-col lg:flex-row shadow-2xl animate-[pop-in_0.3s_ease-out]">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 z-20 p-2 bg-white/80 rounded-full hover:bg-gray-100 transition-colors"
@@ -95,8 +99,8 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({
           <span className="material-icons text-gray-500">close</span>
         </button>
 
-        {/* Image Section */}
-        <div className="w-full md:w-1/2 bg-secondary/30 min-h-[300px] md:min-h-[500px] relative">
+        {/* Image Section - Smaller on mobile/tablet, larger on desktop */}
+        <div className="w-full max-w-xs mx-auto lg:w-1/2 lg:max-w-none bg-secondary/30 aspect-[9/16] relative">
           <img
             src={activeImage}
             alt={product.name}
@@ -105,7 +109,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({
         </div>
 
         {/* Details Section */}
-        <div className="w-full md:w-1/2 p-6 md:p-10 flex flex-col">
+        <div className="w-full lg:w-1/2 p-6 md:p-8 lg:p-10 flex flex-col">
           <h2 className="text-2xl font-bold uppercase tracking-tight mb-2">
             {product.name}
           </h2>
@@ -223,9 +227,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({
                 {isFavorite ? "Saved" : "Wishlist"}
               </button>
               <button
-                onClick={() =>
-                  navigate(`/product/${product.slug || product.id}`)
-                }
+                onClick={() => router.push(`/product/${product.id}`)}
                 className="flex-1 h-12 border border-gray-200 rounded-lg font-bold uppercase text-xs hover:bg-gray-50 transition-colors text-black"
               >
                 View Details

@@ -7,9 +7,10 @@ import { getGuestSessionId, getToken } from "../utils/storage";
 import { endpoints } from "./endpoints";
 
 // Use validated environment variable (validates in production)
-const API_BASE_URL = import.meta.env.PROD
-  ? env.apiUrl
-  : import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL =
+  process.env.NODE_ENV === "production"
+    ? env.apiUrl
+    : process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 /**
  * Create fetch options with auth headers

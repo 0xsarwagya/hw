@@ -1,96 +1,108 @@
-export interface PricelistPrice {
-  priceListId: string;
-  priceListName: string;
-  price: number;
-  overrideType: string;
-  overrideValue: number;
+/**
+ * Type exports from Zod validation schemas
+ * All backend-aligned types come from validation schemas
+ */
+
+// Re-export backend types with aliases for clarity
+import type {
+  Address as BackendAddressType,
+  CartItem as BackendCartItemType,
+  Order as BackendOrderType,
+  Product as BackendProductType,
+} from "./lib/validations";
+
+export type {
+  Address,
+  // Auth & Customer
+  AuthResponse,
+  // Bundles
+  Bundle,
+  BundleSet,
+  BundleSetItem,
+  BundleVariantBreakdown,
+  // Cart (backend types)
+  Cart as BackendCart,
+  CartGstBreakdown,
+  CartItem as BackendCartItem,
+  // Checkout
+  CheckoutAddress,
+  CheckoutAddressInput,
+  CheckoutConfirmResponse,
+  CheckoutSession,
+  CustomerProfile,
+  // Orders
+  Order as BackendOrder,
+  OrderItem,
+  PaginatedProducts,
+  PaginatedReviews,
+  PaymentFeeBreakdown as OrderPaymentFeeBreakdown,
+  PaymentFeeBreakdown as CheckoutPaymentFeeBreakdown,
+  PaymentMethod,
+  // Product & Variants (backend types)
+  Product as BackendProduct,
+  Review as BackendReview,
+  ReviewAggregate,
+  ShippingMethod,
+  UserBundleSelection,
+  Variant,
+} from "./lib/validations";
+
+/**
+ * UI-specific types that extend backend types for frontend display
+ */
+
+// UI Product type - extends backend Product with UI-specific fields
+export interface Product extends Omit<BackendProductType, "title"> {
+  name: string; // Maps from backend 'title'
+  originalPrice?: number; // For showing strikethrough prices
+  image: string; // First image from images array
+  category: string; // Maps from categoryId (or fetched category name)
+  rating: number; // Calculated from reviews
+  reviews: number; // Count of reviews
+  slug?: string; // Generated slug for routing
+  selectedColor?: string; // UI state
+  sizes?: string[]; // Extracted from variants
+  colors?: string[]; // Extracted from variants
 }
 
-export interface Product {
-  id: string;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  image: string;
-  category: string;
-  rating: number;
-  reviews: number;
-  images?: string[];
-  description?: string;
-  sizes?: string[];
-  colors?: string[];
-  selectedColor?: string;
-  slug?: string; // URL-friendly slug for routing
-  pricelistPrices?: PricelistPrice[]; // All available pricelist prices
-}
-
-export interface Review {
-  id: string;
-  author: string;
-  rating: number;
-  date: string;
-  title: string;
-  content: string;
-  avatar?: string;
-}
-
+// UI CartItem type - extends Product with cart-specific fields
 export interface CartItem extends Product {
-  cartId: string; // Unique ID for this specific instance in cart (combines id + size + color)
-  selectedSize: string;
+  cartId: string; // Maps from backend cart item 'id'
+  selectedSize: string; // Extracted from variant
   quantity: number;
 }
 
-export interface BundleConfig {
-  count: number;
-  price: number;
-  originalPrice: number;
-  savings: string;
-  image: string;
+// UI Review type - simplified for display
+export interface Review {
+  id: string;
+  author: string; // Maps from customerName
+  rating: number;
+  date: string; // Formatted createdAt
+  title: string; // Maps from title or empty
+  content: string; // Maps from body
+  avatar?: string; // Optional avatar URL
 }
 
+// UI Order type - can extend BackendOrder if needed
+export type Order = BackendOrderType;
+
+// UI state for user (combines customer profile with UI-specific fields)
+export interface User {
+  name: string;
+  email: string;
+  phone: string;
+  avatar?: string;
+  addresses: BackendAddressType[];
+  orders: Order[];
+  wishlist: Product[]; // UI Product type
+}
+
+// UI helper for color options (not from backend)
 export interface ColorOption {
   name: string;
   hex: string;
   image: string;
 }
 
-export interface Address {
-  id: string;
-  type: string;
-  name: string;
-  street: string;
-  city: string;
-  state: string;
-  zip: string;
-  phone: string;
-  isDefault: boolean;
-}
-
-export interface OrderItem {
-  productId: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-  selectedSize: string;
-  selectedColor?: string;
-}
-
-export interface Order {
-  id: string;
-  date: string;
-  status: "Processing" | "Shipped" | "Delivered" | "Cancelled";
-  total: number;
-  items: OrderItem[];
-  shippingAddress: Address;
-}
-
-export interface User {
-  name: string;
-  email: string;
-  phone: string;
-  avatar?: string;
-  addresses: Address[];
-  orders: Order[];
-  wishlist: Product[];
-}
+// Note: BundleConfig removed - use Bundle type from backend instead
+// Note: PricelistPrice is exported from product validation schema

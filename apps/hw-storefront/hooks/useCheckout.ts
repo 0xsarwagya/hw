@@ -172,9 +172,9 @@ export function usePaymentMethods(params?: {
         : endpoints.checkout.paymentMethods;
 
       try {
-        const data = await get<{ methods: unknown[] }>(url);
+        const data = await get<{ methods?: unknown[] } | unknown[]>(url);
 
-        // Handle both response formats: { methods: [...] } or direct array
+        // Handle response format: { methods: [...] }
         if (
           data &&
           typeof data === "object" &&
@@ -183,6 +183,7 @@ export function usePaymentMethods(params?: {
         ) {
           return data.methods.map((m) => paymentMethodSchema.parse(m));
         } else if (Array.isArray(data)) {
+          // Handle direct array format (fallback)
           return data.map((m) => paymentMethodSchema.parse(m));
         }
 

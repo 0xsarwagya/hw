@@ -1,7 +1,94 @@
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { endpoints, get } from "../lib/api/client";
+import type { Bundle } from "../lib/validations/bundle";
 import { variantSchema } from "../lib/validations/product";
+
+/**
+ * Fetch variants from bundle data using variant IDs from bundle sets
+ */
+export const useBundleVariants = (bundle: Bundle | null) => {
+  return useQuery({
+    queryKey: ["bundleVariants", bundle?.id],
+    queryFn: async () => {
+      if (!bundle) return { variants: [], colors: [], sizes: [] };
+
+      // Extract all variant IDs from bundle sets
+      const variantIds = new Set<string>();
+      bundle.sets.forEach((set) => {
+        set.items.forEach((item) => {
+          variantIds.add(item.variantId);
+        });
+      });
+
+      if (variantIds.size === 0) {
+        return { variants: [], colors: [], sizes: [] };
+      }
+
+      // Fetch products to get their variants
+      // We'll fetch all active products and filter variants
+      const productsData = await get(
+        `${endpoints.products.list}?limit=100&status=active`,
+      );
+      const products = z
+        .object({
+          data: z.array(
+            z.object({
+              id: z.string().uuid(),
+            }),
+          ),
+        })
+        .parse(productsData);
+
+      // Fetch variants for all products in parallel
+      const variantPromises = products.data.map(async (product) => {
+        try {
+          const variants = await get(endpoints.products.variants(product.id));
+          return Array.isArray(variants)
+            ? variants.map((v) => variantSchema.parse(v))
+            : [];
+        } catch (error) {
+          console.error(
+            `Failed to fetch variants for product ${product.id}:`,
+            error,
+          );
+          return [];
+        }
+      });
+
+      const allVariantsArrays = await Promise.all(variantPromises);
+      const allVariants = allVariantsArrays.flat();
+
+      // Filter to only variants that are in the bundle
+      const bundleVariants = allVariants.filter((v) => variantIds.has(v.id));
+
+      // Extract unique colors and sizes from bundle variants
+      const colors = Array.from(
+        new Set(
+          bundleVariants
+            .map((v) => v.color)
+            .filter((color): color is string => !!color),
+        ),
+      ).sort();
+
+      const sizes = Array.from(
+        new Set(
+          bundleVariants
+            .map((v) => v.size)
+            .filter((size): size is string => !!size),
+        ),
+      ).sort();
+
+      return {
+        variants: bundleVariants,
+        colors,
+        sizes,
+      };
+    },
+    enabled: !!bundle,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
+};
 
 /**
  * Fetch all variants from products and extract unique colors and sizes

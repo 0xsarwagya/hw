@@ -1,12 +1,15 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 
 const HeroCarousel: React.FC = () => {
   const slides = [
     {
       id: 1,
-      image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuB3AEFotmLVaCeKFiroqO3nR0fg1kEAQ063Xq7viRYnc6syGuyLplPQBfxzSLiKTiZG06eoEtFMOocr4GD3W1523tuhUeUqUuN34ygdZvc7itoyxgU8w5tBItnw0qeVF8n4tXpcgJWw5e_xgGI9kZGv-uDHYBXVmgVr7Bpxf-DHtrKm6mdHmg4Mv0qIV9VsF_z0EU3AijbtkpQyuHw8Js9ZzyyibAwe5pWSfNaPxaSWdIq1B748PCwg1ArGi59FrGKXKlICqlSNr61B",
+      imageDesktop: "/banners:desktop:1.avif",
+      imageMobile: "/banners:mobile:1.avif",
       title: "Your Style.\nYour Statement.",
       subtitle: "Premium Streetwear Essentials",
       cta: "Shop Men's",
@@ -14,8 +17,8 @@ const HeroCarousel: React.FC = () => {
     },
     {
       id: 2,
-      image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuCFEC38fU-fBmMkF4VqHhVBXu7qsAML8JaB09H8ASNnmzPUrklCA512RUbdxbXP_2R6AAuiI7_NFCgZ7ngjueJvUv1R5Lnnooho_slMagc3s-LSmwo2vLXvkfbuSqWqDAaA7XdHaTJ0RsdzDLizLrYXZyDVvkbUXnh3izP1nGxFsAreK2-TT4NC0Dk7oosuNNev7BK8Rp8dHTc7I6bIP8XwL-H1lDiTwQQL2ycZizUpAV5BhpXGHN1bRfVmeXHWpddn_0DNjIs_AiR_",
+      imageDesktop: "/banners:desktop:2.avif",
+      imageMobile: "/banners:mobile:2.avif",
       title: "New Drop:\nHoodie Season",
       subtitle: "Comfort Meets Chaos",
       cta: "Shop Hoodies",
@@ -23,8 +26,8 @@ const HeroCarousel: React.FC = () => {
     },
     {
       id: 3,
-      image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuDkOWosVi1ErOJ9jUk9YsfwNsecOdKePWP7U1t2esLHBgJmMfH_FGoZgX7_TsENPvokqciHZnVPmdSSiARamarYSit51SB32sl88XmZra9vUskylVLsRa6VSdAy8awObO_yX0R2AAeNY8sw_nJkcPO4LSH0bVw_fwybeyRSbmd5CR1Dlr7YJrWnHUYyQeIsuwajT0lQ_ubdgAkxm6H2W1-atIiTGQRlIm21N-BnX_mSRalAeH24W5UplfGncv3tusJQ5_eLMV1g-qQc",
+      imageDesktop: "/banners:desktop:3.avif",
+      imageMobile: "/banners:mobile:3.avif",
       title: "Unisex\nCollections",
       subtitle: "For Him. For Her. For Everyone.",
       cta: "Shop All",
@@ -48,10 +51,23 @@ const HeroCarousel: React.FC = () => {
           key={slide.id}
           className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? "opacity-100" : "opacity-0"}`}
         >
-          <img
-            src={slide.image}
+          {/* Desktop Banner */}
+          <Image
+            src={slide.imageDesktop}
             alt={slide.title}
-            className="w-full h-full object-cover object-center"
+            fill
+            className="object-cover object-center hidden md:block"
+            priority={index === 0}
+            unoptimized
+          />
+          {/* Mobile Banner */}
+          <Image
+            src={slide.imageMobile}
+            alt={slide.title}
+            fill
+            className="object-cover object-center block md:hidden"
+            priority={index === 0}
+            unoptimized
           />
           <div className="absolute inset-0 bg-black/30 bg-gradient-to-t from-black/80 via-transparent to-transparent">
             <div className="max-w-screen-2xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex flex-col justify-end pb-24 md:pb-32">
@@ -64,7 +80,7 @@ const HeroCarousel: React.FC = () => {
                 </h1>
                 <div className="flex gap-4">
                   <Link
-                    to={slide.link}
+                    href={slide.link}
                     className="bg-primary text-white px-8 py-4 rounded-full font-bold uppercase tracking-wide hover:bg-white hover:text-black transition-colors shadow-lg shadow-blue-900/40 animate-[pulse_2s_infinite]"
                   >
                     {slide.cta}

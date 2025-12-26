@@ -1,17 +1,28 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import { useShop } from "../context/ShopContext";
+import { useCart } from "../hooks/useCart";
 import { formatCurrency } from "../utils";
 
 const CartDrawer: React.FC = () => {
   const { isCartOpen, closeCart, cart, updateQuantity, removeFromCart } =
     useShop();
-  const navigate = useNavigate();
+  const { data: backendCart } = useCart();
+  const router = useRouter();
 
-  const subtotal = cart.reduce(
+  // Use backend cart totals if available, otherwise calculate from cart items
+  const subtotal = backendCart?.subtotal ?? cart.reduce(
     (total, item) => total + item.price * item.quantity,
     0,
   );
+  const discountAmount = backendCart?.discountAmount ?? 0;
+  const discountCode = backendCart?.discountCode;
+  const gstAmount = backendCart?.gstAmount ?? 0;
+  const total = backendCart?.total ?? subtotal;
+
   const FREE_SHIPPING_THRESHOLD = 999;
   const progress = Math.min((subtotal / FREE_SHIPPING_THRESHOLD) * 100, 100);
   const remaining = FREE_SHIPPING_THRESHOLD - subtotal;
@@ -36,7 +47,7 @@ const CartDrawer: React.FC = () => {
 
   const handleCheckout = () => {
     closeCart();
-    navigate("/checkout");
+    router.push("/checkout");
   };
 
   return (
@@ -123,7 +134,7 @@ const CartDrawer: React.FC = () => {
               <button
                 onClick={() => {
                   closeCart();
-                  navigate("/shop");
+                  router.push("/shop");
                 }}
                 className="bg-black text-white px-6 py-2 rounded-lg font-bold uppercase text-sm"
               >
@@ -195,19 +206,59 @@ const CartDrawer: React.FC = () => {
         {cart.length > 0 && (
           <div className="p-5 border-t border-gray-100 bg-gray-50 pb-8 md:pb-5">
             <div className="space-y-2 mb-4">
+              {/* 1. Subtotal */}
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Subtotal</span>
                 <span className="font-bold">{formatCurrency(subtotal)}</span>
               </div>
+
+              {/* 2. GST */}
+              {gstAmount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">GST</span>
+                  <span className="font-bold">{formatCurrency(gstAmount)}</span>
+                </div>
+              )}
+
+              {/* 3. Total Before Discount */}
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Total Before Discount</span>
+                  <span className="font-bold">
+                    {formatCurrency(subtotal + gstAmount)}
+                  </span>
+                </div>
+              )}
+
+              {/* 4. Discount */}
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-sm text-green-600 font-medium">
+                  <span>
+                    Discount{discountCode ? ` (${discountCode})` : ""}
+                  </span>
+                  <span className="font-bold">
+                    -{formatCurrency(discountAmount)}
+                  </span>
+                </div>
+              )}
+
+              {/* 5. Cart Total */}
+              <div className="border-t border-gray-200 pt-2 mt-2">
+                <div className="flex justify-between font-bold text-base">
+                  <span>Total</span>
+                  <span>{formatCurrency(total)}</span>
+                </div>
+              </div>
+
               <p className="text-xs text-gray-400">
-                Shipping & taxes calculated at checkout
+                Shipping calculated at checkout
               </p>
             </div>
             <button
               onClick={handleCheckout}
               className="w-full bg-black text-white py-4 rounded-xl font-bold uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-black/20"
             >
-              Checkout • {formatCurrency(subtotal)}
+              Checkout • {formatCurrency(total)}
             </button>
           </div>
         )}

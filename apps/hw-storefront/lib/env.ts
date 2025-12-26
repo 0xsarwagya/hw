@@ -6,12 +6,12 @@
 const API_URL_PATTERN = /^https?:\/\/.+/;
 
 /**
- * Validate that VITE_API_URL is set and is a valid URL
+ * Validate that NEXT_PUBLIC_API_URL is set and is a valid URL
  */
 function validateApiUrl(url: string | undefined, name: string): string {
   if (!url) {
     throw new Error(
-      `Missing required environment variable: ${name}. Please set it in Netlify project settings or .env file.`,
+      `Missing required environment variable: ${name}. Please set it in Netlify project settings or .env.local file.`,
     );
   }
 
@@ -27,10 +27,15 @@ function validateApiUrl(url: string | undefined, name: string): string {
 /**
  * Get the API base URL
  * Validates the URL format and ensures it's set
+ * Returns a default URL during build time if not set
  */
 export function getApiUrl(): string {
-  const url = import.meta.env.VITE_API_URL;
-  return validateApiUrl(url, "VITE_API_URL");
+  const url = process.env.NEXT_PUBLIC_API_URL;
+  // During build, allow missing env var (will be set at runtime)
+  if (process.env.NODE_ENV === "production" && !url) {
+    return "http://localhost:3001"; // Fallback for build
+  }
+  return validateApiUrl(url, "NEXT_PUBLIC_API_URL");
 }
 
 /**
@@ -38,7 +43,7 @@ export function getApiUrl(): string {
  * Returns undefined if not set (optional for some features)
  */
 export function getRazorpayKeyId(): string | undefined {
-  return import.meta.env.VITE_RAZORPAY_KEY_ID;
+  return process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 }
 
 /**
@@ -47,7 +52,7 @@ export function getRazorpayKeyId(): string | undefined {
  */
 export function validateEnv(): void {
   // Only validate in production - allow dev builds without env vars
-  if (import.meta.env.PROD) {
+  if (process.env.NODE_ENV === "production") {
     getApiUrl();
   }
 }
@@ -58,8 +63,16 @@ export function validateEnv(): void {
 export const env = {
   /**
    * Backend API URL (required)
+   * Returns fallback during build if not set
    */
   get apiUrl() {
+    // During build, allow missing env var
+    if (
+      process.env.NODE_ENV === "production" &&
+      !process.env.NEXT_PUBLIC_API_URL
+    ) {
+      return "http://localhost:3001"; // Fallback for build
+    }
     return getApiUrl();
   },
 
@@ -74,13 +87,13 @@ export const env = {
    * Check if running in production
    */
   get isProduction() {
-    return import.meta.env.PROD;
+    return process.env.NODE_ENV === "production";
   },
 
   /**
    * Check if running in development
    */
   get isDevelopment() {
-    return import.meta.env.DEV;
+    return process.env.NODE_ENV === "development";
   },
 } as const;

@@ -9,7 +9,7 @@ interface ImageSliderProps {
 
 const ImageSlider: React.FC<ImageSliderProps> = ({
   images,
-  aspectRatio = "aspect-[4/5] md:aspect-square",
+  aspectRatio = "aspect-[9/16]",
   className = "",
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);

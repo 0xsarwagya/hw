@@ -17,18 +17,7 @@ export const useBundles = (page = 1, limit = 10) => {
     queryFn: async () => {
       const url = `${endpoints.bundles.list}?page=${page}&limit=${limit}`;
       const data = await get(url);
-      // Backend returns array or paginated response
-      if (Array.isArray(data)) {
-        return {
-          data: data.map((b) => bundleSchema.parse(b)),
-          total: data.length,
-          page,
-          limit,
-          totalPages: Math.ceil(data.length / limit),
-          hasNextPage: false,
-          hasPreviousPage: false,
-        };
-      }
+      // Backend returns paginated response: { data: [...], total, page, limit, totalPages, hasNextPage, hasPreviousPage }
       return paginatedBundlesSchema.parse(data);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -55,12 +44,11 @@ export const useBundleBySlug = (slug: string) => {
   return useQuery({
     queryKey: ["bundles", "slug", slug],
     queryFn: async () => {
-      // Fetch all bundles
+      // Fetch all bundles - API returns paginated response
       const url = `${endpoints.bundles.list}?limit=100`;
       const data = await get(url);
-      const bundles = Array.isArray(data)
-        ? data.map((b) => bundleSchema.parse(b))
-        : paginatedBundlesSchema.parse(data).data;
+      const paginatedResponse = paginatedBundlesSchema.parse(data);
+      const bundles = paginatedResponse.data;
 
       // Find bundle matching slug
       // Slug format: title-slug-{last8charsOfId}

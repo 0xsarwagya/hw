@@ -1,17 +1,16 @@
+"use client";
+
 import React from "react";
-import { Outlet } from "react-router-dom";
 import CartDrawer from "./CartDrawer";
 import Footer from "./Footer";
 import Header from "./Header";
 
-const Layout: React.FC = () => {
+export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col min-h-screen font-sans">
       <Header />
 
-      <main className="flex-grow">
-        <Outlet />
-      </main>
+      <main className="flex-grow">{children}</main>
 
       {/* Cart Drawer */}
       <CartDrawer />
@@ -19,6 +18,4 @@ const Layout: React.FC = () => {
       <Footer />
     </div>
   );
-};
-
-export default Layout;
+}
