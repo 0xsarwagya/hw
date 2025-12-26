@@ -43,9 +43,12 @@ const Bundle: React.FC<BundleProps> = ({ bundleId, slug }) => {
   const bundles = bundlesData?.data || [];
 
   // If slug provided, find bundle by slug
-  const { data: bundleBySlug, isLoading: slugLoading } = useBundleBySlug(
-    slug || "",
-  );
+  const {
+    data: bundleBySlug,
+    isLoading: slugLoading,
+    isError: slugError,
+    error: slugErrorData,
+  } = useBundleBySlug(slug || "");
   const resolvedBundleId = bundleId || bundleBySlug?.id;
 
   // If bundleId provided, fetch that specific bundle
@@ -643,6 +646,36 @@ const Bundle: React.FC<BundleProps> = ({ bundleId, slug }) => {
   // For now, use placeholder images - in production, these would come from product images
   const activeImage = `https://via.placeholder.com/500?text=${encodeURIComponent(activeColorName)}`;
   const galleryImages = [activeImage, activeImage, activeImage, activeImage];
+
+  // Error state - if slug was provided but bundle not found
+  if (slug && slugError) {
+    return (
+      <div className="bg-white min-h-screen pb-20">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
+          <div className="text-center">
+            <h1 className="text-3xl md:text-4xl font-bold mb-4">Bundle Not Found</h1>
+            <p className="text-gray-500 mb-8">
+              The bundle you're looking for doesn't exist or may have been removed.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={() => router.push("/bundles")}
+                className="bg-primary text-white px-6 py-3 rounded font-bold uppercase tracking-wider hover:bg-blue-800 transition-colors"
+              >
+                Browse All Bundles
+              </button>
+              <button
+                onClick={() => router.push("/shop")}
+                className="bg-gray-200 text-gray-800 px-6 py-3 rounded font-bold uppercase tracking-wider hover:bg-gray-300 transition-colors"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Show loading if variants not ready
   if (
