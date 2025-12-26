@@ -128,10 +128,9 @@ export class DiscountsService {
         minQuantity: createDiscountDto.minQuantity || null,
         customerGroupIds: createDiscountDto.customerGroupIds || null,
         scope: createDiscountDto.scope || "PRODUCT",
-        calculationBasis:
-          (createDiscountDto.calculationBasis || "TOTAL") as
-            | "SUBTOTAL"
-            | "TOTAL",
+        calculationBasis: (createDiscountDto.calculationBasis || "TOTAL") as
+          | "SUBTOTAL"
+          | "TOTAL",
         priority: createDiscountDto.priority || 1,
         canStack: createDiscountDto.canStack ?? true,
         mutuallyExclusive: createDiscountDto.mutuallyExclusive ?? false,

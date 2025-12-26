@@ -291,7 +291,9 @@ export function DiscountFormWizard({
             <Label>Calculate Discount On</Label>
             <select
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-              value={formData.calculationBasis || DiscountCalculationBasis.TOTAL}
+              value={
+                formData.calculationBasis || DiscountCalculationBasis.TOTAL
+              }
               onChange={(e) =>
                 updateField(
                   "calculationBasis",

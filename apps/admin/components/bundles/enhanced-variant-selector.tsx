@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, ChevronsUpDown, Image as ImageIcon } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,8 +41,7 @@ export function EnhancedVariantSelector({
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: variantsIndex, isLoading: isLoadingIndex } =
-    useVariantsIndex();
+  const { data: variantsIndex, isLoading: isLoadingIndex } = useVariantsIndex();
   const { data: inventoryData, isLoading: isLoadingInventory } =
     useInventoryList({
       limit: 1000, // Get all inventory items for better search
@@ -51,9 +50,7 @@ export function EnhancedVariantSelector({
   // Create a map of variantId -> inventory item for quick lookup
   const inventoryMap = useMemo(() => {
     if (!inventoryData?.data) return new Map();
-    return new Map(
-      inventoryData.data.map((item) => [item.variantId, item]),
-    );
+    return new Map(inventoryData.data.map((item) => [item.variantId, item]));
   }, [inventoryData]);
 
   const variants = variantsIndex?.variants || [];
@@ -71,8 +68,9 @@ export function EnhancedVariantSelector({
       const skuMatch = variant.sku.toLowerCase().includes(query);
       const titleMatch = variant.productTitle.toLowerCase().includes(query);
       const attributeMatch = variant.attributes
-        ? Object.values(variant.attributes)
-            .some((value) => value.toLowerCase().includes(query))
+        ? Object.values(variant.attributes).some((value) =>
+            value.toLowerCase().includes(query),
+          )
         : false;
 
       return skuMatch || titleMatch || attributeMatch;
@@ -190,17 +188,18 @@ export function EnhancedVariantSelector({
                           </Badge>
                         )}
                         {isLowStock && (
-                          <Badge variant="outline" className="text-xs border-orange-500 text-orange-600">
+                          <Badge
+                            variant="outline"
+                            className="text-xs border-orange-500 text-orange-600"
+                          >
                             Low Stock
                           </Badge>
                         )}
-                        {inventoryItem &&
-                          !isOutOfStock &&
-                          !isLowStock && (
-                            <Badge variant="outline" className="text-xs">
-                              In Stock
-                            </Badge>
-                          )}
+                        {inventoryItem && !isOutOfStock && !isLowStock && (
+                          <Badge variant="outline" className="text-xs">
+                            In Stock
+                          </Badge>
+                        )}
                       </div>
                       <div className="text-sm font-medium text-foreground mb-1">
                         {variant.productTitle}
@@ -225,7 +224,8 @@ export function EnhancedVariantSelector({
                         <div className="text-xs text-muted-foreground mt-1">
                           Stock: {inventoryItem.inventory} units
                           {inventoryItem.available !== undefined &&
-                            inventoryItem.available !== inventoryItem.inventory && (
+                            inventoryItem.available !==
+                              inventoryItem.inventory && (
                               <span className="ml-1">
                                 ({inventoryItem.available} available)
                               </span>
@@ -244,4 +244,3 @@ export function EnhancedVariantSelector({
     </Popover>
   );
 }
-

@@ -299,7 +299,8 @@ const CheckoutPayment: React.FC = () => {
                     {cart.discountAmount > 0 && (
                       <div className="flex justify-between text-sm text-green-600 font-medium">
                         <span>
-                          Discount{cart.discountCode ? ` (${cart.discountCode})` : ""}
+                          Discount
+                          {cart.discountCode ? ` (${cart.discountCode})` : ""}
                         </span>
                         <span className="font-bold">
                           -{formatCurrency(cart.discountAmount)}
@@ -312,7 +313,8 @@ const CheckoutPayment: React.FC = () => {
                         {formatCurrency(cart.gstAmount)}
                       </span>
                     </div>
-                    {selectedMethod && paymentMethods && (
+                    {selectedMethod &&
+                      paymentMethods &&
                       (() => {
                         const selectedPaymentMethod = paymentMethods.find(
                           (m) => m.method === selectedMethod,
@@ -326,16 +328,16 @@ const CheckoutPayment: React.FC = () => {
                             </span>
                           </div>
                         ) : null;
-                      })()
-                    )}
+                      })()}
                     <div className="border-t border-gray-200 pt-4 flex justify-between font-bold text-lg">
                       <span>Total</span>
                       <span className="text-primary">
                         {formatCurrency(
                           cart.total +
                             (selectedMethod && paymentMethods
-                              ? paymentMethods.find((m) => m.method === selectedMethod)
-                                  ?.fee || 0
+                              ? paymentMethods.find(
+                                  (m) => m.method === selectedMethod,
+                                )?.fee || 0
                               : 0),
                         )}
                       </span>

@@ -121,16 +121,19 @@ export function BundleSetsManager({ bundleId }: BundleSetsManagerProps) {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                           <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs font-medium">
                             {index + 1}
                           </div>
-                        <CardTitle className="text-base">{set.title}</CardTitle>
+                          <CardTitle className="text-base">
+                            {set.title}
+                          </CardTitle>
                         </div>
                         {isComplete ? (
                           <Badge variant="default" className="bg-green-600">
                             <CheckCircle2 className="mr-1 h-3 w-3" />
-                            {variantCount} variant{variantCount !== 1 ? "s" : ""}
+                            {variantCount} variant
+                            {variantCount !== 1 ? "s" : ""}
                           </Badge>
                         ) : (
                           <Badge variant="destructive">

@@ -184,8 +184,7 @@ export class CreateDiscountDto {
   @IsEnum(DiscountCalculationBasis, {
     message: `Calculation basis must be one of: ${Object.values(DiscountCalculationBasis).join(", ")}`,
   })
-  calculationBasis?: DiscountCalculationBasis =
-    DiscountCalculationBasis.TOTAL;
+  calculationBasis?: DiscountCalculationBasis = DiscountCalculationBasis.TOTAL;
 
   @ApiProperty({
     description: "Priority level (lower = higher priority, like Shopify)",

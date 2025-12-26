@@ -6,7 +6,11 @@ import React, { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { SEO } from "../../components/SEO";
-import { useApplyDiscount, useCart, useRemoveDiscount } from "../../hooks/useCart";
+import {
+  useApplyDiscount,
+  useCart,
+  useRemoveDiscount,
+} from "../../hooks/useCart";
 import {
   useApplyAddress,
   useConfirmCheckout,
@@ -948,7 +952,8 @@ const Checkout: React.FC = () => {
                     {cart.discountAmount > 0 && (
                       <div className="flex justify-between text-green-600 font-medium">
                         <span>
-                          Discount{cart.discountCode ? ` (${cart.discountCode})` : ""}
+                          Discount
+                          {cart.discountCode ? ` (${cart.discountCode})` : ""}
                         </span>
                         <span>-{formatCurrency(cart.discountAmount)}</span>
                       </div>
@@ -1081,7 +1086,7 @@ const Checkout: React.FC = () => {
                           setDiscountError(
                             error instanceof Error
                               ? error.message
-                              : "Failed to apply discount"
+                              : "Failed to apply discount",
                           );
                         },
                       });
@@ -1122,7 +1127,8 @@ const Checkout: React.FC = () => {
                 {cart.discountAmount > 0 && (
                   <div className="flex justify-between text-green-600 font-medium">
                     <span>
-                      Discount{cart.discountCode ? ` (${cart.discountCode})` : ""}
+                      Discount
+                      {cart.discountCode ? ` (${cart.discountCode})` : ""}
                     </span>
                     <span>-{formatCurrency(cart.discountAmount)}</span>
                   </div>

@@ -19,10 +19,8 @@ export function BundlePreviewCard({
   className,
 }: BundlePreviewCardProps) {
   const totalSets = bundle.sets?.length || 0;
-  const totalVariants = bundle.sets?.reduce(
-    (sum, set) => sum + (set.items?.length || 0),
-    0,
-  ) || 0;
+  const totalVariants =
+    bundle.sets?.reduce((sum, set) => sum + (set.items?.length || 0), 0) || 0;
 
   return (
     <Card className={className}>
@@ -98,4 +96,3 @@ export function BundlePreviewCard({
     </Card>
   );
 }
-

@@ -15,14 +15,11 @@ interface BundleSummaryCardProps {
  */
 export function BundleSummaryCard({ bundle }: BundleSummaryCardProps) {
   const totalSets = bundle.sets?.length || 0;
-  const totalVariants = bundle.sets?.reduce(
-    (sum, set) => sum + (set.items?.length || 0),
-    0,
-  ) || 0;
+  const totalVariants =
+    bundle.sets?.reduce((sum, set) => sum + (set.items?.length || 0), 0) || 0;
 
-  const setsWithVariants = bundle.sets?.filter(
-    (set) => (set.items?.length || 0) > 0,
-  ).length || 0;
+  const setsWithVariants =
+    bundle.sets?.filter((set) => (set.items?.length || 0) > 0).length || 0;
   const setsWithoutVariants = totalSets - setsWithVariants;
 
   return (
@@ -100,4 +97,3 @@ export function BundleSummaryCard({ bundle }: BundleSummaryCardProps) {
     </Card>
   );
 }
-

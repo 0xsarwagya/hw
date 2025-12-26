@@ -1,8 +1,8 @@
 "use client";
 
 import { Package2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Bundle } from "@/lib/types/bundles";
 
 interface BundleDetailOverviewProps {
@@ -91,4 +91,3 @@ export function BundleDetailOverview({ bundle }: BundleDetailOverviewProps) {
     </Card>
   );
 }
-

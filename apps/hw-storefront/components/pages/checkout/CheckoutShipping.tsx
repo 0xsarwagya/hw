@@ -251,7 +251,8 @@ const CheckoutShipping: React.FC = () => {
                     {cart.discountAmount > 0 && (
                       <div className="flex justify-between text-sm text-green-600 font-medium">
                         <span>
-                          Discount{cart.discountCode ? ` (${cart.discountCode})` : ""}
+                          Discount
+                          {cart.discountCode ? ` (${cart.discountCode})` : ""}
                         </span>
                         <span className="font-bold">
                           -{formatCurrency(cart.discountAmount)}

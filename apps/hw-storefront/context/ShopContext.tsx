@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import {
+  QUERY_KEYS,
   useAddReview,
   useAuthMe,
   useLogin,
@@ -15,7 +16,6 @@ import {
   useProducts,
   useRegister,
   useReviews,
-  QUERY_KEYS,
 } from "../hooks/useApi";
 import {
   useAddToCart,
@@ -26,8 +26,8 @@ import {
 } from "../hooks/useCart";
 import { useCustomerProfile } from "../hooks/useCustomer";
 import { endpoints, get } from "../lib/api/client";
-import { productSchema, variantSchema } from "../lib/validations/product";
 import { isAuthenticated } from "../lib/utils/storage";
+import { productSchema, variantSchema } from "../lib/validations/product";
 import { Address, CartItem, Order, Product, Review, User } from "../types";
 
 interface ShopContextType {
@@ -292,7 +292,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({
   const variantProductMap = useMemo(() => {
     const map = new Map<
       string,
-      { product: (typeof allProducts)[0]; variant: ReturnType<typeof variantSchema.parse> }
+      {
+        product: (typeof allProducts)[0];
+        variant: ReturnType<typeof variantSchema.parse>;
+      }
     >();
 
     productVariantQueries.forEach((query, index) => {

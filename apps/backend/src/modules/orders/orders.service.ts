@@ -472,7 +472,7 @@ export class OrdersService {
           // Extract base price from inclusive price
           const basePricePerUnit = calculateBasePrice(
             item.price,
-          item.productGstRate,
+            item.productGstRate,
           );
           baseAmount = basePricePerUnit * item.quantity;
           subtotal += baseAmount;
@@ -484,10 +484,7 @@ export class OrdersService {
 
         // Calculate GST breakdown
         if (item.productGstRate > 0) {
-          const isIntraState = isIntraStateTransaction(
-          sellerState,
-          buyerState,
-        );
+          const isIntraState = isIntraStateTransaction(sellerState, buyerState);
           if (isIntraState) {
             const { cgst, sgst } = calculateCgstSgst(
               baseAmount,
@@ -533,7 +530,7 @@ export class OrdersService {
               // Extract base price from inclusive price
               const basePricePerUnit = calculateBasePrice(
                 bundleItem.price,
-              product.gstRate,
+                product.gstRate,
               );
               baseAmount = basePricePerUnit * bundleItem.quantity;
               subtotal += baseAmount;
@@ -546,9 +543,9 @@ export class OrdersService {
             // Calculate GST breakdown
             if (product.gstRate > 0) {
               const isIntraState = isIntraStateTransaction(
-              sellerState,
-              buyerState,
-            );
+                sellerState,
+                buyerState,
+              );
               if (isIntraState) {
                 const { cgst, sgst } = calculateCgstSgst(
                   baseAmount,
@@ -559,7 +556,7 @@ export class OrdersService {
               } else {
                 const igst = calculateIgst(baseAmount, product.gstRate);
                 totalIgst += igst;
-          }
+              }
             }
           }
         } else {
@@ -683,7 +680,7 @@ export class OrdersService {
             const pricingType = product?.pricingType || "exclusive";
             const gstRate = product?.gstRate || 0;
             const totalPrice = item.price * item.quantity;
-            
+
             // Extract base price if tax-inclusive, otherwise use price as-is
             let basePrice: number;
             if (pricingType === "inclusive" && gstRate > 0) {
@@ -694,7 +691,7 @@ export class OrdersService {
               // Tax-exclusive or 0% GST - use price as-is
               basePrice = totalPrice;
             }
-            
+
             return {
               variantId: item.productVariantId,
               productId: productId || "",
@@ -713,7 +710,7 @@ export class OrdersService {
             const pricingType = product?.pricingType || "exclusive";
             const gstRate = product?.gstRate || 0;
             const totalPrice = v.basePrice * v.quantity;
-            
+
             // Extract base price if tax-inclusive, otherwise use price as-is
             let basePrice: number;
             if (pricingType === "inclusive" && gstRate > 0) {
@@ -724,7 +721,7 @@ export class OrdersService {
               // Tax-exclusive or 0% GST - use price as-is
               basePrice = totalPrice;
             }
-            
+
             return {
               variantId: v.variantId,
               productId: v.productId,
@@ -1211,10 +1208,7 @@ export class OrdersService {
 
       // Include payment fee in total (already in rupees)
       const total =
-        subtotalAfterDiscount +
-        totalGstAmount +
-        shippingCost +
-        paymentFee;
+        subtotalAfterDiscount + totalGstAmount + shippingCost + paymentFee;
 
       // Verify payment intent amount calculation includes fee
       const expectedAmountInPaise = Math.round(total * 100);
@@ -1756,10 +1750,7 @@ export class OrdersService {
 
       // Calculate GST breakdown
       if (item.productGstRate > 0) {
-        const isIntraState = isIntraStateTransaction(
-          sellerState,
-          buyerState,
-        );
+        const isIntraState = isIntraStateTransaction(sellerState, buyerState);
         if (isIntraState) {
           const { cgst, sgst } = calculateCgstSgst(
             baseAmount,
@@ -1915,7 +1906,7 @@ export class OrdersService {
     // Include payment fee in total (already in rupees)
     const total =
       subtotalAfterDiscount + totalGstAmount + shippingCost + paymentFee;
-    
+
     // Convert payment fee to paise for database storage
     const paymentFeeInPaise = Math.round(paymentFee * 100);
 
@@ -2725,9 +2716,8 @@ export class OrdersService {
     // Validate payment amount matches expected amount
     // Fetch actual payment amount from Razorpay and compare with expected
     try {
-      const razorpayOrder = await this.paymentsService.getRazorpayOrderDetails(
-        paymentIntentId,
-      );
+      const razorpayOrder =
+        await this.paymentsService.getRazorpayOrderDetails(paymentIntentId);
       // Ensure amount is treated as number (Razorpay returns amount in paise)
       const actualPaymentAmountInPaise = Number(razorpayOrder.amount) || 0;
       const actualPaymentAmount = actualPaymentAmountInPaise / 100; // Convert to rupees

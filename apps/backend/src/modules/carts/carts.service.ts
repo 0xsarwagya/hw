@@ -329,10 +329,7 @@ export class CartsService {
     // For bundles, get GST rates and pricing types from their component variants
     // Use first variant's product GST rate and pricing type for simplicity
     const bundleGstRates = new Map<string, number>();
-    const bundlePricingTypes = new Map<
-      string,
-      "inclusive" | "exclusive"
-    >();
+    const bundlePricingTypes = new Map<string, "inclusive" | "exclusive">();
     for (const bundleItem of bundleItems) {
       const _metadata = bundleItem.metadata as BundleCartItemMetadata;
       // Get first variant's product for GST
@@ -367,8 +364,7 @@ export class CartsService {
     let bundleSubtotal = 0;
     for (const bundleItem of bundleItems) {
       const gstRate = bundleGstRates.get(bundleItem.id) || 0;
-      const pricingType =
-        bundlePricingTypes.get(bundleItem.id) || "exclusive";
+      const pricingType = bundlePricingTypes.get(bundleItem.id) || "exclusive";
       const itemPrice = bundleItem.price * bundleItem.quantity;
 
       if (pricingType === "inclusive" && gstRate > 0) {
@@ -422,7 +418,8 @@ export class CartsService {
           // Extract base price and GST from inclusive price
           const basePricePerUnit = calculateBasePrice(item.price, gstRate);
           baseAmount = basePricePerUnit * item.quantity;
-          gstAmount = calculateGstFromInclusivePrice(item.price, gstRate) * item.quantity;
+          gstAmount =
+            calculateGstFromInclusivePrice(item.price, gstRate) * item.quantity;
         } else {
           // Tax-exclusive: calculate GST on top
           baseAmount = itemPrice;
@@ -452,8 +449,7 @@ export class CartsService {
     // Calculate GST for bundle items
     for (const bundleItem of bundleItems) {
       const gstRate = bundleGstRates.get(bundleItem.id) || 0;
-      const pricingType =
-        bundlePricingTypes.get(bundleItem.id) || "exclusive";
+      const pricingType = bundlePricingTypes.get(bundleItem.id) || "exclusive";
       const itemPrice = bundleItem.price * bundleItem.quantity;
 
       if (gstRate > 0) {

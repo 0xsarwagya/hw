@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { useAdminBundles } from "./use-admin-bundles";
 import { useAdminVariants } from "../products/use-admin-variants";
+import { useAdminBundles } from "./use-admin-bundles";
 
 /**
  * Hook to fetch bundles that contain variants from a specific product
@@ -11,7 +11,11 @@ import { useAdminVariants } from "../products/use-admin-variants";
  * @returns Filtered bundles that contain this product's variants
  */
 export function useProductBundles(productId: string) {
-  const { data: bundlesData, isLoading, error } = useAdminBundles({
+  const {
+    data: bundlesData,
+    isLoading,
+    error,
+  } = useAdminBundles({
     limit: 1000, // Get all bundles to filter client-side
   });
   const { data: variants } = useAdminVariants(productId);
@@ -65,4 +69,3 @@ export function useProductBundles(productId: string) {
     error,
   };
 }
-

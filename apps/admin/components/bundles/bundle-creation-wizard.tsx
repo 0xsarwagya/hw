@@ -179,11 +179,7 @@ export function BundleCreationWizard({
                             : "bg-muted text-muted-foreground"
                       }`}
                     >
-                      {isCompleted ? (
-                        <Check className="h-4 w-4" />
-                      ) : (
-                        index + 1
-                      )}
+                      {isCompleted ? <Check className="h-4 w-4" /> : index + 1}
                     </div>
                     <div className="text-xs text-center mt-1">
                       <div
@@ -374,10 +370,7 @@ export function BundleCreationWizard({
         </div>
         <div className="flex gap-2">
           {currentStep === "review" ? (
-            <LoadingButton
-              onClick={handleFinish}
-              disabled={!createdBundleId}
-            >
+            <LoadingButton onClick={handleFinish} disabled={!createdBundleId}>
               Finish & View Bundle
             </LoadingButton>
           ) : (
@@ -395,4 +388,3 @@ export function BundleCreationWizard({
     </div>
   );
 }
-

@@ -14,10 +14,9 @@ const CartDrawer: React.FC = () => {
   const router = useRouter();
 
   // Use backend cart totals if available, otherwise calculate from cart items
-  const subtotal = backendCart?.subtotal ?? cart.reduce(
-    (total, item) => total + item.price * item.quantity,
-    0,
-  );
+  const subtotal =
+    backendCart?.subtotal ??
+    cart.reduce((total, item) => total + item.price * item.quantity, 0);
   const discountAmount = backendCart?.discountAmount ?? 0;
   const discountCode = backendCart?.discountCode;
   const gstAmount = backendCart?.gstAmount ?? 0;

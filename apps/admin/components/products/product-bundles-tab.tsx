@@ -100,9 +100,7 @@ export function ProductBundlesTab({ productId }: ProductBundlesTabProps) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant={bundle.isActive ? "default" : "secondary"}
-                    >
+                    <Badge variant={bundle.isActive ? "default" : "secondary"}>
                       {bundle.isActive ? "Active" : "Inactive"}
                     </Badge>
                     {bundle.allowMixAndMatch && (
@@ -131,9 +129,9 @@ export function ProductBundlesTab({ productId }: ProductBundlesTabProps) {
                       )}{" "}
                       variant
                       {bundle.relevantSets.reduce(
-                          (sum, { itemCount }) => sum + itemCount,
-                          0,
-                        ) !== 1
+                        (sum, { itemCount }) => sum + itemCount,
+                        0,
+                      ) !== 1
                         ? "s"
                         : ""}
                     </div>
@@ -160,4 +158,3 @@ export function ProductBundlesTab({ productId }: ProductBundlesTabProps) {
     </Card>
   );
 }
-

@@ -63,10 +63,10 @@ export const discountScopeEnum = pgEnum("discount_scope", ["ORDER", "PRODUCT"]);
  * - SUBTOTAL: Calculate discount on price excluding tax/GST
  * - TOTAL: Calculate discount on price including tax/GST
  */
-export const discountCalculationBasisEnum = pgEnum("discount_calculation_basis", [
-  "SUBTOTAL",
-  "TOTAL",
-]);
+export const discountCalculationBasisEnum = pgEnum(
+  "discount_calculation_basis",
+  ["SUBTOTAL", "TOTAL"],
+);
 
 /**
  * Main discounts table

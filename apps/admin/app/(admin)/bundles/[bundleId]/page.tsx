@@ -5,10 +5,10 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { AdminPageLayout } from "@/components/layout/admin-page-layout";
 import { BundleDetailOverview } from "@/components/bundles/bundle-detail-overview";
-import { BundleSummaryCard } from "@/components/bundles/bundle-summary-card";
 import { BundleSetsManager } from "@/components/bundles/bundle-sets-manager";
+import { BundleSummaryCard } from "@/components/bundles/bundle-summary-card";
+import { AdminPageLayout } from "@/components/layout/admin-page-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -164,45 +164,47 @@ export default function BundleDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              {...register("title", { required: "Title is required" })}
-              aria-invalid={errors.title ? "true" : "false"}
-            />
-            <FieldError error={errors.title?.message} />
-          </div>
+                    <div className="grid gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="title">Title *</Label>
+                        <Input
+                          id="title"
+                          {...register("title", {
+                            required: "Title is required",
+                          })}
+                          aria-invalid={errors.title ? "true" : "false"}
+                        />
+                        <FieldError error={errors.title?.message} />
+                      </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              {...register("description")}
-              aria-invalid={errors.description ? "true" : "false"}
-            />
-            <FieldError error={errors.description?.message} />
-          </div>
-        </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                          id="description"
+                          {...register("description")}
+                          aria-invalid={errors.description ? "true" : "false"}
+                        />
+                        <FieldError error={errors.description?.message} />
+                      </div>
+                    </div>
 
-        <div className="flex gap-4">
-          <LoadingButton
-            type="submit"
-            isLoading={updateBundle.isPending}
-            loadingText="Saving..."
-          >
-            <Save className="mr-2 h-4 w-4" />
-            Save Changes
-          </LoadingButton>
-          <Button type="button" variant="outline" asChild>
-            <Link href="/bundles">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Cancel
-            </Link>
-          </Button>
-        </div>
-      </form>
+                    <div className="flex gap-4">
+                      <LoadingButton
+                        type="submit"
+                        isLoading={updateBundle.isPending}
+                        loadingText="Saving..."
+                      >
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Changes
+                      </LoadingButton>
+                      <Button type="button" variant="outline" asChild>
+                        <Link href="/bundles">
+                          <ArrowLeft className="mr-2 h-4 w-4" />
+                          Cancel
+                        </Link>
+                      </Button>
+                    </div>
+                  </form>
                 </CardContent>
               </Card>
             </TabsContent>
