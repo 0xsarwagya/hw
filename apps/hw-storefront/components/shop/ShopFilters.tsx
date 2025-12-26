@@ -3,6 +3,7 @@ import { useCollections } from "../../hooks/useApi";
 import { useCategories } from "../../hooks/useCategories";
 import { Product } from "../../types";
 import { formatCurrency } from "../../utils";
+import { getColorHexWithFallback } from "../../utils/color-map";
 import { getUniqueColors, getUniqueSizes } from "../../utils/variant-helpers";
 
 interface ShopFiltersProps {
@@ -240,21 +241,8 @@ const ShopFilters: React.FC<ShopFiltersProps> = ({
           </div>
           <div className="flex flex-wrap gap-2">
             {availableColors.map((color) => {
-              // Simple color mapping for display
-              const colorHex = color.toLowerCase().includes("black")
-                ? "#000"
-                : color.toLowerCase().includes("white")
-                  ? "#fff"
-                  : color.toLowerCase().includes("gray") ||
-                      color.toLowerCase().includes("grey")
-                    ? "#808080"
-                    : color.toLowerCase().includes("red")
-                      ? "#ff0000"
-                      : color.toLowerCase().includes("blue")
-                        ? "#0000ff"
-                        : color.toLowerCase().includes("green")
-                          ? "#008000"
-                          : "#ccc";
+              // Use color map for proper hex values
+              const colorHex = getColorHexWithFallback(color);
               return (
                 <button
                   key={color}

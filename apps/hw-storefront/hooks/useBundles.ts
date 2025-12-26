@@ -5,6 +5,7 @@ import {
   bundleSchema,
   paginatedBundlesSchema,
 } from "../lib/validations/bundle";
+import { createBundleSlug } from "../utils/slug";
 
 export const QUERY_KEYS = {
   bundles: ["bundles"],
@@ -79,13 +80,10 @@ export const useBundleBySlug = (slug: string) => {
             return bundleIdSuffix === lastPart.toLowerCase();
           }) || null;
 
-          // Also check if slug matches generated slug
+          // Also check if slug matches generated slug using the same slugify function
           if (!foundBundle) {
             foundBundle = bundles.find((b) => {
-              const bundleSlug = `${b.title
-                .toLowerCase()
-                .replace(/\s+/g, "-")
-                .replace(/[^\w-]/g, "")}-${b.id.slice(-8)}`;
+              const bundleSlug = createBundleSlug(b.title, b.id);
               return bundleSlug === slug || b.id === slug;
             }) || null;
           }
@@ -114,10 +112,7 @@ export const useBundleBySlug = (slug: string) => {
           const bundles = paginatedResponse.data;
 
           const bundle = bundles.find((b) => {
-            const bundleSlug = `${b.title
-              .toLowerCase()
-              .replace(/\s+/g, "-")
-              .replace(/[^\w-]/g, "")}-${b.id.slice(-8)}`;
+            const bundleSlug = createBundleSlug(b.title, b.id);
             return bundleSlug === slug || b.id === slug;
           });
 

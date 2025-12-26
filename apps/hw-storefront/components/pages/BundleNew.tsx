@@ -12,6 +12,7 @@ import { useBundleBySlug, useBundles } from "../../hooks/useBundles";
 import { useAvailableVariants } from "../../hooks/useVariants";
 import { Product } from "../../types";
 import { formatCurrency } from "../../utils";
+import { getColorHexWithFallback } from "../../utils/color-map";
 import { findVariantBySizeColor } from "../../utils/variant-helpers";
 
 interface BundleNewProps {
@@ -456,24 +457,8 @@ const BundleNew: React.FC<BundleNewProps> = ({ slug }) => {
                         <div className="absolute top-full left-0 z-20 w-full mt-1 bg-white border border-gray-200 shadow-xl rounded-lg p-3 max-h-60 overflow-y-auto animate-[fade-in_0.2s_ease-out]">
                           <div className="grid grid-cols-4 gap-2">
                             {availableColors.map((colorName) => {
-                              const colorHex = colorName
-                                .toLowerCase()
-                                .includes("black")
-                                ? "#000"
-                                : colorName.toLowerCase().includes("white")
-                                  ? "#fff"
-                                  : colorName.toLowerCase().includes("gray") ||
-                                      colorName.toLowerCase().includes("grey")
-                                    ? "#808080"
-                                    : colorName.toLowerCase().includes("red")
-                                      ? "#ff0000"
-                                      : colorName.toLowerCase().includes("blue")
-                                        ? "#0000ff"
-                                        : colorName
-                                              .toLowerCase()
-                                              .includes("green")
-                                          ? "#008000"
-                                          : "#ccc";
+                              // Use color map for proper hex values
+                              const colorHex = getColorHexWithFallback(colorName);
                               return (
                                 <button
                                   key={colorName}

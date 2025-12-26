@@ -19,6 +19,7 @@ import {
 import type { Product as BackendProduct } from "../../lib/validations/product";
 import { Product } from "../../types";
 import { formatCurrency } from "../../utils";
+import { getColorHexWithFallback } from "../../utils/color-map";
 import {
   findVariantBySizeColor,
   getUniqueColors,
@@ -487,24 +488,7 @@ const ProductDetails: React.FC = () => {
                         <div
                           className="w-8 h-8 rounded-full border border-black/10 shadow-sm bg-gray-200"
                           style={{
-                            backgroundColor: colorName
-                              .toLowerCase()
-                              .includes("black")
-                              ? "#000"
-                              : colorName.toLowerCase().includes("white")
-                                ? "#fff"
-                                : colorName.toLowerCase().includes("gray") ||
-                                    colorName.toLowerCase().includes("grey")
-                                  ? "#808080"
-                                  : colorName.toLowerCase().includes("red")
-                                    ? "#ff0000"
-                                    : colorName.toLowerCase().includes("blue")
-                                      ? "#0000ff"
-                                      : colorName
-                                            .toLowerCase()
-                                            .includes("green")
-                                        ? "#008000"
-                                        : "#ccc",
+                            backgroundColor: getColorHexWithFallback(colorName),
                           }}
                         ></div>
                       </button>

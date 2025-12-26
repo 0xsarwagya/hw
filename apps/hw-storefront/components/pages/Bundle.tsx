@@ -19,6 +19,7 @@ import {
 import { endpoints, get } from "../../lib/api/client";
 import { productSchema } from "../../lib/validations/product";
 import { formatCurrency } from "../../utils";
+import { getColorHexWithFallback } from "../../utils/color-map";
 import { findVariantBySizeColor } from "../../utils/variant-helpers";
 
 interface Selection {
@@ -640,12 +641,59 @@ const Bundle: React.FC<BundleProps> = ({ bundleId, slug }) => {
     );
   }
 
-  // Identify current active color - use placeholder images for now
+  // Identify current active color
   const activeColorName =
     selections[activeItem]?.color || availableColors[0] || "Black";
-  // For now, use placeholder images - in production, these would come from product images
-  const activeImage = `https://via.placeholder.com/500?text=${encodeURIComponent(activeColorName)}`;
-  const galleryImages = [activeImage, activeImage, activeImage, activeImage];
+  const activeSize = selections[activeItem]?.size || availableSizes[0] || "";
+  
+  // Get actual product image for the active selection
+  const activeImage = useMemo(() => {
+    const image = getVariantImage(activeColorName, activeSize);
+    // Fallback to placeholder only if no image found
+    return image || `https://via.placeholder.com/500?text=${encodeURIComponent(activeColorName)}`;
+  }, [getVariantImage, activeColorName, activeSize]);
+  
+  // Build gallery images from all selected variants
+  const galleryImages = useMemo(() => {
+    const images: string[] = [];
+    
+    // Collect images from all selections (prioritize selected variants)
+    selections.forEach((sel) => {
+      if (sel.color) {
+        const image = getVariantImage(sel.color, sel.size);
+        if (image && !images.includes(image)) {
+          images.push(image);
+        }
+      }
+    });
+    
+    // If we have images from selections, use them
+    if (images.length > 0) {
+      return images;
+    }
+    
+    // If no selections yet, show images for available colors
+    // This helps users preview what's available
+    if (selections.length === 0 || selections.every(s => !s.color)) {
+      availableColors.forEach((color) => {
+        const image = getVariantImage(color);
+        if (image && !images.includes(image)) {
+          images.push(image);
+        }
+      });
+      
+      if (images.length > 0) {
+        return images;
+      }
+    }
+    
+    // Fallback: use active image if it's a real image, otherwise placeholder
+    if (activeImage && !activeImage.includes("via.placeholder.com")) {
+      return [activeImage];
+    }
+    
+    return [activeImage];
+  }, [selections, getVariantImage, activeImage, availableColors]);
 
   // Error state - if slug was provided but bundle not found
   if (slug && slugError) {
@@ -872,25 +920,8 @@ const Bundle: React.FC<BundleProps> = ({ bundleId, slug }) => {
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {availableColors.map((colorName) => {
-                            // Simple color hex mapping
-                            const colorHex = colorName
-                              .toLowerCase()
-                              .includes("black")
-                              ? "#000"
-                              : colorName.toLowerCase().includes("white")
-                                ? "#fff"
-                                : colorName.toLowerCase().includes("gray") ||
-                                    colorName.toLowerCase().includes("grey")
-                                  ? "#808080"
-                                  : colorName.toLowerCase().includes("red")
-                                    ? "#ff0000"
-                                    : colorName.toLowerCase().includes("blue")
-                                      ? "#0000ff"
-                                      : colorName
-                                            .toLowerCase()
-                                            .includes("green")
-                                        ? "#008000"
-                                        : "#ccc";
+                            // Use color map for proper hex values
+                            const colorHex = getColorHexWithFallback(colorName);
                             const isValid = sel.size
                               ? isValidCombination(colorName, sel.size)
                               : true;

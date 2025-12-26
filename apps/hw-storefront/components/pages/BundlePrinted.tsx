@@ -11,6 +11,7 @@ import { useBundleBySlug } from "../../hooks/useBundles";
 import { useAvailableVariants } from "../../hooks/useVariants";
 import { Product } from "../../types";
 import { formatCurrency } from "../../utils";
+import { getColorHexWithFallback } from "../../utils/color-map";
 import { findVariantBySizeColor } from "../../utils/variant-helpers";
 
 interface Selection {
@@ -214,20 +215,8 @@ const BundlePrinted: React.FC<BundlePrintedProps> = ({ slug }) => {
                   </h3>
                   <div className="flex flex-wrap gap-3">
                     {availableColors.map((colorName) => {
-                      const colorHex = colorName.toLowerCase().includes("black")
-                        ? "#000"
-                        : colorName.toLowerCase().includes("white")
-                          ? "#fff"
-                          : colorName.toLowerCase().includes("gray") ||
-                              colorName.toLowerCase().includes("grey")
-                            ? "#808080"
-                            : colorName.toLowerCase().includes("red")
-                              ? "#ff0000"
-                              : colorName.toLowerCase().includes("blue")
-                                ? "#0000ff"
-                                : colorName.toLowerCase().includes("green")
-                                  ? "#008000"
-                                  : "#ccc";
+                      // Use color map for proper hex values
+                      const colorHex = getColorHexWithFallback(colorName);
                       return (
                         <div
                           key={colorName}
@@ -278,20 +267,8 @@ const BundlePrinted: React.FC<BundlePrintedProps> = ({ slug }) => {
               {/* Item Selectors List */}
               <div className="space-y-4 flex-grow mb-20">
                 {selections.map((sel, idx) => {
-                  const colorHex = sel.color?.toLowerCase().includes("black")
-                    ? "#000"
-                    : sel.color?.toLowerCase().includes("white")
-                      ? "#fff"
-                      : sel.color?.toLowerCase().includes("gray") ||
-                          sel.color?.toLowerCase().includes("grey")
-                        ? "#808080"
-                        : sel.color?.toLowerCase().includes("red")
-                          ? "#ff0000"
-                          : sel.color?.toLowerCase().includes("blue")
-                            ? "#0000ff"
-                            : sel.color?.toLowerCase().includes("green")
-                              ? "#008000"
-                              : "#ccc";
+                  // Use color map for proper hex values
+                  const colorHex = getColorHexWithFallback(sel.color || "");
                   return (
                     <div
                       key={idx}
@@ -381,28 +358,8 @@ const BundlePrinted: React.FC<BundlePrintedProps> = ({ slug }) => {
                               onClick={(e) => e.stopPropagation()}
                             >
                               {availableColors.map((colorName) => {
-                                const colorHex = colorName
-                                  .toLowerCase()
-                                  .includes("black")
-                                  ? "#000"
-                                  : colorName.toLowerCase().includes("white")
-                                    ? "#fff"
-                                    : colorName
-                                          .toLowerCase()
-                                          .includes("gray") ||
-                                        colorName.toLowerCase().includes("grey")
-                                      ? "#808080"
-                                      : colorName.toLowerCase().includes("red")
-                                        ? "#ff0000"
-                                        : colorName
-                                              .toLowerCase()
-                                              .includes("blue")
-                                          ? "#0000ff"
-                                          : colorName
-                                                .toLowerCase()
-                                                .includes("green")
-                                            ? "#008000"
-                                            : "#ccc";
+                                // Use color map for proper hex values
+                                const colorHex = getColorHexWithFallback(colorName);
                                 return (
                                   <button
                                     key={colorName}
