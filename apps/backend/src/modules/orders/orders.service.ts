@@ -673,33 +673,69 @@ export class OrdersService {
           await this.getPriceListsForCustomer(customerGroupId);
 
         // Build variant pricing input (variants + flattened bundles)
-        // Note: Multiply by quantity to get total price, not unit price
-        // The pricing engine sums these basePrice values to get totalEffectivePrice
+        // Note: The pricing engine expects BASE prices (GST-exclusive)
+        // For tax-inclusive pricing, extract base price before passing to engine
+        // Multiply by quantity to get total price, not unit price
         const variantPricingInput = [
           ...cartItemsWithVariants.map((item) => {
             const productId = variantToProduct.get(item.productVariantId);
             const product = productId ? productMap.get(productId) : null;
+            const pricingType = product?.pricingType || "exclusive";
+            const gstRate = product?.gstRate || 0;
+            const totalPrice = item.price * item.quantity;
+            
+            // Extract base price if tax-inclusive, otherwise use price as-is
+            let basePrice: number;
+            if (pricingType === "inclusive" && gstRate > 0) {
+              // Extract base price from GST-inclusive price
+              const basePricePerUnit = calculateBasePrice(item.price, gstRate);
+              basePrice = basePricePerUnit * item.quantity;
+            } else {
+              // Tax-exclusive or 0% GST - use price as-is
+              basePrice = totalPrice;
+            }
+            
             return {
               variantId: item.productVariantId,
               productId: productId || "",
               categoryId: product?.categoryId || null,
-              basePrice: item.price * item.quantity,
+              basePrice,
               compareAtPrice: undefined, // TODO: Load from variant
               salePrice: undefined, // TODO: Load from variant
               saleStartDate: undefined,
               saleEndDate: undefined,
             };
           }),
-          ...flattenedBundleVariants.map((v) => ({
-            variantId: v.variantId,
-            productId: v.productId,
-            categoryId: v.categoryId,
-            basePrice: v.basePrice * v.quantity,
-            compareAtPrice: undefined,
-            salePrice: undefined,
-            saleStartDate: undefined,
-            saleEndDate: undefined,
-          })),
+          ...flattenedBundleVariants.map((v) => {
+            // For bundle variants, we need to get the product's pricing type
+            // The bundle price is already per-unit, so we extract base if needed
+            const product = productMap.get(v.productId);
+            const pricingType = product?.pricingType || "exclusive";
+            const gstRate = product?.gstRate || 0;
+            const totalPrice = v.basePrice * v.quantity;
+            
+            // Extract base price if tax-inclusive, otherwise use price as-is
+            let basePrice: number;
+            if (pricingType === "inclusive" && gstRate > 0) {
+              // Extract base price from GST-inclusive price
+              const basePricePerUnit = calculateBasePrice(v.basePrice, gstRate);
+              basePrice = basePricePerUnit * v.quantity;
+            } else {
+              // Tax-exclusive or 0% GST - use price as-is
+              basePrice = totalPrice;
+            }
+            
+            return {
+              variantId: v.variantId,
+              productId: v.productId,
+              categoryId: v.categoryId,
+              basePrice,
+              compareAtPrice: undefined,
+              salePrice: undefined,
+              saleStartDate: undefined,
+              saleEndDate: undefined,
+            };
+          }),
         ];
 
         // Run pricing engine
