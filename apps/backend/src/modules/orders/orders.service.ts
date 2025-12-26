@@ -2601,7 +2601,8 @@ export class OrdersService {
       const razorpayOrder = await this.paymentsService.getRazorpayOrderDetails(
         paymentIntentId,
       );
-      const actualPaymentAmountInPaise = razorpayOrder.amount; // Amount in paise from Razorpay
+      // Ensure amount is treated as number (Razorpay returns amount in paise)
+      const actualPaymentAmountInPaise = Number(razorpayOrder.amount) || 0;
       const actualPaymentAmount = actualPaymentAmountInPaise / 100; // Convert to rupees
       const expectedPaymentAmount = total; // Expected amount in rupees
 
