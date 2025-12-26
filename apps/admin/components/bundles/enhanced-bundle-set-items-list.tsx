@@ -236,20 +236,22 @@ export function EnhancedBundleSetItemsList({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          asChild
-                          title="View Product"
-                        >
-                          <Link
-                            href={`/products/${variant.productId}`}
-                            target="_blank"
+                        {inventory?.productId && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            asChild
+                            title="View Product"
                           >
-                            <ExternalLink className="h-4 w-4" />
-                          </Link>
-                        </Button>
+                            <Link
+                              href={`/products/${inventory.productId}`}
+                              target="_blank"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        )}
                         <Button
                           type="button"
                           variant="ghost"
