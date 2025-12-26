@@ -63,7 +63,9 @@ export function CategoryForm({
   const handleSubmit = async (
     data: CreateCategoryInputSchema | UpdateCategoryInputSchema,
   ) => {
-    await onSubmit(data as CreateCategoryInput | UpdateCategoryInput);
+    // Remove position field as backend DTO doesn't accept it
+    const { position, ...dataWithoutPosition } = data;
+    await onSubmit(dataWithoutPosition as CreateCategoryInput | UpdateCategoryInput);
   };
 
   return (
