@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   type CreateDiscountInput,
   DiscountApplicationType,
+  DiscountCalculationBasis,
   DiscountType,
   DiscountValueType,
 } from "@/lib/types/discounts";
@@ -53,6 +54,8 @@ export function DiscountFormWizard({
     usageLimit: initialData?.usageLimit ?? undefined,
     perUserLimit: initialData?.perUserLimit ?? undefined,
     customerGroupIds: initialData?.customerGroupIds ?? undefined,
+    calculationBasis:
+      initialData?.calculationBasis || DiscountCalculationBasis.TOTAL,
     startDate: initialData?.startDate || new Date().toISOString(),
     endDate: initialData?.endDate || undefined,
     productIds: initialData?.productIds || [],
@@ -283,6 +286,31 @@ export function DiscountFormWizard({
             value={formData.priority}
             onValueChange={(value) => updateField("priority", value)}
           />
+
+          <div className="space-y-2">
+            <Label>Calculate Discount On</Label>
+            <select
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+              value={formData.calculationBasis || DiscountCalculationBasis.TOTAL}
+              onChange={(e) =>
+                updateField(
+                  "calculationBasis",
+                  e.target.value as DiscountCalculationBasis,
+                )
+              }
+            >
+              <option value={DiscountCalculationBasis.SUBTOTAL}>
+                Subtotal (before tax/GST)
+              </option>
+              <option value={DiscountCalculationBasis.TOTAL}>
+                Total (after tax/GST)
+              </option>
+            </select>
+            <p className="text-sm text-muted-foreground">
+              Choose whether to calculate the discount on the subtotal (before
+              tax) or total (after tax) amount
+            </p>
+          </div>
 
           <DiscountStackingEditor
             canStack={formData.canStack ?? true}

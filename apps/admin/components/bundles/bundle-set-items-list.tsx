@@ -15,7 +15,7 @@ import { useAdminAddBundleSetItem } from "@/hooks/bundles/use-admin-add-bundle-s
 import { useAdminRemoveBundleSetItem } from "@/hooks/bundles/use-admin-remove-bundle-set-item";
 import { useVariantsIndex } from "@/hooks/inventory/use-variants-index";
 import type { BundleSet } from "@/lib/types/bundles";
-import { VariantSelector } from "./variant-selector";
+import { EnhancedVariantSelector } from "./enhanced-variant-selector";
 
 interface BundleSetItemsListProps {
   bundleId: string;
@@ -65,7 +65,7 @@ export function BundleSetItemsList({
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <div className="flex-1">
-          <VariantSelector
+          <EnhancedVariantSelector
             selectedVariantId={selectedVariantId}
             onSelect={setSelectedVariantId}
             excludedVariantIds={existingVariantIds}

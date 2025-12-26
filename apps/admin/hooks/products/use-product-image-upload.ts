@@ -38,8 +38,8 @@ async function uploadSingleImage(productId: string, file: File): Promise<void> {
   formData.append("file", file);
   formData.append("prefix", "products");
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-  const uploadResponse = await fetch(`${API_URL}${endpoints.storage.upload}`, {
+  // Use Next.js API proxy route to ensure cookies are properly forwarded
+  const uploadResponse = await fetch("/api/admin/storage/upload", {
     method: "POST",
     body: formData,
     credentials: "include",

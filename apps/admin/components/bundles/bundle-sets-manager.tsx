@@ -1,6 +1,14 @@
 "use client";
 
-import { ChevronDown, ChevronUp, Edit, Trash2 } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Edit,
+  Package,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +21,7 @@ import { useAdminDeleteBundleSet } from "@/hooks/bundles/use-admin-delete-bundle
 import type { CreateBundleSetInput } from "@/lib/types/bundles";
 import { BundleSetEditor } from "./bundle-set-editor";
 import { BundleSetForm } from "./bundle-set-form";
-import { BundleSetItemsList } from "./bundle-set-items-list";
+import { EnhancedBundleSetItemsList } from "./enhanced-bundle-set-items-list";
 
 interface BundleSetsManagerProps {
   bundleId: string;
@@ -93,30 +101,64 @@ export function BundleSetsManager({ bundleId }: BundleSetsManagerProps) {
         </Card>
       ) : (
         <div className="space-y-4">
-          {sets.map((set) => {
+          {sets.map((set, index) => {
             const isExpanded = expandedSetIds.has(set.id);
             const isEditing = editingSetId === set.id;
+            const variantCount = set.items?.length || 0;
+            const isComplete = variantCount > 0;
+            const isRequired = set.minQuantity > 0;
 
             return (
-              <Card key={set.id}>
+              <Card
+                key={set.id}
+                className={
+                  !isComplete
+                    ? "border-destructive/50 bg-destructive/5"
+                    : "border-green-500/20 bg-green-50/50 dark:bg-green-950/20"
+                }
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
                       <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs font-medium">
+                            {index + 1}
+                          </div>
                         <CardTitle className="text-base">{set.title}</CardTitle>
+                        </div>
+                        {isComplete ? (
+                          <Badge variant="default" className="bg-green-600">
+                            <CheckCircle2 className="mr-1 h-3 w-3" />
+                            {variantCount} variant{variantCount !== 1 ? "s" : ""}
+                          </Badge>
+                        ) : (
+                          <Badge variant="destructive">
+                            <AlertCircle className="mr-1 h-3 w-3" />
+                            Empty
+                          </Badge>
+                        )}
                         <Badge variant="outline">
-                          {set.items.length} item
-                          {set.items.length !== 1 ? "s" : ""}
-                        </Badge>
-                        <Badge variant="secondary">
+                          <Package className="mr-1 h-3 w-3" />
                           {set.minQuantity === set.maxQuantity
-                            ? `${set.minQuantity} required`
-                            : `${set.minQuantity}-${set.maxQuantity} items`}
+                            ? `Select ${set.minQuantity}`
+                            : `Select ${set.minQuantity}-${set.maxQuantity}`}
                         </Badge>
+                        {isRequired && (
+                          <Badge variant="secondary" className="text-xs">
+                            Required
+                          </Badge>
+                        )}
                       </div>
                       {set.description && (
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-sm text-muted-foreground mt-2">
                           {set.description}
+                        </p>
+                      )}
+                      {!isComplete && (
+                        <p className="text-sm text-destructive mt-2 flex items-center gap-1">
+                          <AlertCircle className="h-4 w-4" />
+                          This set needs at least one variant to be usable.
                         </p>
                       )}
                     </div>
@@ -182,7 +224,7 @@ export function BundleSetsManager({ bundleId }: BundleSetsManagerProps) {
                       }}
                     >
                       <CollapsibleContent>
-                        <BundleSetItemsList
+                        <EnhancedBundleSetItemsList
                           bundleId={bundleId}
                           bundleSet={set}
                           onItemsChange={refetch}

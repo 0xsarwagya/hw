@@ -17,7 +17,6 @@ import {
   STORAGE_EMPTY_STATE_DESCRIPTION,
   STORAGE_EMPTY_STATE_TITLE,
 } from "@/lib/constants/storage.constants";
-import { endpoints } from "@/lib/endpoints";
 import type { FileMetadata } from "@/lib/types/storage";
 import { StorageFilesTable } from "./storage-files-table";
 import { StoragePreviewDialog } from "./storage-preview-dialog";
@@ -77,9 +76,8 @@ export function StoragePageClient() {
     if (prefix) formData.append("prefix", prefix);
 
     try {
-      const API_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const response = await fetch(`${API_URL}${endpoints.storage.upload}`, {
+      // Use Next.js API proxy route to ensure cookies are properly forwarded
+      const response = await fetch("/api/admin/storage/upload", {
         method: "POST",
         credentials: "include",
         body: formData,

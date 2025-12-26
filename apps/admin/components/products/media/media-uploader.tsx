@@ -56,16 +56,12 @@ export function MediaUploader({
         formData.append("file", file);
         formData.append("prefix", prefix);
 
-        const API_URL =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-        const uploadResponse = await fetch(
-          `${API_URL}${endpoints.storage.upload}`,
-          {
-            method: "POST",
-            body: formData,
-            credentials: "include",
-          },
-        );
+        // Use Next.js API proxy route to ensure cookies are properly forwarded
+        const uploadResponse = await fetch("/api/admin/storage/upload", {
+          method: "POST",
+          body: formData,
+          credentials: "include",
+        });
 
         if (!uploadResponse.ok) {
           const errorData = await uploadResponse.json().catch(() => ({}));

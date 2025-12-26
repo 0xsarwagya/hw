@@ -132,6 +132,7 @@ export function DiscountDetailPageClient() {
                   usageLimit: discount.usageLimit ?? undefined,
                   perUserLimit: discount.perUserLimit ?? undefined,
                   customerGroupIds: discount.customerGroupIds ?? undefined,
+                  calculationBasis: discount.calculationBasis,
                   startDate:
                     discount.startDate instanceof Date
                       ? discount.startDate.toISOString()

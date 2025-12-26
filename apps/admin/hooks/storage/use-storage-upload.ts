@@ -31,9 +31,8 @@ export function useStorageUpload(options: UseStorageUploadOptions = {}) {
         formData.append("prefix", options.prefix);
       }
 
-      const API_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const response = await fetch(`${API_URL}${endpoints.storage.upload}`, {
+      // Use Next.js API proxy route to ensure cookies are properly forwarded
+      const response = await fetch("/api/admin/storage/upload", {
         method: "POST",
         credentials: "include",
         body: formData,

@@ -89,6 +89,7 @@ export function ProductDetailClient({ productId }: ProductDetailClientProps) {
             | "18"
             | "28"
             | undefined,
+          pricingType: product.pricingType || "exclusive",
           hsnCode: product.hsnCode || undefined,
           status: product.status,
           categoryId: product.categoryId || null,

@@ -6,6 +6,7 @@ import type { Category } from "@/lib/types/categories";
 import type { Collection } from "@/lib/types/collections";
 import type { ProductImage, Variant } from "@/lib/types/products";
 import type { UpdateProductFormValues } from "@/lib/validations/products";
+import { ProductBundlesTab } from "./product-bundles-tab";
 import { ProductCategoriesTab } from "./tabs/product-categories-tab";
 import { ProductCollectionsTab } from "./tabs/product-collections-tab";
 import { ProductDetailsTab } from "./tabs/product-details-tab";
@@ -47,6 +48,7 @@ export function ProductDetailTabs({
         <TabsTrigger value="variants">Variants</TabsTrigger>
         <TabsTrigger value="categories">Categories</TabsTrigger>
         <TabsTrigger value="collections">Collections</TabsTrigger>
+        <TabsTrigger value="bundles">Bundles</TabsTrigger>
       </TabsList>
 
       <TabsContent value="details">
@@ -75,6 +77,10 @@ export function ProductDetailTabs({
           selectedCollectionIds={selectedCollectionIds}
           onCollectionToggle={onCollectionToggle}
         />
+      </TabsContent>
+
+      <TabsContent value="bundles">
+        <ProductBundlesTab productId={productId} />
       </TabsContent>
     </Tabs>
   );

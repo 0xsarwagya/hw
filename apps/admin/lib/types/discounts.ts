@@ -26,6 +26,11 @@ export enum DiscountScope {
   PRODUCT = "PRODUCT",
 }
 
+export enum DiscountCalculationBasis {
+  SUBTOTAL = "SUBTOTAL",
+  TOTAL = "TOTAL",
+}
+
 export enum DriftSeverity {
   INFO = "INFO",
   WARNING = "WARNING",
@@ -58,6 +63,7 @@ export interface Discount {
   minQuantity: number | null;
   customerGroupIds: string | null; // JSON array string
   scope: DiscountScope;
+  calculationBasis: DiscountCalculationBasis;
   priority: number;
   canStack: boolean;
   mutuallyExclusive: boolean;
@@ -115,6 +121,7 @@ export interface CreateDiscountInput {
   minQuantity?: number;
   customerGroupIds?: string; // JSON array string
   scope?: DiscountScope;
+  calculationBasis?: DiscountCalculationBasis;
   priority?: number;
   canStack?: boolean;
   mutuallyExclusive?: boolean;

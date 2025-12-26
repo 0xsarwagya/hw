@@ -6,13 +6,18 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { AdminPageLayout } from "@/components/layout/admin-page-layout";
+import { BundleDetailOverview } from "@/components/bundles/bundle-detail-overview";
+import { BundleSummaryCard } from "@/components/bundles/bundle-summary-card";
+import { BundleSetsManager } from "@/components/bundles/bundle-sets-manager";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAdminBundle } from "@/hooks/bundles/use-admin-bundle";
 import { useAdminDeleteBundle } from "@/hooks/bundles/use-admin-delete-bundle";
@@ -143,7 +148,22 @@ export default function BundleDetailPage() {
         <ErrorDisplay error={apiError} onRetry={() => setApiError(null)} />
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <Tabs defaultValue="details" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="sets">Choice Sets</TabsTrigger>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="details" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Bundle Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="title">Title *</Label>
@@ -183,6 +203,24 @@ export default function BundleDetailPage() {
           </Button>
         </div>
       </form>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="sets" className="space-y-4">
+              <BundleSetsManager bundleId={bundleId} />
+            </TabsContent>
+
+            <TabsContent value="overview" className="space-y-4">
+              <BundleDetailOverview bundle={bundle} />
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        <div className="space-y-6">
+          <BundleSummaryCard bundle={bundle} />
+        </div>
+      </div>
     </AdminPageLayout>
   );
 }
