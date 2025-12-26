@@ -673,6 +673,8 @@ export class OrdersService {
           await this.getPriceListsForCustomer(customerGroupId);
 
         // Build variant pricing input (variants + flattened bundles)
+        // Note: Multiply by quantity to get total price, not unit price
+        // The pricing engine sums these basePrice values to get totalEffectivePrice
         const variantPricingInput = [
           ...cartItemsWithVariants.map((item) => {
             const productId = variantToProduct.get(item.productVariantId);
@@ -681,7 +683,7 @@ export class OrdersService {
               variantId: item.productVariantId,
               productId: productId || "",
               categoryId: product?.categoryId || null,
-              basePrice: item.price,
+              basePrice: item.price * item.quantity,
               compareAtPrice: undefined, // TODO: Load from variant
               salePrice: undefined, // TODO: Load from variant
               saleStartDate: undefined,
@@ -692,7 +694,7 @@ export class OrdersService {
             variantId: v.variantId,
             productId: v.productId,
             categoryId: v.categoryId,
-            basePrice: v.basePrice,
+            basePrice: v.basePrice * v.quantity,
             compareAtPrice: undefined,
             salePrice: undefined,
             saleStartDate: undefined,
